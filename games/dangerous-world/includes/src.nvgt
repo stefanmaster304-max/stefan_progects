@@ -3,6 +3,8 @@ source@[] src(0);
 dictionary source_playback_offsets;
 dictionary source_resolved_path_cache;
 dictionary source_is_music_cache;
+string deferred_neighbor_sync_map = "";
+bool deferred_neighbor_sync_pending = false;
 
 string[] cached_source_maps;
 const uint MAX_CACHED_SOURCE_MAPS = 6;
@@ -194,6 +196,8 @@ class source
 	bool is_ambience;
 	bool paused;
 	bool is_neighbor;
+	bool playback_initialized;
+	string resolved_file;
 
 	bool is_player_inside()
 	{
@@ -228,6 +232,8 @@ class source
 		is_ambience = is_amb;
 		paused = false;
 		is_neighbor = neighbor;
+		playback_initialized = false;
+		sound = -1;
 
 		string sound_file = "";
 		if (source_resolved_path_cache.exists(file))
@@ -252,6 +258,15 @@ class source
 			source_resolved_path_cache.set(file, sound_file);
 			source_is_music_cache.set(file, is_music);
 		}
+
+		resolved_file = sound_file;
+	}
+
+	void start_playback()
+	{
+		if (playback_initialized) return;
+		playback_initialized = true;
+		if (resolved_file == "") return;
 
 		int cx = (x1 + x2) / 2;
 		int cy = (y1 + y2) / 2;
@@ -281,16 +296,16 @@ class source
 			// Environmental beds are non-positional 2D audio. Their map bounds
 			// control only whether playback is paused; they never determine a
 			// virtual emitter position or distance attenuation.
-			sound = sp.play_stationary_extended(sound_file, true, start_off, 0.0, final_vol, float(pitch), true, null, null);
+			sound = sp.play_stationary_extended(resolved_file, true, start_off, 0.0, final_vol, float(pitch), true, null, null, true);
 		}
 		else
 		{
 			bool should_stream = true;
-			sound = sp.play_extended_3d(sound_file, float(me.x), float(me.y), float(me.z), float(cx), float(cy), float(cz), double(facing), lx, rx, ly, ry, lz, rz, true, start_off, 0.0, final_vol, float(pitch), true, null, null, should_stream, 0);
+			sound = sp.play_extended_3d(resolved_file, float(me.x), float(me.y), float(me.z), float(cx), float(cy), float(cz), double(facing), lx, rx, ly, ry, lz, rz, true, start_off, 0.0, final_vol, float(pitch), true, null, null, should_stream, 0);
 			sp.update_sound_range_3d(sound, lx, rx, ly, ry, lz, rz);
 		}
 
-		if (is_ambience && !is_player_inside())
+		if (is_ambience && !is_player_inside() && sound >= 0)
 		{
 			paused = true;
 			sp.pause_sound(sound);
@@ -590,7 +605,7 @@ class neighbor_map_offset_info
 }
 neighbor_map_offset_info@[] g_active_neighbor_maps;
 
-void sync_map_and_neighbor_sources(const string&in active_mname)
+void sync_map_and_neighbor_sources(const string&in active_mname, bool include_neighbor_maps = true)
 {
 	if (active_mname == "") return;
 	g_active_neighbor_maps.resize(0);
@@ -617,7 +632,7 @@ void sync_map_and_neighbor_sources(const string&in active_mname)
 		parse_source_lines_from_content(cur_content, cur.mname, cur.ox, cur.oy, cur.oz, is_neigh, pending_sources);
 
 		// Discover neighbor connections up to depth 2 (includes direct neighbors and 2nd-degree neighbors like Swamp when in Ocean)
-		if (cur.depth < 2)
+		if (include_neighbor_maps && cur.depth < 2)
 		{
 			string cleaned = string_replace(cur_content, "\r", "", true);
 			string[]@ lines = string_split(cleaned, "\n", false);
@@ -754,8 +769,22 @@ void seamless_switch_map_sources(const string&in prev_map, const string&in next_
 void update_sources()
 {
 	double cur_min = 0.0;
+	bool started_stream_this_tick = false;
 	for (uint i = 0; i < src.length(); i++)
 	{
+		if (!src[i].playback_initialized)
+		{
+			if (src[i].is_ambience && !src[i].is_player_inside()) continue;
+			// Starting an audio stream can involve file I/O and decoding. Spread
+			// that cost across game ticks so map geometry and movement stay live.
+			if (!started_stream_this_tick)
+			{
+				src[i].start_playback();
+				started_stream_this_tick = true;
+			}
+			continue;
+		}
+		if (src[i].sound < 0) continue;
 		if (src[i].is_ambience)
 		{
 			bool inside = src[i].is_player_inside();
@@ -796,7 +825,7 @@ void apply_ambient_volume()
 	}
 	for (uint i = 0; i < src.length(); i++)
 	{
-		if (src[i].is_music || src[i].paused) continue;
+		if (src[i].sound < 0 || src[i].is_music || src[i].paused) continue;
 		double mult = src[i].calculate_time_multiplier(cur_min);
 		double eff_vol = src[i].volume + mult_to_db_offset(mult);
 		if (eff_vol < -100.0) eff_vol = -100.0;
@@ -812,7 +841,7 @@ void apply_music_volume()
 	double cur_min = 0.0;
 	for (uint i = 0; i < src.length(); i++)
 	{
-		if (!src[i].is_music || src[i].paused) continue;
+		if (src[i].sound < 0 || !src[i].is_music || src[i].paused) continue;
 		double mult = src[i].calculate_time_multiplier(cur_min);
 		double eff_vol = src[i].volume + mult_to_db_offset(mult);
 		if (eff_vol < -100.0) eff_vol = -100.0;

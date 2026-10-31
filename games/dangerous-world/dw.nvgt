@@ -306,6 +306,8 @@ mainmenu();
 void game()
 {
 is_in_game = true;
+bool welcome_sound_pending = !initial_session_welcome_played;
+uint neighbor_sync_delay_ticks = 0;
 while(true)
 {
 weapon_system_loop();
@@ -345,6 +347,25 @@ bodyfallloop();
 	}
 update_game_world();
 wait(5);
+if (deferred_neighbor_sync_pending)
+{
+	if (deferred_neighbor_sync_map != mapname)
+	{
+		deferred_neighbor_sync_map = mapname;
+		neighbor_sync_delay_ticks = 0;
+	}
+	neighbor_sync_delay_ticks++;
+	if (neighbor_sync_delay_ticks >= 40)
+	{
+		deferred_neighbor_sync_pending = false;
+		sync_map_and_neighbor_sources(mapname, true);
+	}
+}
+if (welcome_sound_pending)
+{
+	welcome_sound_pending = false;
+	play_initial_session_welcome_sound();
+}
 if (health<=20 and health>0)
 {
 bleading.play_looped();
@@ -1381,9 +1402,9 @@ void play_initial_session_welcome_sound()
 	}
 }
 
-void announce_zone_on_load()
+void announce_zone_on_load(bool play_welcome = true)
 {
-	play_initial_session_welcome_sound();
+	if (play_welcome) play_initial_session_welcome_sound();
 	string locate=get_zone_at(int(round(me.x,0)),int(round(me.y,0)),int(round(me.z,0)));
 	if (locate!="")
 	{
