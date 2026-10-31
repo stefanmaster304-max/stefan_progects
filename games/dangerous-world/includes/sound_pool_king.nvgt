@@ -6,7 +6,6 @@
  * King Audio adaptation - 2026
  */
 #include "includes/rotation.nvgt"
-#pragma plugin king_audio_engine
 bool sound_pool_default_y_elevation = false;
 
 class sound_pool_item {

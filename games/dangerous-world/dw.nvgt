@@ -3,7 +3,7 @@
 // (doors, staircases, vitals, gameplay loop) can share it without a dedicated
 // pose system.
 #pragma namespace sound upcoming
-#pragma plugin king_audio_engine
+#pragma plugin("king_audio_engine")
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
