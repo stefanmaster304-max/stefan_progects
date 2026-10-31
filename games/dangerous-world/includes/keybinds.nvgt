@@ -363,7 +363,7 @@ int kb_capture_key(bool allow_modifiers = false)
     while (true)
     {
         wait(5);
-        key_code[]@ kd = keys_down();
+        int[]@ kd = keys_down();
         if (kd.length() > 0)
         {
             // The shift modifier itself may legitimately be a modifier key.

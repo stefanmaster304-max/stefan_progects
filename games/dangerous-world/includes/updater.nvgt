@@ -1,0 +1,76 @@
+const string GAME_RELEASE_API = "https://api.github.com/repos/stefanmaster304-max/stefan_progects/releases/latest";
+const string GAME_RELEASE_PAGE = "https://github.com/stefanmaster304-max/stefan_progects/releases";
+
+string json_string_field(const string&in json, const string&in field)
+{
+	string key = "\"" + field + "\"";
+	int key_pos = json.find(key);
+	if (key_pos < 0) return "";
+	int colon = json.find(":", key_pos + int(key.length()));
+	if (colon < 0) return "";
+	int start = json.find("\"", colon + 1);
+	if (start < 0) return "";
+	int end = json.find("\"", start + 1);
+	if (end < 0) return "";
+	return json.substr(start + 1, end - start - 1);
+}
+
+bool is_newer_game_version(const string&in candidate, const string&in installed)
+{
+	string candidate_text = candidate;
+	string installed_text = installed;
+	if (candidate_text.length() > 0 && string_to_lower_case(candidate_text.substr(0, 1)) == "v") candidate_text = candidate_text.substr(1);
+	if (installed_text.length() > 0 && string_to_lower_case(installed_text.substr(0, 1)) == "v") installed_text = installed_text.substr(1);
+	string[]@ candidate_parts = string_split(candidate_text, ".", true);
+	string[]@ installed_parts = string_split(installed_text, ".", true);
+	uint part_count = candidate_parts.length() > installed_parts.length() ? candidate_parts.length() : installed_parts.length();
+	for (uint i = 0; i < part_count; i++)
+	{
+		double candidate_number = i < candidate_parts.length() ? string_to_number(candidate_parts[i]) : 0;
+		double installed_number = i < installed_parts.length() ? string_to_number(installed_parts[i]) : 0;
+		if (candidate_number > installed_number) return true;
+		if (candidate_number < installed_number) return false;
+	}
+	return false;
+}
+
+void check_game_updates()
+{
+	speak("Checking for game updates.");
+	http request;
+	if (!request.get(GAME_RELEASE_API))
+	{
+		dlg("The update request could not be started. Check your internet connection and try again.");
+		return;
+	}
+	while (!request.complete)
+	{
+		wait(10);
+		update_game_world();
+	}
+	if (request.status_code == 404)
+	{
+		dlg("There is no published game release yet. Updates will appear here after a release is published in the Stefan Projects repository.");
+		return;
+	}
+	if (request.status_code != 200)
+	{
+		dlg("The update server returned HTTP " + request.status_code + ". Try again later.");
+		return;
+	}
+	string release_data = request.response_body;
+	string release_tag = json_string_field(release_data, "tag_name");
+	string release_url = json_string_field(release_data, "html_url");
+	if (release_tag == "" || release_url == "")
+	{
+		dlg("The repository returned release data that the updater could not read.");
+		return;
+	}
+	if (!is_newer_game_version(release_tag, ver))
+	{
+		dlg("The latest published version is " + release_tag + ". There is no newer release than the version currently running (" + ver + ").");
+		return;
+	}
+	clipboard_set_text(release_url);
+	dlg("A published game release is available: " + release_tag + ". The release page link has been copied to the clipboard: " + release_url);
+}

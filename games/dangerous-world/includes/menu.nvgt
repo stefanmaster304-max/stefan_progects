@@ -148,6 +148,7 @@ void mainmenu()
 		m.add_item_tts("Play","play");
 		m.add_item_tts("Listen to story","story");
 		m.add_item_tts("Options","options");
+		m.add_item_tts("Check for updates", "updates");
 		m.add_item_tts("Exit","exit");
 		int mres=m.run("Main Menu",true);
 		string menuitem=m.get_item_name(mres);
@@ -247,6 +248,10 @@ void mainmenu()
 		{
 			m.fade_music(15);
 			optionsmenu();
+		}
+		else if (menuitem=="updates")
+		{
+			check_game_updates();
 		}
 	}
 }

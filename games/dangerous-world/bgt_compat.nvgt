@@ -86,7 +86,8 @@ shared double string_to_number(const string& in num) {
 	return parse_double(num.trim_whitespace_left());
 }
 bool show_game_window(const string& in title) {
-	return show_window(title);
+	game_window@ window = show_window(title);
+	return window !is null;
 }
 
 shared double clamp(double value, double low, double high) {
@@ -95,13 +96,6 @@ shared double clamp(double value, double low, double high) {
 	return value;
 }
 
-bool file_put_contents(const string&in filename, const string&in contents) {
-	file output;
-	if (!output.open(filename, "wb")) return false;
-	output.write(contents);
-	output.close();
-	return true;
-}
 
 bool hide_game_window() {
 	return hide_window();
