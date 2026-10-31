@@ -825,6 +825,7 @@ if (kb_pressed("exit_game") and jumping==0 and falling==false)
     bool do_exit = (confirm_exit == 1) ? confirm_exit_dialog() : true;
     if (do_exit)
     {
+        is_in_game = false;
         unequip_weapon(true);
         save_location();
         destroy_all_doors();
@@ -836,7 +837,8 @@ if (kb_pressed("exit_game") and jumping==0 and falling==false)
         is_sitting = false;
         tracking_active = false;
         tempreset();
-        mainmenu();
+        currentloc = "";
+        return;
     }
 }
 }
