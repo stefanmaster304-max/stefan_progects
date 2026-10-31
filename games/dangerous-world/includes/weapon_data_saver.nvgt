@@ -995,24 +995,31 @@ void load_all_weapons_wpm(bool force = false)
 	ensure_weapon_directories();
 
 	// 1. Primary: Load single unified encrypted weapons.dat
-	string bundle_path = file_exists(WEAPONS_DAT_PATH) ? WEAPONS_DAT_PATH : (file_exists("data/weapons.dat") ? "data/weapons.dat" : (file_exists("weapons.dat") ? "weapons.dat" : ""));
-	if (bundle_path != "")
+	string enc = SCRIPT_COMPILED ? get_contents_payload("weapons") : "";
+	if (enc == "")
 	{
-		file f;
-		if (f.open(bundle_path, "rb"))
+		string bundle_path = file_exists(WEAPONS_DAT_PATH) ? WEAPONS_DAT_PATH : (file_exists("data/weapons.dat") ? "data/weapons.dat" : (file_exists("weapons.dat") ? "weapons.dat" : ""));
+		if (bundle_path != "")
 		{
-			string enc = f.read();
-			f.close();
-			string decrypted = string_decrypt(enc, WEAPON_ENC_KEY);
-			if (decrypted.length() > 0)
+			file f;
+			if (f.open(bundle_path, "rb"))
 			{
-				parse_weapons_bundle(decrypted);
-				if (weapon_registry.length() > 0)
-				{
-					weapon_cache_version++;
-					weapons_loaded_once = true;
-					return;
-				}
+				enc = f.read();
+				f.close();
+			}
+		}
+	}
+	if (enc != "")
+	{
+		string decrypted = string_decrypt(enc, WEAPON_ENC_KEY);
+		if (decrypted.length() > 0)
+		{
+			parse_weapons_bundle(decrypted);
+			if (weapon_registry.length() > 0)
+			{
+				weapon_cache_version++;
+				weapons_loaded_once = true;
+				return;
 			}
 		}
 	}

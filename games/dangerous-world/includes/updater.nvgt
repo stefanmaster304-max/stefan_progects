@@ -1,76 +1,485 @@
-const string GAME_RELEASE_API = "https://api.github.com/repos/stefanmaster304-max/stefan_progects/releases/latest";
-const string GAME_RELEASE_PAGE = "https://github.com/stefanmaster304-max/stefan_progects/releases";
+// Offline game updater. The public manifest is maintained in this repository;
+// downloadable binaries and data packages are attached to GitHub Releases.
+const string GAME_UPDATE_MANIFEST = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/dangerous-world/updates/manifest.json";
+const string UPDATE_TEMP_DIR = "settings/update_staging";
+const string UPDATE_VERSIONS_FILE = "settings/update_versions.ini";
+const string UPDATE_CONTENTS_PATH = "settings/contents.dat";
+const string UPDATE_MAPS_PATH = "settings/maps.dat";
+const string UPDATE_CONTENTS_KEY = "StefanDangerousWorld_ContentBundle_AES256_2026_Release_Key_9f4c2b7e6d1a8350";
 
-string json_string_field(const string&in json, const string&in field)
+int check_updates_on_startup = 1;
+string current_game_version = "0.1.0.1";
+string current_content_version = "1.0.0";
+string current_maps_version = "1.0.0";
+string current_sounds_version = "1.0.0";
+
+enum update_type { UPDATE_GAME, UPDATE_CONTENTS, UPDATE_MAPS, UPDATE_SOUNDS }
+
+class update_item
 {
-	string key = "\"" + field + "\"";
-	int key_pos = json.find(key);
-	if (key_pos < 0) return "";
-	int colon = json.find(":", key_pos + int(key.length()));
-	if (colon < 0) return "";
-	int start = json.find("\"", colon + 1);
-	if (start < 0) return "";
-	int end = json.find("\"", start + 1);
-	if (end < 0) return "";
-	return json.substr(start + 1, end - start - 1);
+	update_type type;
+	string label;
+	string version;
+	string url;
+	string sha256;
+	string target;
+	int64 expected_size;
 }
 
-bool is_newer_game_version(const string&in candidate, const string&in installed)
+string update_version_for(update_type type)
 {
-	string candidate_text = candidate;
-	string installed_text = installed;
-	if (candidate_text.length() > 0 && string_to_lower_case(candidate_text.substr(0, 1)) == "v") candidate_text = candidate_text.substr(1);
-	if (installed_text.length() > 0 && string_to_lower_case(installed_text.substr(0, 1)) == "v") installed_text = installed_text.substr(1);
-	string[]@ candidate_parts = string_split(candidate_text, ".", true);
-	string[]@ installed_parts = string_split(installed_text, ".", true);
-	uint part_count = candidate_parts.length() > installed_parts.length() ? candidate_parts.length() : installed_parts.length();
-	for (uint i = 0; i < part_count; i++)
+	if (type == UPDATE_GAME) return current_game_version;
+	if (type == UPDATE_CONTENTS) return current_content_version;
+	if (type == UPDATE_MAPS) return current_maps_version;
+	return current_sounds_version;
+}
+
+void set_update_version(update_type type, const string&in value)
+{
+	if (type == UPDATE_GAME) current_game_version = value;
+	else if (type == UPDATE_CONTENTS) current_content_version = value;
+	else if (type == UPDATE_MAPS) current_maps_version = value;
+	else current_sounds_version = value;
+}
+
+void load_update_versions()
+{
+	current_game_version = ver;
+	if (!file_exists(UPDATE_VERSIONS_FILE)) return;
+	file f;
+	if (!f.open(UPDATE_VERSIONS_FILE, "r")) return;
+	string data = f.read();
+	f.close();
+	string[]@ lines = string_split(string_replace(data, "\r", "", true), "\n", true);
+	if (lines is null) return;
+	for (uint i = 0; i < lines.length(); i++)
 	{
-		double candidate_number = i < candidate_parts.length() ? string_to_number(candidate_parts[i]) : 0;
-		double installed_number = i < installed_parts.length() ? string_to_number(installed_parts[i]) : 0;
-		if (candidate_number > installed_number) return true;
-		if (candidate_number < installed_number) return false;
+		int eq = string_contains(lines[i], "=", 1);
+		if (eq < 0) continue;
+		string key = string_to_lower_case(string_left(lines[i], eq).trim_whitespace());
+		string value = lines[i].substr(eq + 1).trim_whitespace();
+		if (key == "contents") current_content_version = value;
+		else if (key == "maps") current_maps_version = value;
+		else if (key == "sounds") current_sounds_version = value;
+	}
+}
+
+void save_update_versions()
+{
+	if (!directory_exists("settings")) directory_create("settings");
+	file f;
+	if (!f.open(UPDATE_VERSIONS_FILE, "w")) return;
+	f.write("contents=" + current_content_version + "\n");
+	f.write("maps=" + current_maps_version + "\n");
+	f.write("sounds=" + current_sounds_version + "\n");
+	f.close();
+}
+
+int compare_update_versions(const string&in installed, const string&in available)
+{
+	string[]@ a = string_split(string_replace(installed, "v", "", true), ".", true);
+	string[]@ b = string_split(string_replace(available, "v", "", true), ".", true);
+	uint n = a.length() > b.length() ? a.length() : b.length();
+	for (uint i = 0; i < n; i++)
+	{
+		double av = i < a.length() ? string_to_number(a[i]) : 0;
+		double bv = i < b.length() ? string_to_number(b[i]) : 0;
+		if (bv > av) return 1;
+		if (bv < av) return -1;
+	}
+	return 0;
+}
+
+void play_update_sound(const string&in filename)
+{
+	string path = "sounds/update-sound/" + filename + ".ogg";
+	if (!file_exists(path)) path = "sounds/update-sound/" + filename + ".wav";
+	if (!file_exists(path)) path = get_sound_path("update-sound/" + filename + ".ogg;" + filename + ".ogg");
+	if (path == "" || !file_exists(path)) return;
+	sound effect;
+	if (effect.load(path)) effect.play_wait();
+}
+
+string format_update_size(int64 bytes)
+{
+	if (bytes <= 0) return "unknown";
+	if (bytes >= 1073741824) return round(double(bytes) / 1073741824.0, 2) + " gigabytes";
+	if (bytes >= 1048576) return round(double(bytes) / 1048576.0, 1) + " megabytes";
+	if (bytes >= 1024) return round(double(bytes) / 1024.0, 1) + " kilobytes";
+	return bytes + " bytes";
+}
+
+bool ask_update_download(const update_item@ update)
+{
+	string message = "A new " + update.label + " update is available. Your version is " + update_version_for(update.type) + ", and the new version is " + update.version + ". This version may no longer receive new content, bug fixes, or improvements. Press Enter to download and install now, or Escape to cancel and return to the main menu.";
+	play_update_sound("update-found");
+	speak(message);
+	while (true)
+	{
+		wait(5);
+		if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPADENTER)) return true;
+		if (key_pressed(KEY_ESCAPE))
+		{
+			speak("Update canceled. Returning to the main menu.");
+			return false;
+		}
 	}
 	return false;
 }
 
-void check_game_updates()
+void play_download_progress_beep(tone_synth@ synth, sound@ &out tone, double progress)
 {
-	speak("Checking for game updates.");
+	if (synth is null) return;
+	if (tone !is null && tone.active) tone.stop();
+	synth.seek(0);
+	synth.freq_ms(360 + int(progress * 5.0), 45);
+	@tone = synth.write_wave_sound();
+	if (tone !is null) tone.play();
+}
+
+bool download_update_file(const update_item@ update, const string&in destination)
+{
+	if (!directory_exists(UPDATE_TEMP_DIR)) directory_create(UPDATE_TEMP_DIR);
+	if (!directory_exists("settings")) directory_create("settings");
+	string temp_path = destination + ".download.tmp";
+	if (file_exists(temp_path)) file_delete(temp_path);
 	http request;
-	if (!request.get(GAME_RELEASE_API))
+	request.receive_timeout = 30000;
+	if (!request.get(update.url))
 	{
-		dlg("The update request could not be started. Check your internet connection and try again.");
-		return;
+		dlg("The " + update.label + " download could not start. Check your internet connection and try again.");
+		return false;
 	}
+	file output;
+	bool opened = false;
+	int last_beep_mark = -1;
+	tone_synth beep_generator;
+	sound@ progress_tone = null;
+	speak("Downloading update: " + update.label + ". Press Space for progress, 1 for total size, 2 for downloaded size, 3 for remaining size, H to repeat this help, or Escape to cancel.");
 	while (!request.complete)
 	{
-		wait(10);
-		update_game_world();
+		wait(5);
+		if (key_pressed(KEY_ESCAPE))
+		{
+			request.reset();
+			if (output.active) output.close();
+			if (file_exists(temp_path)) file_delete(temp_path);
+			if (progress_tone !is null && progress_tone.active) progress_tone.stop();
+			speak("Download canceled. Returning to the main menu.");
+			return false;
+		}
+		if (request.status_code > 0 && request.status_code != 200)
+		{
+			request.reset();
+			if (output.active) output.close();
+			if (file_exists(temp_path)) file_delete(temp_path);
+			dlg("The " + update.label + " download failed with HTTP error " + request.status_code + ". Check your connection and try again.");
+			return false;
+		}
+		if (!opened && request.status_code == 200)
+		{
+			opened = output.open(temp_path, "wb");
+			if (!opened)
+			{
+				request.reset();
+				dlg("The temporary update file could not be created. Check the game's folder permissions and free disk space.");
+				return false;
+			}
+		}
+		if (opened)
+		{
+			string chunk = request.response_body;
+			if (chunk != "") output.write(chunk);
+		}
+		int64 downloaded = file_exists(temp_path) ? file_get_size(temp_path) : 0;
+		double progress = update.expected_size > 0 ? (double(downloaded) / double(update.expected_size)) * 100.0 : request.progress * 100.0;
+		if (progress > 100) progress = 100;
+		int mark = int(progress / 5.0);
+		if (mark > last_beep_mark)
+		{
+			last_beep_mark = mark;
+			play_download_progress_beep(@beep_generator, progress_tone, progress);
+		}
+		int64 remaining = update.expected_size > downloaded ? update.expected_size - downloaded : 0;
+		if (key_pressed(KEY_SPACE)) speak(round(progress, 0) + "% downloaded");
+		else if (key_pressed(KEY_1)) speak("Total size: " + format_update_size(update.expected_size));
+		else if (key_pressed(KEY_2)) speak("Downloaded: " + format_update_size(downloaded));
+		else if (key_pressed(KEY_3)) speak("Remaining: " + format_update_size(remaining));
+		else if (key_pressed(KEY_H)) speak("Press Space for progress, 1 for total size, 2 for downloaded size, 3 for remaining size, H to repeat this help, or Escape to cancel.");
 	}
-	if (request.status_code == 404)
+	// Small responses can finish before the first polling iteration; persist the
+	// final response body in that case as well.
+	if (!opened && request.status_code == 200)
 	{
-		dlg("There is no published game release yet. Updates will appear here after a release is published in the Stefan Projects repository.");
+		opened = output.open(temp_path, "wb");
+		if (opened && request.response_body != "") output.write(request.response_body);
+	}
+	if (opened) output.close();
+	if (progress_tone !is null && progress_tone.active) progress_tone.stop();
+	if (request.status_code != 200 || !file_exists(temp_path))
+	{
+		if (file_exists(temp_path)) file_delete(temp_path);
+		if (request.status_code == 0) dlg("The " + update.label + " download lost its connection before the server responded. Check your internet connection.");
+		else dlg("The " + update.label + " download did not finish successfully. The server returned HTTP " + request.status_code + ".");
+		return false;
+	}
+	int64 actual_size = file_get_size(temp_path);
+	if (actual_size <= 0 || (update.expected_size > 0 && actual_size != update.expected_size))
+	{
+		file_delete(temp_path);
+		dlg("The downloaded " + update.label + " file failed validation. Expected " + format_update_size(update.expected_size) + ", received " + format_update_size(actual_size) + ". The existing files were left unchanged.");
+		return false;
+	}
+	if (!verify_update_sha256(temp_path, update.sha256))
+	{
+		file_delete(temp_path);
+		dlg("The downloaded " + update.label + " file failed SHA-256 validation. The existing game files were left unchanged.");
+		return false;
+	}
+	return true;
+}
+
+bool replace_file_atomically(const string&in staged, const string&in target)
+{
+	string backup = target + ".previous";
+	if (file_exists(backup)) file_delete(backup);
+	if (file_exists(target) && !file_move(target, backup)) return false;
+	if (!file_move(staged, target))
+	{
+		if (file_exists(backup)) file_move(backup, target);
+		return false;
+	}
+	if (file_exists(backup)) file_delete(backup);
+	return true;
+}
+
+bool validate_encrypted_update(const update_item@ update, const string&in path)
+{
+	string encrypted = read_contents_file(path);
+	if (encrypted == "") return false;
+	if (update.type == UPDATE_CONTENTS)
+	{
+		string plain = string_aes_decrypt(encrypted, UPDATE_CONTENTS_KEY);
+		return string_contains(plain, "[section:", 1) >= 0;
+	}
+	if (update.type == UPDATE_MAPS)
+	{
+		string plain = string_aes_decrypt(encrypted, MAP_ENC_KEY);
+		return string_contains(plain, "[map:", 1) >= 0;
+	}
+	if (update.type == UPDATE_GAME)
+	{
+		file f;
+		if (!f.open(path, "rb")) return false;
+		string magic = f.read(2);
+		f.close();
+		return magic == "MZ";
+	}
+	return false;
+}
+
+bool run_powershell_script(const string&in script_path)
+{
+	string cmd = "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"" + script_path + "\"";
+	run("cmd.exe", "/c " + cmd, true, false);
+	return true;
+}
+
+bool verify_update_sha256(const string&in path, const string&in expected)
+{
+	if (expected == "") return true;
+	string script_path = UPDATE_TEMP_DIR + "/verify_update_hash.ps1";
+	string result_path = UPDATE_TEMP_DIR + "/verify_update_hash.txt";
+	if (file_exists(result_path)) file_delete(result_path);
+	file ps;
+	if (!ps.open(script_path, "w")) return false;
+	ps.write("$ErrorActionPreference = 'Stop'\r\n");
+	ps.write("(Get-FileHash -LiteralPath '" + path + "' -Algorithm SHA256).Hash | Set-Content -LiteralPath '" + result_path + "' -Encoding ASCII\r\n");
+	ps.close();
+	run_powershell_script(script_path);
+	string actual = string_to_lower_case(read_contents_file(result_path).trim_whitespace());
+	if (file_exists(result_path)) file_delete(result_path);
+	if (file_exists(script_path)) file_delete(script_path);
+	return actual == string_to_lower_case(expected.trim_whitespace());
+}
+
+void restart_game_client()
+{
+	wait(250);
+	if (SCRIPT_COMPILED) run("dw.exe", "", false, false);
+	else run("nvgt", "dw.nvgt", false, false);
+	exit();
+}
+
+bool install_sounds_zip(const string&in zip_path)
+{
+	string stage_root = UPDATE_TEMP_DIR + "/sounds-stage";
+	string script_path = UPDATE_TEMP_DIR + "/install_sounds.ps1";
+	string result_path = UPDATE_TEMP_DIR + "/sounds-install.result";
+	if (file_exists(result_path)) file_delete(result_path);
+	if (!directory_exists(UPDATE_TEMP_DIR)) directory_create(UPDATE_TEMP_DIR);
+	file ps;
+	if (!ps.open(script_path, "w")) return false;
+	ps.write("$ErrorActionPreference = 'Stop'\r\n");
+	ps.write("$zip = (Resolve-Path -LiteralPath '" + zip_path + "').Path\r\n");
+	ps.write("$stage = '" + stage_root + "'\r\n");
+	ps.write("$new = Join-Path $stage 'new-sounds'\r\n");
+	ps.write("$backup = Join-Path $stage 'old-sounds'\r\n");
+	ps.write("try {\r\n");
+	ps.write("  if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }\r\n");
+	ps.write("  New-Item -ItemType Directory -Path $new -Force | Out-Null\r\n");
+	ps.write("  Expand-Archive -LiteralPath $zip -DestinationPath $new -Force\r\n");
+	ps.write("  $nested = Join-Path $new 'sounds'\r\n");
+	ps.write("  if (Test-Path -LiteralPath $nested -PathType Container) { $source = $nested } else { $source = $new }\r\n");
+	ps.write("  if (-not (Get-ChildItem -LiteralPath $source -File -Recurse | Select-Object -First 1)) { throw 'The ZIP contains no sound files.' }\r\n");
+	ps.write("  if (Test-Path -LiteralPath 'sounds') { Move-Item -LiteralPath 'sounds' -Destination $backup -Force }\r\n");
+	ps.write("  Move-Item -LiteralPath $source -Destination 'sounds' -Force\r\n");
+	ps.write("  if (Test-Path -LiteralPath $backup) { Remove-Item -LiteralPath $backup -Recurse -Force }\r\n");
+	ps.write("  if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }\r\n");
+	ps.write("  Set-Content -LiteralPath '" + result_path + "' -Value 'OK' -Encoding ASCII\r\n");
+	ps.write("} catch {\r\n");
+	ps.write("  if ((Test-Path -LiteralPath $backup) -and -not (Test-Path -LiteralPath 'sounds')) { Move-Item -LiteralPath $backup -Destination 'sounds' -Force }\r\n");
+	ps.write("  Set-Content -LiteralPath '" + result_path + "' -Value $_.Exception.Message -Encoding UTF8\r\n");
+	ps.write("  exit 1\r\n");
+	ps.write("}\r\n");
+	ps.close();
+	if (!run_powershell_script(script_path)) return false;
+	string result = read_contents_file(result_path).trim_whitespace();
+	if (file_exists(zip_path)) file_delete(zip_path);
+	if (file_exists(script_path)) file_delete(script_path);
+	if (file_exists(result_path)) file_delete(result_path);
+	if (result != "OK")
+	{
+		dlg("Sound update extraction or installation failed: " + result + ". The previous sounds folder was restored.");
+		return false;
+	}
+	return true;
+}
+
+bool install_game_executable(const update_item@ update, const string&in staged)
+{
+	if (!validate_encrypted_update(update, staged))
+	{
+		if (file_exists(staged)) file_delete(staged);
+		dlg("The downloaded game file is not a valid Windows executable. The current game was not changed.");
+		return false;
+	}
+	if (file_exists("dw_update.exe")) file_delete("dw_update.exe");
+	if (!file_move(staged, "dw_update.exe"))
+	{
+		dlg("The game update could not be staged in the game folder. Check free space and folder permissions.");
+		return false;
+	}
+	file script;
+	if (!script.open("install_game_update.cmd", "w")) return false;
+	script.write("@echo off\r\nsetlocal\r\n");
+	script.write(":wait_for_game\r\ntimeout /t 1 /nobreak >nul\r\ntasklist /FI \"IMAGENAME eq dw.exe\" | find /I \"dw.exe\" >nul\r\nif not errorlevel 1 goto wait_for_game\r\n");
+	script.write("if exist dw.exe move /y dw.exe dw.exe.previous >nul\r\n");
+	script.write("move /y dw_update.exe dw.exe >nul\r\nif errorlevel 1 goto rollback\r\n");
+	script.write("start \"\" dw.exe\r\nif exist dw.exe.previous del /q dw.exe.previous\r\ngoto cleanup\r\n:rollback\r\nif exist dw.exe.previous move /y dw.exe.previous dw.exe >nul\r\n:cleanup\r");
+	script.write("del \"%~f0\"\r\n");
+	script.close();
+	set_update_version(update.type, update.version);
+	save_update_versions();
+	play_update_sound("update-completed");
+	speak("The game update is complete. The game will restart now.");
+	wait(1200);
+	run("cmd.exe", "/c install_game_update.cmd", false, false);
+	exit();
+	return true;
+}
+
+bool apply_resource_update(const update_item@ update, const string&in staged)
+{
+	if (update.type == UPDATE_CONTENTS || update.type == UPDATE_MAPS)
+	{
+		if (!validate_encrypted_update(update, staged))
+		{
+			if (file_exists(staged)) file_delete(staged);
+			dlg("The downloaded " + update.label + " file failed its encrypted-format validation. Existing game data was left unchanged.");
+			return false;
+		}
+		string target = update.type == UPDATE_CONTENTS ? UPDATE_CONTENTS_PATH : UPDATE_MAPS_PATH;
+		if (!replace_file_atomically(staged, target))
+		{
+			dlg("The " + update.label + " file validated, but could not be copied into the settings folder. Existing data was restored.");
+			return false;
+		}
+	}
+	else if (update.type == UPDATE_SOUNDS)
+	{
+		if (!install_sounds_zip(staged)) return false;
+	}
+	set_update_version(update.type, update.version);
+	save_update_versions();
+	play_update_sound("update-completed");
+	speak("The " + update.label + " update is complete. The game will restart now.");
+	wait(1000);
+	restart_game_client();
+	return true;
+}
+
+bool perform_update(const update_item@ update)
+{
+	string destination = UPDATE_TEMP_DIR + "/" + (update.type == UPDATE_GAME ? "dw.exe" : (update.type == UPDATE_CONTENTS ? "contents.dat" : (update.type == UPDATE_MAPS ? "maps.dat" : "sounds.zip")));
+	if (!download_update_file(update, destination)) return false;
+	if (update.type == UPDATE_GAME) return install_game_executable(update, destination + ".download.tmp");
+	return apply_resource_update(update, destination + ".download.tmp");
+}
+
+update_item@ manifest_update(json_object@ root, const string&in key, update_type type, const string&in label, const string&in target)
+{
+	if (root is null || !root.is_object(key)) return null;
+	json_object@ section = root[key];
+	if (section is null) return null;
+	if (section.is_null("version") || section.is_null("url")) return null;
+	update_item@ item = update_item();
+	item.type = type;
+	item.label = label;
+	item.target = target;
+	item.version = section["version"];
+	item.url = section["url"];
+	item.sha256 = "";
+	if (!section.is_null("sha256")) item.sha256 = section["sha256"];
+	item.expected_size = section.is_null("size") ? 0 : int64(section["size"]);
+	if (item.version == "" || item.url == "") return null;
+	if (compare_update_versions(update_version_for(type), item.version) <= 0) return null;
+	return item;
+}
+
+void check_game_updates(bool automatic = false)
+{
+	load_update_versions();
+	if (!automatic) speak("Checking for game updates.");
+	http request;
+	request.receive_timeout = 15000;
+	if (!request.get(GAME_UPDATE_MANIFEST))
+	{
+		dlg("The update check could not start. Check your internet connection and try again. Your installed files were not changed.");
 		return;
 	}
+	while (!request.complete) wait(5);
 	if (request.status_code != 200)
 	{
-		dlg("The update server returned HTTP " + request.status_code + ". Try again later.");
+		if (request.status_code == 0) dlg("The update check lost its connection before the server responded. The game will keep its current files.");
+		else dlg("The update check failed with HTTP error " + request.status_code + ". The game will keep its current files.");
 		return;
 	}
-	string release_data = request.response_body;
-	string release_tag = json_string_field(release_data, "tag_name");
-	string release_url = json_string_field(release_data, "html_url");
-	if (release_tag == "" || release_url == "")
+	json_object@ root = parse_json(request.response_body);
+	if (root is null)
 	{
-		dlg("The repository returned release data that the updater could not read.");
+		dlg("The update manifest is invalid. The game was not changed.");
 		return;
 	}
-	if (!is_newer_game_version(release_tag, ver))
+	update_item@ available = manifest_update(root, "game", UPDATE_GAME, "game", "dw.exe");
+	if (available is null) @available = manifest_update(root, "contents", UPDATE_CONTENTS, "content", UPDATE_CONTENTS_PATH);
+	if (available is null) @available = manifest_update(root, "maps", UPDATE_MAPS, "map", UPDATE_MAPS_PATH);
+	if (available is null) @available = manifest_update(root, "sounds", UPDATE_SOUNDS, "sound", "sounds");
+	if (available is null)
 	{
-		dlg("The latest published version is " + release_tag + ". There is no newer release than the version currently running (" + ver + ").");
+		if (!automatic) speak("There are no updates available.");
 		return;
 	}
-	clipboard_set_text(release_url);
-	dlg("A published game release is available: " + release_tag + ". The release page link has been copied to the clipboard: " + release_url);
+	if (!ask_update_download(available)) return;
+	perform_update(available);
 }

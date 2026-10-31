@@ -457,20 +457,27 @@ void init_stores()
 	ensure_store_dir();
 
 	// 1. Primary: Load single unified encrypted shops.dat / stores.dat
-	string bundle_path = file_exists(SHOPS_DAT_PATH) ? SHOPS_DAT_PATH : (file_exists(STORES_DAT_PATH) ? STORES_DAT_PATH : (file_exists("data/shops.dat") ? "data/shops.dat" : (file_exists("data/stores.dat") ? "data/stores.dat" : (file_exists("shops.dat") ? "shops.dat" : (file_exists("stores.dat") ? "stores.dat" : "")))));
-	if (bundle_path != "")
+	string enc = SCRIPT_COMPILED ? get_contents_payload("stores") : "";
+	if (enc == "")
 	{
-		file f;
-		if (f.open(bundle_path, "rb"))
+		string bundle_path = file_exists(SHOPS_DAT_PATH) ? SHOPS_DAT_PATH : (file_exists(STORES_DAT_PATH) ? STORES_DAT_PATH : (file_exists("data/shops.dat") ? "data/shops.dat" : (file_exists("data/stores.dat") ? "data/stores.dat" : (file_exists("shops.dat") ? "shops.dat" : (file_exists("stores.dat") ? "stores.dat" : "")))));
+		if (bundle_path != "")
 		{
-			string enc = f.read();
-			f.close();
-			string decrypted = string_decrypt(enc, STORE_ENC_KEY);
-			if (decrypted.length() > 0)
+			file f;
+			if (f.open(bundle_path, "rb"))
 			{
-				parse_stores_bundle(decrypted);
-				if (store_configs.length() > 0) return;
+				enc = f.read();
+				f.close();
 			}
+		}
+	}
+	if (enc != "")
+	{
+		string decrypted = string_decrypt(enc, STORE_ENC_KEY);
+		if (decrypted.length() > 0)
+		{
+			parse_stores_bundle(decrypted);
+			if (store_configs.length() > 0) return;
 		}
 	}
 

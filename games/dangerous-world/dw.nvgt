@@ -29,6 +29,7 @@ string ver = "0.1.0.1";
 #include"includes/menu.nvgt"
 #include"includes/keybinds.nvgt"
 #include "includes/virtualizer.nvgt"
+#include "includes/contents_bundle.nvgt"
 #include "includes/builder.nvgt"
 #include"includes/inventory.nvgt"
 #include "includes/health_system.nvgt"
@@ -296,6 +297,7 @@ sp.behind_pitch_decrease = 0.0;
 	p.max_distance = 80;
 	sp.max_distance = 0;
 	itempool.max_distance = 80;
+if (check_updates_on_startup == 1) check_game_updates(true);
 mainmenu();
 }
 void game()
@@ -1097,6 +1099,10 @@ if (sd.d.exists("confirm_exit"))
 {
 confirm_exit=int(sd.readn("confirm_exit"));
 }
+if (sd.d.exists("check_updates_on_startup"))
+{
+check_updates_on_startup=int(sd.readn("check_updates_on_startup"));
+}
 if (sd.d.exists("verbalize_zones"))
 {
 verbalize_zones=int(sd.readn("verbalize_zones"));
@@ -1131,6 +1137,7 @@ void writeprefs()
     sd.add("footdrag_enabled",footdrag_enabled);
     sd.add("play_logo",play_logo);
     sd.add("confirm_exit",confirm_exit);
+    sd.add("check_updates_on_startup",check_updates_on_startup);
     sd.add("verbalize_zones",verbalize_zones);
     sd.add("menu_music_choice",menu_music_choice);
     sd.add("enable_player_pain_sounds",enable_player_pain_sounds);

@@ -161,19 +161,27 @@ void load_all_packages()
 	ensure_package_directories();
 
 	// 1. Primary: Load encrypted bundle
-	if (file_exists(PACKAGES_DAT_PATH))
+	string enc = SCRIPT_COMPILED ? get_contents_payload("packages") : "";
+	if (enc == "")
 	{
-		file f;
-		if (f.open(PACKAGES_DAT_PATH, "rb"))
+		string bundle_path = file_exists(PACKAGES_DAT_PATH) ? PACKAGES_DAT_PATH : (file_exists("data/packages.dat") ? "data/packages.dat" : (file_exists("packages.dat") ? "packages.dat" : ""));
+		if (bundle_path != "")
 		{
-			string enc = f.read();
-			f.close();
-			string decrypted = string_decrypt(enc, PACKAGE_ENC_KEY);
-			if (decrypted.length() > 0)
+			file f;
+			if (f.open(bundle_path, "rb"))
 			{
-				parse_packages_bundle(decrypted);
-				if (package_registry.length() > 0) return;
+				enc = f.read();
+				f.close();
 			}
+		}
+	}
+	if (enc != "")
+	{
+		string decrypted = string_decrypt(enc, PACKAGE_ENC_KEY);
+		if (decrypted.length() > 0)
+		{
+			parse_packages_bundle(decrypted);
+			if (package_registry.length() > 0) return;
 		}
 	}
 

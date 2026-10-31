@@ -18,6 +18,12 @@ uint string_len(const string& in str) {
 string string_replace(const string& in str, const string& in search, const string& in replace, bool replace_all) {
 	return str.replace(search, replace, replace_all);
 }
+bool string_starts_with(const string& in str, const string& in prefix) {
+	return str.starts_with(prefix);
+}
+bool string_ends_with(const string& in str, const string& in suffix) {
+	return str.ends_with(suffix);
+}
 string string_left(const string& in str, uint count) {
 	if (str == "") return str;
 	return str.substr(0, count);

@@ -675,7 +675,17 @@ void encrypt_everything()
 	encrypt_all_items();
 	encrypt_all_weapons();
 	encrypt_all_packages();
-	speak("Everything compiled and encrypted.");
+	if (write_contents_bundle())
+	{
+		string[] content_files = {"settings/items.dat", "settings/weapons.dat", "settings/packages.dat", "settings/shops.dat", "settings/stores.dat"};
+		for (uint i = 0; i < content_files.length(); i++)
+			if (file_exists(content_files[i])) file_delete(content_files[i]);
+		speak("Maps encrypted into maps.dat. Items, ammunition, weapons, packages, and stores encrypted into contents.dat.");
+	}
+	else
+	{
+		speak("Content encryption failed. The individual encrypted files were retained.");
+	}
 }
 
 void decrypt_everything()

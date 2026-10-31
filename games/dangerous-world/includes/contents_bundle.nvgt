@@ -1,0 +1,110 @@
+// Public game data is distributed as one encrypted bundle. Each section keeps
+// the existing encrypted payload format and parser.
+const string CONTENTS_DAT_PATH = "settings/contents.dat";
+const string CONTENTS_ENCRYPTION_KEY = "StefanDangerousWorld_ContentBundle_AES256_2026_Release_Key_9f4c2b7e6d1a8350";
+
+dictionary contents_payloads;
+bool contents_payloads_loaded = false;
+
+string read_contents_file(const string&in path)
+{
+	file source;
+	if (!source.open(path, "rb")) return "";
+	string data = source.read();
+	source.close();
+	return data;
+}
+
+bool load_contents_payloads(bool force = false)
+{
+	if (contents_payloads_loaded && !force) return true;
+	contents_payloads_loaded = true;
+	contents_payloads.delete_all();
+	string path = file_exists(CONTENTS_DAT_PATH) ? CONTENTS_DAT_PATH : (file_exists("data/contents.dat") ? "data/contents.dat" : (file_exists("contents.dat") ? "contents.dat" : ""));
+	if (path == "") return false;
+	string encrypted = read_contents_file(path);
+	if (encrypted == "") return false;
+	string plain = string_aes_decrypt(encrypted, CONTENTS_ENCRYPTION_KEY);
+	if (plain == "") return false;
+	string[]@ lines = string_split(plain, "\n", true);
+	if (lines is null) return false;
+	string section = "";
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string line = lines[i].trim_whitespace();
+		if (line == "" || string_starts_with(line, "#")) continue;
+		if (string_starts_with(line, "[section:") && string_ends_with(line, "]"))
+		{
+			section = line.substr(9, line.length() - 10);
+			continue;
+		}
+		if (section != "" && string_starts_with(line, "data="))
+			contents_payloads[section] = string_base64_decode(line.substr(5));
+	}
+	return contents_payloads.get_keys().length() > 0;
+}
+
+string get_contents_payload(const string&in section)
+{
+	if (!load_contents_payloads()) return "";
+	string payload;
+	if (!contents_payloads.get(section, payload)) return "";
+	return payload;
+}
+
+bool validate_contents_bundle()
+{
+	if (!load_contents_payloads()) return false;
+	return get_contents_payload("items") != "" && get_contents_payload("weapons") != "" && get_contents_payload("stores") != "";
+}
+
+bool write_contents_bundle()
+{
+	if (!directory_exists("settings") && !directory_create("settings")) return false;
+	string[] sections = {"items", "weapons", "packages", "stores"};
+	string[] sources = {"settings/items.dat", "settings/weapons.dat", "settings/packages.dat", "settings/shops.dat"};
+	bool[] required = {true, true, false, true};
+	string plain = "# Dangerous World encrypted content bundle v1\n";
+	for (uint i = 0; i < sections.length(); i++)
+	{
+		if (!file_exists(sources[i]))
+		{
+			if (required[i]) return false;
+			continue;
+		}
+		string payload = read_contents_file(sources[i]);
+		if (payload == "")
+		{
+			if (required[i]) return false;
+			continue;
+		}
+		plain += "[section:" + sections[i] + "]\n";
+		plain += "data=" + string_base64_encode(payload) + "\n";
+	}
+	string encrypted = string_aes_encrypt(plain, CONTENTS_ENCRYPTION_KEY);
+	if (encrypted == "") return false;
+	string temp_path = CONTENTS_DAT_PATH + ".tmp";
+	file temp;
+	if (!temp.open(temp_path, "wb")) return false;
+	temp.write(encrypted);
+	temp.close();
+	string backup_path = CONTENTS_DAT_PATH + ".previous";
+	if (file_exists(backup_path)) file_delete(backup_path);
+	if (file_exists(CONTENTS_DAT_PATH) && !file_move(CONTENTS_DAT_PATH, backup_path))
+	{
+		file_delete(temp_path);
+		return false;
+	}
+	if (!file_move(temp_path, CONTENTS_DAT_PATH))
+	{
+		if (file_exists(backup_path)) file_move(backup_path, CONTENTS_DAT_PATH);
+		if (file_exists(temp_path)) file_delete(temp_path);
+		return false;
+	}
+	if (file_exists(backup_path)) file_delete(backup_path);
+	contents_payloads_loaded = false;
+	if (!load_contents_payloads(true)) return false;
+	for (uint i = 0; i < sections.length(); i++)
+		if (required[i] && get_contents_payload(sections[i]) == "") return false;
+	return true;
+}

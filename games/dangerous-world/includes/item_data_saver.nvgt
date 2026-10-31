@@ -341,20 +341,27 @@ void load_all_items_config(bool force = false)
 	ensure_item_directories();
 
 	// 1. Primary: Load single unified encrypted items.dat
-	string bundle_path = file_exists(ITEMS_DAT_PATH) ? ITEMS_DAT_PATH : (file_exists("data/items.dat") ? "data/items.dat" : (file_exists("items.dat") ? "items.dat" : ""));
-	if (bundle_path != "")
+	string enc = SCRIPT_COMPILED ? get_contents_payload("items") : "";
+	if (enc == "")
 	{
-		file f;
-		if (f.open(bundle_path, "rb"))
+		string bundle_path = file_exists(ITEMS_DAT_PATH) ? ITEMS_DAT_PATH : (file_exists("data/items.dat") ? "data/items.dat" : (file_exists("items.dat") ? "items.dat" : ""));
+		if (bundle_path != "")
 		{
-			string enc = f.read();
-			f.close();
-			string decrypted = string_decrypt(enc, ITEM_ENC_KEY);
-			if (decrypted.length() > 0)
+			file f;
+			if (f.open(bundle_path, "rb"))
 			{
-				parse_items_bundle(decrypted);
-				if (item_registry.length() > 0) return;
+				enc = f.read();
+				f.close();
 			}
+		}
+	}
+	if (enc != "")
+	{
+		string decrypted = string_decrypt(enc, ITEM_ENC_KEY);
+		if (decrypted.length() > 0)
+		{
+			parse_items_bundle(decrypted);
+			if (item_registry.length() > 0) return;
 		}
 	}
 
