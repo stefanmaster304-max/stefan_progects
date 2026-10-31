@@ -45,6 +45,8 @@ void player_die(const string&in cause_message)
 	sp.destroy_all();
 	dp.destroy_all();
 	clear_location();
+	unequip_weapon(true);
+	remove_all_equipment();
 	reset();
 	mainmenu();
 }

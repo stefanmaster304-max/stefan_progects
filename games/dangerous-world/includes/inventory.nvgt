@@ -122,9 +122,22 @@ void quick_inventory_cycle(int direction)
         invpos = (current + direction + int(keys.length())) % int(keys.length());
     }
     quick_inventory_item = keys[invpos];
-    weapon_data@ weapon = find_weapon_data(quick_inventory_item);
-    if (weapon !is null) equip_weapon(quick_inventory_item);
-    speak("Selected " + get_item_display_name(quick_inventory_item) + ".");
+    speak(get_item_display_name(quick_inventory_item) + ", " + get_item_count(quick_inventory_item));
+}
+
+void use_quick_inventory_item()
+{
+    if (quick_inventory_item == "" || get_item_count(quick_inventory_item) <= 0)
+    {
+        quick_inventory_item = "";
+        speak("No item is selected.");
+        return;
+    }
+    use(quick_inventory_item);
+    if (get_item_count(quick_inventory_item) <= 0)
+    {
+        quick_inventory_item = "";
+    }
 }
 
 void drop_quick_inventory_item()

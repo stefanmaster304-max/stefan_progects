@@ -6,7 +6,7 @@
 #pragma plugin king_audio_engine
 // Sounds are read as loose files from sounds/. This typed null selects King
 // Audio's disk-file overload without attaching an asset pack.
-const pack_interface@ no_sound_pack = null;
+king_pack@ no_sound_pack = null;
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
@@ -637,7 +637,11 @@ if (altisdown() and (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER)))
 }
 else if (!altisdown() and (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER)))
 {
-	if (checkstores()) { }
+	if (quick_inventory_item != "" && get_item_count(quick_inventory_item) > 0)
+	{
+		use_quick_inventory_item();
+	}
+	else if (checkstores()) { }
 	else
 	{
 		speak("No shop nearby.");
@@ -821,8 +825,17 @@ if (kb_pressed("exit_game") and jumping==0 and falling==false)
     bool do_exit = (confirm_exit == 1) ? confirm_exit_dialog() : true;
     if (do_exit)
     {
+        unequip_weapon(true);
         save_location();
-        reset();
+        destroy_all_doors();
+        destroy_all_staircases();
+        destroy_all_builder_objects();
+        map.resize(0);
+        zones.resize(0);
+        safezones.resize(0);
+        is_sitting = false;
+        tracking_active = false;
+        tempreset();
         mainmenu();
     }
 }
@@ -1023,6 +1036,7 @@ destroy_all_builder_objects();
 map.resize(0);
 zones.resize(0);
 safezones.resize(0);
+	unequip_weapon(true);
 	remove_all_equipment();
 	is_sitting = false;
 tracking_active = false;
@@ -1312,40 +1326,45 @@ void tempreset()
 }
 bool initial_session_welcome_played = false;
 sound session_welcome_sound;
+string[] cached_welcome_files;
+bool welcome_files_indexed = false;
 
 void play_initial_session_welcome_sound()
 {
 	if (initial_session_welcome_played) return;
 	initial_session_welcome_played = true;
 
-	string[] welcome_files;
-	if (directory_exists("sounds/welcome"))
+	if (!welcome_files_indexed)
 	{
-		string[]@ files = find_files("sounds/welcome/*.ogg");
-		if (files !is null)
+		welcome_files_indexed = true;
+		if (directory_exists("sounds/welcome"))
 		{
-			for (uint i = 0; i < files.length(); i++)
+			string[]@ files = find_files("sounds/welcome/*.ogg");
+			if (files !is null)
 			{
-				welcome_files.insert_last("sounds/welcome/" + files[i]);
+				for (uint i = 0; i < files.length(); i++)
+				{
+					cached_welcome_files.insert_last("sounds/welcome/" + files[i]);
+				}
 			}
 		}
-	}
-	if (welcome_files.length() == 0 && directory_exists("sounds/boas-vindas"))
-	{
-		string[]@ files = find_files("sounds/boas-vindas/*.ogg");
-		if (files !is null)
+		if (cached_welcome_files.length() == 0 && directory_exists("sounds/boas-vindas"))
 		{
-			for (uint i = 0; i < files.length(); i++)
+			string[]@ files = find_files("sounds/boas-vindas/*.ogg");
+			if (files !is null)
 			{
-				welcome_files.insert_last("sounds/boas-vindas/" + files[i]);
+				for (uint i = 0; i < files.length(); i++)
+				{
+					cached_welcome_files.insert_last("sounds/boas-vindas/" + files[i]);
+				}
 			}
 		}
 	}
 
-	if (welcome_files.length() > 0)
+	if (cached_welcome_files.length() > 0)
 	{
-		int chosen_idx = random(0, welcome_files.length() - 1);
-		string wpath = welcome_files[chosen_idx];
+		int chosen_idx = random(0, cached_welcome_files.length() - 1);
+		string wpath = cached_welcome_files[chosen_idx];
 		if (wpath != "" && session_welcome_sound.load(wpath, @no_sound_pack))
 		{
 			session_welcome_sound.play();
@@ -1424,6 +1443,7 @@ void init()
 	register_default_anti_death_card_if_missing();
 	load_all_weapons_wpm();
 	cancel_reload();
+	unequip_weapon(true);
 	remove_all_equipment();
 	current_weapon_id = "";
 	inv.delete_all();
