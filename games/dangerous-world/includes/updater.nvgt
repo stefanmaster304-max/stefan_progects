@@ -96,7 +96,7 @@ void play_update_sound(const string&in filename)
 	if (!file_exists(path)) path = "sounds/update-sound/" + filename + ".wav";
 	if (!file_exists(path)) path = get_sound_path("update-sound/" + filename + ".ogg;" + filename + ".ogg");
 	if (path == "" || !file_exists(path)) return;
-	sound effect;
+	upcoming::sound effect;
 	if (effect.load(path)) effect.play_wait();
 }
 
@@ -127,7 +127,7 @@ bool ask_update_download(const update_item@ update)
 	return false;
 }
 
-void play_download_progress_beep(tone_synth@ synth, sound@ &out tone, double progress)
+void play_download_progress_beep(tone_synth@ synth, upcoming::sound@ &out tone, double progress)
 {
 	if (synth is null) return;
 	if (tone !is null && tone.active) tone.stop();
@@ -154,7 +154,7 @@ bool download_update_file(const update_item@ update, const string&in destination
 	bool opened = false;
 	int last_beep_mark = -1;
 	tone_synth beep_generator;
-	sound@ progress_tone = null;
+	upcoming::sound@ progress_tone = null;
 	speak("Downloading update: " + update.label + ". Press Space for progress, 1 for total size, 2 for downloaded size, 3 for remaining size, H to repeat this help, or Escape to cancel.");
 	while (!request.complete)
 	{
