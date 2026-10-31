@@ -6,7 +6,7 @@
 #pragma plugin king_audio_engine
 // Sounds are read as loose files from sounds/. This typed null selects King
 // Audio's disk-file overload without attaching an asset pack.
-king_pack@ no_sound_pack = null;
+pack_interface@ no_sound_pack = null;
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
