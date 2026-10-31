@@ -430,6 +430,10 @@ class sound_pool {
 		return play_extended(0, filename, null, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
+	int play_stationary_extended(string filename, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent, mixer@ mix, string[]@ fx, bool stream) {
+		return play_extended(0, filename, null, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
+	}
+
 	int play_1d(string filename, king_pack@ packfile, float listener_x, float sound_x, bool looping, bool persistent = false) {
 		return play_extended(1, filename, packfile, listener_x, 0, 0, sound_x, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent);
 	}

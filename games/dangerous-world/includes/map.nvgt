@@ -591,9 +591,26 @@ if (parsed.length() >= 8)
 spawn_zone(string_to_number(parsed[1]), string_to_number(parsed[2]), string_to_number(parsed[3]), string_to_number(parsed[4]), string_to_number(parsed[5]), string_to_number(parsed[6]), parsed[7]);
 }
 }
-else if (cmd == "source")
+else if (cmd == "source" || cmd == "ambience" || cmd == "ambsource" || cmd == "environment")
 {
-	// Sound sources are managed uniformly and seamlessly by sync_map_and_neighbor_sources
+	if (need_spawn_sources && parsed.length() >= 8)
+	{
+		double svol = (parsed.length() >= 9 && parsed[8] != "") ? string_to_number(parsed[8]) : 0.0;
+		double spitch = (parsed.length() >= 10 && parsed[9] != "") ? string_to_number(parsed[9]) : 100.0;
+		bool stime = false;
+		int sh = 6, sm = 0, eh = 18, em = 0, sfade = 30;
+		if (parsed.length() >= 16)
+		{
+			stime = (parsed[10] == "1" || parsed[10] == "true");
+			sh = int(string_to_number(parsed[11]));
+			sm = int(string_to_number(parsed[12]));
+			eh = int(string_to_number(parsed[13]));
+			em = int(string_to_number(parsed[14]));
+			sfade = int(string_to_number(parsed[15]));
+		}
+		bool is_ambience = (cmd != "source");
+		spawn_source(int(string_to_number(parsed[1])), int(string_to_number(parsed[2])), int(string_to_number(parsed[3])), int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])), parsed[7], svol, spitch, stime, sh, sm, eh, em, sfade, name, is_ambience);
+	}
 }
 else if (cmd == "store")
 {
@@ -774,7 +791,7 @@ spawn_platform(0,maxx,maxy+1,maxy+1000,0,50,"wallw");
 spawn_platform(maxx+1,maxx+1000,0,maxy,0,50,"wallw");
 mapname=name;
 mark_map_sources_registered(name);
-sync_map_and_neighbor_sources(name);
+seamless_switch_map_sources("", name);
 apply_ambient_volume();
 apply_music_volume();
 check_map_exploration(name, int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
