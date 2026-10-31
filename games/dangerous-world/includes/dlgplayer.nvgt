@@ -1,7 +1,7 @@
 sound dlgaudio;
 void dlgplay(string dlgsound, bool dlgfade=false, int fadespeed=30)
 {
-dlgaudio.load(dlgsound, no_sound_pack);
+dlgaudio.load(dlgsound, @no_sound_pack);
 dlgaudio.play();
 while(dlgaudio.playing)
 {

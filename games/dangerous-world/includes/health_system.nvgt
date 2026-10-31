@@ -24,7 +24,7 @@ void player_die(const string&in cause_message)
 	if (cause_message != "") speak(cause_message);
 	string death_path = pick_player_death_sound();
 	sound death_sound;
-	if (death_path != "" && death_sound.load(death_path, no_sound_pack))
+	if (death_path != "" && death_sound.load(death_path, @no_sound_pack))
 	{
 		death_sound.play();
 		while (death_sound.playing) wait(5);
@@ -35,7 +35,7 @@ void player_die(const string&in cause_message)
 	if (fall_path != "" && file_exists(fall_path))
 	{
 		sound fall_sound;
-		if (fall_sound.load(fall_path, no_sound_pack))
+		if (fall_sound.load(fall_path, @no_sound_pack))
 		{
 			fall_sound.play();
 			while (fall_sound.playing) wait(5);

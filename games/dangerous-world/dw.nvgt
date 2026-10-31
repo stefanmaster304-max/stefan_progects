@@ -199,7 +199,7 @@ void dive_underwater()
 
 	underwater_ambient_sound.stop();
 	string uw_amb = get_sound_path("anbients/underwater.ogg;underwater.ogg");
-	if (uw_amb != "" && underwater_ambient_sound.load(uw_amb, no_sound_pack))
+	if (uw_amb != "" && underwater_ambient_sound.load(uw_amb, @no_sound_pack))
 	{
 		underwater_ambient_sound.volume = ambient_volume - 100.0;
 		underwater_ambient_sound.play_looped();
@@ -229,7 +229,7 @@ void play_logo_intro()
 	if (lpath == "") lpath = get_sound_path("logo.ogg");
 	if (!file_exists(lpath)) return;
 	sound logosnd;
-	if (logosnd.load(lpath, no_sound_pack))
+	if (logosnd.load(lpath, @no_sound_pack))
 	{
 		logosnd.play();
 		while(logosnd.playing)
@@ -276,7 +276,7 @@ if (directory_exists(DIRECTORY_TEMP+"/cheat engine") and SCRIPT_COMPILED)
 sound cheater;
 string cpath = get_misc_sound("cheat");
 if (cpath == "") cpath = get_sound_path("cheat.ogg");
-cheater.load(cpath, no_sound_pack);
+cheater.load(cpath, @no_sound_pack);
 cheater.play_wait();
 exit();
 }
@@ -359,7 +359,7 @@ if (directory_exists(DIRECTORY_TEMP+"/cheat engine") and SCRIPT_COMPILED)
 sound cheater;
 string cpath = get_misc_sound("cheat");
 if (cpath == "") cpath = get_sound_path("cheat.ogg");
-cheater.load(cpath, no_sound_pack);
+cheater.load(cpath, @no_sound_pack);
 cheater.play_wait();
 exit();
 }
@@ -1346,7 +1346,7 @@ void play_initial_session_welcome_sound()
 	{
 		int chosen_idx = random(0, welcome_files.length() - 1);
 		string wpath = welcome_files[chosen_idx];
-		if (wpath != "" && session_welcome_sound.load(wpath, no_sound_pack))
+		if (wpath != "" && session_welcome_sound.load(wpath, @no_sound_pack))
 		{
 			session_welcome_sound.play();
 			return;
@@ -1354,7 +1354,7 @@ void play_initial_session_welcome_sound()
 	}
 
 	string fallback = get_sound_path("welcome/welcome.ogg;welcome.ogg");
-	if (fallback != "" && session_welcome_sound.load(fallback, no_sound_pack))
+	if (fallback != "" && session_welcome_sound.load(fallback, @no_sound_pack))
 	{
 		session_welcome_sound.play();
 	}
@@ -1431,5 +1431,5 @@ void init()
 	currentloc="";
 	string bpath = get_player_sound("blead");
 	if (bpath == "") bpath = get_sound_path("bleading.ogg");
-	bleading.load(bpath, no_sound_pack);
+	bleading.load(bpath, @no_sound_pack);
 }
