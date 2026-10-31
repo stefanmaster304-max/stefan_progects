@@ -233,7 +233,7 @@ void mainmenu()
 			dp.update_listener_3d(me.x, me.y, me.z, double(facing));
 			initial_session_welcome_played = false;
 			draw_map(target_map);
-			announce_zone_on_load(false);
+			announce_zone_on_load();
 			game();
 			p.update_listener_3d(0, 0, 0, 0);
 			sp.update_listener_3d(0, 0, 0, 0);
