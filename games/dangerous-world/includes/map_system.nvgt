@@ -104,10 +104,10 @@ class native_map
 
 	void add_travelpoint(double x1, double x2, double y1, double y2, double z1, double z2,
 		double dx1, double dx2, double dy1, double dy2, double dz1, double dz2,
-		const string&in target_map, int autotp = 1)
+		const string&in target_map)
 	{
 		string coords = dx1 + ":" + dx2 + ":" + dy1 + ":" + dy2 + ":" + dz1 + ":" + dz2;
-		add_area(x1, x2, y1, y2, z1, z2, target_map, coords, "" + autotp, MAP_TRAVELPOINT);
+		add_area(x1, x2, y1, y2, z1, z2, target_map, coords, "manual", MAP_TRAVELPOINT);
 	}
 
 	void add_door(double x1, double x2, double y1, double y2, double z1, double z2,

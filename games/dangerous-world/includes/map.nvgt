@@ -651,16 +651,10 @@ else if (cmd == "travelpoint")
 		int max_l = int(string_to_number(tp_parts[16]));
 		int min_r = int(string_to_number(tp_parts[17]));
 		int max_r = int(string_to_number(tp_parts[18]));
-		bool is_auto = false;
-		if (tp_parts.length() >= 20)
-		{
-			string auto_flag = tp_parts[19].trim_whitespace();
-			is_auto = (auto_flag == "1" || auto_flag == "true" || auto_flag == "auto");
-		}
-
 		if (target_map != "" && map_exists_on_disk(target_map))
 		{
-			spawn_travelpoint(x1, x2, y1, y2, z1, z2, target_map, dx1, dx2, dy1, dy2, dz1, dz2, tp_text, min_l, max_l, min_r, max_r, is_auto);
+			// Ignore any legacy trailing field; travel points are manual only.
+			spawn_travelpoint(x1, x2, y1, y2, z1, z2, target_map, dx1, dx2, dy1, dy2, dz1, dz2, tp_text, min_l, max_l, min_r, max_r);
 		}
 	}
 	else if (tp_parts.length() >= 14)

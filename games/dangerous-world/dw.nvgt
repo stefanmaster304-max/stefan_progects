@@ -326,23 +326,6 @@ if (key_pressed(KEY_V))
 {
 	cycle_fire_mode(current_weapon_id);
 }
-doorcheckloop();
-staircasecheckloop();
-szloop();
-checkloc();
-text_square_check();
-checkpoints_check();
-ground_item_loop();
-map_item_spawner_loop();
-bodyfallloop();
-	tracking_loop();
-	broadcast_loop();
-	update_sources();
-	if (autosave_timer.elapsed >= 30000)
-	{
-		autosave_timer.restart();
-		save_location();
-	}
 update_game_world();
 wait(5);
 if (health<=20 and health>0)
@@ -746,14 +729,12 @@ if (ascending==false and jumptimer.elapsed>=jumptime2 and atapex==false)
 jumptimer.restart();
 me.z-=1;
 checkforplatforms();
-check_automatic_travelpoints(0, 0, -1);
 }
 if (ascending==true and jumptimer.elapsed>=jumptime)
 {
 jumptimer.restart();
 me.z+=1;
 checkforplatforms();
-check_automatic_travelpoints(0, 0, 1);
 if (me.z>=ty2)
 {
 ascending=false;
@@ -775,7 +756,6 @@ if(falltimer.elapsed>=falltime && me.z > minz)
 falltimer.restart();
 me.z--;
 fallcounter++;
-check_automatic_travelpoints(0, 0, -1);
 }
 bool landed = false;
 if (me.z <= minz)
@@ -854,9 +834,6 @@ void player_step(int dir)
 old = me;
 vector step_start = me;
 vector target = move(me.x, me.y, me.z, dir, facing);
-int attempt_dx = int(round(target.x - me.x, 0));
-int attempt_dy = int(round(target.y - me.y, 0));
-int attempt_dz = int(round(target.z - me.z, 0));
 target.x = round(target.x, 0);
 target.y = round(target.y, 0);
 target.z = round(target.z, 0);
@@ -877,8 +854,6 @@ if (is_underwater && !is_water_tile(int(me.x), int(me.y), int(me.z)))
 
 if (hit_boundary && target.x == old.x && target.y == old.y && target.z == old.z)
 {
-	if (check_automatic_travelpoints(attempt_dx, attempt_dy, attempt_dz, true))
-		return;
 	return;
 }
 
@@ -887,8 +862,6 @@ if (me.x != step_start.x || me.y != step_start.y || me.z != step_start.z)
 	has_moved = true;
 	player_walked_since_stop = true;
 	check_map_exploration(mapname, int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
-	if (check_automatic_travelpoints(attempt_dx, attempt_dy, attempt_dz, false))
-		return;
 }
 playstep();
 }

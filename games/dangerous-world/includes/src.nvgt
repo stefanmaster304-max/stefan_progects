@@ -196,7 +196,7 @@ double mult_to_db_offset(double mult)
 
 class source
 {
-	int x1, x2, y1, y2, z1, z2, sound;
+	int x1, x2, y1, y2, z1, z2, sound = -1;
 	string file;
 	string map;
 	double volume;
@@ -209,6 +209,7 @@ class source
 	bool is_music;
 	bool is_ambience;
 	bool paused;
+	bool load_attempted = false;
 
 	bool is_player_inside()
 	{
@@ -239,8 +240,13 @@ class source
 		last_multiplier = 1.0;
 		is_music = false;
 		is_ambience = is_amb;
-		paused = false;
+		paused = is_amb && !is_player_inside();
+	}
 
+	bool start_playback()
+	{
+		if (load_attempted || sound >= 0) return sound >= 0;
+		load_attempted = true;
 		string sound_file = "";
 		if (source_resolved_path_cache.exists(file))
 		{
@@ -302,11 +308,7 @@ class source
 			sp.update_sound_range_3d(sound, lx, rx, ly, ry, lz, rz);
 		}
 
-		if (is_ambience && !is_player_inside() && sound >= 0)
-		{
-			paused = true;
-			sp.pause_sound(sound);
-		}
+		return sound >= 0;
 	}
 
 	double forward_dist(double from_t, double to_t)
@@ -409,9 +411,28 @@ void spawn_source(int sx1, int sx2, int sy1, int sy2, int sz1, int sz2, string s
 void update_sources()
 {
 	double cur_min = 0.0;
+	bool started_source_this_tick = false;
 	for (uint i = 0; i < src.length(); i++)
 	{
 		if (src[i].map != mapname) continue;
+		if (src[i].is_ambience)
+		{
+			bool inside = src[i].is_player_inside();
+			if (!inside)
+			{
+				if (!src[i].paused && src[i].sound >= 0)
+					sp.pause_sound(src[i].sound);
+				src[i].paused = true;
+				continue;
+			}
+		}
+		if (src[i].sound < 0 && !src[i].load_attempted && !started_source_this_tick)
+		{
+			src[i].start_playback();
+			started_source_this_tick = true;
+			if (src[i].sound < 0) continue;
+		}
+		if (src[i].sound < 0) continue;
 		if (src[i].is_ambience)
 		{
 			bool inside = src[i].is_player_inside();
