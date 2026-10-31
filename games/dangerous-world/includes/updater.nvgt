@@ -97,7 +97,7 @@ void play_update_sound(const string&in filename)
 	if (!file_exists(path)) path = get_sound_path("update-sound/" + filename + ".ogg;" + filename + ".ogg");
 	if (path == "" || !file_exists(path)) return;
 	upcoming::sound effect;
-	if (effect.load(path)) effect.play_wait();
+	if (effect.load(path, null)) effect.play_wait();
 }
 
 string format_update_size(int64 bytes)

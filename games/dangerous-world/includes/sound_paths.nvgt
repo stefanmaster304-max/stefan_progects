@@ -887,7 +887,7 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 					if (full_snd != "")
 					{
 						builder_preview_sound.stop();
-						if (builder_preview_sound.load(full_snd))
+						if (builder_preview_sound.load(full_snd, null))
 						{
 							builder_preview_sound.play();
 						}
@@ -904,7 +904,7 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 					if (full_snd != "")
 					{
 						builder_preview_sound.stop();
-						if (builder_preview_sound.load(full_snd))
+						if (builder_preview_sound.load(full_snd, null))
 						{
 							builder_preview_sound.play();
 						}

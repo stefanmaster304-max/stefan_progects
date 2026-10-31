@@ -54,6 +54,6 @@ void broadcast_loop()
 	if (broadcast_messages.length() == 0) load_broadcast_messages();
 	if (broadcast_messages.length() == 0) return;
 	string notification = get_sound_path("misc/notify.ogg;notify.ogg");
-	if (notification != "" && broadcast_sound.load(notification)) broadcast_sound.play();
+	if (notification != "" && broadcast_sound.load(notification, null)) broadcast_sound.play();
 	speak(broadcast_messages[random(0, int(broadcast_messages.length()) - 1)]);
 }

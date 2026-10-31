@@ -82,7 +82,7 @@ void build_sign()
 			if (pos >= 0 && pos < int(sgn_dirs.length()))
 			{
 				string snd = get_pack_sound("builder/interaction/signs/" + sgn_dirs[pos] + "/*press*");
-				if (snd != "" && builder_preview_sound.load(snd)) builder_preview_sound.play();
+				if (snd != "" && builder_preview_sound.load(snd, null)) builder_preview_sound.play();
 			}
 			wait(150);
 		}
