@@ -113,7 +113,7 @@ class sound_pool_item {
 					if (@packfile != null)
 						handle.load(filename, packfile);
 					else
-						handle.load(filename, null);
+						handle.load(filename, no_sound_pack);
 				}
 				if (handle.active == true) {
 					if (start_offset > 0)
@@ -376,7 +376,7 @@ class sound_pool {
 				if (@items[slot].packfile != null)
 					items[slot].handle.load(items[slot].filename, items[slot].packfile);
 				else
-					items[slot].handle.load(items[slot].filename, null);
+					items[slot].handle.load(items[slot].filename, no_sound_pack);
 			}
 			if (items[slot].handle.active == false) {
 				items[slot].reset();

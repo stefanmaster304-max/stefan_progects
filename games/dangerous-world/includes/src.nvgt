@@ -845,7 +845,7 @@ bool play_builder_preview(const string&in path, double vol, double pitch)
 	if (!loaded)
 	{
 		builder_preview_sound.close();
-		loaded = builder_preview_sound.load(path, null);
+		loaded = builder_preview_sound.load(path, no_sound_pack);
 	}
 	if (loaded)
 	{

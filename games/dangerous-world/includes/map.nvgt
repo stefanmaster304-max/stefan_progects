@@ -1195,7 +1195,7 @@ void build_platform()
 					if (it !is null && it.sound_pickup != "") snd = get_sound_path(it.sound_pickup);
 				}
 				if (snd == "") snd = get_platform_sound("stone", "step");
-				if (snd != "" && builder_preview_sound.load(snd, null))
+				if (snd != "" && builder_preview_sound.load(snd, no_sound_pack))
 				{
 					builder_preview_sound.play();
 				}
@@ -1282,7 +1282,7 @@ void build_wall()
 			if (pos >= 0 && pos < int(wall_dirs.length()))
 			{
 				string snd = get_wall_sound(wall_dirs[pos], "bump");
-				if (snd != "" && builder_preview_sound.load(snd, null))
+				if (snd != "" && builder_preview_sound.load(snd, no_sound_pack))
 				{
 					builder_preview_sound.play();
 				}

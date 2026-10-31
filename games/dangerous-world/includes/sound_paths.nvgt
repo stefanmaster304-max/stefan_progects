@@ -1,14 +1,6 @@
-// sound_paths.nvgt - path resolution for NVGT audio assets.
-// Loose files remain supported for development and map-specific content.
+// sound_paths.nvgt - resolves audio files from the game's sounds directory.
 
 sound builder_preview_sound;
-
-bool sound_pack_active = false;
-
-void init_sound_package()
-{
-	// Direct disk folder loading is enforced.
-}
 
 bool string_starts_with(const string&in s, const string&in prefix)
 {
@@ -128,7 +120,7 @@ string translate_sound_path(const string&in path)
 	return path;
 }
 
-string get_pack_sound(const string&in path)
+string resolve_sound_path(const string&in path)
 {
 	if (path == "" || path == "none") return "";
 	if (file_exists(path)) return path;
@@ -501,7 +493,7 @@ string get_sound_path(string path)
 		return "sounds/" + path;
 	}
 
-	string res = get_pack_sound(path);
+	string res = resolve_sound_path(path);
 	if (res != "" && file_exists(res))
 	{
 		sound_path_cache.set(path, res);
@@ -535,7 +527,6 @@ string get_sound_path(string path)
 	if (string_starts_with(check_name, "player/")) check_name = check_name.substr(7);
 	if (string_starts_with(check_name, "weapons/")) check_name = check_name.substr(8);
 	if (string_starts_with(check_name, "shield/")) check_name = check_name.substr(7);
-	if (false) check_name = check_name.substr(5);
 
 	if (check_name == "buy" || check_name == "buy.ogg" || check_name == "purchase" || check_name == "purchase.ogg" || check_name == "storepurchase" || check_name == "storepurchase.ogg")
 	{
@@ -887,7 +878,7 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 					if (full_snd != "")
 					{
 						builder_preview_sound.stop();
-						if (builder_preview_sound.load(full_snd, null))
+						if (builder_preview_sound.load(full_snd, no_sound_pack))
 						{
 							builder_preview_sound.play();
 						}
@@ -904,7 +895,7 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 					if (full_snd != "")
 					{
 						builder_preview_sound.stop();
-						if (builder_preview_sound.load(full_snd, null))
+						if (builder_preview_sound.load(full_snd, no_sound_pack))
 						{
 							builder_preview_sound.play();
 						}

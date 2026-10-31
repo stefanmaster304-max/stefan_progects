@@ -120,7 +120,7 @@ return;
 }
 if(!music.playing)
 {
-music.load(musicpath, null);
+music.load(musicpath, no_sound_pack);
 music.set_hrtf(true);
 music_added=true;
 }

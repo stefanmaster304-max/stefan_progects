@@ -119,7 +119,7 @@ void play_story_sequence()
 	speak("Playing story. You cannot skip while the story is playing.");
 
 	sound story_snd;
-	if (story_snd.load(story_path, null))
+	if (story_snd.load(story_path, no_sound_pack))
 	{
 		story_snd.play();
 		while (story_snd.playing)
@@ -321,7 +321,7 @@ void select_menu_music_dialog()
 				string full_p = "sounds/menu sounds/" + fn;
 				if (file_exists(full_p))
 				{
-					preview_sound.load(full_p, null);
+					preview_sound.load(full_p, no_sound_pack);
 					preview_sound.play_looped();
 				}
 			}
