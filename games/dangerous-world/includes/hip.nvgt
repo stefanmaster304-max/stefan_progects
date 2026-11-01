@@ -94,22 +94,8 @@ return file_put_contents(inifile,towrite,FILE_WRITE);
 }
 /*
 ini_to_dict
-this function is a bool! Be careful!
-Unlike deserialize, this function does not return a dictionary handle.
-Instead, it writes directly to an &out dictionary.
-The boolean is so you can see if the opening worked.
-the first peramitor is the string of the ini file you wish to read.
-the second peramitor is a handle to a dictionary to write to, so you would call something like this.
-dictionary test;
-bool worked=ini_to_dict("test.ini",test);
-if(worked==false)
-{
-alert("Error","The file test.ini doesn't exist.");
-}
-and the dictionary would be filled.
-This function will only convert key=value, it will not support sectioned ini files such as those seen in ISS files.
-However, it does support semicolon line commenting.
-This function is the inverse of dict_to_ini, and so should only be used when using that function to make the original file, unless you know that it is safe for parsing. Anything messed up may result in very strange output in the dictionary.
+Writes key=value pairs directly to an &out dictionary.
+Returns true on success, false on failure.
 */
 bool ini_to_dict(string inifile, dictionary &out dict)
 {
@@ -230,3 +216,18 @@ this function takes one peramitor, the percentage value to beep.
 It will generate and play the beep all in the single function call.
 It does indeed require the two objects declared above it for it to work properly.
 */
+tone_synth progress_synth;
+upcoming::sound@ progress_sound;
+void beep_percentage(double val)
+{
+val=round(val,0);
+if(val<0) val=0;
+if(val>100) val=100;
+double freq=110*2**(val/25);
+progress_synth.waveform_type=3;
+progress_synth.set_edge_fades(0,0);
+progress_synth.freq_ms(freq,40);
+@progress_sound=progress_synth.write_wave_sound();
+progress_synth.reset();
+progress_sound.play();
+}

@@ -283,6 +283,11 @@ void parse_stores_bundle(const string&in content)
 			}
 			continue;
 		}
+		else if (string_starts_with(line, "["))
+		{
+			@current = null;
+			continue;
+		}
 
 		if (current is null) continue;
 
@@ -456,28 +461,38 @@ void init_stores()
 	store_configs.resize(0);
 	ensure_store_dir();
 
-	// 1. Primary: Load single unified encrypted shops.dat / stores.dat
-	string enc = SCRIPT_COMPILED ? get_contents_payload("stores") : "";
-	if (enc == "")
+	// 1. Primary: Load single unified encrypted contents.dat
+	string content_bundle = file_exists("settings/contents.dat") ? "settings/contents.dat" : (file_exists("data/contents.dat") ? "data/contents.dat" : (file_exists("contents.dat") ? "contents.dat" : ""));
+	if (content_bundle != "")
 	{
-		string bundle_path = file_exists(SHOPS_DAT_PATH) ? SHOPS_DAT_PATH : (file_exists(STORES_DAT_PATH) ? STORES_DAT_PATH : (file_exists("data/shops.dat") ? "data/shops.dat" : (file_exists("data/stores.dat") ? "data/stores.dat" : (file_exists("shops.dat") ? "shops.dat" : (file_exists("stores.dat") ? "stores.dat" : "")))));
-		if (bundle_path != "")
+		file cf;
+		if (cf.open(content_bundle, "rb"))
 		{
-			file f;
-			if (f.open(bundle_path, "rb"))
+			string enc = cf.read();
+			cf.close();
+			string decrypted = string_decrypt(enc, "ShooterContentKey2026_UnifiedEncryptedContents");
+			if (decrypted.length() > 0)
 			{
-				enc = f.read();
-				f.close();
+				parse_stores_bundle(decrypted);
+				if (store_configs.length() > 0) return;
 			}
 		}
 	}
-	if (enc != "")
+
+	string bundle_path = file_exists(SHOPS_DAT_PATH) ? SHOPS_DAT_PATH : (file_exists(STORES_DAT_PATH) ? STORES_DAT_PATH : (file_exists("data/shops.dat") ? "data/shops.dat" : (file_exists("data/stores.dat") ? "data/stores.dat" : (file_exists("shops.dat") ? "shops.dat" : (file_exists("stores.dat") ? "stores.dat" : "")))));
+	if (bundle_path != "")
 	{
-		string decrypted = string_decrypt(enc, STORE_ENC_KEY);
-		if (decrypted.length() > 0)
+		file f;
+		if (f.open(bundle_path, "rb"))
 		{
-			parse_stores_bundle(decrypted);
-			if (store_configs.length() > 0) return;
+			string enc = f.read();
+			f.close();
+			string decrypted = string_decrypt(enc, STORE_ENC_KEY);
+			if (decrypted.length() > 0)
+			{
+				parse_stores_bundle(decrypted);
+				if (store_configs.length() > 0) return;
+			}
 		}
 	}
 
@@ -586,7 +601,7 @@ void decrypt_stores()
 
 bool is_store_encrypted(const string&in name = "")
 {
-	return file_exists(SHOPS_DAT_PATH) || file_exists(STORES_DAT_PATH) || file_exists("data/shops.dat") || file_exists("data/stores.dat") || file_exists("shops.dat") || file_exists("stores.dat");
+	return file_exists("settings/contents.dat") || file_exists("data/contents.dat") || file_exists("contents.dat") || file_exists(SHOPS_DAT_PATH) || file_exists(STORES_DAT_PATH) || file_exists("data/shops.dat") || file_exists("data/stores.dat") || file_exists("shops.dat") || file_exists("stores.dat");
 }
 
 void create_default_stores()

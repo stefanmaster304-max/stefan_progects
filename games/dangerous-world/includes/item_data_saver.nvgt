@@ -2,6 +2,8 @@
 // Unified encrypted format: settings/items.dat (all items encrypted into a single bundle)
 
 const string ITEM_DIR = "settings/items";
+const string CONTENTS_DAT_PATH = "settings/contents.dat";
+const string CONTENT_ENC_KEY = "ShooterContentKey2026_UnifiedEncryptedContents";
 const string ITEMS_DAT_PATH = "settings/items.dat";
 const string ITEM_ENC_KEY = "ShooterItemConfigKey2026_9x!L#qZ8*vM3&kP5";
 
@@ -10,15 +12,14 @@ string[] item_categories = {
 	"ammo",
 	"equipment",
 	"currency",
-	"packages",
-	"materials"
+	"packages"
 };
 
 class item_data
 {
 	string id;
 	string name;
-	string category; // consumables, ammo, packages, equipment, currency, materials
+	string category; // consumables, ammo, packages, equipment, currency
 	string subtype;
 	int heal_amount;
 	int capacity;
@@ -147,9 +148,6 @@ string serialize_item_config(item_data@ it)
 
 	if (it.category == "consumables")
 	{
-		// Only the restore types actually enabled carry an amount; disabled
-		// legacy item entries without a healing effect remain usable as ordinary items
-		// also restores health.
 		s_out += "restores_health=" + (it.restores_health ? 1 : 0) + "\n";
 		s_out += "heal_amount=" + (it.restores_health ? it.heal_amount : 0) + "\n";
 		if (it.sound_use != "") s_out += "sound_use=" + it.sound_use + "\n";
@@ -179,12 +177,6 @@ string serialize_item_config(item_data@ it)
 	else if (it.category == "currency")
 	{
 		s_out += "quantity=" + it.quantity + "\n";
-		if (it.sound_loot != "") s_out += "sound_loot=" + it.sound_loot + "\n";
-		if (it.sound_pickup != "") s_out += "sound_pickup=" + it.sound_pickup + "\n";
-		if (it.sound_draw != "") s_out += "sound_draw=" + it.sound_draw + "\n";
-	}
-	else if (it.category == "materials")
-	{
 		if (it.sound_loot != "") s_out += "sound_loot=" + it.sound_loot + "\n";
 		if (it.sound_pickup != "") s_out += "sound_pickup=" + it.sound_pickup + "\n";
 		if (it.sound_draw != "") s_out += "sound_draw=" + it.sound_draw + "\n";
@@ -267,6 +259,11 @@ void parse_items_bundle(const string&in content)
 			}
 			continue;
 		}
+		else if (string_starts_with(line, "["))
+		{
+			@current = null;
+			continue;
+		}
 
 		if (current is null) continue;
 
@@ -340,28 +337,38 @@ void load_all_items_config(bool force = false)
 	item_registry.resize(0);
 	ensure_item_directories();
 
-	// 1. Primary: Load single unified encrypted items.dat
-	string enc = SCRIPT_COMPILED ? get_contents_payload("items") : "";
-	if (enc == "")
+	// 1. Primary: Load single unified encrypted contents.dat
+	string content_bundle = file_exists(CONTENTS_DAT_PATH) ? CONTENTS_DAT_PATH : (file_exists("data/contents.dat") ? "data/contents.dat" : (file_exists("contents.dat") ? "contents.dat" : ""));
+	if (content_bundle != "")
 	{
-		string bundle_path = file_exists(ITEMS_DAT_PATH) ? ITEMS_DAT_PATH : (file_exists("data/items.dat") ? "data/items.dat" : (file_exists("items.dat") ? "items.dat" : ""));
-		if (bundle_path != "")
+		file cf;
+		if (cf.open(content_bundle, "rb"))
 		{
-			file f;
-			if (f.open(bundle_path, "rb"))
+			string enc = cf.read();
+			cf.close();
+			string decrypted = string_decrypt(enc, CONTENT_ENC_KEY);
+			if (decrypted.length() > 0)
 			{
-				enc = f.read();
-				f.close();
+				parse_items_bundle(decrypted);
+				if (item_registry.length() > 0) return;
 			}
 		}
 	}
-	if (enc != "")
+
+	string bundle_path = file_exists(ITEMS_DAT_PATH) ? ITEMS_DAT_PATH : (file_exists("data/items.dat") ? "data/items.dat" : (file_exists("items.dat") ? "items.dat" : ""));
+	if (bundle_path != "")
 	{
-		string decrypted = string_decrypt(enc, ITEM_ENC_KEY);
-		if (decrypted.length() > 0)
+		file f;
+		if (f.open(bundle_path, "rb"))
 		{
-			parse_items_bundle(decrypted);
-			if (item_registry.length() > 0) return;
+			string enc = f.read();
+			f.close();
+			string decrypted = string_decrypt(enc, ITEM_ENC_KEY);
+			if (decrypted.length() > 0)
+			{
+				parse_items_bundle(decrypted);
+				if (item_registry.length() > 0) return;
+			}
 		}
 	}
 
@@ -370,7 +377,7 @@ void load_all_items_config(bool force = false)
 	{
 		string folder = ITEM_DIR + "/" + item_categories[c];
 		if (!directory_exists(folder)) continue;
-
+		
 		// Plain .config files
 		string[]@ files = find_files(folder + "/*.config");
 		if (files !is null)
@@ -519,7 +526,7 @@ void decrypt_all_items()
 
 bool is_item_encrypted(const string&in id = "")
 {
-	return file_exists(ITEMS_DAT_PATH) || file_exists("data/items.dat") || file_exists("items.dat");
+	return file_exists(CONTENTS_DAT_PATH) || file_exists("data/contents.dat") || file_exists("contents.dat") || file_exists(ITEMS_DAT_PATH) || file_exists("data/items.dat") || file_exists("items.dat");
 }
 
 bool delete_item_file(const string&in id)

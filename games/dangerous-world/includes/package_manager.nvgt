@@ -108,6 +108,11 @@ void parse_packages_bundle(const string&in content)
 			}
 			continue;
 		}
+		else if (string_starts_with(line, "["))
+		{
+			@current = null;
+			continue;
+		}
 
 		if (current is null) continue;
 
@@ -126,7 +131,7 @@ void parse_packages_bundle(const string&in content)
 
 bool is_package_encrypted(const string&in id = "")
 {
-	return file_exists(PACKAGES_DAT_PATH) || file_exists("data/packages.dat") || file_exists("packages.dat");
+	return file_exists("settings/contents.dat") || file_exists("data/contents.dat") || file_exists("contents.dat") || file_exists(PACKAGES_DAT_PATH) || file_exists("data/packages.dat") || file_exists("packages.dat");
 }
 
 bool save_package_config(package_data@ pkg)
@@ -160,28 +165,37 @@ void load_all_packages()
 	package_registry.resize(0);
 	ensure_package_directories();
 
-	// 1. Primary: Load encrypted bundle
-	string enc = SCRIPT_COMPILED ? get_contents_payload("packages") : "";
-	if (enc == "")
+	// 1. Primary: Load single unified encrypted contents.dat
+	string content_bundle = file_exists("settings/contents.dat") ? "settings/contents.dat" : (file_exists("data/contents.dat") ? "data/contents.dat" : (file_exists("contents.dat") ? "contents.dat" : ""));
+	if (content_bundle != "")
 	{
-		string bundle_path = file_exists(PACKAGES_DAT_PATH) ? PACKAGES_DAT_PATH : (file_exists("data/packages.dat") ? "data/packages.dat" : (file_exists("packages.dat") ? "packages.dat" : ""));
-		if (bundle_path != "")
+		file cf;
+		if (cf.open(content_bundle, "rb"))
 		{
-			file f;
-			if (f.open(bundle_path, "rb"))
+			string enc = cf.read();
+			cf.close();
+			string decrypted = string_decrypt(enc, "ShooterContentKey2026_UnifiedEncryptedContents");
+			if (decrypted.length() > 0)
 			{
-				enc = f.read();
-				f.close();
+				parse_packages_bundle(decrypted);
+				if (package_registry.length() > 0) return;
 			}
 		}
 	}
-	if (enc != "")
+
+	if (file_exists(PACKAGES_DAT_PATH))
 	{
-		string decrypted = string_decrypt(enc, PACKAGE_ENC_KEY);
-		if (decrypted.length() > 0)
+		file f;
+		if (f.open(PACKAGES_DAT_PATH, "rb"))
 		{
-			parse_packages_bundle(decrypted);
-			if (package_registry.length() > 0) return;
+			string enc = f.read();
+			f.close();
+			string decrypted = string_decrypt(enc, PACKAGE_ENC_KEY);
+			if (decrypted.length() > 0)
+			{
+				parse_packages_bundle(decrypted);
+				if (package_registry.length() > 0) return;
+			}
 		}
 	}
 

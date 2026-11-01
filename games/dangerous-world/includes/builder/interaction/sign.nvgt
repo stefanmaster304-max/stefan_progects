@@ -13,8 +13,8 @@ class sign_obj
 		z = sz;
 		text = stext;
 		type = stype;
-		string lsound = resolve_sound_path("builder/interaction/signs/" + type + "/*loop*");
-		if (lsound == "") lsound = resolve_sound_path("builder/interaction/signs/sign/*loop*");
+		string lsound = get_pack_sound("builder/interaction/signs/" + type + "/*loop*");
+		if (lsound == "") lsound = get_pack_sound("builder/interaction/signs/sign/*loop*");
 		if (lsound != "")
 			loop_sound = sp.play_3d(lsound, me.x, me.y, me.z, x, y, z, double(facing), true);
 		else
@@ -38,8 +38,8 @@ bool signcheck()
 	{
 		if (px == signs[i].x && py == signs[i].y && pz == signs[i].z)
 		{
-			string psnd = resolve_sound_path("builder/interaction/signs/" + signs[i].type + "/*press*");
-			if (psnd == "") psnd = resolve_sound_path("builder/interaction/signs/sign/*press*");
+			string psnd = get_pack_sound("builder/interaction/signs/" + signs[i].type + "/*press*");
+			if (psnd == "") psnd = get_pack_sound("builder/interaction/signs/sign/*press*");
 			if (psnd == "") psnd = "sounds/interaction/signs/sign/press.ogg";
 			if (psnd != "" && file_exists(psnd)) p.play_stationary(psnd, false);
 			speak(signs[i].text);
@@ -81,8 +81,8 @@ void build_sign()
 			int pos = f.get_list_position(sgn_list);
 			if (pos >= 0 && pos < int(sgn_dirs.length()))
 			{
-				string snd = resolve_sound_path("builder/interaction/signs/" + sgn_dirs[pos] + "/*press*");
-				if (snd != "" && builder_preview_sound.load(snd, @no_sound_pack)) builder_preview_sound.play();
+				string snd = get_pack_sound("builder/interaction/signs/" + sgn_dirs[pos] + "/*press*");
+				if (snd != "" && builder_preview_sound.load(snd)) builder_preview_sound.play();
 			}
 			wait(150);
 		}

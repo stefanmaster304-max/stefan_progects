@@ -5,7 +5,8 @@
  * Original Copyright (C) 2010-2014 Blastbay Studios
  * King Audio adaptation - 2026
  */
-#include "includes/rotation.nvgt"
+#include "rotation.nvgt"
+#pragma plugin king_audio_engine
 bool sound_pool_default_y_elevation = false;
 
 class sound_pool_item {
@@ -42,6 +43,7 @@ class sound_pool_item {
 	timer last_memory_push;
 	string extra_data;
 	string[] fx_list;
+	string pool_lowpass_fx;
 	float last_set_lx = -999999.0, last_set_ly = -999999.0, last_set_lz = -999999.0;
 	float last_set_sx = -999999.0, last_set_sy = -999999.0, last_set_sz = -999999.0;
 	float last_set_rot = -999999.0;
@@ -65,7 +67,7 @@ class sound_pool_item {
 		theta = 0;
 		looping = false;
 		pan_step = 1.0;
-		volume_step = 1.0;
+		volume_step = 2.0;
 		behind_pitch_decrease = 0.0;
 		start_pan = 0.0;
 		start_volume = 0.0;
@@ -85,6 +87,7 @@ class sound_pool_item {
 		last_memory_push.restart();
 		extra_data = "";
 		fx_list.resize(0);
+		pool_lowpass_fx = "";
 		last_set_lx = -999999.0; last_set_ly = -999999.0; last_set_lz = -999999.0;
 		last_set_sx = -999999.0; last_set_sy = -999999.0; last_set_sz = -999999.0;
 		last_set_rot = -999999.0;
@@ -97,13 +100,22 @@ class sound_pool_item {
 	void update(float listener_x, float listener_y, float listener_z, double rotation, int max_distance) {
 		if (@handle == null)
 			return;
-		if (max_distance > 0 and looping == true and filename != "") {
+		if (handle.active == true && handle.playing == true) {
+			double cur_pos = handle.position;
+			if (cur_pos > 0) start_offset = cur_pos;
+		}
+		if (max_distance > 0 and filename != "") {
 			int total_distance = get_total_distance(listener_x, listener_y, listener_z);
-			if (total_distance > max_distance and handle.active == true) {
-				handle.close();
+			// Apply the same audible boundary to every source type. Previously only
+			// looping sounds were culled, so a one-shot howl, footstep, or
+			// ambience could remain faintly audible after crossing the whole map.
+			if (total_distance > max_distance) {
+				if (handle.active == true) handle.close();
 				return;
 			}
-			if (total_distance <= max_distance and handle.active == false) {
+			// Only looping sources may be restarted after they re-enter the radius.
+			// One-shot sounds that have been culled must not restart from the beginning.
+			if (looping == true and handle.active == false) {
 				if (stream) {
 					if (@packfile != null)
 						handle.stream(filename, packfile);
@@ -113,18 +125,20 @@ class sound_pool_item {
 					if (@packfile != null)
 						handle.load(filename, packfile);
 					else
-						handle.load(filename, @no_sound_pack);
+						handle.load(filename);
 				}
 				if (handle.active == true) {
-					if (start_offset > 0)
-						handle.seek(start_offset);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
 					handle.pan = start_pan;
 					handle.volume = start_volume;
 					for (uint fi = 0; fi < fx_list.length(); fi++)
 						handle.set_fx(fx_list[fi]);
+					if (pool_lowpass_fx != "")
+						handle.set_fx(pool_lowpass_fx);
 					if (paused == false)
 						handle.play_looped();
+					if (start_offset > 0)
+						handle.seek(start_offset);
 				}
 				return;
 			}
@@ -285,17 +299,24 @@ class sound_pool {
 	float pan_step;
 	float volume_step;
 	float behind_pitch_decrease;
-	bool hrtf = king_global_hrtf;
+	bool hrtf = true;
+	// Retained as a compatibility setting for existing callers. King Audio's
+	// own spatializer performs the smoothing and occlusion work.
+	float position_smoothing = 0.0;
 	mixer@ mixer = null;
 	king_pack@ pack_file = null;
+	float pool_lowpass_cutoff = 0.0;
+	float pool_lowpass_resonance = 1.0;
 
 	// Default constructor
 	sound_pool(int default_item_size = 100) {
 		items.resize(default_item_size);
 		max_distance = 0;
 		pan_step = 1.0;
-		volume_step = 1.0;
+		volume_step = 2.0;
 		behind_pitch_decrease = 0.25;
+		pool_lowpass_cutoff = 0.0;
+		pool_lowpass_resonance = 1.0;
 		last_listener_x = 0;
 		last_listener_y = 0;
 		last_listener_z = 0;
@@ -317,14 +338,14 @@ class sound_pool {
 		items[slot].pan_step = pan_step;
 		items[slot].volume_step = volume_step;
 		items[slot].behind_pitch_decrease = behind_pitch_decrease;
-		items[slot].stationary = dimension == 0;
+		items[slot].stationary = (dimension == 0);
 		items[slot].left_range = left_range;
 		items[slot].right_range = right_range;
 		items[slot].backward_range = backward_range;
 		items[slot].forward_range = forward_range;
 		items[slot].lower_range = lower_range;
 		items[slot].upper_range = upper_range;
-		items[slot].is_3d = true;
+		items[slot].is_3d = (dimension > 0);
 		if (filename != "")
 			items[slot].start_offset = offset;
 		items[slot].start_pan = start_pan;
@@ -333,7 +354,11 @@ class sound_pool {
 		items[slot].persistent = persistent;
 		items[slot].stream = stream;
 		items[slot].theta = theta;
-		items[slot].handle.set_hrtf(king_global_hrtf);
+		if (items[slot].stationary) {
+			items[slot].handle.set_hrtf(false);
+		} else {
+			items[slot].handle.set_hrtf(true);
+		}
 		if (@mix != null)
 			items[slot].handle.set_mixer(mix);
 		else if (@mixer != null)
@@ -376,14 +401,12 @@ class sound_pool {
 				if (@items[slot].packfile != null)
 					items[slot].handle.load(items[slot].filename, items[slot].packfile);
 				else
-					items[slot].handle.load(items[slot].filename, @no_sound_pack);
+					items[slot].handle.load(items[slot].filename);
 			}
 			if (items[slot].handle.active == false) {
 				items[slot].reset();
 				return -1;
 			}
-			if (items[slot].start_offset > 0)
-				items[slot].handle.seek(items[slot].start_offset);
 			if (start_pan != 0.0)
 				items[slot].handle.pan = start_pan;
 			if (start_volume < 0.0)
@@ -392,6 +415,12 @@ class sound_pool {
 		}
 		for (uint i = 0; i < items[slot].fx_list.length(); i++)
 			items[slot].handle.set_fx(items[slot].fx_list[i]);
+		if (pool_lowpass_cutoff > 0.0 && pool_lowpass_cutoff < 20000.0) {
+			items[slot].pool_lowpass_fx = "$pool_lp:lowpass:" + int(pool_lowpass_cutoff) + ":" + int(pool_lowpass_resonance);
+			items[slot].handle.set_fx(items[slot].pool_lowpass_fx);
+		} else {
+			items[slot].pool_lowpass_fx = "";
+		}
 		if (dimension > 0)
 			last_listener_x = listener_x;
 		if (dimension > 1) {
@@ -403,11 +432,23 @@ class sound_pool {
 		if (filename != "") {
 			items[slot].update(listener_x, listener_y, listener_z, rotation, max_distance);
 			if (!start_playing)
+			{
 				items[slot].paused = true;
+				if (items[slot].start_offset > 0)
+					items[slot].handle.seek(items[slot].start_offset);
+			}
 			else if (looping == true)
+			{
 				items[slot].handle.play_looped();
+				if (items[slot].start_offset > 0)
+					items[slot].handle.seek(items[slot].start_offset);
+			}
 			else
+			{
 				items[slot].handle.play();
+				if (items[slot].start_offset > 0)
+					items[slot].handle.seek(items[slot].start_offset);
+			}
 		}
 		if (slot > highest_slot)
 			highest_slot = slot;
@@ -430,6 +471,7 @@ class sound_pool {
 		return play_extended(0, filename, null, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
+	// Compatibility overload for callers that explicitly request streaming.
 	int play_stationary_extended(string filename, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent, mixer@ mix, string[]@ fx, bool stream) {
 		return play_extended(0, filename, null, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
 	}
@@ -514,6 +556,16 @@ class sound_pool {
 		return items[slot].handle.playing;
 	}
 
+	double get_sound_position(int slot) {
+		if (verify_slot(slot) == false || @items[slot].handle == null)
+			return 0.0;
+		if (items[slot].handle.active == true && items[slot].handle.playing == true) {
+			double pos = items[slot].handle.position;
+			if (pos > 0) return pos;
+		}
+		return items[slot].start_offset;
+	}
+
 	bool pause_sound(int slot) {
 		if (sound_is_active(slot) == false)
 			return false;
@@ -557,7 +609,7 @@ class sound_pool {
 	}
 
 	void destroy_all() {
-		for (uint i = 0; i < items.length(); i++)
+		for (uint i = 0; i <= highest_slot && i < items.length(); i++)
 			items[i].reset();
 		highest_slot = 0;
 	}
@@ -582,9 +634,34 @@ class sound_pool {
 			if (refresh_y_is_elevation) items[i].y_is_elevation = this.y_is_elevation;
 			items[i].update(listener_x, listener_y, listener_z, rotation, max_distance);
 		}
-		// Flush FMOD state after this listener update so standalone menu loops
-		// and game loops both process spatial changes immediately.
-		king_system_update();
+		// The game commits FMOD/Steam Audio once after every pool has submitted
+		// its transforms.  Flushing here would commit four partial listener
+		// states per frame and can produce audible discontinuities.
+	}
+
+	void set_lowpass(float cutoff_hz, float resonance = 1.0) {
+		if (cutoff_hz <= 0.0 || cutoff_hz >= 20000.0) {
+			if (pool_lowpass_cutoff > 0.0) {
+				pool_lowpass_cutoff = 0.0;
+				for (int i = 0; i <= highest_slot; i++) {
+					items[i].pool_lowpass_fx = "";
+					if (items[i].handle !is null && items[i].handle.active) {
+						items[i].handle.set_fx("$pool_lp");
+					}
+				}
+			}
+			return;
+		}
+
+		pool_lowpass_cutoff = cutoff_hz;
+		pool_lowpass_resonance = resonance;
+		string fx_cmd = "$pool_lp:lowpass:" + int(cutoff_hz) + ":" + int(resonance);
+		for (int i = 0; i <= highest_slot; i++) {
+			items[i].pool_lowpass_fx = fx_cmd;
+			if (items[i].handle !is null && items[i].handle.active) {
+				items[i].handle.set_fx(fx_cmd);
+			}
+		}
 	}
 
 	bool set_sound_owner(int slot, string owner, int priority = 0) {

@@ -277,11 +277,11 @@ void build_item_spawner()
 			int bint = int(string_to_number(sf.get_text(in_beacon_int)));
 
 			write_item_spawner(rx, rx2, ry, ry2, rz, rz2, sp_time, dmin_time, dmax_time, combined_item_spec, bsnd, bint);
-
+			
 			// Spawn 1 initial item randomly from the set
 			string initial_item = selected_ids[random(0, int(selected_ids.length()) - 1)];
 			spawn_ground_item(initial_item, 1, random(int(rx), int(rx2)), random(int(ry), int(ry2)), rz + 1, dmin_time, dmax_time, bsnd, bint);
-
+			
 			tempreset();
 			draw_map(mapname);
 			speak("Item spawner created with " + selected_ids.length() + " item types.");
@@ -298,7 +298,7 @@ void map_item_spawner_loop()
 		if (sp.spawn_timer.elapsed >= sp.spawn_interval)
 		{
 			sp.spawn_timer.restart();
-
+			
 			// Prevent excessive ground item accumulation on map (max 30 items)
 			if (ground_items.length() >= 30) continue;
 

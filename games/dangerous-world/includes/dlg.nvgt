@@ -5,6 +5,7 @@ while(true)
 {
 wait(5);
 update_game_world();
+joy_update();
 if (key_pressed(KEY_LEFT) or key_pressed(KEY_RIGHT) or key_pressed(KEY_UP) or key_pressed(KEY_DOWN) or kb_pressed("menu_left") or kb_pressed("menu_right") or kb_pressed("menu_up") or kb_pressed("menu_down"))
 {
 speak(message);
@@ -16,6 +17,7 @@ speak("Copied");
 }
 if (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER) or key_pressed(KEY_ESCAPE) or kb_pressed("menu_activate") or kb_pressed("menu_back"))
 {
+joy_menu_closed();
 break;
 }
 }

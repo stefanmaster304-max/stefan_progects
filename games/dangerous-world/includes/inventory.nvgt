@@ -1,150 +1,356 @@
+bool is_item_equipped(const string&in item_id)
+{
+	if (item_id == current_weapon_id && current_weapon_id != "") return true;
+	if (current_shield !is null && current_shield.id == item_id && current_shield.durability > 0) return true;
+	return false;
+}
+
+// inventory.nvgt - Dedicated Fast Cyclic Player Inventory Engine
+
 #include "package_manager.nvgt"
 #include "shield_system.nvgt"
 
-dictionary inv;
 int invpos = 0;
-bool takeobj = false;
-string quick_inventory_item = "";
+dictionary inv;
+bool takeobj;
 
-void give(const string&in item, int amount)
+void give(string item, int amount)
 {
-    if (item == "" || amount == 0) return;
-    int quantity = get_item_count(item) + amount;
-    if (quantity <= 0) inv.delete(item);
-    else inv.set(item, quantity);
+	int a;
+	if (!inv.exists(item))
+	{
+		if (amount <= 0) return;
+		inv.set(item, amount);
+	}
+	else
+	{
+		inv.get(item, a);
+		if (a + amount <= 0)
+		{
+			inv.delete(item);
+		}
+		else
+			inv.set(item, a + amount);
+	}
 }
 
-int get_item_count(const string&in item)
+int get_item_count(string item)
 {
-    int quantity = 0;
-    inv.get(item, quantity);
-    return quantity;
+	int amount = 0;
+	if (inv.exists(item))
+		inv.get(item, amount);
+	return amount;
 }
 
 int count_total_items()
 {
-    return int(inv.get_keys().length());
+	string[] keys = inv.get_keys();
+	return int(keys.length());
 }
 
-string[] get_all_inv_keys(const string&in filter = "*")
+string get_inventory_item_label(const string&in item_id)
 {
-    string[] all = inv.get_keys();
-    string[] result;
-    for (uint i = 0; i < all.length(); i++)
-    {
-        if (get_item_count(all[i]) > 0) result.insert_last(all[i]);
-    }
-    result.sort_ascending();
-    return result;
+	string name = get_item_display_name(item_id);
+	int count = get_item_count(item_id);
+	string status = "";
+	if (is_item_equipped(item_id)) status = ", equipped";
+
+	if (count > 0)
+		return name + ", " + count + (count == 1 ? " item" : " items") + status + ".";
+	else
+		return name + ", 0 in backpack" + status + ".";
+}
+
+string[] get_all_inv_keys()
+{
+	string[] all_keys = inv.get_keys();
+	string[] keys;
+	for (uint i = 0; i < all_keys.length(); i++)
+	{
+		int qty = 0;
+		inv.get(all_keys[i], qty);
+		if (qty > 0 && keys.find(all_keys[i]) == -1)
+		{
+			keys.insert_last(all_keys[i]);
+		}
+	}
+	if (current_weapon_id != "" && keys.find(current_weapon_id) == -1)
+	{
+		keys.insert_last(current_weapon_id);
+	}
+
+	keys.sort_ascending();
+	return keys;
 }
 
 string serialize_inventory()
 {
-    string[] keys = get_all_inv_keys();
-    string output = "";
-    for (uint i = 0; i < keys.length(); i++)
-    {
-        if (output != "") output += ";";
-        output += keys[i] + ":" + get_item_count(keys[i]);
-    }
-    return output;
+	string[] keys = inv.get_keys();
+	string out_str = "";
+	for (uint i = 0; i < keys.length(); i++)
+	{
+		int qty = 0;
+		inv.get(keys[i], qty);
+		if (qty > 0)
+		{
+			if (out_str != "") out_str += ";";
+			out_str += keys[i] + ":" + qty;
+		}
+	}
+	return out_str;
 }
 
 void deserialize_inventory(const string&in data)
 {
-    inv.delete_all();
-    string[] pairs = string_split(data, ";", false);
-    for (uint i = 0; i < pairs.length(); i++)
-    {
-        string[] parts = string_split(pairs[i], ":", false);
-        if (parts.length() < 2) continue;
-        int quantity = int(string_to_number(parts[1]));
-        if (parts[0] != "" && quantity > 0) inv.set(parts[0], quantity);
-    }
+	inv.delete_all();
+	if (data == "") return;
+	string[] pairs = string_split(data, ";", false);
+	for (uint i = 0; i < pairs.length(); i++)
+	{
+		string[] kv = string_split(pairs[i], ":", false);
+		if (kv.length() >= 2)
+		{
+			string item = kv[0];
+			int qty = int(string_to_number(kv[1]));
+			if (qty > 0) inv.set(item, qty);
+		}
+	}
 }
 
 string get_item_display_name(const string&in item_id)
 {
-    weapon_data@ weapon = find_weapon_data(item_id);
-    if (weapon !is null && weapon.name != "") return weapon.name;
-    item_data@ item = get_item_data(item_id);
-    if (item !is null && item.name != "") return item.name;
-    package_data@ package = find_package_data(item_id);
-    if (package !is null && package.name != "") return package.name;
-    return string_replace(item_id, "_", " ", true);
+	weapon_data@ w = find_weapon_data(item_id);
+	if (w !is null && w.name != "") return "[Weapon] " + w.name;
+
+	item_data@ it = get_item_data(item_id);
+	if (it !is null && it.name != "") return it.name;
+
+	package_data@ pkg = find_package_data(item_id);
+	if (pkg !is null && pkg.name != "") return pkg.name;
+
+	return string_replace(item_id, "_", " ", true);
 }
 
 string get_item_description(const string&in item_id)
 {
-    item_data@ item = get_item_data(item_id);
-    if (item !is null) return item.description;
-    package_data@ package = find_package_data(item_id);
-    if (package !is null) return package.description;
-    weapon_data@ weapon = find_weapon_data(item_id);
-    if (weapon !is null) return weapon.description;
-    return "";
+	item_data@ it = get_item_data(item_id);
+	if (it !is null)
+	{
+		if (it.category == "equipment") return build_equipment_description(it);
+		if (it.description != "") return it.description;
+	}
+
+	package_data@ pkg = find_package_data(item_id);
+	if (pkg !is null && pkg.description != "") return pkg.description;
+
+	weapon_data@ w = find_weapon_data(item_id);
+	if (w !is null)
+	{
+		if (w.description != "") return w.description;
+		if (w.melee) return "Melee Weapon. Damage " + w.min_damage + "-" + w.max_damage + ".";
+		return "Ranged Weapon. Class: " + w.wclass + ", Capacity: " + w.capacity + " " + w.ammo_display + ", Damage: " + w.min_damage + "-" + w.max_damage + ".";
+	}
+
+	return "";
 }
 
-void use(const string&in item_id)
+void use(string item)
 {
-    if (item_id == "" || get_item_count(item_id) <= 0) return;
-    weapon_data@ weapon = find_weapon_data(item_id);
-    if (weapon !is null) { equip_weapon(item_id); return; }
-    if (is_package(item_id)) { open_package_by_id(item_id); return; }
-    if (is_equipment_item(item_id)) { equip_equipment(item_id); return; }
-    item_data@ item = get_item_data(item_id);
-    if (item is null) { speak("This item cannot be used."); return; }
-    if (item.category == "consumables" && item.heal_amount > 0)
-    {
-        if (health >= maxhealth) { speak("Your health is already full."); return; }
-        health += item.heal_amount;
-        if (health > maxhealth) health = maxhealth;
-        if (item.sound_use != "")
-        {
-            string path = get_sound_path(item.sound_use);
-            if (path != "") p.play_stationary(path, false);
-        }
-        give(item_id, -1);
-        return;
-    }
-    speak("This item cannot be used.");
+	if (item == "") return;
+	load_all_items_config();
+	load_all_weapons_wpm();
+	load_all_packages();
+
+	weapon_data@ w = find_weapon_data(item);
+	if (w !is null)
+	{
+		equip_weapon(item);
+		return;
+	}
+
+	if (is_package(item))
+	{
+		open_package_by_id(item);
+		return;
+	}
+
+	if (is_equipment_item(item))
+	{
+		equip_equipment(item);
+		return;
+	}
+
+	item_data@ it = get_item_data(item);
+	if (it !is null)
+	{
+		if (it.subtype == "anti_death_card" || it.id == "anti_death_card")
+		{
+			speak("This anti-death card protects you automatically from your inventory upon taking fatal damage.");
+			return;
+		}
+
+		if (it.category == "packages")
+		{
+			open_package_by_id(item);
+			return;
+		}
+		else if (it.category == "currency")
+		{
+			return;
+		}
+		else if (it.category == "consumables")
+		{
+			if (health >= maxhealth)
+			{
+				speak("Your health is already at maximum.");
+				return;
+			}
+
+			if (it.sound_use != "")
+			{
+				string usnd = get_sound_path(it.sound_use);
+				if (usnd != "") p.play_stationary(usnd, false);
+			}
+
+			int heal_val = (it.heal_amount > 0) ? it.heal_amount : 250;
+			health += heal_val;
+			if (health > maxhealth) health = maxhealth;
+
+			give(item, -1);
+			return;
+		}
+		else
+		{
+			speak("Cannot use this item directly.");
+			return;
+		}
+	}
+
+	speak("Cannot use this item directly.");
 }
 
-void quick_inventory_cycle(int direction)
+void cycle_inventory(bool reverse = false)
 {
-    string[] keys = get_all_inv_keys();
-    if (keys.length() == 0) { quick_inventory_item = ""; speak("Your quick inventory is empty."); return; }
-    if (quick_inventory_item == "") invpos = (direction < 0) ? int(keys.length()) - 1 : 0;
-    else
-    {
-        int current = keys.find(quick_inventory_item);
-        if (current < 0) current = 0;
-        invpos = (current + direction + int(keys.length())) % int(keys.length());
-    }
-    quick_inventory_item = keys[invpos];
-    speak(get_item_display_name(quick_inventory_item) + ", " + get_item_count(quick_inventory_item));
+	load_all_items_config();
+	load_all_weapons_wpm();
+	load_all_packages();
+
+	string[] keys = get_all_inv_keys();
+	if (keys.length() == 0)
+	{
+		focuseditem = "";
+		speak("Inventory is empty.");
+		return;
+	}
+
+	int idx = -1;
+	if (focuseditem != "")
+	{
+		idx = keys.find(focuseditem);
+	}
+
+	if (idx == -1)
+	{
+		idx = reverse ? int(keys.length()) - 1 : 0;
+	}
+	else
+	{
+		if (reverse)
+		{
+			idx--;
+			if (idx < 0) idx = int(keys.length()) - 1;
+		}
+		else
+		{
+			idx++;
+			if (idx >= int(keys.length())) idx = 0;
+		}
+	}
+
+	focuseditem = keys[idx];
+
+	string catsnd = get_sound_path("player/invcat_change.ogg");
+	if (catsnd != "") p.play_stationary(catsnd, false);
+
+	speak(get_inventory_item_label(focuseditem));
 }
 
-void use_quick_inventory_item()
+bool activate_focused_item()
 {
-    if (quick_inventory_item == "" || get_item_count(quick_inventory_item) <= 0)
-    {
-        quick_inventory_item = "";
-        speak("No item is selected.");
-        return;
-    }
-    use(quick_inventory_item);
-    if (get_item_count(quick_inventory_item) <= 0)
-    {
-        quick_inventory_item = "";
-    }
-}
+	if (focuseditem == "") return false;
+	int count = get_item_count(focuseditem);
+	if (count <= 0 && !is_item_equipped(focuseditem))
+	{
+		focuseditem = "";
+		return false;
+	}
 
-void drop_quick_inventory_item()
-{
-    if (quick_inventory_item == "" || get_item_count(quick_inventory_item) <= 0) { speak("No item is selected."); return; }
-    spawn_ground_item(quick_inventory_item, 1, me.x, me.y, me.z);
-    give(quick_inventory_item, -1);
-    quick_inventory_item = "";
-    speak("Item dropped.");
+	weapon_data@ w = find_weapon_data(focuseditem);
+	if (w !is null)
+	{
+		if (current_weapon_id == focuseditem)
+		{
+			unequip_weapon(false);
+			speak("Unequipped " + (w.name != "" ? w.name : focuseditem) + ".");
+		}
+		else
+		{
+			equip_weapon(focuseditem);
+		}
+		focuseditem = "";
+		return true;
+	}
+
+	if (is_equipment_item(focuseditem))
+	{
+		equip_equipment(focuseditem);
+		focuseditem = "";
+		return true;
+	}
+
+	item_data@ it = get_item_data(focuseditem);
+	if (it !is null && it.category == "consumables")
+	{
+		if (it.subtype == "anti_death_card" || it.id == "anti_death_card")
+		{
+			speak("This anti-death card protects you automatically from your inventory upon taking fatal damage.");
+			focuseditem = "";
+			return true;
+		}
+
+		if (health >= maxhealth)
+		{
+			speak("Your health is already at maximum.");
+			return true;
+		}
+
+		if (it.sound_use != "")
+		{
+			string usnd = get_sound_path(it.sound_use);
+			if (usnd != "") p.play_stationary(usnd, false);
+		}
+
+		int heal_val = (it.heal_amount > 0) ? it.heal_amount : 250;
+		health += heal_val;
+		if (health > maxhealth) health = maxhealth;
+
+		give(focuseditem, -1);
+		if (get_item_count(focuseditem) <= 0)
+		{
+			focuseditem = "";
+		}
+		return true;
+	}
+
+	if (is_package(focuseditem) || (it !is null && it.category == "packages"))
+	{
+		open_package_by_id(focuseditem);
+		if (get_item_count(focuseditem) <= 0)
+		{
+			focuseditem = "";
+		}
+		return true;
+	}
+
+	return false;
 }

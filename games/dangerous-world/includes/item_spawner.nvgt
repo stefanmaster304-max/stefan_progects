@@ -43,11 +43,11 @@ class ground_item
 		y = gy;
 		z = gz;
 		sound_slot = -1;
-
+		
 		int d_min = (min_dec > 0) ? min_dec : 180000;
 		int d_max = (max_dec >= d_min) ? max_dec : d_min;
 		decay_time = (d_max > d_min) ? random(d_min, d_max) : d_min;
-
+		
 		beacon_sound = (bsnd != "") ? bsnd : "items/item.ogg";
 		beacon_interval = (bint > 0) ? bint : 1000;
 
@@ -90,7 +90,6 @@ void ground_item_loop()
 {
 	ensure_item_pool();
 	itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
-	pickup_nearby_ground_item();
 
 	item_beacon_candidate@[] candidates;
 
@@ -135,6 +134,47 @@ void ground_item_loop()
 		}
 
 		double dist = get_3d_distance(me.x, me.y, me.z, gi.x, gi.y, gi.z);
+
+		// Automatic ground item pickup within 4 steps
+		if (dist <= 4.0)
+		{
+			if (gi.sound_slot != -1)
+			{
+				itempool.destroy_sound(gi.sound_slot);
+				gi.sound_slot = -1;
+			}
+			item_data@ data = get_item_data(gi.item_id);
+			string snd_file = "";
+			if (data !is null && data.sound_loot != "")
+			{
+				snd_file = get_sound_path(data.sound_loot);
+				if (snd_file == "") snd_file = find_sound_in_disk("sounds/items/" + data.sound_loot);
+			}
+			if (snd_file == "" && data !is null && data.sound_pickup != "")
+			{
+				snd_file = get_sound_path(data.sound_pickup);
+				if (snd_file == "") snd_file = find_sound_in_disk("sounds/items/" + data.sound_pickup);
+			}
+			if (snd_file == "") snd_file = find_sound_in_disk("sounds/items/get" + gi.item_id + ".ogg");
+			if (snd_file == "") snd_file = get_sound_path("items/itemget1.ogg");
+			if (snd_file == "") snd_file = get_sound_path("itemget1.ogg");
+			if (snd_file != "" && file_exists(snd_file))
+			{
+				p.play_extended_3d(snd_file, me.x, me.y, me.z, gi.x, gi.y, gi.z, double(facing), 0, 0, 0, 0, 0, 0, false, 0, 0, 0, 100, false);
+			}
+
+			string grant_id = gi.item_id;
+			int grant_amount = gi.amount;
+			if (data !is null && data.category == "currency")
+			{
+				grant_id = currency_key_for_item(data);
+				int qty = (data.quantity > 0) ? data.quantity : data.capacity;
+				if (qty > 0) grant_amount = qty;
+			}
+			give(grant_id, grant_amount);
+			ground_items.remove_at(uint(i));
+			continue;
+		}
 
 		// 2. Audio beacon candidates within audible radius (15 tiles)
 		if (gi.beacon_sound != "" && dist <= 15.0)

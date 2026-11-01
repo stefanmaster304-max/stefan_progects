@@ -1,0 +1,383 @@
+// joystick.nvgt
+// Joystick/gamepad support built on the nvgt-joystick-helpers library
+// (https://github.com/IMS-Productions/nvgt-joystick-helpers.git), using the
+// extended version (as used by the free_strike project) that supports stick
+// and trigger axes, not just buttons. Every gameplay action that exists in
+// keybinds.nvgt (except the admin-only map manager) has a joystick binding,
+// so the whole game can be played from a gamepad.
+// Bindings are stored in a readable text file (data/joystick.txt) and can be
+// remapped from Options > Remap joystick keys. Both buttons and stick
+// directions can be assigned: the recorder captures the first stick moved,
+// the first trigger pressed, or the buttons held.
+// Defaults: the left stick moves the player, the right stick X turns (with
+// auto-repeat while held), and the D-pad is left free so it can be assigned
+// to anything else. The Back button is the joystick Shift modifier: holding
+// it and pressing the cycle button flips the inventory backward, exactly like
+// Shift+Tab on the keyboard. The keyboard Shift modifier itself is rebindable
+// through the Keybindings menu ("mod_shift").
+#include "joystick_helpers.nvgt"
+
+// Referenced by the helper's rumble presets; vibration is not used here.
+bool joystick_vibration_disabled = false;
+
+joystick@ stick = null;
+js_manager@ jsm = null;
+bool joy_enabled = false;
+
+// Per-frame held-button snapshot (21/22 are the trigger pseudo-buttons).
+int[] joy_down_buttons;
+// Buttons that were held when a menu closed. They stay blocked until
+// released, so the press that activated (or backed out of) a menu cannot also
+// trigger its gameplay action (e.g. A closes the inventory but must not make
+// the player jump).
+int[] joy_blocked_buttons;
+timer joy_turn_timer;
+// Edge tracking for axis turning: fires once per stick push, then repeats.
+dictionary joy_turn_was;
+
+int[]@ joy_buttons_for(string action)
+{
+    js_action@ a = jsm.get_action(action);
+    if (@a is null) return null;
+    return a.required_buttons;
+}
+
+bool joy_all_down(int[]@ btns)
+{
+    for (uint i = 0; i < btns.length(); i++)
+    {
+        if (joy_down_buttons.find(btns[i]) == -1) return false;
+    }
+    return true;
+}
+
+// True if the button is part of the shift modifier binding, so the modifier
+// itself is never suppressed by the active-combo rule below.
+bool joy_button_is_mod(int btn)
+{
+    js_action@ a = jsm.get_action("mod_shift");
+    if (@a is null) return false;
+    return a.required_buttons.find(btn) != -1;
+}
+
+// True if a button is currently a member of any fully-held combination.
+// Single-button actions whose button belongs to an active combo are
+// suppressed, so remapped combos (e.g. Back + A = coordinates) never
+// double-fire with their members (jump on A).
+bool joy_button_in_active_combo(int btn)
+{
+    if (joy_button_is_mod(btn)) return false;
+    string[]@ names = jsm.list_actions();
+    for (uint i = 0; i < names.length(); i++)
+    {
+        int[]@ btns = joy_buttons_for(names[i]);
+        if (btns is null or btns.length() < 2) continue;
+        if (btns.find(btn) == -1) continue;
+        if (joy_all_down(btns)) return true;
+    }
+    return false;
+}
+
+// Default button bindings. Movement and turning use sticks instead (see
+// joy_apply_default), so the D-pad is free for anything the player wants.
+int[]@ joy_default_buttons(string action)
+{
+    if (action == "jump") return {0};
+    if (action == "fire") return {22};
+    if (action == "reload") return {2};
+    if (action == "pause") return {6};
+    if (action == "inventory") return {3};
+    if (action == "drop_item") return {21};
+    if (action == "use") return {1};
+    if (action == "cycle_inv") return {7};
+    if (action == "mod_shift") return {4};
+    // Back (4) combos: status / world info
+    if (action == "coordinates") return {4, 0};
+    if (action == "location") return {4, 1};
+    if (action == "health_status") return {4, 2};
+    if (action == "ammo_status") return {4, 3};
+    if (action == "level_status") return {4, 5};
+    if (action == "kills") return {4, 8};
+    if (action == "fists") return {4, 6};
+    if (action == "facing") return {4, 21};
+    // Guide (5) combos: tracking / utilities
+    if (action == "tracking_query") return {5, 0};
+    if (action == "tracking_prev") return {5, 2};
+    if (action == "tracking_next") return {5, 3};
+    if (action == "tracking_startstop") return {5, 7};
+    if (action == "volume_up") return {5, 8};
+    if (action == "volume_down") return {5, 9};
+    if (action == "stairs_up") return {5, 10};
+    if (action == "stairs_down") return {5, 6};
+    if (action == "exit_game") return {5, 21};
+    return {};
+}
+
+// Applies the default binding for one action: sticks for movement and
+// turning, buttons for everything else.
+void joy_apply_default(string action)
+{
+    if (action == "move_forward") { jsm.set_action_axis(action, "y", -1); return; }
+    if (action == "move_back") { jsm.set_action_axis(action, "y", 1); return; }
+    if (action == "move_left") { jsm.set_action_axis(action, "x", -1); return; }
+    if (action == "move_right") { jsm.set_action_axis(action, "x", 1); return; }
+    if (action == "turn_left") { jsm.set_action_axis(action, "r_x", -1); return; }
+    if (action == "turn_right") { jsm.set_action_axis(action, "r_x", 1); return; }
+    int[]@ btns = joy_default_buttons(action);
+    jsm.set_action_buttons(action, btns);
+}
+
+// The older helper version could only store buttons, so any config file
+// without "axis:" lines comes from that version and is rebuilt with the new
+// stick-based defaults.
+void joy_migrate_config()
+{
+    string cfg = prefsdir + "/joystick.txt";
+    if (!file_exists(cfg)) return;
+    file f;
+    if (!f.open(cfg, "r")) return;
+    string content = f.read();
+    f.close();
+    if (content.find("axis:") == -1)
+        file_delete(cfg);
+}
+
+void joy_init()
+{
+    @stick = joystick();
+    if (@stick is null) return;
+    @jsm = js_manager(stick, prefsdir + "/joystick.txt");
+    if (!jsm.init(0)) return;
+    // Register every gameplay action except the admin-only map manager.
+    // Favorites (favorite_1 .. favorite_10) are part of KB_ACTIONS, so they
+    // are registered here too with both their keyboard and joystick defaults.
+    for (uint i = 0; i < KB_ACTIONS.length(); i++)
+    {
+        string a = KB_ACTIONS[i];
+        if (a == "builder") continue;
+        jsm.add_action(a, kb_action_name(a), {});
+        joy_apply_default(a);
+    }
+    joy_migrate_config();
+    jsm.load();
+    joy_enabled = true;
+}
+
+// Called once per frame while in-game.
+void joy_update()
+{
+    if (@jsm is null or @stick is null) return;
+    // If the joystick was unplugged (or absent at launch), keep trying so a
+    // controller plugged in later is picked up automatically.
+    if (!joy_enabled or !stick.active)
+    {
+        if (jsm.init(0)) joy_enabled = true;
+        else return;
+    }
+    jsm.update();
+    joy_down_buttons = stick.buttons_down();
+    if (joy_left_trigger_down(stick)) joy_down_buttons.insert_last(21);
+    if (joy_right_trigger_down(stick)) joy_down_buttons.insert_last(22);
+    // Unblock buttons that have been released since a menu closed.
+    if (joy_blocked_buttons.length() > 0)
+    {
+        for (int bi = int(joy_blocked_buttons.length()) - 1; bi >= 0; bi--)
+        {
+            if (joy_down_buttons.find(joy_blocked_buttons[bi]) == -1)
+                joy_blocked_buttons.remove_at(bi);
+        }
+    }
+}
+
+// Called right before a menu closes (see m_pro / dlg / buy). Buttons that are
+// held at that moment are blocked until the player releases them, so closing
+// a menu with A or B cannot fire jump/use in the resumed game loop.
+void joy_menu_closed()
+{
+    joy_blocked_buttons = joy_down_buttons;
+}
+
+// True if any button of this action is still blocked from a closed menu.
+bool joy_action_blocked(string action)
+{
+    if (joy_blocked_buttons.length() == 0) return false;
+    js_action@ a = jsm.get_action(action);
+    if (@a is null) return false;
+    for (uint i = 0; i < a.required_buttons.length(); i++)
+    {
+        if (joy_blocked_buttons.find(a.required_buttons[i]) != -1) return true;
+    }
+    return false;
+}
+
+// Single press: fire weapons, open menus, speak status, etc.
+bool joy_pressed(string action)
+{
+    if (!joy_enabled) return false;
+    // Axis turning on the right stick: one fire per push, then auto-repeat.
+    if (action == "turn_left" or action == "turn_right")
+    {
+        js_action@ a = jsm.get_action(action);
+        if (@a !is null and a.axis_type != "none" and a.axis_direction != 0)
+        {
+            bool held = jsm.check(action);
+            if (!held) { joy_turn_was.set(action, false); return false; }
+            bool was = false;
+            if (joy_turn_was.exists(action)) joy_turn_was.get(action, was);
+            if (!was) { joy_turn_was.set(action, true); joy_turn_timer.restart(); return true; }
+            if (joy_turn_timer.elapsed >= 250) { joy_turn_timer.restart(); return true; }
+            return false;
+        }
+    }
+    js_action@ a = jsm.get_action(action);
+    if (@a is null or !a.configured) return false;
+    if (joy_action_blocked(action)) return false;
+    if (a.required_buttons.length() == 1 and joy_button_in_active_combo(a.required_buttons[0])) return false;
+    return jsm.check(action, 1);
+}
+
+// Held state: movement, jumping, stairs, automatic fire.
+bool joy_down(string action)
+{
+    if (!joy_enabled) return false;
+    js_action@ a = jsm.get_action(action);
+    if (@a is null or !a.configured) return false;
+    if (joy_action_blocked(action)) return false;
+    if (a.required_buttons.length() == 1 and joy_button_in_active_combo(a.required_buttons[0])) return false;
+    return jsm.check(action);
+}
+
+string joy_action_name(string action)
+{
+    if (action == "mod_shift") return "Shift modifier";
+    return kb_action_name(action);
+}
+
+// Readable name for an axis binding ("Left Stick Up", "Right Stick Left"...).
+string joy_axis_name(string axis_type, int dir)
+{
+    if (axis_type == "x") return dir == -1 ? "Left Stick Left" : "Left Stick Right";
+    if (axis_type == "y") return dir == -1 ? "Left Stick Up" : "Left Stick Down";
+    if (axis_type == "r_x") return dir == -1 ? "Right Stick Left" : "Right Stick Right";
+    if (axis_type == "r_y") return dir == -1 ? "Right Stick Up" : "Right Stick Down";
+    if (axis_type == "z") return dir == -1 ? "Z axis negative" : "Z axis positive";
+    if (axis_type == "slider_1") return "Left Trigger";
+    if (axis_type == "slider_2") return "Right Trigger";
+    return axis_type + " axis";
+}
+
+string joy_combo_text(string action)
+{
+    js_action@ a = jsm.get_action(action);
+    if (@a is null) return "none";
+    if (a.required_buttons.length() > 0)
+    {
+        string[] names;
+        for (uint i = 0; i < a.required_buttons.length(); i++)
+            names.insert_last(js_button_to_string(a.required_buttons[i]));
+        return join(names, " + ");
+    }
+    if (a.axis_type != "none" and a.axis_direction != 0)
+        return joy_axis_name(a.axis_type, a.axis_direction);
+    return "none";
+}
+
+void joy_reset_defaults()
+{
+    string[]@ names = jsm.list_actions();
+    for (uint i = 0; i < names.length(); i++)
+        joy_apply_default(names[i]);
+    jsm.save();
+}
+
+void joystick_menu()
+{
+    if (!joy_enabled)
+    {
+        speak("No joystick detected.");
+        return;
+    }
+    setupmenu(false);
+    string[]@ names = jsm.list_actions();
+    for (uint i = 0; i < names.length(); i++)
+    {
+        m.add_item_tts(joy_action_name(names[i]) + ", " + joy_combo_text(names[i]), names[i]);
+    }
+    m.add_item_tts("Reset all to defaults", "js_reset");
+    m.add_item_tts("Back", "back");
+    while (true)
+    {
+        int r = m.run("Joystick Settings", true);
+        if (r == 0) return;
+        string sel = m.get_item_name(r);
+        if (sel == "back") return;
+        if (sel == "js_reset")
+        {
+            if (menuquestion("Reset all joystick bindings to defaults?") == 1)
+            {
+                joy_reset_defaults();
+                speak("Joystick bindings restored to defaults.");
+            }
+            joystick_menu();
+            return;
+        }
+        setupmenu(false);
+        m.add_item_tts("Assign a new button or stick", "assign");
+        m.add_item_tts("Clear binding", "clear");
+        m.add_item_tts("Reset to default", "reset");
+        m.add_item_tts("Back", "back");
+        int ra = m.run(joy_action_name(sel) + ", currently " + joy_combo_text(sel), true);
+        string sel2 = m.get_item_name(ra);
+        if (ra == 0 or sel2 == "back")
+        {
+            joystick_menu();
+            return;
+        }
+        if (sel2 == "reset")
+        {
+            joy_apply_default(sel);
+            jsm.save();
+            speak(joy_action_name(sel) + " reset to " + joy_combo_text(sel) + ".");
+            joystick_menu();
+            return;
+        }
+        if (sel2 == "clear")
+        {
+            jsm.clear_action_binding(sel);
+            jsm.save();
+            speak(joy_action_name(sel) + " is now unbound.");
+            joystick_menu();
+            return;
+        }
+        speak("Press the button, stick direction or combination for " + joy_action_name(sel) + ". Escape to cancel.");
+        js_recorder rec(stick);
+        rec.begin();
+        while (rec.is_recording)
+        {
+            wait(5);
+            rec.update();
+        }
+        if (!rec.has_captured)
+        {
+            speak("Binding cancelled.");
+            joystick_menu();
+            return;
+        }
+        if (rec.is_button_capture)
+        {
+            const int[]@ captured = rec.buttons;
+            int[] new_btns;
+            for (uint i = 0; i < captured.length(); i++)
+                new_btns.insert_last(captured[i]);
+            jsm.set_action_buttons(sel, new_btns);
+        }
+        else
+        {
+            jsm.set_action_axis(sel, rec.captured_axis_type, rec.captured_axis_direction, rec.captured_axis_deadzone, rec.captured_axis_threshold);
+        }
+        jsm.save();
+        speak(joy_action_name(sel) + " is now " + joy_combo_text(sel) + ".");
+        joystick_menu();
+        return;
+    }
+}

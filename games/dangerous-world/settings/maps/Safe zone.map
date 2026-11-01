@@ -1,0 +1,15 @@
+map: Safe zone
+minx: 0
+maxx: 20
+miny: 0
+maxy: 20
+minz: 0
+maxz: 20
+minlevel: 1
+maxlevel: 0
+minresurrection: 0
+maxresurrection: 0
+safezone:0:20:0:20:0:20
+zone:0:20:0:20:0:20:the safe zone
+platform:0:20:0:10:0:0:carpet2
+platform:0:20:11:20:0:0:marble1

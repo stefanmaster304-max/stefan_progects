@@ -1,0 +1,15 @@
+# ==========================================
+# Sound Folder and Audio Assets (User Rule)
+# ==========================================
+sounds/
+sounds/*
+*.ogg
+*.wav
+*.mp3
+
+# Temporary staging and scratch files
+update_temp/
+temp_remote_repo/
+*.tmp
+scratch_*.py
+step1_*.py

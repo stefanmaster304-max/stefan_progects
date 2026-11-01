@@ -2,7 +2,7 @@ void push_playing_music_volume(sound@ snd)
 {
 	if (@snd == null) return;
 	if (!snd.active) return;
-	snd.set_position(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+	snd.set_position(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 }
 
 string menu_music_choice = "random";
@@ -119,7 +119,7 @@ void play_story_sequence()
 	speak("Playing story. You cannot skip while the story is playing.");
 
 	sound story_snd;
-	if (story_snd.load(story_path, @no_sound_pack))
+	if (story_snd.load(story_path))
 	{
 		story_snd.play();
 		while (story_snd.playing)
@@ -147,8 +147,8 @@ void mainmenu()
 		setupmenu(true);
 		m.add_item_tts("Play","play");
 		m.add_item_tts("Listen to story","story");
+		m.add_item_tts("Check for updates","check_updates");
 		m.add_item_tts("Options","options");
-		m.add_item_tts("Check for updates", "updates");
 		m.add_item_tts("Exit","exit");
 		int mres=m.run("Main Menu",true);
 		string menuitem=m.get_item_name(mres);
@@ -244,14 +244,18 @@ void mainmenu()
 		{
 			play_story_sequence();
 		}
+		else if (menuitem=="check_updates")
+		{
+			bool updated = check_for_updates(true);
+			if (!updated)
+			{
+				m.play_music();
+			}
+		}
 		else if (menuitem=="options")
 		{
 			m.fade_music(15);
 			optionsmenu();
-		}
-		else if (menuitem=="updates")
-		{
-			check_game_updates();
 		}
 	}
 }
@@ -321,7 +325,7 @@ void select_menu_music_dialog()
 				string full_p = "sounds/menu sounds/" + fn;
 				if (file_exists(full_p))
 				{
-					preview_sound.load(full_p, @no_sound_pack);
+					preview_sound.load(full_p);
 					preview_sound.play_looped();
 				}
 			}
@@ -362,10 +366,11 @@ int wrap_box = form.create_checkbox("Disable menu wrapping", wrap_disabled == 1)
 int footdrag_box = form.create_checkbox("Foot dragging sound when standing still", footdrag_enabled == 1);
 int confirm_exit_box = form.create_checkbox("Confirm before exiting with Escape", confirm_exit == 1);
 int pain_sounds_box = form.create_checkbox("Play pain sounds when receiving attacks or damage", enable_player_pain_sounds == 1);
-int updates_box = form.create_checkbox("Check for updates when the game starts", check_updates_on_startup == 1);
+int startup_update_box = form.create_checkbox("Check for updates on startup", check_updates_on_startup == 1);
 int music_btn = form.create_button("Select Menu Music", false);
 int kbsound_btn = form.create_button("Select keyboard typing sound theme", false);
 int kb_btn = form.create_button("Keybindings", false);
+int joy_btn = form.create_button("Joystick Settings", false);
 int save_btn = form.create_button("Save", true);
 int cancel_btn = form.create_button("Cancel", false, true);
 
@@ -375,7 +380,7 @@ int last_wrap_box = form.is_checked(wrap_box) ? 1 : 0;
 int last_footdrag_box = form.is_checked(footdrag_box) ? 1 : 0;
 int last_confirm_exit_box = form.is_checked(confirm_exit_box) ? 1 : 0;
 int last_pain_box = form.is_checked(pain_sounds_box) ? 1 : 0;
-int last_updates_box = form.is_checked(updates_box) ? 1 : 0;
+int last_startup_box = form.is_checked(startup_update_box) ? 1 : 0;
 bool prefs_dirty = false;
 
 while (true)
@@ -411,11 +416,12 @@ last_pain_box = cur_pain;
 enable_player_pain_sounds = cur_pain;
 prefs_dirty = true;
 }
-int cur_updates = form.is_checked(updates_box) ? 1 : 0;
-if (cur_updates != last_updates_box)
+int cur_startup = form.is_checked(startup_update_box) ? 1 : 0;
+if (cur_startup != last_startup_box)
 {
-last_updates_box = cur_updates;
-check_updates_on_startup = cur_updates;
+last_startup_box = cur_startup;
+check_updates_on_startup = cur_startup;
+save_updater_settings();
 prefs_dirty = true;
 }
 if (prefs_dirty)
@@ -448,6 +454,13 @@ optionsmenu();
 break;
 }
 
+if (form.is_pressed(joy_btn))
+{
+form.reset();
+joystick_menu();
+optionsmenu();
+break;
+}
 
 if (form.is_pressed(cancel_btn))
 {
@@ -481,3 +494,4 @@ void storemenu()
 	// currency (gold / coins / dollars).
 	store_menu_cart(s);
 }
+

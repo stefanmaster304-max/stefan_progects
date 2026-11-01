@@ -4,11 +4,9 @@ if (!SCRIPT_COMPILED) return true;
 
 	// Verify unified bundles or fallback loose files in settings/
 	bool maps_ok = file_exists("settings/maps.dat") || file_exists("data/maps.dat") || file_exists("settings/maps/main.map") || file_exists("maps/main.map") || file_exists("settings/maps/main.map.dat") || file_exists("data/maps/main.map.dat") || directory_exists("settings/maps");
-	bool content_bundle_exists = file_exists("settings/contents.dat") || file_exists("data/contents.dat") || file_exists("contents.dat");
-	bool content_bundle_ok = content_bundle_exists && validate_contents_bundle();
-	bool items_ok = content_bundle_ok || file_exists("settings/items.dat") || file_exists("data/items.dat") || directory_exists("settings/items") || directory_exists("data/items");
-	bool weapons_ok = content_bundle_ok || file_exists("settings/weapons.dat") || file_exists("data/weapons.dat") || directory_exists("settings/weapons");
-	bool shops_ok = content_bundle_ok || file_exists("settings/shops.dat") || file_exists("settings/stores.dat") || file_exists("data/shops.dat") || file_exists("data/stores.dat") || directory_exists("settings/stores") || directory_exists("stores") || directory_exists("data/stores");
+	bool items_ok = file_exists("settings/items.dat") || file_exists("data/items.dat") || directory_exists("settings/items") || directory_exists("data/items");
+	bool weapons_ok = file_exists("settings/weapons.dat") || file_exists("data/weapons.dat") || directory_exists("settings/weapons") || directory_exists("data/weapons");
+	bool shops_ok = file_exists("settings/shops.dat") || file_exists("settings/stores.dat") || file_exists("data/shops.dat") || file_exists("data/stores.dat") || directory_exists("settings/stores") || directory_exists("stores") || directory_exists("data/stores");
 	bool sounds_ok = file_exists("sounds.dw") || file_exists("settings/sounds.dw") || directory_exists("sounds");
 
 	string checked = "";

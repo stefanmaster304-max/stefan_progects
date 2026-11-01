@@ -76,3 +76,4 @@ bool checkstores()
 	}
 	return false;
 }
+

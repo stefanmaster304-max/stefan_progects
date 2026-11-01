@@ -2,7 +2,7 @@
 //
 // A theme is a folder under sounds/keyboards/<theme>/ holding the five key
 // samples that ship with the game: type, cap, space, delete and return.
-// Every sample is played through the native NVGT sound pool `p` at the player's
+// Every sample is played through the King Audio sound pool `p` at the player's
 // own position, so it goes through the same spatialisation, HRTF and
 // voice-stealing path as every other sound in the game instead of a raw 2D
 // voice.
@@ -245,4 +245,4 @@ void select_keyboard_sound_theme_dialog()
 			}
 		}
 	}
-}
+}

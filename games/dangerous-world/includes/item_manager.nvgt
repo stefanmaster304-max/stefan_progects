@@ -372,14 +372,10 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 		btn_loot = form.create_button("&loot sound" + get_snd_count_label(it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
 		btn_draw = form.create_button("&draw sound" + get_snd_count_label(it.sound_draw));
 	}
-	else if (it.category == "materials")
-	{
-		btn_loot = form.create_button("&loot sound" + get_snd_count_label(it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
-		btn_draw = form.create_button("&draw sound" + get_snd_count_label(it.sound_draw));
-	}
 
 	form.set_disallowed_chars(in_mstack, "0123456789", true, "Numbers only.");
 	if (in_heal != -1) form.set_disallowed_chars(in_heal, "0123456789", true, "Numbers only.");
+
 	if (in_cap != -1) form.set_disallowed_chars(in_cap, "0123456789", true, "Numbers only.");
 
 	int b_give = -1;
@@ -403,9 +399,6 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 		update_game_world();
 		form.monitor();
 
-		// Each restore amount field is only shown while its checkbox is
-		// checked. Unchecking a restore option hides the related amount box
-		// Health restoration is the only supported survival effect.
 		if (it.category == "consumables" && cb_restore_health != -1)
 		{
 			bool v_health = form.is_checked(cb_restore_health);
@@ -512,17 +505,10 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 
 				if (it.category == "consumables")
 				{
-					// Each restore amount is only kept for the restore type that is
-					// actually checked; unchecking a type zeroes its amount so a
-					// healing item never saves a hidden health effect.
 					if (cb_restore_health != -1)
 					{
 						it.restores_health = form.is_checked(cb_restore_health);
 						if (!it.restores_health) it.heal_amount = 0;
-					}
-					{
-					}
-					{
 					}
 					if (in_heal != -1 && it.restores_health) it.heal_amount = int(string_to_number(form.get_text(in_heal)));
 				}

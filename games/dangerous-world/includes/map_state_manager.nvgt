@@ -1,4 +1,6 @@
-// Preserves ground items and item spawners when changing maps in-game.
+// includes/map_state_manager.nvgt - Map state persistence across seamless transitions
+// Preserves ground items and item spawners when switching maps
+
 class map_persistent_state
 {
 	string map_name;
@@ -10,23 +12,33 @@ dictionary g_map_states;
 
 bool has_saved_map_state(const string&in mname)
 {
-	return mname != "" && g_map_states.exists(mname);
+	if (mname == "") return false;
+	return g_map_states.exists(mname);
 }
 
 void save_current_map_state()
 {
 	if (mapname == "") return;
-	map_persistent_state@ state = map_persistent_state();
-	state.map_name = mapname;
-	for (uint i = 0; i < ground_items.length(); i++)
+	map_persistent_state@ st = map_persistent_state();
+	st.map_name = mapname;
+
+	for (uint k = 0; k < ground_items.length(); k++)
 	{
-		if (ground_items[i] is null) continue;
-		ground_items[i].sound_slot = -1;
-		state.items.insert_last(ground_items[i]);
+		if (ground_items[k] !is null)
+		{
+			ground_items[k].sound_slot = -1;
+			st.items.insert_last(ground_items[k]);
+		}
 	}
-	for (uint i = 0; i < map_item_spawners.length(); i++)
-		if (map_item_spawners[i] !is null) state.item_spawners.insert_last(map_item_spawners[i]);
-	g_map_states.set(mapname, @state);
+
+	for (uint m = 0; m < map_item_spawners.length(); m++)
+	{
+		if (map_item_spawners[m] !is null)
+			st.item_spawners.insert_last(map_item_spawners[m]);
+	}
+
+	g_map_states.set(mapname, @st);
+
 	ground_items.resize(0);
 	map_item_spawners.resize(0);
 }
@@ -35,12 +47,12 @@ void restore_map_state(const string&in mname)
 {
 	if (mname != "" && g_map_states.exists(mname))
 	{
-		map_persistent_state@ state = null;
-		g_map_states.get(mname, @state);
-		if (state !is null)
+		map_persistent_state@ st = null;
+		g_map_states.get(mname, @st);
+		if (st !is null)
 		{
-			ground_items = state.items;
-			map_item_spawners = state.item_spawners;
+			ground_items = st.items;
+			map_item_spawners = st.item_spawners;
 			return;
 		}
 	}
@@ -50,7 +62,10 @@ void restore_map_state(const string&in mname)
 
 void clear_saved_map_state(const string&in mname)
 {
-	if (mname != "" && g_map_states.exists(mname)) g_map_states.delete(mname);
+	if (mname != "" && g_map_states.exists(mname))
+	{
+		g_map_states.delete(mname);
+	}
 }
 
 void clear_all_map_states()

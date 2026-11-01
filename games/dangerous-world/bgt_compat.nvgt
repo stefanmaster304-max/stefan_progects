@@ -86,16 +86,8 @@ shared double string_to_number(const string& in num) {
 	return parse_double(num.trim_whitespace_left());
 }
 bool show_game_window(const string& in title) {
-	game_window@ window = show_window(title);
-	return window !is null;
+	return show_window(title) !is null;
 }
-
-shared double clamp(double value, double low, double high) {
-	if (value < low) return low;
-	if (value > high) return high;
-	return value;
-}
-
 
 bool hide_game_window() {
 	return hide_window();
@@ -205,22 +197,21 @@ string string_decrypt(const string& in the_string, const string& in encryption_k
 bool file_encrypt(const string&in input_file, const string&in output_file, string key) {
 	file input;
 	if (!input.open(input_file, "rb")) return false;
-	string contents = input.read();
-	input.close();
 	file output;
 	if (!output.open(output_file, "wb")) return false;
-	output.write(string_encrypt(contents, key));
-	output.close();
+	asset_encryptor encryptor(output, key);
+	encryptor.write(input.read());
+	input.close();
+	encryptor.close();
 	return true;
 }
 bool file_decrypt(const string&in input_file, const string&in output_file, string key) {
 	file input;
 	if (!input.open(input_file, "rb")) return false;
-	string contents = input.read();
-	input.close();
 	file output;
 	if (!output.open(output_file, "wb")) return false;
-	output.write(string_decrypt(contents, key));
+	output.write(asset_decryptor(input, key).read());
+	input.close();
 	output.close();
 	return true;
 }
@@ -314,3 +305,4 @@ typedef int long;
 typedef uint ulong;
 typedef int16 short;
 typedef uint16 ushort;
+

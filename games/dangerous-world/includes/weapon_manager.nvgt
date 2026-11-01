@@ -456,7 +456,7 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 	form.set_disallowed_chars(in_capacity, "0123456789", true, "Numbers only.");
 	int in_ammo_type = form.create_input_box("ammo type description", w.ammo_type, "", 0, false, false, view_only);
 	int in_reserve_item = form.create_input_box("reserve ammunition item id", w.reserve_item, "", 0, false, false, view_only);
-
+	
 	int btn_pick_ammo = -1;
 	if (!view_only)
 	{
@@ -468,7 +468,7 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 	// No reload-time field: reload duration is the length of the weapon's
 	// reload sound. The weapon cannot fire while that sound is playing.
 	int in_ammo_display = form.create_input_box("ammo display unit (rounds, shells, cells)", w.ammo_display, "", 0, false, false, view_only);
-
+	
 	int in_fire_modes_list = form.create_list("available fire modes (use arrow keys to focus and select)", 0, false, true);
 	for (uint mi = 0; mi < available_fire_mode_keys.length(); mi++)
 	{
@@ -595,7 +595,7 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 				w.reserve_label = form.get_text(in_reserve_label);
 				w.is_magazine = form.is_checked(in_is_mag);
 				w.ammo_display = form.get_text(in_ammo_display);
-
+				
 				int mode_pos = form.get_list_position(in_fire_modes_list);
 				if (mode_pos >= 0 && mode_pos < int(available_fire_mode_keys.length()))
 				{

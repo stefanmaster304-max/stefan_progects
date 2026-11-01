@@ -119,9 +119,11 @@ void store_menu_cart(store_cfg@ s)
 	{
 		wait(5);
 		update_game_world();
+		joy_update();
 		if (key_pressed(KEY_ESCAPE) || kb_pressed("menu_back"))
 		{
 			play("menuclick");
+			joy_menu_closed();
 			break;
 		}
 

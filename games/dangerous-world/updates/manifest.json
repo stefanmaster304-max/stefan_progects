@@ -1,7 +1,23 @@
 {
   "schema": 1,
-  "game": { "version": "0.1.0.1" },
-  "contents": { "version": "1.0.0" },
-  "maps": { "version": "1.0.0" },
-  "sounds": { "version": "1.0.0" }
+  "game": {
+    "version": "0.1.0.2",
+    "url": "",
+    "size": 0
+  },
+  "contents": {
+    "version": "1.0.0",
+    "url": "",
+    "size": 0
+  },
+  "maps": {
+    "version": "1.0.0",
+    "url": "",
+    "size": 0
+  },
+  "sounds": {
+    "version": "1.0.0",
+    "url": "",
+    "size": 0
+  }
 }

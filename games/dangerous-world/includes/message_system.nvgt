@@ -1,8 +1,9 @@
-// Periodic announcements, delivered every 15 minutes while the world is active.
+// includes/message_system.nvgt - Automatic Periodic Broadcast Messages (Every 10-15 Minutes)
+
 const string BROADCAST_FILE = "settings/broadcasts.txt";
-const int BROADCAST_INTERVAL_MS = 15 * 60 * 1000;
 
 timer broadcast_timer;
+int next_broadcast_interval_ms = 600000; // 10 mins default
 string[] broadcast_messages;
 bool broadcast_initialized = false;
 sound broadcast_sound;
@@ -10,14 +11,21 @@ sound broadcast_sound;
 void ensure_broadcast_file()
 {
 	if (!directory_exists("settings")) directory_create("settings");
-	if (file_exists(BROADCAST_FILE)) return;
-	file f;
-	if (f.open(BROADCAST_FILE, "w"))
+	if (!file_exists(BROADCAST_FILE))
 	{
-		f.write("Tip: Check the map and listen for nearby sounds before moving on.\r\n");
-		f.write("Announcement: Explore carefully and keep your equipment ready.\r\n");
-		f.write("Tip: Visit shops to restock useful equipment.\r\n");
-		f.close();
+		string default_content = "";
+		default_content += "Tip: Check your backpack and gear before long journeys.\r\n";
+		default_content += "Notice: Keep your weapons loaded and stay alert.\r\n";
+		default_content += "Community: Join our Discord server to share feedback and meet other survivors!\r\n";
+		default_content += "Tip: Use your listening skills and check surrounding zones frequently.\r\n";
+		default_content += "Announcement: Remember to visit stores regularly to replenish supplies.\r\n";
+
+		file f;
+		if (f.open(BROADCAST_FILE, "w"))
+		{
+			f.write(default_content);
+			f.close();
+		}
 	}
 }
 
@@ -25,23 +33,47 @@ void load_broadcast_messages()
 {
 	broadcast_messages.resize(0);
 	ensure_broadcast_file();
+
 	file f;
-	if (!f.open(BROADCAST_FILE, "r")) return;
-	string content = f.read(f.get_size());
-	f.close();
-	string[]@ lines = string_split(string_replace(content, "\r", "", true), "\n", true);
-	if (lines is null) return;
-	for (uint i = 0; i < lines.length(); i++)
+	if (f.open(BROADCAST_FILE, "r"))
 	{
-		string line = lines[i].trim_whitespace();
-		if (line != "" && !string_starts_with(line, "#") && !string_starts_with(line, ";"))
-			broadcast_messages.insert_last(line);
+		string content = f.read(f.get_size());
+		f.close();
+		string[]@ lines = string_split(content, "\n", true);
+		if (lines !is null)
+		{
+			for (uint i = 0; i < lines.length(); i++)
+			{
+				string line = lines[i].trim_whitespace();
+				if (line != "" && !string_starts_with(line, "#") && !string_starts_with(line, ";"))
+				{
+					broadcast_messages.insert_last(line);
+				}
+			}
+		}
+	}
+}
+
+void play_broadcast_sound()
+{
+	string snd_path = find_sound_in_disk("sounds/misc/notify.ogg");
+	if (snd_path == "") snd_path = find_sound_in_disk("sounds/misk/notify.ogg");
+	if (snd_path == "") snd_path = get_sound_path("misc/notify.ogg;notify.ogg");
+	if (snd_path != "")
+	{
+		broadcast_sound.stop();
+		if (broadcast_sound.load(snd_path))
+		{
+			broadcast_sound.play();
+		}
 	}
 }
 
 void init_broadcast_system()
 {
 	load_broadcast_messages();
+	// Random interval between 10 and 15 minutes
+	next_broadcast_interval_ms = random(10 * 60 * 1000, 15 * 60 * 1000);
 	broadcast_timer.restart();
 	broadcast_initialized = true;
 }
@@ -49,11 +81,42 @@ void init_broadcast_system()
 void broadcast_loop()
 {
 	if (!broadcast_initialized) init_broadcast_system();
-	if (broadcast_timer.elapsed < BROADCAST_INTERVAL_MS) return;
-	broadcast_timer.restart();
-	if (broadcast_messages.length() == 0) load_broadcast_messages();
-	if (broadcast_messages.length() == 0) return;
-	string notification = get_sound_path("misc/notify.ogg;notify.ogg");
-	if (notification != "" && broadcast_sound.load(notification, @no_sound_pack)) broadcast_sound.play();
-	speak(broadcast_messages[random(0, int(broadcast_messages.length()) - 1)]);
+
+	if (broadcast_timer.elapsed >= next_broadcast_interval_ms)
+	{
+		broadcast_timer.restart();
+		next_broadcast_interval_ms = random(10 * 60 * 1000, 15 * 60 * 1000);
+
+		if (broadcast_messages.length() == 0)
+		{
+			load_broadcast_messages();
+		}
+
+		if (broadcast_messages.length() > 0)
+		{
+			int idx = random(0, broadcast_messages.length() - 1);
+			string msg = broadcast_messages[idx];
+			play_broadcast_sound();
+			speak(msg);
+		}
+	}
+}
+
+string format_player_death_message(const string&in killer, double x, double y, double z)
+{
+	string m_name = (mapname != "" ? mapname : "main");
+	string k = (killer != "" ? killer.trim_whitespace() : "an attack");
+	string k_lower = string_to_lower_case(k);
+
+	string article = "";
+	if (!string_starts_with(k_lower, "a ") && !string_starts_with(k_lower, "an ") && !string_starts_with(k_lower, "the "))
+	{
+		string first_char = string_left(k_lower, 1);
+		if (first_char == "a" || first_char == "e" || first_char == "i" || first_char == "o" || first_char == "u")
+			article = "an ";
+		else
+			article = "a ";
+	}
+
+	return "You were killed by " + article + k_lower + " on the " + m_name + " map.";
 }

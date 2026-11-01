@@ -169,7 +169,7 @@ int get_default_shield_durability()
 // Processes an incoming hit against the worn shield.
 //
 // damage_source describes where the hit came from ("bullet" for weapon fire,
-// "projectile" / "impact" / "explosive", ...). Shield durability is a dynamic
+// "animal" / "bite" / "claw", ...). Shield durability is a dynamic
 // pool of damage points. Every hit drains the pool by the incoming damage.
 // When an attack breaks the shield, only the shield breaking sound is played
 // (no hit sound), and the blow is completely spent destroying the shield

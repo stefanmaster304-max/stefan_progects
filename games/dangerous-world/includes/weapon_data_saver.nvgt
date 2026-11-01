@@ -901,6 +901,11 @@ void parse_weapons_bundle(const string&in content)
 			}
 			continue;
 		}
+		else if (string_starts_with(line, "["))
+		{
+			@current = null;
+			continue;
+		}
 
 		if (current is null) continue;
 
@@ -994,32 +999,47 @@ void load_all_weapons_wpm(bool force = false)
 	weapon_registry.resize(0);
 	ensure_weapon_directories();
 
-	// 1. Primary: Load single unified encrypted weapons.dat
-	string enc = SCRIPT_COMPILED ? get_contents_payload("weapons") : "";
-	if (enc == "")
+	// 1. Primary: Load single unified encrypted contents.dat
+	string content_bundle = file_exists(CONTENTS_DAT_PATH) ? CONTENTS_DAT_PATH : (file_exists("data/contents.dat") ? "data/contents.dat" : (file_exists("contents.dat") ? "contents.dat" : ""));
+	if (content_bundle != "")
 	{
-		string bundle_path = file_exists(WEAPONS_DAT_PATH) ? WEAPONS_DAT_PATH : (file_exists("data/weapons.dat") ? "data/weapons.dat" : (file_exists("weapons.dat") ? "weapons.dat" : ""));
-		if (bundle_path != "")
+		file cf;
+		if (cf.open(content_bundle, "rb"))
 		{
-			file f;
-			if (f.open(bundle_path, "rb"))
+			string enc = cf.read();
+			cf.close();
+			string decrypted = string_decrypt(enc, CONTENT_ENC_KEY);
+			if (decrypted.length() > 0)
 			{
-				enc = f.read();
-				f.close();
+				parse_weapons_bundle(decrypted);
+				if (weapon_registry.length() > 0)
+				{
+					weapon_cache_version++;
+					weapons_loaded_once = true;
+					return;
+				}
 			}
 		}
 	}
-	if (enc != "")
+
+	string bundle_path = file_exists(WEAPONS_DAT_PATH) ? WEAPONS_DAT_PATH : (file_exists("data/weapons.dat") ? "data/weapons.dat" : (file_exists("weapons.dat") ? "weapons.dat" : ""));
+	if (bundle_path != "")
 	{
-		string decrypted = string_decrypt(enc, WEAPON_ENC_KEY);
-		if (decrypted.length() > 0)
+		file f;
+		if (f.open(bundle_path, "rb"))
 		{
-			parse_weapons_bundle(decrypted);
-			if (weapon_registry.length() > 0)
+			string enc = f.read();
+			f.close();
+			string decrypted = string_decrypt(enc, WEAPON_ENC_KEY);
+			if (decrypted.length() > 0)
 			{
-				weapon_cache_version++;
-				weapons_loaded_once = true;
-				return;
+				parse_weapons_bundle(decrypted);
+				if (weapon_registry.length() > 0)
+				{
+					weapon_cache_version++;
+					weapons_loaded_once = true;
+					return;
+				}
 			}
 		}
 	}
@@ -1032,7 +1052,7 @@ void load_all_weapons_wpm(bool force = false)
 		{
 			string folder = WEAPON_DIR + "/" + existing_dirs[c];
 			if (!directory_exists(folder)) continue;
-
+			
 			// Plain .wpm files
 			string[]@ files = find_files(folder + "/*.wpm");
 			if (files !is null)
@@ -1127,7 +1147,7 @@ weapon_data@ find_weapon_data(const string&in id)
 		string reg_norm = string_to_lower_case(string_replace(weapon_registry[i].id, "_", " ", true));
 		if (reg_norm == norm) return weapon_registry[i];
 	}
-	// 3. Fallback common aliases for legacy configurations and stores
+	// 3. Fallback common aliases (for legacy configs, stores)
 	if (norm == "glock 17" || norm == "glock17") return find_weapon_data("glock_17_pistol");
 	if (norm == "ak47" || norm == "ak 47" || norm == "ak47 assault rifle") return find_weapon_data("AK74");
 	if (norm == "benelli m4" || norm == "benelli m4 shotgun") return find_weapon_data("beneli m4");
@@ -1214,7 +1234,7 @@ bool delete_weapon_wpm(const string&in id)
 
 bool is_weapon_encrypted(const string&in id = "")
 {
-	return file_exists(WEAPONS_DAT_PATH) || file_exists("data/weapons.dat") || file_exists("weapons.dat");
+	return file_exists(CONTENTS_DAT_PATH) || file_exists("data/contents.dat") || file_exists("contents.dat") || file_exists(WEAPONS_DAT_PATH) || file_exists("data/weapons.dat") || file_exists("weapons.dat");
 }
 
 void encrypt_all_weapons_silent()
