@@ -396,7 +396,7 @@ void build_travelpoint()
 			if (tmin_res == "") tmin_res = "0";
 			if (tmax_res == "") tmax_res = "0";
 
-			save_to_map("travelpoint:" + x1 + ":" + x2 + ":" + y1 + ":" + y2 + ":" + z1 + ":" + z2 + ":" + tmap + ":" + dx1 + ":" + dx2 + ":" + dy1 + ":" + dy2 + ":" + dz1 + ":" + dz2 + ":" + ttxt + ":" + tmin_lvl + ":" + tmax_lvl + ":" + tmin_res + ":" + tmax_res);
+			save_to_map("travelpoint:" + x1 + ":" + x2 + ":" + y1 + ":" + y2 + ":" + z1 + ":" + z2 + ":" + tmap + ":" + dx1 + ":" + dx2 + ":" + dy1 + ":" + dy2 + ":" + dz1 + ":" + dz2 + ":" + ttxt + ":" + tmin_lvl + ":" + tmax_lvl + ":" + tmin_res + ":" + tmax_res + ":manual");
 			return;
 		}
 	}
