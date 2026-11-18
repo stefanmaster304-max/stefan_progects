@@ -1237,7 +1237,11 @@ void npc_save_spawner_to_map(int enemies, int friends, int respawn_ms)
 	if (respawn_ms < 1000) respawn_ms = 1000;
 
 	string path = MAP_DIR + "/" + mapname + ".map";
-	string content = get_map_content_by_name(mapname);
+	// Read the map file itself, not the parsed cache, so every unrelated line
+	// (sources, zones, spawners of other tools) survives the rewrite untouched.
+	string content = "";
+	if (file_exists(path)) content = file_get_contents(path);
+	if (content == "") content = get_map_content_by_name(mapname);
 	string new_line = "npcspawner:" + enemies + ":" + friends + ":" + respawn_ms;
 
 	string[]@ raw = string_split(string_replace(content, "\r", "", true), "\n", false);

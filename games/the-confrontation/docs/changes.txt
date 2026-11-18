@@ -116,3 +116,12 @@ PLAYER
 
 FIXED: Dying now empties the inventory. The death save wrote the inventory as it was, so the items came back with the next life; the inventory and the equipment are cleared before the death save is written.
 FIXED: Firing is blocked inside a safe zone even when a firing path does not go through the game loop's own safe zone check.
+
+REVERB ZONE PREVIEW
+
+ADDED: The reverb zone builder now offers a reverb type list before the sliders: room, small room, long room, hall, cathedral, cave, bathroom, arena, hangar, forest, tunnel and underwater. Choosing a type sets every slider at once.
+FIXED: The looping platform sound of the builder now goes through its own mixer with the native King Audio reverb attached, so the effect is heard while the sliders and the type are being changed instead of only after the zone is saved. Any slider change reconfigures the loop immediately.
+
+MAPS
+
+FIXED: Saving the enemy and ally spawner rewrote the map from the parsed cache and could drop unrelated lines such as a map sound source. The spawner now reads the map file itself, replaces only its own line and keeps every other line untouched.
