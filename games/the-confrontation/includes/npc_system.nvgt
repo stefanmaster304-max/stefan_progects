@@ -24,8 +24,9 @@
 
 const int NPC_NEAR_FIRE_DISTANCE = 10;
 const int NPC_LOCAL_SOUND_DISTANCE = 12;
+const double NPC_ITEM_SEARCH_DISTANCE = 25.0;
+const int NPC_ITEM_SEARCH_MS = 800;
 const double NPC_DISTANT_FIRE_GAIN_DB = 6.0;
-const int NPC_SIGHT_DISTANCE = 90;
 const int NPC_DEATH_LINGER_MS = 1000;
 
 // ---------------------------------------------------------------------------
@@ -43,6 +44,8 @@ class npc_weapon
 	string id;
 	string name;
 	string ammo_type;
+	string reserve_item;
+	bool is_magazine;
 	string fire_mode;
 	bool melee;
 	int firetime;
@@ -66,6 +69,8 @@ class npc_weapon
 		id = "";
 		name = "";
 		ammo_type = "";
+		reserve_item = "";
+		is_magazine = false;
 		fire_mode = "semi";
 		melee = false;
 		firetime = 500;
@@ -128,6 +133,8 @@ npc_weapon@ npc_make_weapon(weapon_data@ w)
 	nw.id = w.id;
 	nw.name = (w.name != "") ? w.name : w.id;
 	nw.ammo_type = w.ammo_type;
+	nw.reserve_item = w.reserve_item;
+	nw.is_magazine = w.is_magazine;
 	nw.fire_mode = npc_first_fire_mode(w.fire_modes);
 	nw.melee = w.melee;
 	nw.firetime = (w.firetime > 0) ? w.firetime : 500;
@@ -194,6 +201,11 @@ class npc_actor
 	int patrol_x, patrol_y;
 	timer patrol_timer;
 
+	// Ground item the NPC is walking to while it has nothing left to use.
+	// 0 means no item chosen and triggers a new search after a short pause.
+	int item_target;
+	timer item_search_timer;
+
 	// Target bookkeeping. target_is_player marks the only case in which this
 	// NPC is allowed to damage the player.
 	npc_actor@ target_actor;
@@ -224,6 +236,7 @@ class npc_actor
 		reloading = false;
 		patrol_x = 0;
 		patrol_y = 0;
+		item_target = 0;
 		@target_actor = null;
 		target_is_player = false;
 		lasthit = "";
@@ -550,6 +563,7 @@ npc_actor@ npc_spawn_actor(bool is_enemy)
 	a.fire_timer.restart();
 	a.move_timer.restart();
 	a.think_timer.restart();
+	a.item_search_timer.restart();
 
 	npc_assign_arsenal(a);
 	npc_assign_healing(a);
@@ -688,7 +702,10 @@ npc_actor@ npc_nearest_opponent(npc_actor@ a, bool &out is_player, int &out tx, 
 {
 	is_player = false;
 	tx = a.x; ty = a.y; tz = a.z;
-	int best = NPC_SIGHT_DISTANCE + 1;
+	// The original files give every enemy and friend a target anywhere on the
+	// map and let it walk there, so the whole map is crossed and the two sides
+	// only shoot when they meet inside a weapon's range.
+	int best = 1000000;
 	npc_actor@ found = null;
 
 	for (uint i = 0; i < npc_actors.length(); i++)
@@ -738,13 +755,10 @@ int npc_step_interval(npc_actor@ a)
 bool npc_target_valid(npc_actor@ a)
 {
 	if (a is null) return false;
-	if (a.target_is_player)
-	{
-		return (get_3d_distance(double(a.x), double(a.y), double(a.z), me.x, me.y, me.z) <= double(NPC_SIGHT_DISTANCE));
-	}
+	if (a.target_is_player) return true;
 	if (a.target_actor is null) return false;
 	if (a.target_actor.dead) return false;
-	return (get_3d_distance(double(a.x), double(a.y), double(a.z), double(a.target_actor.x), double(a.target_actor.y), double(a.target_actor.z)) <= double(NPC_SIGHT_DISTANCE));
+	return true;
 }
 
 void npc_try_move(npc_actor@ a, int nx, int ny)
@@ -758,29 +772,34 @@ void npc_try_move(npc_actor@ a, int nx, int ny)
 	if (step != "") npc_play_positional(step, a.x, a.y, a.z);
 }
 
+// Walks exactly like the original enemy and friend files: x first, then y, with
+// both axes allowed to change on the same tick, one tile per walking interval
+// and the same facing values.
 void npc_step_toward(npc_actor@ a, int tx, int ty)
 {
 	if (a is null) return;
-	if (a.x == tx && a.y == ty) return;
-	int adx = abs(tx - a.x);
-	int ady = abs(ty - a.y);
-	int sx = (tx > a.x) ? 1 : (tx < a.x ? -1 : 0);
-	int sy = (ty > a.y) ? 1 : (ty < a.y ? -1 : 0);
+	bool moved = false;
+	if (a.x < tx && npc_can_step_to(a.x + 1, a.y, a.z)) { a.x += 1; a.facing = east; moved = true; }
+	else if (a.x > tx && npc_can_step_to(a.x - 1, a.y, a.z)) { a.x -= 1; a.facing = west; moved = true; }
+	if (a.y < ty && npc_can_step_to(a.x, a.y + 1, a.z)) { a.y += 1; a.facing = north; moved = true; }
+	else if (a.y > ty && npc_can_step_to(a.x, a.y - 1, a.z)) { a.y -= 1; a.facing = south; moved = true; }
+	if (moved)
+	{
+		string tile = get_tile_at(a.x, a.y, a.z);
+		string step = get_platform_sound(tile, "step");
+		if (step != "") npc_play_positional(step, a.x, a.y, a.z);
+	}
+}
 
-	if (adx > 0 && (ady == 0 || adx >= ady))
+void npc_patrol_tick(npc_actor@ a)
+{
+	if (a is null) return;
+	if (get_3d_distance(double(a.x), double(a.y), double(a.z), double(a.patrol_x), double(a.patrol_y), double(a.z)) < 1.0 || a.patrol_timer.elapsed > 20000)
+		npc_pick_patrol(a);
+	if (a.move_timer.elapsed >= npc_step_interval(a))
 	{
-		int nx = a.x + sx;
-		if (npc_can_step_to(nx, a.y, a.z)) { npc_try_move(a, nx, a.y); return; }
-	}
-	if (ady > 0)
-	{
-		int ny = a.y + sy;
-		if (npc_can_step_to(a.x, ny, a.z)) { npc_try_move(a, a.x, ny); return; }
-	}
-	if (adx > 0)
-	{
-		int nx2 = a.x + sx;
-		if (npc_can_step_to(nx2, a.y, a.z)) npc_try_move(a, nx2, a.y);
+		a.move_timer.restart();
+		npc_step_toward(a, a.patrol_x, a.patrol_y);
 	}
 }
 
@@ -802,7 +821,7 @@ void npc_fire_shot(npc_actor@ a, npc_weapon@ w, int tx, int ty, int tz, bool tar
 		if (target_is_player)
 		{
 			int through = shield_process_damage(dmg, "melee");
-			if (through > 0) health_damage_player(through, a.id);
+			if (through > 0) health_damage_player(through, a.id, w.name);
 		}
 		else if (target_actor !is null)
 		{
@@ -841,7 +860,7 @@ void npc_fire_shot(npc_actor@ a, npc_weapon@ w, int tx, int ty, int tz, bool tar
 	if (target_is_player)
 	{
 		int through = shield_process_damage(dmg, "bullet");
-		if (through > 0) health_damage_player(through, a.id);
+		if (through > 0) health_damage_player(through, a.id, w.name);
 	}
 	else if (target_actor !is null)
 	{
@@ -872,6 +891,160 @@ bool npc_step_axis(npc_actor@ a, bool along_x, int dir)
 	else ny += dir;
 	if (!npc_can_step_to(nx, ny, a.z)) return false;
 	npc_try_move(a, nx, ny);
+	return true;
+}
+
+// ---------------------------------------------------------------------------
+// Ground item collection
+// ---------------------------------------------------------------------------
+// An NPC only goes looking when it has nothing left: no healing item and no
+// loaded or reserve ammunition on any firearm. Melee weapons do not count as
+// inventory to use, so a melee-only NPC with no healing items searches too.
+bool npc_needs_items(npc_actor@ a)
+{
+	if (a is null) return false;
+	if (a.heal_items.length() > 0) return false;
+	for (uint i = 0; i < a.weapons.length(); i++)
+	{
+		npc_weapon@ w = a.weapons[i];
+		if (w !is null && !w.melee && (w.loaded > 0 || w.reserve > 0)) return false;
+	}
+	return true;
+}
+
+bool npc_weapon_takes_item(npc_weapon@ w, item_data@ it)
+{
+	if (w is null || it is null || w.melee) return false;
+	if (it.id != "" && string_to_lower_case(it.id) == string_to_lower_case(w.reserve_item)) return true;
+	if (it.ammo_type != "" && w.ammo_type != "" && string_to_lower_case(it.ammo_type) == string_to_lower_case(w.ammo_type)) return true;
+	return false;
+}
+
+bool npc_item_is_useful(npc_actor@ a, item_data@ it)
+{
+	if (a is null || it is null) return false;
+	if (it.category == "medical items" && it.heal_amount > 0) return true;
+	for (uint i = 0; i < a.weapons.length(); i++)
+	{
+		if (npc_weapon_takes_item(a.weapons[i], it)) return true;
+	}
+	return false;
+}
+
+ground_item@ npc_ground_item_by_id(int gid)
+{
+	if (gid <= 0) return null;
+	for (uint i = 0; i < ground_items.length(); i++)
+	{
+		if (ground_items[i] !is null && ground_items[i].id == gid) return ground_items[i];
+	}
+	return null;
+}
+
+int npc_find_useful_ground_item(npc_actor@ a)
+{
+	int best_id = 0;
+	double best = NPC_ITEM_SEARCH_DISTANCE;
+	for (uint i = 0; i < ground_items.length(); i++)
+	{
+		ground_item@ gi = ground_items[i];
+		if (gi is null) continue;
+		if (abs(double(gi.z) - double(a.z)) > 1.0) continue;
+		item_data@ it = get_item_data(gi.item_id);
+		if (!npc_item_is_useful(a, it)) continue;
+		double d = get_3d_distance(double(a.x), double(a.y), double(a.z), gi.x, gi.y, gi.z);
+		if (d < best)
+		{
+			best = d;
+			best_id = gi.id;
+		}
+	}
+	return best_id;
+}
+
+void npc_collect_ground_item(npc_actor@ a, ground_item@ gi)
+{
+	if (a is null || gi is null) return;
+	item_data@ it = get_item_data(gi.item_id);
+
+	string snd = "";
+	if (it !is null && it.sound_pickup != "") snd = get_sound_path(it.sound_pickup);
+	if (snd == "") snd = get_sound_path("items/itemget1.ogg");
+	if (snd != "") npc_play_positional(snd, a.x, a.y, a.z);
+
+	if (it !is null)
+	{
+		if (it.category == "medical items" && it.heal_amount > 0)
+		{
+			int count = gi.amount;
+			if (count < 1) count = 1;
+			if (count > 10) count = 10;
+			for (int n = 0; n < count; n++) a.heal_items.insert_last(it.id);
+		}
+		else
+		{
+			int add = (it.quantity > 0) ? it.quantity : ((it.capacity > 0) ? it.capacity : 1);
+			for (uint i = 0; i < a.weapons.length(); i++)
+			{
+				npc_weapon@ w = a.weapons[i];
+				if (!npc_weapon_takes_item(w, it)) continue;
+				if (w.is_magazine) w.reserve += 1;
+				else w.reserve += add;
+			}
+		}
+	}
+
+	if (gi.sound_slot != -1)
+	{
+		itempool.destroy_sound(gi.sound_slot);
+		gi.sound_slot = -1;
+	}
+	for (uint i = 0; i < ground_items.length(); i++)
+	{
+		if (ground_items[i] is gi)
+		{
+			ground_items.remove_at(i);
+			break;
+		}
+	}
+	a.item_target = 0;
+}
+
+// Returns true while the NPC is busy walking to an item or has just collected
+// one, so the caller knows the tick was used.
+bool npc_item_tick(npc_actor@ a)
+{
+	if (a is null) return false;
+	if (!npc_needs_items(a))
+	{
+		a.item_target = 0;
+		return false;
+	}
+
+	ground_item@ gi = npc_ground_item_by_id(a.item_target);
+	if (gi is null)
+	{
+		if (a.item_search_timer.elapsed < NPC_ITEM_SEARCH_MS) return false;
+		a.item_search_timer.restart();
+		a.item_target = npc_find_useful_ground_item(a);
+		gi = npc_ground_item_by_id(a.item_target);
+		if (gi is null) return false;
+	}
+
+	// Same collection rule as the player: the item is taken automatically as
+	// soon as the character is within three steps of it.
+	double d = get_3d_distance(double(a.x), double(a.y), double(a.z), gi.x, gi.y, gi.z);
+	if (d <= 3.0)
+	{
+		npc_collect_ground_item(a, gi);
+		return true;
+	}
+
+	if (a.move_timer.elapsed >= npc_step_interval(a))
+	{
+		a.move_timer.restart();
+		npc_step_toward(a, int(round(gi.x, 0)), int(round(gi.y, 0)));
+	}
 	return true;
 }
 
@@ -907,14 +1080,8 @@ void npc_combat_tick(npc_actor@ a)
 
 	if (!has_target)
 	{
-		// Patrol the whole map.
-		if (get_3d_distance(double(a.x), double(a.y), double(a.z), double(a.patrol_x), double(a.patrol_y), double(a.z)) < 1.0 || a.patrol_timer.elapsed > 20000)
-			npc_pick_patrol(a);
-		if (a.move_timer.elapsed >= npc_step_interval(a))
-		{
-			a.move_timer.restart();
-			npc_step_toward(a, a.patrol_x, a.patrol_y);
-		}
+		// No living opponent on the map at all: walk it at random.
+		npc_patrol_tick(a);
 		return;
 	}
 
@@ -991,6 +1158,18 @@ void npc_actor_tick(npc_actor@ a)
 	if (a.hp < a.maxhp && a.heal_items.length() > 0 && a.heal_timer.elapsed >= a.heal_delay)
 		npc_use_heal(a);
 
+	// A map that carries a safe zone forbids combat outright: enemies and allies
+	// keep walking it and may still pick items up, but they never target or
+	// attack anybody while they are on that map.
+	if (safezones.length() > 0)
+	{
+		@a.target_actor = null;
+		a.target_is_player = false;
+		if (npc_item_tick(a)) return;
+		npc_patrol_tick(a);
+		return;
+	}
+
 	if (a.think_timer.elapsed >= 350)
 	{
 		a.think_timer.restart();
@@ -1003,6 +1182,10 @@ void npc_actor_tick(npc_actor@ a)
 			a.target_is_player = is_player;
 		}
 	}
+
+	// An empty-handed NPC diverts to a useful item even in the middle of a
+	// pursuit, exactly like the player picks items up by walking over them.
+	if (npc_item_tick(a)) return;
 
 	npc_combat_tick(a);
 }

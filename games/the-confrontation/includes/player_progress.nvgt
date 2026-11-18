@@ -89,7 +89,7 @@ void player_die(const string&in cause_message)
 	mainmenu();
 }
 
-void health_damage_player(int dmg, const string&in killer_name = "")
+void health_damage_player(int dmg, const string&in killer_name = "", const string&in weapon_name = "")
 {
 	if (dmg <= 0) return;
 	health -= dmg;
@@ -104,7 +104,7 @@ void health_damage_player(int dmg, const string&in killer_name = "")
 	else
 	{
 		string kn = (killer_name != "") ? killer_name : "an enemy";
-		string kill_msg = format_player_death_message(kn, me.x, me.y, me.z);
+		string kill_msg = format_player_death_message(kn, me.x, me.y, me.z, weapon_name);
 		player_die(kill_msg);
 	}
 }

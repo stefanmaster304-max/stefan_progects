@@ -1247,6 +1247,10 @@ void reset_location_on_death()
     loc.add("current_weapon", "");
     loc.add("equipped_shield_id", "");
     loc.add("equipped_shield_durability", 0);
+    // Death costs everything: the inventory is cleared before it is written, so
+    // the next life starts with no items at all.
+    clear_player_inventory();
+    remove_all_equipment();
     loc.add("inventory_data", serialize_inventory());
     loc.add("is_sitting", 0);
     loc.add("discovered_maps", serialize_discovered_maps());

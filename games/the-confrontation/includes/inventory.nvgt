@@ -45,6 +45,16 @@ int count_total_items()
 	return int(keys.length());
 }
 
+// Wipes every carried item and the quick inventory focus. Used when the player
+// dies: nothing is carried into the next life.
+void clear_player_inventory()
+{
+	inv.delete_all();
+	g_inventory_item_order.resize(0);
+	quick_inv_index = 0;
+	quick_inv_focused = false;
+}
+
 string[] g_inventory_item_order;
 
 void ensure_inventory_item_order(string[]@ keys)
