@@ -1,5 +1,6 @@
 // item_data_saver.nvgt - Data storage, file I/O, and persistence for items.
-// Unified encrypted format: settings/items.dat (all items encrypted into a single bundle)
+// Distribution format: every item lives in the encrypted settings/contents.dat.
+// Loose .config files and settings/items.dat are development-only formats.
 
 const string ITEM_DIR = "settings/items";
 const string ITEMS_DAT_PATH = "settings/items.dat";

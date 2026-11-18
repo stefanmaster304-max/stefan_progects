@@ -1,5 +1,6 @@
 // weapon_data_saver.nvgt - Persistence and I/O for weapons.
-// Unified encrypted format: settings/weapons.dat (all weapons encrypted into a single bundle)
+// Distribution format: every weapon lives in the encrypted settings/contents.dat.
+// Loose .wpm files and settings/weapons.dat are development-only formats.
 
 const string WEAPON_ENC_KEY = "aB3!cD5#eF7@gH9*jK2$lM4^nP8&qR6%tS1*uV5/wX7(yZ0)zA3-dE6+fG9/hJ2=mL4+pO7*rT1_DWWeaponsPack2026";
 const string WEAPON_DIR = "settings/weapons";
