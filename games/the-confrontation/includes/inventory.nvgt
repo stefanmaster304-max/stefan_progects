@@ -1,0 +1,324 @@
+// inventory.nvgt - Player inventory and cyclic quick inventory.
+// Tab and Shift+Tab cycle through the carried items; Enter uses the focused item.
+
+#include "package_manager.nvgt"
+#include "shield_system.nvgt"
+
+dictionary inv;
+
+// Index and focus of the cyclic quick inventory. Tab and Shift+Tab move the
+// focus only; there is no quick inventory menu or open/close mode.
+int quick_inv_index = 0;
+bool quick_inv_focused = false;
+
+void give(string item, int amount)
+{
+	int a;
+	if (!inv.exists(item))
+	{
+		if (amount <= 0) return;
+		inv.set(item, amount);
+	}
+	else
+	{
+		inv.get(item, a);
+		if (a + amount <= 0)
+		{
+			inv.delete(item);
+		}
+		else
+			inv.set(item, a + amount);
+	}
+}
+
+int get_item_count(string item)
+{
+	int amount = 0;
+	if (inv.exists(item))
+		inv.get(item, amount);
+	return amount;
+}
+
+int count_total_items()
+{
+	string[] keys = inv.get_keys();
+	return int(keys.length());
+}
+
+string[] g_inventory_item_order;
+
+void ensure_inventory_item_order(string[]@ keys)
+{
+	for (uint i = 0; i < keys.length(); i++)
+	{
+		if (g_inventory_item_order.find(keys[i]) == -1)
+		{
+			g_inventory_item_order.insert_last(keys[i]);
+		}
+	}
+	for (int i = int(g_inventory_item_order.length()) - 1; i >= 0; i--)
+	{
+		if (keys.find(g_inventory_item_order[i]) == -1)
+		{
+			g_inventory_item_order.remove_at(i);
+		}
+	}
+}
+
+string[] get_all_inv_keys()
+{
+	string[] all_keys = inv.get_keys();
+	string[] keys;
+	for (uint i = 0; i < all_keys.length(); i++)
+	{
+		int qty = 0;
+		inv.get(all_keys[i], qty);
+		if (qty > 0 && keys.find(all_keys[i]) == -1)
+		{
+			keys.insert_last(all_keys[i]);
+		}
+	}
+
+	ensure_inventory_item_order(keys);
+
+	string[] ordered;
+	for (uint i = 0; i < g_inventory_item_order.length(); i++)
+	{
+		string item_k = g_inventory_item_order[i];
+		if (keys.find(item_k) >= 0)
+		{
+			ordered.insert_last(item_k);
+		}
+	}
+	return ordered;
+}
+
+string serialize_inventory()
+{
+	string[] keys = inv.get_keys();
+	string out_str = "";
+	for (uint i = 0; i < keys.length(); i++)
+	{
+		int qty = 0;
+		inv.get(keys[i], qty);
+		if (qty > 0)
+		{
+			if (out_str != "") out_str += ";";
+			out_str += keys[i] + ":" + qty;
+		}
+	}
+	return out_str;
+}
+
+void deserialize_inventory(const string&in data)
+{
+	inv.delete_all();
+	g_inventory_item_order.resize(0);
+	quick_inv_index = 0;
+	quick_inv_focused = false;
+	if (data == "") return;
+	string[] pairs = string_split(data, ";", false);
+	for (uint i = 0; i < pairs.length(); i++)
+	{
+		string[] kv = string_split(pairs[i], ":", false);
+		if (kv.length() >= 2)
+		{
+			string item = kv[0];
+			int qty = int(string_to_number(kv[1]));
+			if (qty > 0) inv.set(item, qty);
+		}
+	}
+}
+
+string get_item_display_name(const string&in item_id)
+{
+	weapon_data@ w = find_weapon_data(item_id);
+	if (w !is null && w.name != "") return "[Weapon] " + w.name;
+
+	item_data@ it = get_item_data(item_id);
+	if (it !is null && it.name != "") return it.name;
+
+	package_data@ pkg = find_package_data(item_id);
+	if (pkg !is null && pkg.name != "") return pkg.name;
+
+	return string_replace(item_id, "_", " ", true);
+}
+
+string get_item_description(const string&in item_id)
+{
+	item_data@ it = get_item_data(item_id);
+	if (it !is null)
+	{
+		if (it.category == "equipment") return build_equipment_description(it);
+		if (it.description != "") return it.description;
+	}
+
+	package_data@ pkg = find_package_data(item_id);
+	if (pkg !is null && pkg.description != "") return pkg.description;
+
+	weapon_data@ w = find_weapon_data(item_id);
+	if (w !is null)
+	{
+		if (w.description != "") return w.description;
+		if (w.melee) return "Melee Weapon. Damage " + w.min_damage + "-" + w.max_damage + ".";
+		return "Ranged Weapon. Class: " + w.wclass + ", Capacity: " + w.capacity + " " + w.ammo_display + ", Damage: " + w.min_damage + "-" + w.max_damage + ".";
+	}
+
+	return "";
+}
+
+// Uses one item. Health-restoring consumables heal only when health is missing;
+// shields and weapons are equipped. Nothing is ever dropped.
+void use(string item)
+{
+	if (item == "") return;
+	load_all_items_config();
+	load_all_weapons_wpm();
+	load_all_packages();
+
+	weapon_data@ w = find_weapon_data(item);
+	if (w !is null)
+	{
+		equip_weapon(item);
+		return;
+	}
+
+	if (is_package(item))
+	{
+		open_package_by_id(item);
+		return;
+	}
+
+	if (is_equipment_item(item))
+	{
+		equip_equipment(item);
+		return;
+	}
+
+	item_data@ it = get_item_data(item);
+	if (it is null)
+	{
+		speak("Cannot use this item directly.");
+		return;
+	}
+
+	if (it.subtype == "anti_death_card" || it.id == "anti_death_card")
+	{
+		speak("The anti-death card is used automatically when your health reaches zero.");
+		return;
+	}
+
+	if (it.category == "currency")
+	{
+		return;
+	}
+
+	if (it.category == "packages")
+	{
+		open_package_by_id(item);
+		return;
+	}
+
+	bool heals = (it.restores_health || it.heal_amount > 0);
+	if (!heals)
+	{
+		speak("Cannot use this item directly.");
+		return;
+	}
+
+	if (health >= maxhealth)
+	{
+		speak("Your health is already at maximum.");
+		return;
+	}
+
+	if (it.sound_use != "")
+	{
+		string usnd = get_sound_path(it.sound_use);
+		if (usnd != "") p.play_stationary(usnd, false);
+	}
+
+	health += it.heal_amount;
+	if (health > maxhealth) health = maxhealth;
+	give(item, -1);
+	speak("Consumed " + it.name + ". Health restored.");
+}
+
+void play_invcat_change_sound()
+{
+	string snd = "sounds/player/invcat_change.ogg";
+	if (file_exists(snd)) p.play_stationary(snd, false);
+}
+
+void quick_inventory_announce()
+{
+	string[] keys = get_all_inv_keys();
+	if (keys.length() == 0)
+	{
+		quick_inv_focused = false;
+		speak("Your inventory is empty.");
+		return;
+	}
+	if (quick_inv_index < 0) quick_inv_index = int(keys.length()) - 1;
+	if (quick_inv_index >= int(keys.length())) quick_inv_index = 0;
+	string item = keys[quick_inv_index];
+	int count = get_item_count(item);
+	speak(get_item_display_name(item) + (count > 1 ? ", " + count + "." : ".") + " " + (quick_inv_index + 1) + " of " + keys.length() + ".");
+}
+
+void quick_inventory_cycle(int step)
+{
+	string[] keys = get_all_inv_keys();
+	if (keys.length() == 0)
+	{
+		quick_inv_focused = false;
+		speak("Your inventory is empty.");
+		return;
+	}
+
+	if (!quick_inv_focused)
+	{
+		quick_inv_focused = true;
+		quick_inv_index = (step > 0) ? 0 : int(keys.length()) - 1;
+	}
+	else
+	{
+		quick_inv_index += step;
+		if (quick_inv_index < 0) quick_inv_index = int(keys.length()) - 1;
+		if (quick_inv_index >= int(keys.length())) quick_inv_index = 0;
+	}
+
+	play_invcat_change_sound();
+	quick_inventory_announce();
+}
+
+// Returns true when the key press was consumed by the quick inventory.
+bool quick_inventory_handle_enter()
+{
+	if (!quick_inv_focused) return false;
+
+	string[] keys = get_all_inv_keys();
+	if (keys.length() == 0)
+	{
+		quick_inv_focused = false;
+		speak("Your inventory is empty.");
+		return true;
+	}
+	if (quick_inv_index < 0 || quick_inv_index >= int(keys.length())) quick_inv_index = 0;
+
+	string item = keys[quick_inv_index];
+	use(item);
+
+	// Keep the quick inventory usable after an item is consumed.
+	keys = get_all_inv_keys();
+	if (keys.length() == 0)
+	{
+		quick_inv_focused = false;
+		quick_inv_index = 0;
+	}
+	else
+	{
+		if (quick_inv_index >= int(keys.length())) quick_inv_index = int(keys.length()) - 1;
+	}
+	return true;
+}

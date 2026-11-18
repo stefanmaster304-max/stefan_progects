@@ -1,0 +1,274 @@
+// includes/contents_bundle.nvgt - Single encrypted content package for the game.
+// Every item, weapon, store, package and ammo definition the game uses is stored
+// in settings/contents.dat, encrypted with one strong key. A distribution build
+// ships that file only; the loose .config/.wpm/.st files exist for development
+// and are removed again by the compiler.
+
+const string CONTENTS_DAT_PATH = "settings/contents.dat";
+const string CONTENT_ENC_KEY = "C0nt3nts!2026#aQ7$zW2%xE9&rT4*yU8(iO1)pA5-sD3+fG6=hJ0_kL7@nB2^mC8$vX4";
+
+bool contents_bundle_loaded = false;
+
+bool is_content_encrypted()
+{
+	return file_exists(CONTENTS_DAT_PATH);
+}
+
+string get_contents_bundle_path()
+{
+	if (file_exists(CONTENTS_DAT_PATH)) return CONTENTS_DAT_PATH;
+	return "";
+}
+
+// Sections keep the four content types apart, so a name= line from one bundle can
+// never leak into another registry while parsing.
+string serialize_all_contents_bundle()
+{
+	string s = "# The Confrontation Contents Bundle v1.0\n\n";
+	s += "[section:items]\n" + serialize_all_items_bundle() + "\n";
+	s += "[section:weapons]\n" + serialize_all_weapons_bundle() + "\n";
+	s += "[section:stores]\n" + serialize_all_stores_bundle() + "\n";
+	s += "[section:packages]\n" + serialize_all_packages_bundle() + "\n";
+	return s;
+}
+
+void parse_contents_bundle(const string&in content)
+{
+	string items_sec = "";
+	string weapons_sec = "";
+	string stores_sec = "";
+	string packages_sec = "";
+	string section = "";
+
+	string[]@ lines = string_split(content, "\n", true);
+	if (lines is null) return;
+
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string line = lines[i].trim_whitespace();
+		if (string_starts_with(line, "[section:") && string_ends_with(line, "]"))
+		{
+			section = line.substr(9, line.length() - 10);
+			continue;
+		}
+		if (section == "items") items_sec += lines[i] + "\n";
+		else if (section == "weapons") weapons_sec += lines[i] + "\n";
+		else if (section == "stores") stores_sec += lines[i] + "\n";
+		else if (section == "packages") packages_sec += lines[i] + "\n";
+	}
+
+	parse_items_bundle(items_sec);
+	parse_weapons_bundle(weapons_sec);
+	parse_stores_bundle(stores_sec);
+	parse_packages_bundle(packages_sec);
+}
+
+bool decrypt_contents_text(const string&in path, string&out text)
+{
+	text = "";
+	if (path == "" || !file_exists(path)) return false;
+	file f;
+	if (!f.open(path, "rb")) return false;
+	string enc = f.read();
+	f.close();
+	if (enc.length() == 0) return false;
+	text = string_decrypt(enc, CONTENT_ENC_KEY);
+	return text.length() > 0;
+}
+
+// Used by the updater before an update is allowed to replace the live file.
+bool validate_contents_file(const string&in path)
+{
+	string text = "";
+	if (!decrypt_contents_text(path, text)) return false;
+	if (text.find("[section:items]") < 0) return false;
+	if (text.find("[section:weapons]") < 0) return false;
+	if (text.find("[section:stores]") < 0) return false;
+	if (text.find("[section:packages]") < 0) return false;
+	return (text.find("[item:") >= 0 || text.find("[weapon:") >= 0 || text.find("[store:") >= 0);
+}
+
+bool load_all_contents(bool force = false)
+{
+	if (!force && contents_bundle_loaded) return true;
+	string path = get_contents_bundle_path();
+	if (path == "") return false;
+
+	string text = "";
+	if (!decrypt_contents_text(path, text)) return false;
+
+	item_registry.resize(0);
+	weapon_registry.resize(0);
+	store_configs.resize(0);
+	package_registry.resize(0);
+
+	parse_contents_bundle(text);
+	register_builtin_collectable_resources();
+	register_builtin_anti_death_card();
+	contents_bundle_loaded = true;
+	return true;
+}
+
+bool encrypt_all_contents_silent()
+{
+	if (!directory_exists("settings")) directory_create("settings");
+	string enc = string_encrypt(serialize_all_contents_bundle(), CONTENT_ENC_KEY);
+	file f;
+	if (!f.open(CONTENTS_DAT_PATH, "wb")) return false;
+	f.write(enc);
+	f.close();
+	contents_bundle_loaded = true;
+	return true;
+}
+
+void delete_legacy_content_bundles()
+{
+	if (file_exists("settings/items.dat")) file_delete("settings/items.dat");
+	if (file_exists("settings/weapons.dat")) file_delete("settings/weapons.dat");
+	if (file_exists("settings/shops.dat")) file_delete("settings/shops.dat");
+	if (file_exists("settings/stores.dat")) file_delete("settings/stores.dat");
+	if (file_exists("settings/packages.dat")) file_delete("settings/packages.dat");
+	if (file_exists("data/items.dat")) file_delete("data/items.dat");
+	if (file_exists("data/weapons.dat")) file_delete("data/weapons.dat");
+	if (file_exists("data/shops.dat")) file_delete("data/shops.dat");
+	if (file_exists("data/stores.dat")) file_delete("data/stores.dat");
+	if (file_exists("data/packages.dat")) file_delete("data/packages.dat");
+	if (file_exists("items.dat")) file_delete("items.dat");
+	if (file_exists("weapons.dat")) file_delete("weapons.dat");
+	if (file_exists("shops.dat")) file_delete("shops.dat");
+	if (file_exists("stores.dat")) file_delete("stores.dat");
+	if (file_exists("packages.dat")) file_delete("packages.dat");
+}
+
+void clean_loose_content_files()
+{
+	for (uint c = 0; c < item_categories.length(); c++)
+	{
+		string folder = ITEM_DIR + "/" + item_categories[c];
+		if (!directory_exists(folder)) continue;
+		string[]@ files = find_files(folder + "/*.config");
+		if (files !is null)
+			for (uint i = 0; i < files.length(); i++) file_delete(folder + "/" + files[i]);
+		string[]@ dats = find_files(folder + "/*.dat");
+		if (dats !is null)
+			for (uint i = 0; i < dats.length(); i++) file_delete(folder + "/" + dats[i]);
+	}
+
+	string[]@ weapon_dirs = find_directories(WEAPON_DIR + "/*");
+	if (weapon_dirs !is null)
+	{
+		for (uint c = 0; c < weapon_dirs.length(); c++)
+		{
+			string folder = WEAPON_DIR + "/" + weapon_dirs[c];
+			if (!directory_exists(folder)) continue;
+			string[]@ files = find_files(folder + "/*.wpm");
+			if (files !is null)
+				for (uint i = 0; i < files.length(); i++) file_delete(folder + "/" + files[i]);
+			string[]@ dats = find_files(folder + "/*.dat");
+			if (dats !is null)
+				for (uint i = 0; i < dats.length(); i++) file_delete(folder + "/" + dats[i]);
+		}
+	}
+
+	if (directory_exists(STORE_DIR))
+	{
+		string[]@ st_files = find_files(STORE_DIR + "/*.st");
+		if (st_files !is null)
+			for (uint i = 0; i < st_files.length(); i++) file_delete(STORE_DIR + "/" + st_files[i]);
+	}
+
+	if (directory_exists(PACKAGE_DIR))
+	{
+		string[]@ pkg_files = find_files(PACKAGE_DIR + "/*.config");
+		if (pkg_files !is null)
+			for (uint i = 0; i < pkg_files.length(); i++) file_delete(PACKAGE_DIR + "/" + pkg_files[i]);
+	}
+
+	delete_legacy_content_bundles();
+}
+
+void encrypt_all_contents()
+{
+	if (item_registry.length() == 0) load_all_items_config();
+	if (weapon_registry.length() == 0) load_all_weapons_wpm();
+	if (store_configs.length() == 0) init_stores();
+	if (package_registry.length() == 0) load_all_packages();
+
+	if (item_registry.length() == 0 && weapon_registry.length() == 0 && store_configs.length() == 0 && package_registry.length() == 0)
+	{
+		speak("No content found to encrypt.");
+		return;
+	}
+
+	if (!encrypt_all_contents_silent())
+	{
+		speak("Error compiling contents into contents.dat.");
+		return;
+	}
+
+	clean_loose_content_files();
+	speak("All items, weapons, stores and packages compiled into contents.dat.");
+}
+
+void decrypt_all_contents()
+{
+	if (!load_all_contents(true))
+	{
+		speak("No contents.dat found to decrypt.");
+		return;
+	}
+
+	ensure_item_directories();
+	for (uint i = 0; i < item_registry.length(); i++)
+	{
+		item_data@ it = @item_registry[i];
+		if (is_builtin_collectable_resource(it.id)) continue;
+		string folder = ITEM_DIR + "/" + it.category;
+		if (!directory_exists(folder)) directory_create(folder);
+		file f;
+		if (f.open(folder + "/" + it.id + ".config", "wb"))
+		{
+			f.write(serialize_item_config(it));
+			f.close();
+		}
+	}
+
+	ensure_weapon_directories();
+	for (uint i = 0; i < weapon_registry.length(); i++)
+	{
+		weapon_data@ w = @weapon_registry[i];
+		string folder = WEAPON_DIR + "/" + w.wclass;
+		if (!directory_exists(folder)) directory_create(folder);
+		file f;
+		if (f.open(folder + "/" + w.id + ".wpm", "wb"))
+		{
+			f.write(serialize_weapon_wpm(w));
+			f.close();
+		}
+	}
+
+	ensure_store_dir();
+	for (uint i = 0; i < store_configs.length(); i++)
+	{
+		store_cfg@ st = @store_configs[i];
+		put_store_content(STORE_DIR + "/" + st.name + ".st", serialize_store_st(st));
+	}
+
+	ensure_package_directories();
+	for (uint i = 0; i < package_registry.length(); i++)
+	{
+		package_data@ pkg = @package_registry[i];
+		file f;
+		if (f.open(PACKAGE_DIR + "/" + pkg.id + ".config", "wb"))
+		{
+			f.write(serialize_package_config(pkg));
+			f.close();
+		}
+	}
+
+	if (file_exists(CONTENTS_DAT_PATH)) file_delete(CONTENTS_DAT_PATH);
+	delete_legacy_content_bundles();
+	contents_bundle_loaded = false;
+
+	speak("All items, weapons, stores and packages decrypted from contents.dat.");
+}

@@ -1,0 +1,23 @@
+{
+  "game": {
+    "version": "1.0.0",
+    "url": "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/dw.exe",
+    "size": 0
+  },
+  "content": {
+    "version": "1.0.0",
+    "url": "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/contents.dat",
+    "size": 0
+  },
+  "sounds": {
+    "version": "1.0.0",
+    "new_count": 0,
+    "url": "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/sounds.zip",
+    "size": 0
+  },
+  "maps": {
+    "version": "1.0.0",
+    "url": "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/maps.dat",
+    "size": 0
+  }
+}

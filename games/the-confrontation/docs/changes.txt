@@ -1,0 +1,73 @@
+Version 1.0.0 - The Confrontation
+=================================
+
+NAME AND VERSION
+
+CHANGED: The game is now called The Confrontation and its version is 1.0.0.
+CHANGED: The new name and version are shown in the title bar, in every window title and in settings/versions.cfg.
+CHANGED: Every header comment, comment, default text and settings file that still carried the old name was updated.
+
+REMOVED SYSTEMS
+
+REMOVED: The complete NPC system. The NPC runtime, the NPC class and its state, the NPC spawning and spawning points, the NPC management menu and builder tools, the NPC navigation, the NPC combat and decision code, the NPC voices in the sound pools, the NPC entries in maps and stores, and every helper that only existed to serve an NPC were deleted.
+REMOVED: Hitting, targeting, damaging and killing NPCs. Projectiles now only collide with the world geometry, walls, map bounds and their own range; there is no target search, no hit registration on characters and no damage dealt to anything that the NPC system used to provide.
+CHANGED: The player progression that lived inside the NPC runtime (experience, level and resurrection handling) was moved out into its own player module, so the player systems keep working without the NPC runtime.
+
+REMOVED: The complete hands system. The left hand and the right hand slots, the second hand, the hand switching, the per-hand weapon state, the per-hand drawing, firing and reloading rules, the dual wielding and every message, sound and check that referred to a hand were deleted.
+CHANGED: The player now has one equipped weapon at a time. Equipping a weapon replaces the previous one, and firing, reloading, ammunition and the walk speed always read the single equipped weapon.
+
+REMOVED: The complete day and night system. The game calendar, the world clock, sunrise and sunset, dawn and dusk twilight, noon, midnight, the day phases, the seasons, the leap years, the weekdays, the holidays, the solstices and equinoxes and the moon phases are all gone. Nothing in the game measures or advances time any more.
+REMOVED: Every spoken time and date announcement: sunrise, morning, noon, afternoon, sunset, twilight, night, midnight, the year change, the holiday and solstice messages, the upcoming holiday warnings and the full moon announcements.
+REMOVED: The world clock persistence, including its own save file settings/game_time.dat. Saving, dying, leaving the game, changing maps and starting a new game no longer write or read any calendar state, because there is no calendar state. The old save file was deleted as well.
+REMOVED: The Shift+T shortcut that spoke the current game time, date, season, day phase, moon phase, solstice and holiday.
+REMOVED: The day and night time limits of map sound sources and map ambience: the "Use day and night time limits" checkbox, the start hour, start minute, end hour, end minute and fade duration sliders, the time window stored in the map lines and the cross-fades that followed the time of day. A sound source now simply plays at the volume of its volume slider, and an ambience simply plays while the player is inside its area.
+REMOVED: The calendar object that could be placed on maps: its builder entry, its builder form, its runtime class, its spawn and check functions, its press and loop sounds, its map line and its access to the game date, season, holiday and moon phase.
+REMOVED: The clock object that could be placed on maps: its builder entry, its builder form, its runtime class, its spawn and check functions, its press and loop sounds, its map line and its access to the game time.
+REMOVED: The "calendar" and "clock" entries from the construction menu, together with their sound folder translations and the fallback sound names that belonged to them.
+REMOVED: The map content that was built on the removed system: the night ambience of the main map, the day and night music pairs of the main map and of the north ocean, and the day and night ocean sources of the north ocean. Every map keeps one ambience and one source per area that is always available.
+REMOVED: The entire collection of time driven logic that the removal left behind, including the unused helpers for time windows, the unused decibel conversion helper and the dead branches that called them.
+
+REMOVED: The message of the day system in full. The daily message pool, its file settings/daily_messages.txt, its state file settings/daily_msg_state.dat, the pool loader, the sequential rotation, the index persistence, the daily announcement at startup, the F1 announcement and the "daily message manager" entry in the construction menu were deleted.
+CHANGED: Only the rolling announcements remain. They are read from settings/broadcasts.txt and one random message is spoken every 10 to 15 minutes, without any reference to a day, a date or a world clock.
+
+SOUND
+
+CHANGED: The sound pool was updated to the current King Audio components and now runs on the king_audio_engine version of the pool. All spatial positioning goes through King Audio's own set_position(), including its HRTF handling.
+CHANGED: The spatial behaviour was rebuilt for King Audio: box clamping, distance gating, occlusion raycasts, position smoothing and the per-frame listener update were adapted to the engine instead of the old mixer.
+KEPT: The project customizations on top of the current King Audio set: low-pass filter command support, offset tracking and seeking in every play mode, start pitch applied after play() because King Audio ignores it before a channel exists, and a single king_system_update() per frame committed by the caller instead of once per pool.
+FIXED: Footsteps keep a constant volume of 0 dB and vary only in pitch, so walking no longer gets louder or quieter at random.
+REMOVED: The sleep system leftovers, including the fade and lowpass handling that only existed for it. Lowpass now belongs only to diving under water, and the fade that remains is the one used when the world is reset.
+FIXED: The sound pool no longer leaks slots or voices when a sound ends, is stopped or is replaced.
+
+INVENTORY
+
+REMOVED: The complete inventory menu. The full inventory window, its list, its categories, its navigation, its item actions, its open and close state and its own key handling were deleted.
+CHANGED: The quick inventory is the only inventory interface. Tab and Shift+Tab move the focus from item to item in a cycle and announce the item, its amount and the position in the list.
+CHANGED: Enter uses the focused quick inventory item: a healing item is used only while health is below its maximum, a shield is equipped and a weapon is equipped.
+CHANGED: Escape does nothing and announces nothing, because there is no open or closed state and no "quick inventory closed" message any more.
+REMOVED: The unused inventory position variable and every leftover of the old full inventory mode.
+FIXED: Using an item from the quick inventory keeps the focus usable when the item is consumed or the list becomes empty.
+
+WEAPONS
+
+CHANGED: Every weapon reads its cadence, weight, time between shots, range, spread, damage, fire modes and ammunition from its own .wpm file. There is no longer any weapon timing, weight, ammunition rule or fire mode rule written in the code.
+REMOVED: The two functions that overrode the .wpm data with hardcoded values, the forced minimum and maximum shot times and the rule that treated every shotgun as semi automatic.
+FIXED: The time between shots of every weapon now follows its .wpm file exactly, so full automatic weapons, burst weapons and single shot weapons fire at the rate their file declares.
+FIXED: Weapon fire, reload, draw, empty and distant sounds are resolved from the weapon file and the sound folders, with no generic fallback sound.
+
+CURRENCY AND STORES
+
+REMOVED: The four coins that were hardcoded in the game. The four native currencies, gold, golden crystal, diamond and silver, are now ordinary item files and the store uses them like any other item.
+REMOVED: The currency aliases and legacy names that were accepted in silence, and the hidden fallback that charged gold whenever a currency could not be found. A store now charges exactly the currency it declares.
+FIXED: The four currencies are offered by the store as payment methods, can be spent, earned and checked, and appear in the store currency selection.
+REMOVED: The stub that reported every store product as unavailable and the dead store code that surrounded it. A store product is now granted only when its item exists, with no silent substitution.
+
+DOCUMENTATION
+
+CHANGED: The documentation viewer now opens fixed English paths (docs/readme.txt, docs/game_guide.txt, docs/changes.txt) and lists only the files that actually exist.
+CHANGED: This changelog was rewritten from scratch for version 1.0.0.
+
+CLEANUP
+
+REMOVED: Dead code found in a full source sweep: the unused session clock string and its timer, the unused focused item variable, the readable time helper that only served the session clock, the include that loaded it, and the orphaned daily message and game time save files.
+CHECKED: All .nvgt sources, map lines, settings files and includes were searched for broken, disabled, commented out, duplicated, fallback, generic, placeholder and stub code. The remaining candidate matches were legitimate API returns, real configuration defaults, encrypted and legacy file readers that still open real files, and asset resolution paths that must exist.

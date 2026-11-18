@@ -1,0 +1,110 @@
+// player_progress.nvgt - Player XP, resurrection and damage.
+// Moved out of the removed NPC runtime so the player systems stay intact.
+
+void add_player_quantum_xp(int amount)
+{
+	if (amount <= 0) return;
+	xp += amount;
+	speak("Gained " + amount + " XP!");
+	normalize_player_xp(true);
+	if (level >= get_resurrection_levels_required(resurrections))
+	{
+		resurrections += 1;
+		level = 1;
+		xp = 0;
+		xprequired = get_xp_required(level);
+
+		int old_max = maxhealth;
+		maxhealth = int(round(double(maxhealth) * 1.20, 0));
+		if (maxhealth <= old_max) maxhealth = old_max + 100;
+		health = maxhealth;
+
+		string resurrection_sound = get_player_sound("resurrection");
+		if (sound_file_exists(resurrection_sound)) p.play_stationary(resurrection_sound, false);
+		speak("Congratulations! You have achieved a new resurrection, and your resurrection is now " + resurrections + ". You have become a little stronger than before.");
+	}
+	save_location();
+}
+
+// Central death sequence: anti-death card first, then death sounds, then menu.
+bool check_and_use_anti_death_card()
+{
+	if (get_item_count("anti_death_card") > 0)
+	{
+		give("anti_death_card", -1);
+		health = maxhealth;
+		is_sitting = false;
+		string snd_file = "sounds/misc/deathfree.ogg";
+		string s = find_sound_in_disk(snd_file);
+		if (s == "") s = get_sound_path(snd_file);
+		if (s != "") p.play_stationary(s, false);
+		speak("Anti-death card activated. Your life has been saved and your health is fully restored.");
+		save_location();
+		return true;
+	}
+	return false;
+}
+
+void player_die(const string&in cause_message)
+{
+	if (check_and_use_anti_death_card())
+	{
+		return;
+	}
+	if (cause_message != "")
+	{
+		speak(cause_message);
+	}
+
+	if (bleading.playing) bleading.stop();
+	if (heartbeat.playing) heartbeat.stop();
+
+	string death_path = pick_player_death_sound();
+	sound death_snd;
+	if (death_path != "") death_snd.load(death_path);
+
+	string fall_path = get_platform_sound(gmt(), "fall");
+	if (fall_path == "") fall_path = get_platform_sound(gmt(), "hardland");
+	if (fall_path == "") fall_path = get_player_sound("fall");
+	if (fall_path == "") fall_path = get_sound_path("player/sit.ogg");
+
+	sound fall_snd;
+	if (fall_path != "") fall_snd.load(fall_path);
+
+	if (death_snd.active) death_snd.play();
+	if (fall_snd.active) fall_snd.play();
+
+	while (death_snd.playing || fall_snd.playing)
+	{
+		wait(5);
+	}
+
+	sp.destroy_all();
+	p.destroy_all();
+	dp.destroy_all();
+
+	is_sitting = false;
+	reset_location_on_death();
+	reset();
+	mainmenu();
+}
+
+void health_damage_player(int dmg, const string&in killer_name = "")
+{
+	if (dmg <= 0) return;
+	health -= dmg;
+	if (health > 0)
+	{
+		if (enable_player_pain_sounds == 1)
+		{
+			string pain_snd = pick_player_pain_sound();
+			if (pain_snd != "") p.play_stationary(pain_snd, false);
+		}
+	}
+	else
+	{
+		string kn = (killer_name != "") ? killer_name : "an enemy";
+		string kill_msg = format_player_death_message(kn, me.x, me.y, me.z);
+		player_die(kill_msg);
+	}
+}

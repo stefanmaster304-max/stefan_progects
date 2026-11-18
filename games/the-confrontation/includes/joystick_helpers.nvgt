@@ -1,0 +1,540 @@
+//extras, do not touch.
+const int JOYSTICK_CONTROL_LEFT_TRIGGER = 21;
+const int JOYSTICK_CONTROL_RIGHT_TRIGGER = 22;
+class rumble_preset {
+	string name;
+	uint16 low;
+	uint16 high;
+	int duration;
+	bool use_triggers;
+	uint16 leftTrigger;
+	uint16 rightTrigger;
+	rumble_preset(string n, uint16 l, uint16 h, int dur, bool trigger = false, uint16 lt = 0, uint16 rt = 0) {
+		this.name = n;
+		this.low = l;
+		this.high = h;
+		this.duration = dur;
+		this.use_triggers = trigger;
+		this.leftTrigger = lt;
+		this.rightTrigger = rt;
+	}
+	bool rumble(joystick@ j) {
+		if(joystick_vibration_disabled) return false;
+		if(@j == null || !j.active || !j.can_vibrate)
+			return false;
+		if(use_triggers && j.can_vibrate_triggers)
+			return j.vibrate_triggers(leftTrigger, rightTrigger, duration);
+		else
+			return j.vibrate(low, high, duration);
+	}
+}
+class rumble_manager {
+	private dictionary presets;
+	rumble_manager() { // Constructor to add default presets
+		add(rumble_preset("player_hit", 65535, 65535, 250)); // New preset for player getting hit
+	}
+	bool add(rumble_preset@ preset) {
+		if(presets.exists(preset.name)) return false;
+		presets.set(preset.name, @preset);
+		return true;
+	}
+	bool remove(const string &in name) {
+		if(!presets.exists(name)) return false;
+		return presets.delete(name);
+	}
+	rumble_preset@ get(const string &in name) {
+		if(!presets.exists(name)) return null;
+		rumble_preset@ r;
+		presets.get(name, @r);
+		return r;
+	}
+	bool play(const string &in name, joystick@ j) {
+		rumble_preset@ r = this.get(name);
+		if(@r == null) return false;
+		return r.rumble(@j);
+	}
+}
+class js_recorder {
+	private joystick@ stick;
+	private bool recording;
+	private bool _has_captured_input = false; // Internal flag, exposed by get_has_captured()
+	bool is_button_capture = false; // Indicates if buttons were captured (true) or axis (false)
+
+	int[] captured_buttons;
+	string captured_axis_type = "none";
+	int captured_axis_direction = 0;
+	float captured_axis_deadzone = 0.2f; // Default deadzone for recording
+	float captured_axis_threshold = 0.5f; // Default threshold for recording
+
+	js_recorder(joystick@ s) {
+		@this.stick = @s;
+		this.recording = false;
+		this._has_captured_input = false;
+		this.is_button_capture = false;
+	}
+	bool begin() {
+		if(@stick == null or !stick.active) return false;
+		this.recording = true;
+		this._has_captured_input = false; // Reset capture status
+		this.is_button_capture = false; // Reset capture type
+		this.captured_buttons.resize(0);
+		this.captured_axis_type = "none";
+		this.captured_axis_direction = 0;
+		return true;
+	}
+	void stop() {
+		this.recording = false;
+	}
+	bool get_is_recording() const property {
+		return this.recording;
+	}
+	bool get_has_captured() const property {
+		return this._has_captured_input;
+	}
+	const int[]@ get_buttons() property {
+		return @this.captured_buttons;
+	}
+	string get_captured_axis_type() { return this.captured_axis_type; }
+	int get_captured_axis_direction() { return this.captured_axis_direction; }
+	float get_captured_axis_deadzone() { return this.captured_axis_deadzone; }
+	float get_captured_axis_threshold() { return this.captured_axis_threshold; }
+
+	// call this every frame
+	void update() {
+		if(!recording or @stick == null) return;
+
+		if(key_pressed(KEY_ESCAPE)){
+			this.captured_buttons.resize(0);
+			this.captured_axis_type = "none";
+			this.captured_axis_direction = 0;
+			this._has_captured_input = false; // Ensure has_captured is false on escape
+			this.is_button_capture = false;
+			this.stop(); // Stops recording
+			return;
+		}
+
+		// If nothing captured yet, try to capture new input
+		if (!this._has_captured_input) {
+			// --- Attempt to capture Axis first ---
+			// Check primary X/Y
+			if (joy_up(stick, captured_axis_deadzone)) { captured_axis_type = "y"; captured_axis_direction = -1; _has_captured_input = true; is_button_capture = false; return; }
+			if (joy_down(stick, captured_axis_deadzone)) { captured_axis_type = "y"; captured_axis_direction = 1; _has_captured_input = true; is_button_capture = false; return; }
+			if (joy_left(stick, captured_axis_deadzone)) { captured_axis_type = "x"; captured_axis_direction = -1; _has_captured_input = true; is_button_capture = false; return; }
+			if (joy_right(stick, captured_axis_deadzone)) { captured_axis_type = "x"; captured_axis_direction = 1; _has_captured_input = true; is_button_capture = false; return; }
+
+			// Check right stick (r_x/r_y)
+			if (joy_right_up(stick, captured_axis_deadzone)) { captured_axis_type = "r_y"; captured_axis_direction = -1; _has_captured_input = true; is_button_capture = false; return; }
+			if (joy_right_down(stick, captured_axis_deadzone)) { captured_axis_type = "r_y"; captured_axis_direction = 1; _has_captured_input = true; is_button_capture = false; return; }
+			if (joy_right_left(stick, captured_axis_deadzone)) { captured_axis_type = "r_x"; captured_axis_direction = -1; _has_captured_input = true; is_button_capture = false; return; }
+			if (joy_right_right(stick, captured_axis_deadzone)) { captured_axis_type = "r_x"; captured_axis_direction = 1; _has_captured_input = true; is_button_capture = false; return; }
+
+			// Check Z-axis (shoulder buttons on some controllers, or twist on joysticks)
+			if (joy_z_positive(stick, captured_axis_deadzone)) { captured_axis_type = "z"; captured_axis_direction = 1; _has_captured_input = true; is_button_capture = false; return; }
+			if (joy_z_negative(stick, captured_axis_deadzone)) { captured_axis_type = "z"; captured_axis_direction = -1; _has_captured_input = true; is_button_capture = false; return; }
+
+			// Check sliders (triggers)
+			if (joy_left_trigger_down(stick, captured_axis_deadzone)) { captured_axis_type = "slider_1"; captured_axis_direction = 1; _has_captured_input = true; is_button_capture = false; return; }
+			if (joy_right_trigger_down(stick, captured_axis_deadzone)) { captured_axis_type = "slider_2"; captured_axis_direction = 1; _has_captured_input = true; is_button_capture = false; return; }
+
+			// --- If no Axis captured, attempt to capture Buttons ---
+			int[] down = stick.buttons_down();
+			// Add virtual trigger buttons if active (these are discrete, so treat as buttons)
+			if(joy_left_trigger_down(stick)) down.insert_last(JOYSTICK_CONTROL_LEFT_TRIGGER);
+			if(joy_right_trigger_down(stick)) down.insert_last(JOYSTICK_CONTROL_RIGHT_TRIGGER);
+
+			if(down.length() > 0) {
+				_has_captured_input = true;
+				is_button_capture = true;
+				for(uint i = 0; i < down.length(); i++)
+					this.captured_buttons.insert_last(down[i]);
+				return;
+			}
+		}
+		// If input was already captured, monitor for release
+		else {
+			if(is_button_capture) {
+				// Monitor button release
+				int[] current_down_buttons = stick.buttons_down();
+				if(joy_left_trigger_down(stick)) current_down_buttons.insert_last(JOYSTICK_CONTROL_LEFT_TRIGGER);
+				if(joy_right_trigger_down(stick)) current_down_buttons.insert_last(JOYSTICK_CONTROL_RIGHT_TRIGGER);
+
+				// Check if all initially captured buttons are now released
+				bool all_captured_buttons_released = true;
+				for(uint i=0; i < captured_buttons.length(); i++) {
+					if(current_down_buttons.find(captured_buttons[i]) != -1) {
+						all_captured_buttons_released = false;
+						break;
+					}
+				}
+				// If no captured buttons are currently down, stop recording
+				if(all_captured_buttons_released && captured_buttons.length() > 0) {
+					this.stop();
+				} else if (captured_buttons.length() == 0 && current_down_buttons.length() == 0) { // Edge case: if nothing was pressed, but captured_input was true.
+                    this.stop();
+                }
+
+
+			} else { // It was an axis capture
+				// Monitor axis release
+				float current_axis_value = 0.0f;
+				if (captured_axis_type == "x") current_axis_value = normalize_axis_unsigned(stick.x);
+				else if (captured_axis_type == "y") current_axis_value = normalize_axis_unsigned(stick.y);
+				else if (captured_axis_type == "r_x") current_axis_value = normalize_axis_unsigned(stick.r_x);
+				else if (captured_axis_type == "r_y") current_axis_value = normalize_axis_unsigned(stick.r_y);
+				else if (captured_axis_type == "z") current_axis_value = normalize_axis_unsigned(stick.z);
+				else if (captured_axis_type == "slider_1") current_axis_value = normalize_axis_unsigned(stick.slider_1);
+				else if (captured_axis_type == "slider_2") current_axis_value = normalize_axis_unsigned(stick.slider_2);
+
+				current_axis_value = apply_deadzone(current_axis_value, captured_axis_deadzone);
+
+				bool axis_still_active = false;
+				if (captured_axis_direction == 1) { // Positive direction
+					axis_still_active = current_axis_value > captured_axis_threshold;
+				} else { // Negative direction
+					axis_still_active = current_axis_value < -captured_axis_threshold;
+				}
+
+				if (!axis_still_active) { // Axis released
+					this.stop();
+				}
+			}
+		}
+	}
+}
+class js_action {
+	string name;
+	int[] required_buttons;
+	string description;
+	bool pressed = false;
+	string axis_type = "none"; // "x", "y", "r_x", "r_y", "z", "r_z", "slider_1", "slider_2"
+	int axis_direction = 0; // -1 (negative), 1 (positive), 0 (none)
+	float axis_deadzone = 0.2f;
+	float axis_threshold = 0.5f;
+
+	js_action(string name, int[]@ required_buttons, string description = "") {
+		this.name = name;
+		this.required_buttons = required_buttons;
+		this.description = description;
+	}
+
+	string serialize() {
+		string[] parts;
+		parts.insert_last(this.name);
+		string binding_str = "none";
+		if(this.required_buttons.length() > 0) {
+			string[] final;
+			for(uint i = 0; i<this.required_buttons.length(); i+=1) final.insert_last(js_button_to_string(this.required_buttons[i]));
+			binding_str = join(final, "+");
+		} else if (this.axis_type != "none" && this.axis_direction != 0) {
+			binding_str = "axis:" + this.axis_type + ":" + this.axis_direction + ":" + this.axis_deadzone + ":" + this.axis_threshold;
+		}
+		parts.insert_last(binding_str);
+		return join(parts, "=")+"\r\n";
+	}
+
+	bool deserialize(const string &in data) {
+		string[] parts = data.split("=");
+		if(parts.length() < 2) return false;
+		this.name = parts[0];
+		string binding_str = parts[1];
+		
+		this.required_buttons.resize(0);
+		this.axis_type = "none";
+		this.axis_direction = 0;
+		this.axis_deadzone = 0.2f;
+		this.axis_threshold = 0.5f;
+
+		if(binding_str == "none") return true;
+
+		if(binding_str.substr(0, 5) == "axis:") {
+			string[] axis_parts = binding_str.split(":");
+			if(axis_parts.length() >= 5) {
+				this.axis_type = axis_parts[1];
+				this.axis_direction = int(string_to_number(axis_parts[2]));
+				this.axis_deadzone = float(string_to_number(axis_parts[3]));
+				this.axis_threshold = float(string_to_number(axis_parts[4]));
+			}
+		} else {
+			string[] button_names = binding_str.split("+");
+			for(uint i = 0; i < button_names.length(); i++) {
+				int btn = string_to_js_button(button_names[i]);
+				if(btn != -1) this.required_buttons.insert_last(btn);
+			}
+		}
+		return true;
+	}
+
+	bool get_configured() property {
+		return this.required_buttons.length() > 0 || (this.axis_type != "none" && this.axis_direction != 0);
+	}
+}
+class js_manager {
+	private dictionary action_map;
+	private joystick@j_handle;
+	private int[] _buttons_down, _buttons_pressed;
+	string config_filename = "joystick.ini";
+	private string[] _action_names; //this will keep track of action names so we can show them in the order in which they were added, a dictionary will not do this for us.
+	js_manager(joystick@j, string config_name = "joystick.ini") {
+		@this.j_handle = @j;
+		this.config_filename = config_name;
+	}
+	bool init(uint index = -1) {
+		if(@j_handle == null) return false;
+		if(this.j_handle.active) return true;
+		else {
+			if(this.j_handle.joysticks<=0) return false;
+			return this.j_handle.set(index == -1?0:index);
+		}
+		return false;
+	}
+	bool get_available() property {
+		if(@this.j_handle == null) return false;
+		return this.j_handle.active;
+	}
+	void update() {
+		if(!this.available) return;
+		this._buttons_pressed = this.j_handle.buttons_pressed();
+		this._buttons_down = this.j_handle.buttons_down();
+		if(joy_left_trigger_down(this.j_handle)) this._buttons_down.insert_last(JOYSTICK_CONTROL_LEFT_TRIGGER);
+		if(joy_right_trigger_down(this.j_handle)) this._buttons_down.insert_last(JOYSTICK_CONTROL_RIGHT_TRIGGER);
+	}
+	bool save() {
+		string[]@lst = this.list_actions();
+		if(lst.length()<=0) return false;
+		file@f = file(this.config_filename, "wb");
+		f.write("//this is the joystick configuration file for customizing the way your joystick performs game tasks.\r\n//Please do not add any extra commands in this file, only modify the commands provided.\r\n");
+		for(uint i = 0; i<lst.length(); i+=1) {
+			js_action@temp_action;
+			this.action_map.get(lst[i], @temp_action);
+			if(@temp_action != null) f.write(temp_action.serialize());
+			else continue;
+		}
+		f.close();
+		return true;
+	}
+	bool load() {
+		if(!file_exists(this.config_filename)) return false;
+		file@ f = file(this.config_filename, "rb");
+		if(@f == null or !f.active) return false;
+		string[]@ lines = f.read().split("\r\n");
+		f.close();
+		int loaded = 0;
+		for(uint i = 0; i < lines.length(); i+=1) {
+			string line = lines[i].trim_whitespace();
+			if(line.length() == 0 or line.substr(0, 2) == "//") continue;
+			string[] parts = line.split("=");
+			if(parts.length() < 2) continue;
+			string name = parts[0];
+			js_action@ action = this.get_action(name);
+			if(@action != null and action.deserialize(line)) loaded += 1;
+		}
+		return loaded>0;
+	}
+	bool add_action(string name, string description = "", int default_button = 0) {
+		return this.add_action(name, description, {default_button});
+	}
+	bool add_action(string name, string description = "", int[]@default_button_combo = {}) {
+		if(this.action_map.exists(name)) return false;
+		js_action@action = js_action(name, @default_button_combo, description);
+		this.action_map.set(name, @action);
+		this._action_names.insert_last(name);
+		return true;
+	}
+	bool remove_action(string name) {
+		if(!this.action_map.exists(name)) return false;
+		uint index = this._action_names.find(name);
+		if(index>-1) this._action_names.remove_at(index);
+		return this.action_map.delete(name);
+	}
+	bool set_action_buttons(string name, int[] buttons) {
+		js_action@action = this.get_action(name);
+		if(@action == null) return false;
+		action.required_buttons = buttons;
+		action.axis_type = "none"; // Clear axis binding
+		action.axis_direction = 0;
+		return true;
+	}
+
+	bool set_action_axis(string name, string axis_type, int direction, float deadzone = 0.2f, float threshold = 0.5f) {
+		js_action@action = this.get_action(name);
+		if(@action == null) return false;
+		action.required_buttons.resize(0); // Clear button binding
+		action.axis_type = axis_type;
+		action.axis_direction = direction;
+		action.axis_deadzone = deadzone;
+		action.axis_threshold = threshold;
+		return true;
+	}
+
+	// New method to clear an action's binding
+	bool clear_action_binding(string name) {
+		js_action@action = this.get_action(name);
+		if(@action == null) return false;
+		action.required_buttons.resize(0); // Clear button binding
+		action.axis_type = "none";         // Clear axis binding
+		action.axis_direction = 0;
+		return true;
+	}
+
+	js_action@get_action(string name) {
+		if(!this.action_map.exists(name)) return null;
+		js_action@ret;
+		this.action_map.get(name, @ret);
+		return ret;
+	}
+	string[]@list_actions() {
+		return this._action_names;
+	}
+	bool action_is_pressed(const string&in name) {
+		return this.check(name, 1);
+	}
+	bool action_is_down(const string&in name) {
+		return this.check(name);
+	}
+	bool check(const string &in name, int type = 0) {
+		if(!this.available) return false;
+		js_action@ action = this.get_action(name);
+		if(@action == null || !action.configured) return false;
+
+		bool current_state = false;
+
+		if (action.required_buttons.length() > 0) {
+			// Check button binding
+			int[]@checking = this._buttons_down;
+			current_state = true; // Assume true until a button is not found
+			for(uint i = 0; i < action.required_buttons.length(); i++) {
+				if(checking.find(action.required_buttons[i]) == -1) {
+					current_state = false;
+					break;
+				}
+			}
+		} else if (action.axis_type != "none" && action.axis_direction != 0) {
+			// Check axis binding
+			float axis_value = 0.0f;
+			if (action.axis_type == "x") axis_value = normalize_axis_unsigned(j_handle.x);
+			else if (action.axis_type == "y") axis_value = normalize_axis_unsigned(j_handle.y);
+			else if (action.axis_type == "z") axis_value = normalize_axis_unsigned(j_handle.z);
+			else if (action.axis_type == "r_x") axis_value = normalize_axis_unsigned(j_handle.r_x);
+			else if (action.axis_type == "r_y") axis_value = normalize_axis_unsigned(j_handle.r_y);
+			else if (action.axis_type == "r_z") axis_value = normalize_axis_unsigned(j_handle.r_z);
+			else if (action.axis_type == "slider_1") axis_value = normalize_axis_unsigned(j_handle.slider_1);
+			else if (action.axis_type == "slider_2") axis_value = normalize_axis_unsigned(j_handle.slider_2);
+
+			axis_value = apply_deadzone(axis_value, action.axis_deadzone);
+
+			if (action.axis_direction == 1) { // Positive direction
+				current_state = axis_value > action.axis_threshold;
+			} else { // Negative direction
+				current_state = axis_value < -action.axis_threshold;
+			}
+		}
+
+		if(type == 0) return current_state; // Action is held
+		else { // Action is pressed once
+			if(current_state && !action.pressed) {
+				action.pressed = true;
+				return true;
+			} else if (!current_state) {
+				action.pressed = false;
+			}
+			return false;
+		}
+	}
+}
+float normalize_axis_unsigned(int raw) {
+	return (raw - 32768) / 32768.0f;
+}
+
+float apply_deadzone(float v, float deadzone = 0.2f) {
+	if (abs(v) < deadzone)
+		return 0.0f;
+	return v;
+}
+
+bool joy_left(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float x = apply_deadzone(normalize_axis_unsigned(j.x), deadzone);
+	return x < -deadzone;
+}
+
+bool joy_right(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float x = apply_deadzone(normalize_axis_unsigned(j.x), deadzone);
+	return x > deadzone;
+}
+
+bool joy_up(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float y = apply_deadzone(normalize_axis_unsigned(j.y), deadzone);
+	return y < -deadzone;
+}
+
+bool joy_down(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float y = apply_deadzone(normalize_axis_unsigned(j.y), deadzone);
+	return y > deadzone;
+}
+
+bool joy_z_positive(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float z = apply_deadzone(normalize_axis_unsigned(j.z), deadzone);
+	return z > deadzone;
+}
+
+bool joy_z_negative(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float z = apply_deadzone(normalize_axis_unsigned(j.z), deadzone);
+	return z < -deadzone;
+}
+
+bool joy_right_left(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float x = apply_deadzone(normalize_axis_unsigned(j.r_x), deadzone);
+	return x < -deadzone;
+}
+
+bool joy_right_right(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float x = apply_deadzone(normalize_axis_unsigned(j.r_x), deadzone);
+	return x > deadzone;
+}
+
+bool joy_right_up(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float y = apply_deadzone(normalize_axis_unsigned(j.r_y), deadzone);
+	return y < -deadzone;
+}
+
+bool joy_right_down(joystick@ j, float deadzone = 0.2f) {
+	if(!j.active) return false;
+	float y = apply_deadzone(normalize_axis_unsigned(j.r_y), deadzone);
+	return y > deadzone;
+}
+bool joy_left_trigger_down(joystick@ j, float threshold = 0.2f) {
+	if(!j.active) return false;
+	float lt = normalize_axis_unsigned(j.slider_1);
+	return lt > threshold;
+}
+bool joy_right_trigger_down(joystick@ j, float threshold = 0.2f) {
+	if(!j.active) return false;
+	float rt = normalize_axis_unsigned(j.slider_2);
+	return rt > threshold;
+}
+string[]@ BUTTON_NAMES = {
+	"A", "B", "X", "Y", "Back", "Guide", "Start", "Left Stick", "Right Stick", "Left Shoulder", "Right Shoulder", "DPad Up", "DPad Down", "DPad Left", "DPad Right", "Misc", "Paddle 1", "Paddle 2", "Paddle 3", "Paddle 4", "Touchpad", "Trigger Left", "Trigger Right",
+	// Virtual stick directions
+	"Left Stick Up", "Left Stick Down", "Left Stick Left", "Left Stick Right",
+	"Right Stick Up", "Right Stick Down"
+};
+string js_button_to_string(int button) {
+	if(button < 0 || button >= int(BUTTON_NAMES.length()))
+		return "Invalid";
+	return BUTTON_NAMES[button];
+}
+int string_to_js_button(const string &in name) {
+	for(uint i = 0; i < BUTTON_NAMES.length(); i++) {
+		if(BUTTON_NAMES[i] == name)
+			return int(i);
+	}
+	return -1;
+}
