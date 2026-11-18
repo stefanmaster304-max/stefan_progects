@@ -255,6 +255,14 @@ void projectile_loop()
 			bool is_area_type = (pproj.projectile_type == "missile" || pproj.projectile_type == "rocket" ||
 								 pproj.projectile_type == "grenade" || pproj.projectile_type == "drainage");
 
+			// A projectile that reaches an enemy or an ally damages it, so the
+			// player can fight the NPC set with the same weapons it uses.
+			if (npc_projectile_intersect(pproj.x, pproj.y, pproj.z, pproj.damage, pproj.weapon_id))
+			{
+				active_projectiles.remove_at(uint(i));
+				continue;
+			}
+
 			if (is_projectile_obstacle(int(round(pproj.x, 0)), int(round(pproj.y, 0)), int(round(pproj.z, 0))))
 			{
 				if (is_area_type) detonate_projectile_area(pproj);

@@ -25,7 +25,8 @@ void check_map_discovery(const string&in mname)
 	string lname = string_to_lower_case(mname.trim_whitespace());
 	if (lname.ends_with(".map")) lname = lname.substr(0, lname.length() - 4);
 
-	// The primary spawn map (main) is eliminated: provides no discovery reward or resources.
+	// Discovery is bookkeeping only now. There is no reward, no unlock sound
+	// and no announcement: finding a map is no longer a progression event.
 	if (is_primary_spawn_map(lname))
 	{
 		discovered_maps.set("main", true);
@@ -36,34 +37,11 @@ void check_map_discovery(const string&in mname)
 	string key = "map:" + lname;
 	if (discovered_maps.exists(key) || discovered_maps.exists(lname))
 	{
-		return; // Already discovered
+		return;
 	}
-
-	// First time discovering this map!
 	discovered_maps.set(key, true);
 	discovered_maps.set(lname, true);
-
-	// Persist discovery so it cannot be claimed multiple times
 	save_location();
-
-	// Play map unlocked sound from the player's folder
-	string unlock_snd = get_sound_path("player/unlockmap.ogg;unlockmap.ogg;player/UI mission unlock.ogg");
-	if (unlock_snd != "")
-	{
-		p.play_stationary(unlock_snd, false);
-	}
-
-	// Grant 10 gold as discovery reward
-	int gold_reward = 10;
-	give("gold", gold_reward);
-
-	// Format map display name
-	string disp_name = mname.trim_whitespace();
-	if (disp_name.ends_with(".map")) disp_name = disp_name.substr(0, disp_name.length() - 4);
-
-	// Global notification message
-	string msg = "Congratulations traveler, you have discovered a new map, " + disp_name + "! As a reward you have earned " + gold_reward + " gold.";
-	speak(msg);
 }
 
 void check_map_exploration(const string&in mname, int px, int py, int pz)
@@ -477,6 +455,9 @@ map_min_level = 1;
 map_max_level = 0;
 map_min_resurrection = 0;
 map_max_resurrection = 0;
+npc_enemy_target_count = 0;
+npc_friend_target_count = 0;
+npc_respawn_delay = 30000;
 string[] lines;
 if (map_parsed_lines_cache.exists(name))
 {
@@ -809,6 +790,33 @@ else if (cmd == "item_spawner")
 {
 	if (!map_already_saved) read_item_spawner(parsed);
 }
+else if (cmd == "reverbzone")
+{
+	if (parsed.length() >= 20)
+	{
+		spawn_reverb_zone(
+			int(string_to_number(parsed[1])), int(string_to_number(parsed[2])),
+			int(string_to_number(parsed[3])), int(string_to_number(parsed[4])),
+			int(string_to_number(parsed[5])), int(string_to_number(parsed[6])),
+			string_to_number(parsed[7]), string_to_number(parsed[8]), string_to_number(parsed[9]),
+			string_to_number(parsed[10]), string_to_number(parsed[11]), string_to_number(parsed[12]),
+			string_to_number(parsed[13]), string_to_number(parsed[14]), string_to_number(parsed[15]),
+			string_to_number(parsed[16]), string_to_number(parsed[17]), string_to_number(parsed[18]),
+			string_to_number(parsed[19]));
+	}
+}
+else if (cmd == "npcspawner")
+{
+	if (parsed.length() >= 4)
+	{
+		npc_enemy_target_count = int(string_to_number(parsed[1]));
+		npc_friend_target_count = int(string_to_number(parsed[2]));
+		npc_respawn_delay = int(string_to_number(parsed[3]));
+		if (npc_enemy_target_count < 0) npc_enemy_target_count = 0;
+		if (npc_friend_target_count < 0) npc_friend_target_count = 0;
+		if (npc_respawn_delay < 1000) npc_respawn_delay = 1000;
+	}
+}
 }
 if (!(has_minx && has_maxx && has_miny && has_maxy && has_minz && has_maxz))
 {
@@ -821,6 +829,7 @@ spawn_platform(-1000,-1,0,maxy,0,50,"wallw");
 spawn_platform(0,maxx,maxy+1,maxy+1000,0,50,"wallw");
 spawn_platform(maxx+1,maxx+1000,0,maxy,0,50,"wallw");
 mapname=name;
+npc_start_for_map();
 mark_map_sources_registered(name);
 sync_map_and_neighbor_sources(name);
 apply_ambient_volume();

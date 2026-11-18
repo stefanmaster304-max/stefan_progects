@@ -1,0 +1,166 @@
+// builder/misc/reverb_zone_builder.nvgt - Reverb zone construction form.
+//
+// Only reverb exists in this builder. Every adjustable control is a slider and
+// every slider maps to a native king_audio_engine reverb parameter. A platform
+// sound list is provided so the builder can loop a real surface sound while the
+// sliders are being tuned; that preview never leaves the builder and is never
+// stored on the map.
+
+string[] reverb_zone_sound_options()
+{
+	string[] list = get_map_sound_folders("builder/construction/platforms/*");
+	list.sort_ascending();
+	// Platform sounds are named folders; a handful of maps use flats, so the
+	// materials registered by the items manager are offered too.
+	load_all_items_config();
+	for (uint i = 0; i < item_registry.length(); i++)
+	{
+		if (item_registry[i].category == "materials" && list.find(item_registry[i].id) == -1)
+			list.insert_last(item_registry[i].id);
+	}
+	list.sort_ascending();
+	return list;
+}
+
+void build_reverb_zone()
+{
+	string[] sound_options = reverb_zone_sound_options();
+
+	int saved_x1 = minx, saved_x2 = maxx;
+	int saved_y1 = miny, saved_y2 = maxy;
+	int saved_z1 = minz, saved_z2 = maxz;
+
+	string[] labels = {
+		"reverb decay time in milliseconds",
+		"reverb wet volume in decibels",
+		"reverb dry volume in decibels",
+		"reverb diffusion",
+		"reverb density",
+		"reverb early reflection delay in milliseconds",
+		"reverb late reflection delay in milliseconds",
+		"reverb high frequency reference in hertz",
+		"reverb high frequency decay ratio",
+		"reverb low shelf frequency in hertz",
+		"reverb low shelf gain in decibels",
+		"reverb high cut frequency in hertz",
+		"reverb early to late mix"
+	};
+	double[] defaults = {1500, -6, -80, 80, 60, 5, 10, 5000, 50, 250, 0, 8000, 60};
+	double[] minimums = {100, -60, -80, 0, 0, 0, 0, 1000, 10, 20, -24, 500, 0};
+	double[] maximums = {10000, 0, 0, 100, 100, 200, 200, 20000, 200, 1000, 24, 20000, 100};
+	double[] steps = {50, 1, 1, 1, 1, 1, 1, 100, 1, 10, 1, 100, 1};
+
+	audio_form f;
+	f.create_window("Reverb Zone", false, true, false);
+
+	int i_x1 = f.create_input_box("minimum x", "" + saved_x1);
+	int i_x2 = f.create_input_box("maximum x", "" + saved_x2);
+	int i_y1 = f.create_input_box("minimum y", "" + saved_y1);
+	int i_y2 = f.create_input_box("maximum y", "" + saved_y2);
+	int i_z1 = f.create_input_box("minimum z", "" + saved_z1);
+	int i_z2 = f.create_input_box("maximum z", "" + saved_z2);
+	f.set_disallowed_chars(i_x1, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_x2, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_y1, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_y2, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_z1, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_z2, "0123456789-", true, "Numbers only.");
+
+	int list_sound_preview = f.create_list("platform sound to loop while tuning (Space to start or stop)");
+	f.add_list_item(list_sound_preview, "none", "none");
+	for (uint i = 0; i < sound_options.length(); i++)
+		f.add_list_item(list_sound_preview, sound_options[i], sound_options[i]);
+
+	int[] sliders;
+	for (uint s = 0; s < labels.length(); s++)
+	{
+		int ctrl = f.create_slider(labels[s], defaults[s], minimums[s], maximums[s], "", steps[s]);
+		sliders.insert_last(ctrl);
+	}
+
+	int btn_ok = f.create_button("&add reverb zone", true);
+	int btn_cancel = f.create_button("&cancel", false, true);
+	f.set_default_controls(btn_ok, btn_cancel);
+	f.focus_silently(i_x1);
+
+	bool preview_playing = false;
+	int last_sound_pos = 0;
+	timer space_preview_timer;
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		f.monitor();
+
+		int cur_pos = f.get_list_position(list_sound_preview);
+		if (cur_pos != last_sound_pos)
+		{
+			last_sound_pos = cur_pos;
+			if (preview_playing)
+			{
+				builder_preview_sound.close();
+				preview_playing = false;
+			}
+			if (cur_pos > 0 && cur_pos <= int(sound_options.length()))
+			{
+				string snd = get_platform_sound(sound_options[cur_pos - 1], "step");
+				if (snd != "")
+				{
+					preview_playing = play_builder_preview(snd, 0.0, 100.0);
+				}
+			}
+		}
+
+		if ((key_pressed(KEY_SPACE) || key_down(KEY_SPACE)) && f.get_current_focus() == list_sound_preview)
+		{
+			if (key_pressed(KEY_SPACE) || space_preview_timer.elapsed >= 300)
+			{
+				space_preview_timer.restart();
+				if (preview_playing)
+				{
+					builder_preview_sound.close();
+					preview_playing = false;
+				}
+				else if (cur_pos > 0 && cur_pos <= int(sound_options.length()))
+				{
+					string snd = get_platform_sound(sound_options[cur_pos - 1], "step");
+					if (snd != "") preview_playing = play_builder_preview(snd, 0.0, 100.0);
+				}
+			}
+		}
+
+		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
+		{
+			builder_preview_sound.close();
+			preview_playing = false;
+			speak("canceled");
+			return;
+		}
+
+		if (f.is_pressed(btn_ok))
+		{
+			string tx1 = f.get_text(i_x1);
+			string tx2 = f.get_text(i_x2);
+			string ty1 = f.get_text(i_y1);
+			string ty2 = f.get_text(i_y2);
+			string tz1 = f.get_text(i_z1);
+			string tz2 = f.get_text(i_z2);
+			if (tx1 == "" || tx2 == "" || ty1 == "" || ty2 == "" || tz1 == "" || tz2 == "")
+			{
+				speak("Coordinates cannot be empty.");
+				continue;
+			}
+
+			builder_preview_sound.close();
+			preview_playing = false;
+
+			string line = "reverbzone:" + tx1 + ":" + tx2 + ":" + ty1 + ":" + ty2 + ":" + tz1 + ":" + tz2;
+			for (uint s2 = 0; s2 < sliders.length(); s2++)
+				line += ":" + f.get_slider(sliders[s2]);
+
+			save_to_map(line);
+			return;
+		}
+	}
+}

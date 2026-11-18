@@ -1,0 +1,1007 @@
+// npc_system.nvgt - Offline enemy and ally combat system for The Confrontation.
+//
+// Adapted from the online enemy/friend classes that shipped separately. All
+// network dependencies are gone: no players array, no send_reliable, no remote
+// map lists, no server timers. Everything runs locally against the player and
+// the local NPC set.
+//
+// Rules implemented here, exactly as designed:
+//   - Enemies attack allies AND the player.
+//   - Allies only attack enemies. Neither ever attack the player.
+//   - NPCs never damage the player during an enemy/ally exchange; the player is
+//     damaged only when an enemy has explicitly selected the player as target.
+//   - Every NPC uses the real weapon registry: fire interval, range, damage,
+//     fire mode, magazine capacity, reserve ammunition and melee fallback.
+//   - A shot only lands when the target is exactly in one of the four cardinal
+//     lines of the shooter (straight ahead, behind, left or right) and inside
+//     the weapon's range with a clear line of sight. Otherwise the NPC walks to
+//     re-align instead of firing.
+//   - NPCs carry their own ammunition and healing items, equip a shield a few
+//     seconds after spawning and use healing items with a cooldown.
+//   - Kills are announced globally with attacker, victim, weapon and coordinates.
+//   - Dead NPCs respawn only after the configured delay, keeping the configured
+//     count of enemies and allies.
+
+const int NPC_NEAR_FIRE_DISTANCE = 10;
+const int NPC_SIGHT_DISTANCE = 90;
+const int NPC_DEATH_LINGER_MS = 1000;
+
+// ---------------------------------------------------------------------------
+// Spawner configuration (stored on the map)
+// ---------------------------------------------------------------------------
+int npc_enemy_target_count = 0;
+int npc_friend_target_count = 0;
+int npc_respawn_delay = 30000;
+
+// ---------------------------------------------------------------------------
+// Per-NPC weapon copy
+// ---------------------------------------------------------------------------
+class npc_weapon
+{
+	string id;
+	string name;
+	string ammo_type;
+	string fire_mode;
+	bool melee;
+	int firetime;
+	int walktime;
+	int range;
+	int min_damage;
+	int max_damage;
+	int capacity;
+	int loaded;
+	int reserve;
+	int reload_ms;
+	int burst_left;
+	string sound_fire;
+	string sound_distant_fire;
+	string sound_reload;
+	string sound_draw;
+	string sound_empty_mag;
+
+	npc_weapon()
+	{
+		id = "";
+		name = "";
+		ammo_type = "";
+		fire_mode = "semi";
+		melee = false;
+		firetime = 500;
+		walktime = 0;
+		range = 10;
+		min_damage = 50;
+		max_damage = 100;
+		capacity = 1;
+		loaded = 0;
+		reserve = 0;
+		reload_ms = 2000;
+		burst_left = 0;
+		sound_fire = "";
+		sound_distant_fire = "";
+		sound_reload = "";
+		sound_draw = "";
+		sound_empty_mag = "";
+	}
+}
+
+int npc_reload_time_for_class(const string&in wclass)
+{
+	string c = string_to_lower_case(wclass);
+	if (string_contains(c, "pistol", 1) > -1 || string_contains(c, "revolver", 1) > -1) return 1200;
+	if (string_contains(c, "machine_gun", 1) > -1) return 4200;
+	if (string_contains(c, "launcher", 1) > -1) return 3000;
+	if (string_contains(c, "shotgun", 1) > -1) return 2600;
+	if (string_contains(c, "sniper", 1) > -1 || string_contains(c, "rifle", 1) > -1) return 2000;
+	if (string_contains(c, "energy", 1) > -1) return 1800;
+	return 2000;
+}
+
+bool npc_weapon_usable(npc_weapon@ w)
+{
+	if (w is null) return false;
+	if (w.melee) return true;
+	return (w.loaded > 0 || w.reserve > 0);
+}
+
+string npc_first_fire_mode(const string&in modes)
+{
+	string m = string_to_lower_case(modes);
+	m = string_replace(m, "/", ";", true);
+	m = string_replace(m, ",", ";", true);
+	string[]@ parts = string_split(m, ";", true);
+	if (parts is null) return "semi";
+	for (uint i = 0; i < parts.length(); i++)
+	{
+		string p = parts[i].trim_whitespace();
+		if (p == "auto" || p == "automatic" || p == "full_auto") return "auto";
+		if (p == "burst") return "burst";
+	}
+	return "semi";
+}
+
+npc_weapon@ npc_make_weapon(weapon_data@ w)
+{
+	if (w is null) return null;
+	npc_weapon@ nw = npc_weapon();
+	nw.id = w.id;
+	nw.name = (w.name != "") ? w.name : w.id;
+	nw.ammo_type = w.ammo_type;
+	nw.fire_mode = npc_first_fire_mode(w.fire_modes);
+	nw.melee = w.melee;
+	nw.firetime = (w.firetime > 0) ? w.firetime : 500;
+	nw.walktime = w.walktime;
+	nw.range = (w.range > 0) ? w.range : 10;
+	nw.min_damage = w.min_damage;
+	nw.max_damage = w.max_damage;
+	nw.capacity = (w.capacity > 0) ? w.capacity : 1;
+	nw.loaded = w.melee ? 0 : nw.capacity;
+	nw.reserve = 0;
+	if (!w.melee)
+	{
+		if (w.is_magazine) nw.reserve = random(0, 3);
+		else nw.reserve = random(0, nw.capacity * 3);
+	}
+	nw.reload_ms = npc_reload_time_for_class(w.wclass);
+	nw.sound_fire = w.sound_fire;
+	nw.sound_distant_fire = w.sound_distant_fire;
+	nw.sound_reload = w.sound_reload;
+	nw.sound_draw = w.sound_draw;
+	nw.sound_empty_mag = w.sound_empty_mag;
+	return nw;
+}
+
+// ---------------------------------------------------------------------------
+// NPC actor
+// ---------------------------------------------------------------------------
+class npc_actor
+{
+	string id;
+	bool is_enemy;
+	string nmap;
+
+	int x, y, z;
+	int facing;
+
+	int hp, maxhp;
+	bool dead;
+
+	npc_weapon@[] weapons;
+	int weapon_index;
+
+	int heal_amount;
+	string[] heal_items;
+	int heal_delay;
+	timer heal_timer;
+
+	bool shield_equipped;
+	int shield_durability;
+	bool shield_pending;
+	int shield_delay;
+	timer shield_timer;
+	string shield_item_id;
+
+	int move_interval;
+	timer move_timer;
+	int fire_interval;
+	timer fire_timer;
+	bool reloading;
+	timer reload_timer;
+	timer think_timer;
+	timer death_timer;
+
+	int patrol_x, patrol_y;
+	timer patrol_timer;
+
+	// Target bookkeeping. target_is_player marks the only case in which this
+	// NPC is allowed to damage the player.
+	npc_actor@ target_actor;
+	bool target_is_player;
+
+	string lasthit;
+
+	npc_actor()
+	{
+		id = "";
+		is_enemy = true;
+		nmap = "";
+		x = 0; y = 0; z = 0;
+		facing = north;
+		hp = 1000;
+		maxhp = 1000;
+		dead = false;
+		weapon_index = 0;
+		heal_amount = 0;
+		heal_delay = 0;
+		shield_equipped = false;
+		shield_durability = 0;
+		shield_pending = true;
+		shield_delay = 5000;
+		shield_item_id = "";
+		move_interval = 250;
+		fire_interval = 500;
+		reloading = false;
+		patrol_x = 0;
+		patrol_y = 0;
+		@target_actor = null;
+		target_is_player = false;
+		lasthit = "";
+	}
+}
+
+npc_actor@[] npc_actors(0);
+
+class npc_pending_spawn
+{
+	bool is_enemy;
+	int delay;
+	timer t;
+
+	npc_pending_spawn(bool enemy, int wait_ms)
+	{
+		is_enemy = enemy;
+		delay = wait_ms;
+		t.restart();
+	}
+}
+npc_pending_spawn@[] npc_pending(0);
+
+// ---------------------------------------------------------------------------
+// Map helpers
+// ---------------------------------------------------------------------------
+bool npc_tile_is_floor(int tx, int ty, int tz)
+{
+	if (tx < minx || tx > maxx || ty < miny || ty > maxy || tz < minz || tz > maxz) return false;
+	string tile = get_tile_at(tx, ty, tz);
+	if (tile == "") return false;
+	if (string_contains(string_to_lower_case(tile), "wall", 1) > -1) return false;
+	if (g_active_map.get_wall(tx, ty, tz) != "") return false;
+	return true;
+}
+
+bool npc_find_spawn(int &out sx, int &out sy, int &out sz)
+{
+	for (int attempt = 0; attempt < 500; attempt++)
+	{
+		int tx = random(minx, maxx);
+		int ty = random(miny, maxy);
+		for (int tz = maxz; tz >= minz; tz--)
+		{
+			if (npc_tile_is_floor(tx, ty, tz))
+			{
+				sx = tx; sy = ty; sz = tz;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool npc_can_step_to(int tx, int ty, int tz)
+{
+	return npc_tile_is_floor(tx, ty, tz);
+}
+
+// ---------------------------------------------------------------------------
+// Damage, death and kill feed
+// ---------------------------------------------------------------------------
+string npc_short_name(const string&in who)
+{
+	string w = who;
+	if (w == "") return "Someone";
+	if (string_starts_with(string_to_lower_case(w), "enemy")) return "Enemy";
+	if (string_starts_with(string_to_lower_case(w), "friend")) return "Friend";
+	if (w == "Player") return "Player";
+	return w;
+}
+
+void npc_write_kill_line(const string&in line)
+{
+	string path = "settings/killfeed.log";
+	string old = "";
+	if (file_exists(path)) old = file_get_contents(path);
+	if (old != "" && !string_ends_with(old, "\n")) old += "\n";
+	file_put_contents(path, old + line + "\n");
+}
+
+void npc_announce_kill(const string&in killer, const string&in victim, const string&in weapon_name, int mx, int my, int mz)
+{
+	string line = npc_short_name(killer) + " killed " + npc_short_name(victim) + " at " + mx + ", " + my + ", " + mz + " with " + weapon_name + ".";
+	npc_write_kill_line(line);
+	speak(line);
+}
+
+void npc_play_positional(const string&in snd, int px, int py, int pz)
+{
+	if (snd == "") return;
+	p.play_3d(snd, me.x, me.y, me.z, px, py, pz, double(facing), false);
+}
+
+item_data@ npc_find_shield_item()
+{
+	item_data@ found = find_item_data("metal_shield");
+	if (found !is null) return found;
+	for (uint i = 0; i < item_registry.length(); i++)
+	{
+		item_data@ candidate = @item_registry[i];
+		if (candidate.category == "equipment" && is_shield_item_data(candidate))
+			return candidate;
+	}
+	return null;
+}
+
+void npc_equip_shield(npc_actor@ a)
+{
+	if (a is null || a.shield_equipped) return;
+	item_data@ shield_item = npc_find_shield_item();
+	if (shield_item is null) return;
+	a.shield_equipped = true;
+	a.shield_item_id = shield_item.id;
+	a.shield_durability = (shield_item.capacity > 0) ? shield_item.capacity : SHIELD_DEFAULT_DURABILITY;
+	if (shield_item.sound_use != "")
+	{
+		string snd = get_sound_path(shield_item.sound_use);
+		if (snd != "") npc_play_positional(snd, a.x, a.y, a.z);
+	}
+}
+
+void npc_die(npc_actor@ a, const string&in killer, const string&in weapon_name)
+{
+	if (a is null || a.dead) return;
+	a.dead = true;
+	a.death_timer.restart();
+	@a.target_actor = null;
+	a.target_is_player = false;
+	npc_announce_kill(killer, a.id, weapon_name, a.x, a.y, a.z);
+	if (killer == "Player") kills += 1;
+}
+
+void npc_take_damage(npc_actor@ a, int dmg, const string&in killer, const string&in weapon_name)
+{
+	if (a is null || a.dead || dmg <= 0) return;
+	a.lasthit = killer + "|" + weapon_name;
+
+	if (a.shield_equipped)
+	{
+		item_data@ shield_item = get_item_data(a.shield_item_id);
+		if (a.shield_durability <= dmg)
+		{
+			// The blow is entirely spent breaking the shield, exactly like the
+			// player's own shield rules.
+			a.shield_equipped = false;
+			a.shield_durability = 0;
+			if (shield_item !is null && shield_item.sound_break != "")
+			{
+				string brk = get_sound_path(shield_item.sound_break);
+				if (brk != "") npc_play_positional(brk, a.x, a.y, a.z);
+			}
+			return;
+		}
+		a.shield_durability -= dmg;
+		if (shield_item !is null && shield_item.sound_hit != "")
+		{
+			string hit = get_sound_path(shield_item.sound_hit);
+			if (hit != "") npc_play_positional(hit, a.x, a.y, a.z);
+		}
+		return;
+	}
+
+	a.hp -= dmg;
+	if (a.hp <= 0) npc_die(a, killer, weapon_name);
+}
+
+// Called by the projectile system so the player's own shots can kill NPCs.
+bool npc_projectile_intersect(double px, double py, double pz, int dmg, const string&in weapon_id)
+{
+	if (npc_actors.length() == 0) return false;
+	for (uint i = 0; i < npc_actors.length(); i++)
+	{
+		npc_actor@ a = npc_actors[i];
+		if (a.dead) continue;
+		if (get_3d_distance(px, py, pz, double(a.x), double(a.y), double(a.z)) > 1.2) continue;
+		weapon_data@ w = find_weapon_data(weapon_id);
+		string wname = (w !is null && w.name != "") ? w.name : weapon_id;
+		npc_take_damage(a, dmg, "Player", wname);
+		return true;
+	}
+	return false;
+}
+
+// ---------------------------------------------------------------------------
+// Spawning
+// ---------------------------------------------------------------------------
+void npc_pick_patrol(npc_actor@ a)
+{
+	if (a is null) return;
+	for (int attempt = 0; attempt < 100; attempt++)
+	{
+		int tx = random(minx, maxx);
+		int ty = random(miny, maxy);
+		if (npc_can_step_to(tx, ty, a.z))
+		{
+			a.patrol_x = tx;
+			a.patrol_y = ty;
+			a.patrol_timer.restart();
+			return;
+		}
+	}
+	a.patrol_x = a.x;
+	a.patrol_y = a.y;
+	a.patrol_timer.restart();
+}
+
+void npc_assign_arsenal(npc_actor@ a)
+{
+	load_all_weapons_wpm();
+	string[] ranged_ids;
+	string[] melee_ids;
+	for (uint i = 0; i < weapon_registry.length(); i++)
+	{
+		weapon_data@ w = @weapon_registry[i];
+		if (w is null) continue;
+		if (w.melee) melee_ids.insert_last(w.id);
+		else ranged_ids.insert_last(w.id);
+	}
+
+	int wanted = (int(ranged_ids.length()) < 4) ? int(ranged_ids.length()) : 4;
+	for (int n = 0; n < wanted; n++)
+	{
+		for (int attempt = 0; attempt < 40; attempt++)
+		{
+			if (ranged_ids.length() == 0) break;
+			int idx = random(0, int(ranged_ids.length()) - 1);
+			string wid = ranged_ids[uint(idx)];
+			bool already = false;
+			for (uint k = 0; k < a.weapons.length(); k++)
+			{
+				if (a.weapons[k].id == wid) { already = true; break; }
+			}
+			if (already) continue;
+			npc_weapon@ nw = npc_make_weapon(find_weapon_data(wid));
+			if (nw !is null) a.weapons.insert_last(nw);
+			break;
+		}
+	}
+
+	// A melee weapon is always carried: it is the last resort when every
+	// firearm is out of ammunition, exactly as requested.
+	if (melee_ids.length() > 0)
+	{
+		int midx = random(0, int(melee_ids.length()) - 1);
+		npc_weapon@ mw = npc_make_weapon(find_weapon_data(melee_ids[uint(midx)]));
+		if (mw !is null) a.weapons.insert_last(mw);
+	}
+
+	// Start with a ranged weapon when one exists.
+	a.weapon_index = 0;
+	for (uint i = 0; i < a.weapons.length(); i++)
+	{
+		if (!a.weapons[i].melee) { a.weapon_index = int(i); break; }
+	}
+}
+
+void npc_assign_healing(npc_actor@ a)
+{
+	load_all_items_config();
+	string[] heal_ids;
+	for (uint i = 0; i < item_registry.length(); i++)
+	{
+		item_data@ it = @item_registry[i];
+		if (it is null) continue;
+		if (it.category == "medical items" && it.heal_amount > 0) heal_ids.insert_last(it.id);
+	}
+	if (heal_ids.length() == 0) return;
+	int count = random(1, 5);
+	for (int n = 0; n < count; n++)
+		a.heal_items.insert_last(heal_ids[uint(random(0, int(heal_ids.length()) - 1))]);
+}
+
+npc_actor@ npc_spawn_actor(bool is_enemy)
+{
+	int sx = 0, sy = 0, sz = 0;
+	if (!npc_find_spawn(sx, sy, sz)) return null;
+
+	npc_actor@ a = npc_actor();
+	a.is_enemy = is_enemy;
+	a.id = (is_enemy ? "Enemy " : "Friend ") + random(1000, 9999);
+	a.nmap = mapname;
+	a.x = sx; a.y = sy; a.z = sz;
+	a.maxhp = random(1000, 5000);
+	a.hp = a.maxhp;
+	a.move_interval = random(200, 300);
+	a.facing = random(0, 3) * 90;
+	a.shield_delay = random(5000, 10000);
+	a.shield_timer.restart();
+	a.fire_timer.restart();
+	a.move_timer.restart();
+	a.think_timer.restart();
+
+	npc_assign_arsenal(a);
+	npc_assign_healing(a);
+	npc_pick_patrol(a);
+
+	npc_weapon@ start = npc_current_weapon(a);
+	if (start !is null)
+	{
+		a.fire_interval = start.firetime;
+		if (!start.melee && start.sound_draw != "")
+		{
+			string draw = get_sound_path(start.sound_draw);
+			npc_play_positional(draw, a.x, a.y, a.z);
+		}
+	}
+
+	npc_actors.insert_last(a);
+	return a;
+}
+
+void npc_start_for_map()
+{
+	npc_destroy_all();
+	if (npc_enemy_target_count <= 0 && npc_friend_target_count <= 0) return;
+	for (int i = 0; i < npc_enemy_target_count; i++) npc_spawn_actor(true);
+	for (int i = 0; i < npc_friend_target_count; i++) npc_spawn_actor(false);
+}
+
+void npc_destroy_all()
+{
+	npc_actors.resize(0);
+	npc_pending.resize(0);
+}
+
+// ---------------------------------------------------------------------------
+// Inventory and weapon handling
+// ---------------------------------------------------------------------------
+npc_weapon@ npc_current_weapon(npc_actor@ a)
+{
+	if (a is null || a.weapons.length() == 0) return null;
+	if (a.weapon_index < 0 || a.weapon_index >= int(a.weapons.length())) a.weapon_index = 0;
+	return a.weapons[uint(a.weapon_index)];
+}
+
+void npc_switch_weapon(npc_actor@ a)
+{
+	if (a is null || a.weapons.length() == 0) return;
+	int start = a.weapon_index;
+	for (uint step = 1; step <= a.weapons.length(); step++)
+	{
+		int idx = (start + int(step)) % int(a.weapons.length());
+		if (npc_weapon_usable(a.weapons[uint(idx)]))
+		{
+			a.weapon_index = idx;
+			a.reloading = false;
+			npc_weapon@ nw = a.weapons[uint(idx)];
+			if (nw.sound_draw != "")
+			{
+				string draw = get_sound_path(nw.sound_draw);
+				npc_play_positional(draw, a.x, a.y, a.z);
+			}
+			return;
+		}
+	}
+	// Nothing usable: keep the melee weapon if one is carried.
+	for (uint i = 0; i < a.weapons.length(); i++)
+	{
+		if (a.weapons[i].melee) { a.weapon_index = int(i); return; }
+	}
+}
+
+void npc_start_reload(npc_actor@ a, npc_weapon@ w)
+{
+	if (a is null || w is null || w.melee || a.reloading) return;
+	if (w.reserve <= 0) return;
+	a.reloading = true;
+	a.reload_timer.restart();
+	if (w.sound_reload != "")
+	{
+		string snd = get_sound_path(w.sound_reload);
+		npc_play_positional(snd, a.x, a.y, a.z);
+	}
+}
+
+void npc_finish_reload(npc_actor@ a, npc_weapon@ w)
+{
+	if (a is null || w is null) return;
+	if (w.reserve > 0)
+	{
+		w.reserve -= 1;
+		w.loaded = w.capacity;
+	}
+	a.reloading = false;
+}
+
+void npc_use_heal(npc_actor@ a)
+{
+	if (a is null || a.heal_items.length() == 0) return;
+	int idx = random(0, int(a.heal_items.length()) - 1);
+	string item_id = a.heal_items[uint(idx)];
+	item_data@ it = get_item_data(item_id);
+	if (it is null) return;
+	a.heal_items.remove_at(uint(idx));
+	a.hp += it.heal_amount;
+	if (a.hp > a.maxhp) a.hp = a.maxhp;
+	if (it.sound_use != "")
+	{
+		string snd = get_sound_path(it.sound_use);
+		npc_play_positional(snd, a.x, a.y, a.z);
+	}
+	a.heal_delay = random(5000, 10000);
+	a.heal_timer.restart();
+}
+
+// ---------------------------------------------------------------------------
+// Perception and combat
+// ---------------------------------------------------------------------------
+bool npc_aligned(npc_actor@ a, int tx, int ty, int tz)
+{
+	if (a is null) return false;
+	if (a.z != tz) return false;
+	return (a.x == tx || a.y == ty);
+}
+
+void npc_face_target(npc_actor@ a, int tx, int ty)
+{
+	if (a is null) return;
+	if (tx > a.x) a.facing = east;
+	else if (tx < a.x) a.facing = west;
+	else if (ty > a.y) a.facing = north;
+	else if (ty < a.y) a.facing = south;
+}
+
+npc_actor@ npc_nearest_opponent(npc_actor@ a, bool &out is_player, int &out tx, int &out ty, int &out tz)
+{
+	is_player = false;
+	tx = a.x; ty = a.y; tz = a.z;
+	int best = NPC_SIGHT_DISTANCE + 1;
+	npc_actor@ found = null;
+
+	for (uint i = 0; i < npc_actors.length(); i++)
+	{
+		npc_actor@ other = npc_actors[i];
+		if (other is a || other.dead) continue;
+		if (other.is_enemy == a.is_enemy) continue;
+		int d = int(get_3d_distance(double(a.x), double(a.y), double(a.z), double(other.x), double(other.y), double(other.z)));
+		if (d < best)
+		{
+			best = d;
+			@found = other;
+			tx = other.x; ty = other.y; tz = other.z;
+		}
+	}
+
+	// Only enemies consider the player, and never while the player stands in a
+	// safe zone (the player cannot fire there either).
+	if (a.is_enemy && !is_safe(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0))))
+	{
+		int dp = int(get_3d_distance(double(a.x), double(a.y), double(a.z), me.x, me.y, me.z));
+		if (dp < best)
+		{
+			best = dp;
+			@found = null;
+			is_player = true;
+			tx = int(round(me.x, 0));
+			ty = int(round(me.y, 0));
+			tz = int(round(me.z, 0));
+		}
+	}
+	return found;
+}
+
+int npc_step_interval(npc_actor@ a)
+{
+	npc_weapon@ w = npc_current_weapon(a);
+	if (w !is null && w.walktime > 0) return w.walktime;
+	return a.move_interval;
+}
+
+bool npc_target_valid(npc_actor@ a)
+{
+	if (a is null) return false;
+	if (a.target_is_player)
+	{
+		return (get_3d_distance(double(a.x), double(a.y), double(a.z), me.x, me.y, me.z) <= double(NPC_SIGHT_DISTANCE));
+	}
+	if (a.target_actor is null) return false;
+	if (a.target_actor.dead) return false;
+	return (get_3d_distance(double(a.x), double(a.y), double(a.z), double(a.target_actor.x), double(a.target_actor.y), double(a.target_actor.z)) <= double(NPC_SIGHT_DISTANCE));
+}
+
+void npc_try_move(npc_actor@ a, int nx, int ny)
+{
+	if (a is null) return;
+	if (!npc_can_step_to(nx, ny, a.z)) return;
+	a.x = nx;
+	a.y = ny;
+	string tile = get_tile_at(a.x, a.y, a.z);
+	string step = get_platform_sound(tile, "step");
+	if (step != "") npc_play_positional(step, a.x, a.y, a.z);
+}
+
+void npc_step_toward(npc_actor@ a, int tx, int ty)
+{
+	if (a is null) return;
+	if (a.x == tx && a.y == ty) return;
+	int adx = abs(tx - a.x);
+	int ady = abs(ty - a.y);
+	int sx = (tx > a.x) ? 1 : (tx < a.x ? -1 : 0);
+	int sy = (ty > a.y) ? 1 : (ty < a.y ? -1 : 0);
+
+	if (adx > 0 && (ady == 0 || adx >= ady))
+	{
+		int nx = a.x + sx;
+		if (npc_can_step_to(nx, a.y, a.z)) { npc_try_move(a, nx, a.y); return; }
+	}
+	if (ady > 0)
+	{
+		int ny = a.y + sy;
+		if (npc_can_step_to(a.x, ny, a.z)) { npc_try_move(a, a.x, ny); return; }
+	}
+	if (adx > 0)
+	{
+		int nx2 = a.x + sx;
+		if (npc_can_step_to(nx2, a.y, a.z)) npc_try_move(a, nx2, a.y);
+	}
+}
+
+void npc_fire_shot(npc_actor@ a, npc_weapon@ w, int tx, int ty, int tz, bool target_is_player, npc_actor@ target_actor)
+{
+	if (a is null || w is null) return;
+
+	int dmg = random(w.min_damage, w.max_damage);
+	if (w.melee)
+	{
+		if (!npc_aligned(a, tx, ty, tz)) return;
+		if (get_3d_distance(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz)) > double(w.range)) return;
+		if (w.sound_fire != "")
+		{
+			string snd = get_sound_path(w.sound_fire);
+			npc_play_positional(snd, a.x, a.y, a.z);
+		}
+		npc_face_target(a, tx, ty);
+		if (target_is_player)
+		{
+			int through = shield_process_damage(dmg, "melee");
+			if (through > 0) health_damage_player(through, a.id);
+		}
+		else if (target_actor !is null)
+		{
+			npc_take_damage(target_actor, dmg, a.id, w.name);
+		}
+		return;
+	}
+
+	if (w.loaded <= 0) return;
+
+	// The target must still be exactly on one of the four cardinal lines and
+	// inside the weapon's real range, otherwise no shot is fired at all.
+	if (!npc_aligned(a, tx, ty, tz)) return;
+	double dist = get_3d_distance(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz));
+	if (dist > double(w.range)) return;
+	if (!has_line_of_sight(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz))) return;
+	if (is_safe(tx, ty, tz)) return;
+
+	w.loaded -= 1;
+	w.burst_left = (w.fire_mode == "burst") ? (w.burst_left + 1) : 0;
+	npc_face_target(a, tx, ty);
+
+	string fire_snd = get_sound_path(w.sound_fire);
+	if (fire_snd != "")
+	{
+		int pd = int(round(get_3d_distance(me.x, me.y, me.z, double(a.x), double(a.y), double(a.z)), 0));
+		if (pd <= NPC_NEAR_FIRE_DISTANCE)
+		{
+			npc_play_positional(fire_snd, a.x, a.y, a.z);
+		}
+		else
+		{
+			string dist_snd = get_sound_path(w.sound_distant_fire);
+			if (dist_snd == "") dist_snd = fire_snd;
+			dp.play_3d(dist_snd, me.x, me.y, me.z, a.x, a.y, a.z, double(facing), false);
+		}
+	}
+
+	if (target_is_player)
+	{
+		int through = shield_process_damage(dmg, "bullet");
+		if (through > 0) health_damage_player(through, a.id);
+	}
+	else if (target_actor !is null)
+	{
+		npc_take_damage(target_actor, dmg, a.id, w.name);
+	}
+
+	// Burst fire pauses after three rounds; auto and semi keep the weapon's
+	// configured interval.
+	if (w.fire_mode == "burst" && w.burst_left >= 3)
+	{
+		w.burst_left = 0;
+		a.fire_timer.restart();
+		a.fire_interval = w.firetime * 2;
+	}
+	else
+	{
+		a.fire_timer.restart();
+		a.fire_interval = w.firetime;
+	}
+}
+
+void npc_combat_tick(npc_actor@ a)
+{
+	npc_weapon@ w = npc_current_weapon(a);
+	if (w is null) return;
+
+	if (a.reloading)
+	{
+		if (a.reload_timer.elapsed >= w.reload_ms) npc_finish_reload(a, w);
+		return;
+	}
+
+	if (!npc_target_valid(a))
+	{
+		@a.target_actor = null;
+		a.target_is_player = false;
+	}
+
+	int tx = 0, ty = 0, tz = 0;
+	bool has_target = false;
+	if (a.target_is_player)
+	{
+		tx = int(round(me.x, 0)); ty = int(round(me.y, 0)); tz = int(round(me.z, 0));
+		has_target = true;
+	}
+	else if (a.target_actor !is null)
+	{
+		tx = a.target_actor.x; ty = a.target_actor.y; tz = a.target_actor.z;
+		has_target = true;
+	}
+
+	if (!has_target)
+	{
+		// Patrol the whole map.
+		if (get_3d_distance(double(a.x), double(a.y), double(a.z), double(a.patrol_x), double(a.patrol_y), double(a.z)) < 1.0 || a.patrol_timer.elapsed > 20000)
+			npc_pick_patrol(a);
+		if (a.move_timer.elapsed >= npc_step_interval(a))
+		{
+			a.move_timer.restart();
+			npc_step_toward(a, a.patrol_x, a.patrol_y);
+		}
+		return;
+	}
+
+	bool aligned = npc_aligned(a, tx, ty, tz);
+	double dist = get_3d_distance(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz));
+
+	if (!w.melee && !npc_weapon_usable(w)) npc_switch_weapon(a);
+	w = npc_current_weapon(a);
+	if (w is null) return;
+
+	if (!w.melee && w.loaded <= 0)
+	{
+		if (w.reserve > 0) npc_start_reload(a, w);
+		else npc_switch_weapon(a);
+		return;
+	}
+
+	bool in_range = (dist <= double(w.range));
+	bool clear = has_line_of_sight(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz));
+
+	if (aligned && in_range && clear && !is_safe(tx, ty, tz))
+	{
+		if (a.fire_timer.elapsed >= a.fire_interval)
+			npc_fire_shot(a, w, tx, ty, tz, a.target_is_player, a.target_actor);
+		return;
+	}
+
+	// Cannot land the shot: walk to re-align and close the distance.
+	if (a.move_timer.elapsed >= npc_step_interval(a))
+	{
+		a.move_timer.restart();
+		npc_step_toward(a, tx, ty);
+	}
+}
+
+void npc_actor_tick(npc_actor@ a)
+{
+	if (a is null || a.dead) return;
+
+	if (a.shield_pending && !a.shield_equipped && a.shield_timer.elapsed >= a.shield_delay)
+	{
+		npc_equip_shield(a);
+		a.shield_pending = false;
+	}
+
+	if (a.hp < a.maxhp && a.heal_items.length() > 0 && a.heal_timer.elapsed >= a.heal_delay)
+		npc_use_heal(a);
+
+	if (a.think_timer.elapsed >= 350)
+	{
+		a.think_timer.restart();
+		bool is_player = false;
+		int tx = 0, ty = 0, tz = 0;
+		npc_actor@ target = npc_nearest_opponent(a, is_player, tx, ty, tz);
+		if (target !is null || is_player)
+		{
+			@a.target_actor = target;
+			a.target_is_player = is_player;
+		}
+	}
+
+	npc_combat_tick(a);
+}
+
+void npc_loop()
+{
+	if (npc_actors.length() == 0 && npc_pending.length() == 0) return;
+
+	for (int r = int(npc_pending.length()) - 1; r >= 0; r--)
+	{
+		if (npc_pending[uint(r)].t.elapsed >= npc_pending[uint(r)].delay)
+		{
+			bool enemy = npc_pending[uint(r)].is_enemy;
+			npc_pending.remove_at(uint(r));
+			npc_spawn_actor(enemy);
+		}
+	}
+
+	for (int i = int(npc_actors.length()) - 1; i >= 0; i--)
+	{
+		npc_actor@ a = npc_actors[uint(i)];
+		if (a is null) { npc_actors.remove_at(uint(i)); continue; }
+		if (a.dead)
+		{
+			if (a.death_timer.elapsed >= NPC_DEATH_LINGER_MS)
+			{
+				npc_pending.insert_last(npc_pending_spawn(a.is_enemy, npc_respawn_delay));
+				npc_actors.remove_at(uint(i));
+			}
+			continue;
+		}
+		npc_actor_tick(a);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Map spawner line
+// ---------------------------------------------------------------------------
+void npc_save_spawner_to_map(int enemies, int friends, int respawn_ms)
+{
+	if (SCRIPT_COMPILED || is_map_encrypted(mapname))
+	{
+		speak("Cannot edit an encrypted map.");
+		return;
+	}
+	if (enemies < 0) enemies = 0;
+	if (friends < 0) friends = 0;
+	if (respawn_ms < 1000) respawn_ms = 1000;
+
+	string path = MAP_DIR + "/" + mapname + ".map";
+	string content = get_map_content_by_name(mapname);
+	string new_line = "npcspawner:" + enemies + ":" + friends + ":" + respawn_ms;
+
+	string[]@ raw = string_split(string_replace(content, "\r", "", true), "\n", false);
+	string rebuilt = "";
+	bool replaced = false;
+	if (raw !is null)
+	{
+		for (uint i = 0; i < raw.length(); i++)
+		{
+			string line = raw[i].trim_whitespace();
+			if (string_starts_with(line, "npcspawner:"))
+			{
+				if (!replaced) { rebuilt += new_line + "\n"; replaced = true; }
+				continue;
+			}
+			if (line != "") rebuilt += line + "\n";
+		}
+	}
+	if (!replaced) rebuilt += new_line + "\n";
+
+	file_put_contents(path, rebuilt);
+	map_bundle_cache[mapname] = rebuilt;
+	invalidate_map_lines_cache(mapname);
+	npc_enemy_target_count = enemies;
+	npc_friend_target_count = friends;
+	npc_respawn_delay = respawn_ms;
+	speak("map updated");
+	tempreset();
+	draw_map(mapname);
+}

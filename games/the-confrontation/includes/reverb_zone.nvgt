@@ -1,0 +1,191 @@
+// reverb_zone.nvgt - Reverb zones for The Confrontation.
+//
+// A reverb zone is a rectangular area of a map that places the listener inside
+// a reverberant space. It uses ONLY the native reverb of king_audio_engine:
+// a mixer bus receives every sound the player hears, and the bus reverb is
+// configured with mixer.set_reverb(), the engine's own parametric reverb.
+// No echo, chorus, flanger, distortion, EQ or any other effect is used here,
+// and NVGT's own reverb system is never touched.
+//
+// Map line format (all values in that exact order):
+//   reverbzone:minx:maxx:miny:maxy:minz:maxz:decay_ms:wet_db:dry_db:
+//              diffusion:density:early_delay_ms:late_delay_ms:hf_reference_hz:
+//              hf_decay_ratio:low_shelf_hz:low_shelf_gain_db:high_cut_hz:
+//              early_late_mix
+
+class reverb_zone
+{
+	int minx, maxx;
+	int miny, maxy;
+	int minz, maxz;
+
+	// Native king_audio reverb parameters.
+	double decay_ms;
+	double wet_db;
+	double dry_db;
+	double diffusion;
+	double density;
+	double early_delay;
+	double late_delay;
+	double hf_reference;
+	double hf_decay_ratio;
+	double low_shelf_freq;
+	double low_shelf_gain;
+	double high_cut;
+	double early_late_mix;
+
+	reverb_zone()
+	{
+		minx = 0; maxx = 0;
+		miny = 0; maxy = 0;
+		minz = 0; maxz = 0;
+		decay_ms = 1500;
+		wet_db = -6;
+		dry_db = -80;
+		diffusion = 80;
+		density = 60;
+		early_delay = 5;
+		late_delay = 10;
+		hf_reference = 5000;
+		hf_decay_ratio = 50;
+		low_shelf_freq = 250;
+		low_shelf_gain = 0;
+		high_cut = 8000;
+		early_late_mix = 60;
+	}
+
+	bool contains(double px, double py, double pz)
+	{
+		int mnx = (minx < maxx) ? minx : maxx;
+		int mxx = (minx < maxx) ? maxx : minx;
+		int mny = (miny < maxy) ? miny : maxy;
+		int mxy = (miny < maxy) ? maxy : miny;
+		int mnz = (minz < maxz) ? minz : maxz;
+		int mxz = (minz < maxz) ? maxz : minz;
+		return (px >= mnx && px <= mxx && py >= mny && py <= mxy && pz >= mnz && pz <= mxz);
+	}
+}
+
+reverb_zone@[] reverb_zones(0);
+
+// The single bus every audible pool is routed through. When no zone is active
+// the bus carries no reverb at all, so the game stays perfectly dry.
+mixer reverb_zone_bus;
+bool reverb_bus_ready = false;
+bool reverb_zone_active = false;
+reverb_zone@ active_reverb_zone = null;
+
+void init_reverb_bus()
+{
+	if (reverb_bus_ready) return;
+	reverb_bus_ready = true;
+	// Route every pool the listener hears through the reverb bus. The routing
+	// is stored on each sound and applied when it receives a channel.
+	@p.mixer = @reverb_zone_bus;
+	@dp.mixer = @reverb_zone_bus;
+	@sp.mixer = @reverb_zone_bus;
+	@itempool.mixer = @reverb_zone_bus;
+	@spool.mixer = @reverb_zone_bus;
+}
+
+void spawn_reverb_zone(int x1, int x2, int y1, int y2, int z1, int z2,
+	double decay_ms, double wet_db, double dry_db, double diffusion, double density,
+	double early_delay, double late_delay, double hf_reference, double hf_decay_ratio,
+	double low_shelf_freq, double low_shelf_gain, double high_cut, double early_late_mix)
+{
+	reverb_zone@ z = reverb_zone();
+	z.minx = x1; z.maxx = x2;
+	z.miny = y1; z.maxy = y2;
+	z.minz = z1; z.maxz = z2;
+	z.decay_ms = decay_ms;
+	z.wet_db = wet_db;
+	z.dry_db = dry_db;
+	z.diffusion = diffusion;
+	z.density = density;
+	z.early_delay = early_delay;
+	z.late_delay = late_delay;
+	z.hf_reference = hf_reference;
+	z.hf_decay_ratio = hf_decay_ratio;
+	z.low_shelf_freq = low_shelf_freq;
+	z.low_shelf_gain = low_shelf_gain;
+	z.high_cut = high_cut;
+	z.early_late_mix = early_late_mix;
+	reverb_zones.insert_last(z);
+}
+
+void destroy_all_reverb_zones()
+{
+	reverb_zones.resize(0);
+	if (reverb_bus_ready && reverb_zone_active)
+	{
+		reverb_zone_bus.remove_reverb();
+	}
+	reverb_zone_active = false;
+	@active_reverb_zone = null;
+}
+
+reverb_zone@ get_reverb_zone_at(int px, int py, int pz)
+{
+	// The last zone declared wins when areas overlap, exactly like map zones.
+	for (int i = int(reverb_zones.length()) - 1; i >= 0; i--)
+	{
+		if (reverb_zones[uint(i)].contains(px, py, pz)) return reverb_zones[uint(i)];
+	}
+	return null;
+}
+
+bool apply_reverb_zone(reverb_zone@ z)
+{
+	if (z is null) return false;
+	if (!reverb_bus_ready) init_reverb_bus();
+	bool ok = reverb_zone_bus.set_reverb(
+		float(z.decay_ms),
+		float(z.wet_db),
+		float(z.dry_db),
+		float(z.diffusion),
+		float(z.density),
+		float(z.early_delay),
+		float(z.late_delay),
+		float(z.hf_reference),
+		float(z.hf_decay_ratio),
+		float(z.low_shelf_freq),
+		float(z.low_shelf_gain),
+		float(z.high_cut),
+		float(z.early_late_mix));
+	if (ok)
+	{
+		reverb_zone_active = true;
+		@active_reverb_zone = z;
+	}
+	return ok;
+}
+
+void clear_reverb_zone()
+{
+	if (reverb_zone_active && reverb_bus_ready)
+	{
+		reverb_zone_bus.remove_reverb();
+	}
+	reverb_zone_active = false;
+	@active_reverb_zone = null;
+}
+
+// Called every world tick. Reverb is applied only while the listener stands
+// inside a reverb zone, and removed the moment the zone is left.
+void reverb_zone_loop()
+{
+	if (reverb_zones.length() == 0)
+	{
+		if (reverb_zone_active) clear_reverb_zone();
+		return;
+	}
+
+	reverb_zone@ z = get_reverb_zone_at(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
+	if (z is null)
+	{
+		if (reverb_zone_active) clear_reverb_zone();
+		return;
+	}
+	if (z is active_reverb_zone) return;
+	apply_reverb_zone(z);
+}

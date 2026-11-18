@@ -17,6 +17,8 @@ void update_game_world()
 	map_item_spawner_loop();
 	bodyfallloop();
 	tracking_loop();
+	npc_loop();
+	reverb_zone_loop();
 	broadcast_loop();
 	update_sources();
 	if (autosave_timer.elapsed >= 30000)

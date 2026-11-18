@@ -43,6 +43,8 @@ string ver = "1.0.0";
 #include"includes/store_manager.nvgt"
 #include"includes/shield_system.nvgt"
 #include"includes/message_system.nvgt"
+#include"includes/reverb_zone.nvgt"
+#include"includes/npc_system.nvgt"
 #include"includes/verify_files.nvgt"
 #include "includes/world_runtime.nvgt"
 int x, y, z;
@@ -274,6 +276,7 @@ dlg("Settings file not found, creating a new settings file...");
 // King Audio uses Steam Audio HRTF for spatial rendering.
 king_global_hrtf = true;
 king_realistic_distance = false;
+init_reverb_bus();
 	p.volume_step = 2.0;
 	sp.volume_step = 2.0;
 	itempool.volume_step = 2.0;
@@ -1057,6 +1060,8 @@ destroy_all_travelpoints();
 destroy_all_doors();
 destroy_all_staircases();
 destroy_all_builder_objects();
+npc_destroy_all();
+destroy_all_reverb_zones();
 map.resize(0);
 zones.resize(0);
 safezones.resize(0);
@@ -1330,6 +1335,8 @@ void tempreset_internal(bool save_state, const string&in target_map = "")
     destroy_all_doors();
     destroy_all_staircases();
     destroy_all_builder_objects();
+    npc_destroy_all();
+    destroy_all_reverb_zones();
     map.resize(0);
     zones.resize(0);
 safezones.resize(0);

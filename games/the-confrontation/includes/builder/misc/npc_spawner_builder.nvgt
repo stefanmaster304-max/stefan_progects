@@ -1,0 +1,90 @@
+// builder/misc/npc_spawner_builder.nvgt - Enemy and ally spawner form.
+//
+// No coordinates are requested: the configured enemies and allies are placed on
+// random walkable tiles of the whole map and patrol it freely. The form only
+// asks how many of each to keep alive and how long a dead one waits before it
+// respawns.
+
+void npc_builder_read_current(int &out enemies, int &out friends, int &out respawn_ms)
+{
+	enemies = npc_enemy_target_count;
+	friends = npc_friend_target_count;
+	respawn_ms = npc_respawn_delay;
+	string content = get_map_content_by_name(mapname);
+	if (content == "") return;
+	string[]@ lines = string_split(string_replace(content, "\r", "", true), "\n", false);
+	if (lines is null) return;
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string line = lines[i].trim_whitespace();
+		if (!string_starts_with(line, "npcspawner:")) continue;
+		string[]@ parts = string_split(line, ":", false);
+		if (parts.length() >= 4)
+		{
+			enemies = int(string_to_number(parts[1]));
+			friends = int(string_to_number(parts[2]));
+			respawn_ms = int(string_to_number(parts[3]));
+		}
+		break;
+	}
+}
+
+void build_npc_spawner()
+{
+	int cur_enemies = 0, cur_friends = 0, cur_respawn = 30000;
+	npc_builder_read_current(cur_enemies, cur_friends, cur_respawn);
+	if (cur_respawn < 1000) cur_respawn = 30000;
+
+	audio_form f;
+	f.create_window("Enemy and Ally Spawner", false, true, false);
+	int i_enemies = f.create_input_box("number of enemies to keep on this map", "" + cur_enemies);
+	int i_friends = f.create_input_box("number of allies to keep on this map", "" + cur_friends);
+	int i_respawn = f.create_input_box("respawn time after death in milliseconds", "" + cur_respawn);
+	f.set_disallowed_chars(i_enemies, "0123456789", true, "Numbers only.");
+	f.set_disallowed_chars(i_friends, "0123456789", true, "Numbers only.");
+	f.set_disallowed_chars(i_respawn, "0123456789", true, "Numbers only.");
+	int btn_ok = f.create_button("&generate on this map", true);
+	int btn_cancel = f.create_button("&cancel", false, true);
+	f.set_default_controls(btn_ok, btn_cancel);
+	f.focus_silently(i_enemies);
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		f.monitor();
+
+		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
+		{
+			speak("canceled");
+			return;
+		}
+
+		if (f.is_pressed(btn_ok))
+		{
+			string se = f.get_text(i_enemies).trim_whitespace();
+			string sf = f.get_text(i_friends).trim_whitespace();
+			string sr = f.get_text(i_respawn).trim_whitespace();
+			if (se == "" || sf == "" || sr == "")
+			{
+				speak("All three values are required.");
+				continue;
+			}
+			int enemies = int(string_to_number(se));
+			int friends = int(string_to_number(sf));
+			int respawn_ms = int(string_to_number(sr));
+			if (enemies < 0 || friends < 0)
+			{
+				speak("Counts cannot be negative.");
+				continue;
+			}
+			if (respawn_ms < 1000)
+			{
+				speak("The respawn time must be at least 1000 milliseconds.");
+				continue;
+			}
+			npc_save_spawner_to_map(enemies, friends, respawn_ms);
+			return;
+		}
+	}
+}

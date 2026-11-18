@@ -16,6 +16,8 @@
 // Interaction Builders & Runtime
 #include "builder/interaction/sign.nvgt"
 #include "builder/interaction/text_square.nvgt"
+#include "builder/misc/reverb_zone_builder.nvgt"
+#include "builder/misc/npc_spawner_builder.nvgt"
 
 void destroy_all_builder_objects()
 {
@@ -60,6 +62,8 @@ void buildmenu()
 		"item spawner - configure item drops and map pickup spawners",
 		"weapon manager - add, edit, remove and create new weapons",
 		"store manager - add, remove and edit existing shops or create new ones",
+		"reverb zone - add a reverberant area using King Audio native reverb",
+		"enemy and ally spawner - generate enemies and allies on this map",
 		"map manager and tools - manage maps, properties, backup and tools",
 		"delete current map - permanently delete the active map file"
 	};
@@ -84,6 +88,8 @@ void buildmenu()
 		"item_spawner",
 		"weapon_manager",
 		"store_manager",
+		"reverb_zone",
+		"npc_spawner",
 		"map_manager_tools",
 		"delete_map"
 	};
@@ -203,6 +209,8 @@ void buildobj(string buildtype)
 	else if (buildtype == "package_manager") package_manager_menu();
 	else if (buildtype == "item_spawner") build_item_spawner();
 	else if (buildtype == "weapon_manager") weapon_chooser();
+	else if (buildtype == "reverb_zone") build_reverb_zone();
+	else if (buildtype == "npc_spawner") build_npc_spawner();
 }
 
 void save_to_map(string line)
