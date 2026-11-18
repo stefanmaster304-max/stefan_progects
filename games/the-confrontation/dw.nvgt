@@ -280,12 +280,14 @@ init_reverb_bus();
 	p.volume_step = 2.0;
 	sp.volume_step = 2.0;
 	itempool.volume_step = 2.0;
-	dp.volume_step = 2.0;
+	dp.volume_step = 0.25;
 	spool.volume_step = 2.0;
 	dp.pan_step = 1.0;
 	dp.behind_pitch_decrease = 0.0;
-	// Max audible radius for pools
-	dp.max_distance = 80;
+	// Max audible radius for pools. The distant weapon pool is unbounded: its
+	// reports must reach the far side of any map, and the slow volume step below
+	// is what keeps them audible instead of silent past a few dozen steps.
+	dp.max_distance = 0;
 	dp.hrtf = true;
 p.position_smoothing = 0.0;
 sp.position_smoothing = 0.0;

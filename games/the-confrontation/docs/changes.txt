@@ -71,3 +71,36 @@ CLEANUP
 
 REMOVED: Dead code found in a full source sweep: the unused session clock string and its timer, the unused focused item variable, the readable time helper that only served the session clock, the include that loaded it, and the orphaned daily message and game time save files.
 CHECKED: All .nvgt sources, map lines, settings files and includes were searched for broken, disabled, commented out, duplicated, fallback, generic, placeholder and stub code. The remaining candidate matches were legitimate API returns, real configuration defaults, encrypted and legacy file readers that still open real files, and asset resolution paths that must exist.
+
+ENEMIES AND ALLIES
+
+ADDED: Enemies and allies that live entirely offline, with no network, no player list and no server messages. They spawn from a spawner line stored on the map, patrol the whole map and keep respawning after the configured delay.
+ADDED: An "enemy and ally spawner" entry in the construction menu that asks for the number of enemies, the number of allies and the respawn time in milliseconds, and writes them to the map.
+ADDED: Both sides fight with the player's own weapon files. Fire interval, fire modes, range, damage, magazine capacity, reserve ammunition, reload sound, draw sound and the walk weight come from the .wpm file of each weapon, an NPC switches weapons when its own runs dry and it falls back to melee.
+CHANGED: The walking pace of every NPC is random and slower than the player's. The weapon weight is added on top of that pace instead of replacing it, and melee weapons carry no weight penalty.
+ADDED: Enemies target allies and the player; allies only target enemies. Nobody damages the player during an exchange between an enemy and an ally: the player is hurt only when an enemy has chosen the player as its target.
+FIXED: An NPC no longer closes all the way to the target to line up a shot. Outside its weapon range it closes the distance, and once inside it sidesteps onto a firing line on the axis that leaves the greater distance, so a weapon is used at the range its own file declares.
+ADDED: Enemies and allies carry their own random ammunition, use healing items with a 5 to 10 second cooldown and equip a shield 5 to 10 seconds after spawning.
+ADDED: Kills are announced globally in English with attacker, victim, weapon and coordinates, for example "Enemy killed Friend at 500, 300, 0 with Mp5."
+ADDED: The player's projectiles now hit enemies and allies.
+
+REVERB ZONES
+
+ADDED: Reverb zones stored on maps and built with a form that offers only the native reverb of King Audio: decay, wet and dry level, diffusion, density, early and late delay, high frequency reference, high frequency decay ratio, low shelf frequency and gain, high cut and the early/late mix. No other effect is used.
+ADDED: A list of platform sounds with loop playback inside the reverb form, so a zone can be tuned while hearing the surface the map uses.
+ADDED: Every sound pool the player hears is routed through one reverb bus, so a zone reverberates everything and no zone leaves the game dry.
+
+SOUND
+
+FIXED: The local sounds of enemies and allies (footsteps, weapon draw, reload, shield equip, healing and the near crack of a shot) now have their own pool with a radius of a dozen steps. A fight far away is no longer heard as if it were next to the player.
+FIXED: Weapon reports of enemies and allies now always propagate across the whole map through the distant weapon pool, at any distance and on any map size, with a small gain so the report survives the distance. The distant pool no longer has a maximum radius and its volume falls slowly.
+FIXED: The distant report is played even when the player is close enough to hear the real shot, so an exchange of fire never loses its propagation.
+
+MAPS
+
+ADDED: Map lines for reverb zones and for the enemy and ally spawner.
+REMOVED: The reward for discovering a map. Finding a new map no longer pays gold, plays an unlock sound or announces a reward; discovery is only bookkeeping.
+
+ITEMS
+
+ADDED: A tandem warhead rocket and a ray beam cell, two ammunition types that did not exist in the ammo set.
