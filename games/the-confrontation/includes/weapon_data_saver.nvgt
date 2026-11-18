@@ -44,6 +44,10 @@ class weapon_data
 	int starting_reserve;
 	string ammo_display;
 	string fire_modes;
+	// What this weapon physically launches. "auto" derives it from the ammo
+	// type, but launchers, flamethrowers and energy weapons must be explicit so
+	// a rocket launcher launches rockets and a flamethrower launches fire.
+	string projectile;
 	string sound_fire;
 	string sound_distant_fire;
 	string sound_ricochet;
@@ -77,6 +81,7 @@ class weapon_data
 		starting_reserve = 3;
 		ammo_display = "rounds";
 		fire_modes = "semi";
+		projectile = "auto";
 		sound_fire = "";
 		sound_distant_fire = "";
 		sound_ricochet = "";
@@ -110,6 +115,7 @@ class weapon_data
 		starting_reserve = 3;
 		ammo_display = "rounds";
 		fire_modes = "semi";
+		projectile = "auto";
 		sound_fire = "";
 		sound_distant_fire = "";
 		sound_ricochet = "";
@@ -118,6 +124,25 @@ class weapon_data
 		sound_draw = "";
 		sound_hit = "";
 	}
+}
+
+// Canonical projectile kinds. "auto" keeps the ammo-derived behavior for plain
+// firearms; every non-ballistic weapon can name its projectile explicitly.
+string normalize_projectile_name(const string&in val)
+{
+	string v = string_to_lower_case(string_trim_sides(val));
+	if (v == "" || v == "auto" || v == "automatic" || v == "derive") return "auto";
+	if (v == "bullet" || v == "ballistic" || v == "round") return "ballistic";
+	if (v == "bolt" || v == "arrow" || v == "crossbow") return "bolt";
+	if (v == "ball" || v == "cannonball" || v == "cannon") return "ball";
+	if (v == "energy" || v == "laser" || v == "beam") return "energy";
+	if (v == "plasma") return "plasma";
+	if (v == "missile") return "missile";
+	if (v == "rocket") return "rocket";
+	if (v == "grenade" || v == "shell" || v == "mortar") return "grenade";
+	if (v == "fire" || v == "flame" || v == "flamethrower" || v == "incendiary") return "fire";
+	if (v == "drainage" || v == "drain") return "drainage";
+	return "auto";
 }
 
 weapon_data@[] weapon_registry(0);
@@ -169,6 +194,7 @@ void parse_weapon_wpm(weapon_data@ w, const string&in content)
 		else if (key == "starting_reserve") w.starting_reserve = int(string_to_number(val));
 		else if (key == "ammo_display") w.ammo_display = val;
 		else if (key == "fire_modes") w.fire_modes = val;
+		else if (key == "projectile" || key == "projectile_type") w.projectile = normalize_projectile_name(val);
 		else if (key == "sound_fire") w.sound_fire = val;
 		else if (key == "sound_distant_fire") w.sound_distant_fire = val;
 		else if (key == "sound_ricochet") w.sound_ricochet = val;
@@ -203,6 +229,7 @@ string serialize_weapon_wpm(weapon_data@ w)
 	s += "starting_reserve=" + w.starting_reserve + "\n";
 	s += "ammo_display=" + w.ammo_display + "\n";
 	s += "fire_modes=" + w.fire_modes + "\n";
+	if (w.projectile != "" && w.projectile != "auto") s += "projectile=" + w.projectile + "\n";
 	if (w.sound_fire != "") s += "sound_fire=" + w.sound_fire + "\n";
 	if (w.sound_distant_fire != "") s += "sound_distant_fire=" + w.sound_distant_fire + "\n";
 	if (w.sound_ricochet != "") s += "sound_ricochet=" + w.sound_ricochet + "\n";
@@ -240,6 +267,7 @@ string serialize_all_weapons_bundle()
 		s += "starting_reserve=" + w.starting_reserve + "\n";
 		s += "ammo_display=" + w.ammo_display + "\n";
 		s += "fire_modes=" + w.fire_modes + "\n";
+		s += "projectile=" + normalize_projectile_name(w.projectile) + "\n";
 		s += "sound_fire=" + w.sound_fire + "\n";
 		s += "sound_distant_fire=" + w.sound_distant_fire + "\n";
 		s += "sound_ricochet=" + w.sound_ricochet + "\n";
@@ -307,6 +335,7 @@ void parse_weapons_bundle(const string&in content)
 		else if (key == "starting_reserve") current.starting_reserve = int(string_to_number(val));
 		else if (key == "ammo_display") current.ammo_display = val;
 		else if (key == "fire_modes") current.fire_modes = val;
+		else if (key == "projectile" || key == "projectile_type") current.projectile = normalize_projectile_name(val);
 		else if (key == "sound_fire") current.sound_fire = val;
 		else if (key == "sound_distant_fire") current.sound_distant_fire = val;
 		else if (key == "sound_ricochet") current.sound_ricochet = val;

@@ -13,3 +13,7 @@ temp_remote_repo/
 *.tmp
 scratch_*.py
 step1_*.py
+
+# Player data (never published)
+games/*/settings/gamesave.dat
+games/*/settings/settings.dat

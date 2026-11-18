@@ -18,6 +18,7 @@ is_magazine=true
 starting_reserve=3
 ammo_display=fuel
 fire_modes=semi
+projectile=fire
 sound_fire=weapons/flamethrower/fire1.ogg;weapons/flamethrower/fire2.ogg;weapons/flamethrower/flame_throwerfire1.ogg;weapons/flamethrower/flame_throwerfire2.ogg;weapons/flamethrower/flame_throwerfire3.ogg
 sound_distant_fire=weapons/flamethrower/flame_throwerdist.ogg
 sound_ricochet=

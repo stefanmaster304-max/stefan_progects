@@ -22,41 +22,43 @@ void ensure_bullet_pool()
 	}
 }
 
-string classify_projectile_type(const string&in ammo_type, const string&in wclass)
+// The weapon decides what it launches. A configured "projectile" always wins;
+// "auto" only derives the type for plain firearms whose ammunition already
+// names it. Fuel canisters are fire, never grenades: the old canister rule made
+// flamethrowers detonate as if they were grenade launchers.
+string classify_projectile_type(weapon_data@ w)
 {
-	string at = string_to_lower_case(ammo_type);
-	string wc = string_to_lower_case(wclass);
-	if (string_contains(at, "laser", 1) > -1 || string_contains(at, "plasma", 1) > -1 ||
-		string_contains(at, "quantum", 1) > -1 || string_contains(at, "fusion", 1) > -1 ||
-		string_contains(at, "energy", 1) > -1 || string_contains(at, "ion", 1) > -1 ||
-		string_contains(at, "pulse", 1) > -1 || string_contains(at, "mw", 1) > -1 ||
-		string_contains(at, "gw", 1) > -1 || string_contains(at, "tesla", 1) > -1 ||
-		string_contains(at, "arc", 1) > -1 || string_contains(at, "emp", 1) > -1 ||
-		string_contains(at, "photon", 1) > -1 || string_contains(at, "particle", 1) > -1 ||
-		string_contains(at, "beam", 1) > -1 || wc == "energy" || wc == "energy_weapons" || wc == "laser")
+	if (w is null) return "ballistic";
+	string configured = normalize_projectile_name(w.projectile);
+	if (configured != "auto") return configured;
+
+	string at = string_to_lower_case(w.ammo_type);
+	string wc = string_to_lower_case(w.wclass);
+	if (wc == "energy" || wc == "energy_weapons" || wc == "laser" || wc == "plasma") return "energy";
+	if (at.find("laser") >= 0 || at.find("energy") >= 0 || at.find("beam") >= 0 ||
+		at.find("tesla") >= 0 || at.find("photon") >= 0 || at.find("quantum") >= 0 ||
+		at.find("fusion") >= 0 || at.find("particle") >= 0 || at.find("pulse") >= 0 ||
+		at.find("mw") >= 0 || at.find("gw") >= 0 || at.find("emp") >= 0)
 		return "energy";
-	if (string_contains(at, "missile", 1) > -1 || string_contains(at, "javelin", 1) > -1 ||
-		string_contains(at, "stinger", 1) > -1 || string_contains(at, "tow", 1) > -1 ||
-		string_contains(at, "sam", 1) > -1 || string_contains(at, "atgm", 1) > -1)
+	if (at.find("plasma") >= 0) return "plasma";
+	if (at.find("missile") >= 0 || at.find("javelin") >= 0 || at.find("stinger") >= 0 ||
+		at.find("atgm") >= 0 || at.find("sam ") >= 0)
 		return "missile";
-	if (string_contains(at, "rocket", 1) > -1 || string_contains(at, "rpg", 1) > -1 ||
-		string_contains(at, "law", 1) > -1 || string_contains(at, "gustaf", 1) > -1 ||
-		string_contains(at, "bazooka", 1) > -1 || string_contains(at, "panzerfaust", 1) > -1)
+	if (at.find("rocket") >= 0 || at.find("rpg") >= 0 || at.find("bazooka") >= 0 ||
+		at.find("panzerfaust") >= 0 || at.find("gustaf") >= 0)
 		return "rocket";
-	if (string_contains(at, "grenade", 1) > -1 || string_contains(at, "40mm", 1) > -1 ||
-		string_contains(at, "38mm", 1) > -1 || string_contains(at, "mortar", 1) > -1 ||
-		string_contains(at, "canister", 1) > -1 || string_contains(at, "bomb", 1) > -1 ||
-		string_contains(at, "flare", 1) > -1 || string_contains(at, "smoke", 1) > -1)
+	if (at.find("grenade") >= 0 || at.find("40mm") >= 0 || at.find("38mm") >= 0 ||
+		at.find("mortar") >= 0 || at.find("bomb") >= 0 || at.find("flare") >= 0 ||
+		at.find("smoke") >= 0)
 		return "grenade";
-	if (string_contains(at, "drainage", 1) > -1 || string_contains(at, "drenagem", 1) > -1 ||
-		string_contains(at, "hydrological", 1) > -1 || string_contains(at, "hydro", 1) > -1 ||
-		string_contains(at, "drain", 1) > -1)
-		return "drainage";
-	if (string_contains(at, "incendiar", 1) > -1 || string_contains(at, "flame", 1) > -1 ||
-		string_contains(at, "fire", 1) > -1 || string_contains(at, "dragon", 1) > -1 ||
-		string_contains(at, "napalm", 1) > -1 || string_contains(at, "thermite", 1) > -1 ||
-		string_contains(at, "gel", 1) > -1 || wc == "incendiary" || wc == "flamethrower")
+	if (at.find("incendiar") >= 0 || at.find("flame") >= 0 || at.find("fire") >= 0 ||
+		at.find("dragon") >= 0 || at.find("napalm") >= 0 || at.find("thermite") >= 0 ||
+		at.find("gel") >= 0 || wc == "incendiary" || wc == "flamethrower")
 		return "fire";
+	if (at.find("drainage") >= 0 || at.find("drenagem") >= 0 || at.find("hydro") >= 0 || at.find("drain") >= 0)
+		return "drainage";
+	if (at.find("bolt") >= 0 || at.find("arrow") >= 0) return "bolt";
+	if (at.find("cannonball") >= 0 || at.find("cannon ball") >= 0 || at.find("round ball") >= 0) return "ball";
 	return "ballistic";
 }
 
@@ -103,7 +105,7 @@ class active_projectile
 			ammo_type = "Standard";
 		}
 
-		projectile_type = classify_projectile_type(ammo_type, wclass);
+		projectile_type = classify_projectile_type(w);
 		if (fire_mode != "melee")
 		{
 			if (projectile_type == "energy")
@@ -135,6 +137,20 @@ class active_projectile
 			{
 				if (speedtime < 8) speedtime = 8;
 				spread = int(spread * 2.0) + 5;
+			}
+			else if (projectile_type == "plasma")
+			{
+				if (speedtime > 3) speedtime = 3;
+				spread = int(spread * 0.5);
+			}
+			else if (projectile_type == "bolt")
+			{
+				if (speedtime > 6) speedtime = 6;
+			}
+			else if (projectile_type == "ball")
+			{
+				if (speedtime < 10) speedtime = 10;
+				spread = 0;
 			}
 		}
 

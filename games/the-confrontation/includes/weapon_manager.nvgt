@@ -445,6 +445,7 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 	int in_min_dmg = form.create_input_box("minimum damage", string(w.min_damage), "", 0, false, false, view_only);
 	int in_max_dmg = form.create_input_box("maximum damage", string(w.max_damage), "", 0, false, false, view_only);
 	int in_spread = form.create_input_box("spread accuracy (0 for perfect)", string(w.spread), "", 0, false, false, view_only);
+	int in_projectile = form.create_input_box("projectile launched (auto, ballistic, bolt, ball, energy, plasma, missile, rocket, grenade, fire, drainage)", w.projectile != "" ? w.projectile : "auto", "", 0, false, false, view_only);
 	int in_capacity = form.create_input_box("magazine/chamber capacity", string(w.capacity), "", 0, false, false, view_only);
 	form.set_disallowed_chars(in_firetime, "0123456789", true, "Numbers only.");
 	form.set_disallowed_chars(in_walktime, "0123456789", true, "Numbers only.");
@@ -589,6 +590,7 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 				w.min_damage = int(string_to_number(form.get_text(in_min_dmg)));
 				w.max_damage = int(string_to_number(form.get_text(in_max_dmg)));
 				w.spread = int(string_to_number(form.get_text(in_spread)));
+				w.projectile = normalize_projectile_name(form.get_text(in_projectile));
 				w.capacity = int(string_to_number(form.get_text(in_capacity)));
 				w.ammo_type = form.get_text(in_ammo_type);
 				w.reserve_item = form.get_text(in_reserve_item);

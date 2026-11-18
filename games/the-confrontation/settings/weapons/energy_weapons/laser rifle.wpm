@@ -18,6 +18,7 @@ is_magazine=true
 starting_reserve=3
 ammo_display=cells
 fire_modes=semi
+projectile=energy
 sound_fire=weapons/laser rifle/fire.ogg
 sound_distant_fire=
 sound_ricochet=

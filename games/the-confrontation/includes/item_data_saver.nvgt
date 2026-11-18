@@ -6,12 +6,15 @@ const string ITEM_DIR = "settings/items";
 const string ITEMS_DAT_PATH = "settings/items.dat";
 const string ITEM_ENC_KEY = "ShooterItemConfigKey2026_9x!L#qZ8*vM3&kP5";
 
+// Packages are not items: every package lives in settings/packages and is
+// handled by package_manager.nvgt. Keeping a "packages" category here created a
+// second, empty settings/items/packages folder and made the game treat packages
+// as loose item files.
 string[] item_categories = {
 	"medical items",
 	"ammo",
 	"equipment",
 	"currency",
-	"packages",
 	"materials"
 };
 

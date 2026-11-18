@@ -18,6 +18,7 @@ is_magazine=true
 starting_reserve=3
 ammo_display=gel
 fire_modes=semi
+projectile=fire
 sound_fire=weapons/flameburst_mini_flame_thrower/flameburst_mini_flame_thrower_fire1.ogg;weapons/flameburst_mini_flame_thrower/flameburst_mini_flame_thrower_fire2.ogg;weapons/flameburst_mini_flame_thrower/flameburst_mini_flame_thrower_fire3.ogg
 sound_distant_fire=weapons/flameburst_mini_flame_thrower/flameburst_mini_flame_thrower_dist.ogg
 sound_ricochet=

@@ -586,7 +586,6 @@ void add_item_flow()
 	string[] available_cats = {
 		"medical items",
 		"ammo",
-		"packages",
 		"equipment",
 		"materials"
 	};

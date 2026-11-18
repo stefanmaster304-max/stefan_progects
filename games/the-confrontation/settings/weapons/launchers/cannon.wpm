@@ -18,6 +18,7 @@ is_magazine=false
 starting_reserve=3
 ammo_display=shells
 fire_modes=semi
+projectile=ball
 sound_fire=weapons/cannon/cannon_fire1.ogg;weapons/cannon/cannon_fire2.ogg;weapons/cannon/cannon_fire3.ogg
 sound_distant_fire=weapons/cannon/cannon_dist.ogg
 sound_ricochet=
