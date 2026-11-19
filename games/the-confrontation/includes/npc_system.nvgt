@@ -33,6 +33,11 @@ const int NPC_ITEM_SEARCH_MS = 800;
 // map of any size keeps the report present instead of reaching true silence.
 const double NPC_DISTANT_FIRE_DB_PER_STEP = 0.1;
 const double NPC_DISTANT_FIRE_FLOOR_DB = -60.0;
+// Level of the near crack. It is the loudest thing the NPCs do and it only
+// carries a dozen steps, so a few decibels below full scale leave headroom for
+// several shooters at once and keep the summed mix from clipping, which is what
+// made a close exchange sound chopped.
+const float NPC_NEAR_FIRE_LEVEL_DB = -3.0;
 const int NPC_DEATH_LINGER_MS = 1000;
 
 // ---------------------------------------------------------------------------
@@ -211,6 +216,10 @@ class npc_actor
 	// the tag written into the pool, which survives a slot being recycled.
 	int distant_slot;
 	int report_owner;
+	// Last position and level written into the report slot. They keep the pool
+	// from being rewritten every single frame with values that did not change.
+	int report_x, report_y, report_z;
+	double report_db;
 
 	string lasthit;
 
@@ -243,6 +252,10 @@ class npc_actor
 		lasthit = "";
 		distant_slot = -1;
 		report_owner = 0;
+		report_x = 0;
+		report_y = 0;
+		report_z = 0;
+		report_db = 1000.0;
 	}
 }
 
@@ -250,6 +263,9 @@ npc_actor@[] npc_actors(0);
 // Hands every character its own report tag so two characters can never end up
 // moving the same pool slot.
 int npc_report_owner_seq = 1;
+// Each queued character waits for its own turn on the configured interval, so a
+// map with many characters fills up over time instead of all at once.
+int npc_spawn_slot_ms = 0;
 
 class npc_pending_spawn
 {
@@ -271,7 +287,7 @@ npc_pending_spawn@[] npc_pending(0);
 // is a dozen steps, so a fight on the other side of the map is not heard as if
 // it were happening next to the player. Distant gun reports use the separate
 // dp pool, which is the one that travels across the whole map.
-sound_pool npcp(64);
+sound_pool npcp(192);
 bool npc_pool_ready = false;
 
 void npc_init_pool()
@@ -279,6 +295,9 @@ void npc_init_pool()
 	if (npc_pool_ready) return;
 	npc_pool_ready = true;
 	npcp.max_distance = NPC_LOCAL_SOUND_DISTANCE;
+	// Bigger than the number of characters the spawner allows by default: every
+	// gunshot takes a slot for the length of its sample, and a handful of
+	// automatic weapons used to fill the pool and make the newest shots vanish.
 	npcp.volume_step = 3.0;
 	npcp.pan_step = 1.0;
 	npcp.hrtf = true;
@@ -368,6 +387,18 @@ void npc_play_positional(const string&in snd, int px, int py, int pz)
 	npcp.play_3d(snd, me.x, me.y, me.z, px, py, pz, double(facing), false);
 }
 
+// The near crack itself: the real shot of the weapon, heard only by somebody
+// standing within ten steps of the shooter. It is mixed below full scale so a
+// whole squad firing automatic weapons does not sum into a clipped, chopped
+// mix, which is the "cut" that was heard around a close exchange.
+void npc_play_near_fire(const string&in snd, int px, int py, int pz)
+{
+	if (snd == "") return;
+	npc_init_pool();
+	npcp.play_extended_3d(snd, me.x, me.y, me.z, px, py, pz, double(facing),
+		0, 0, 0, 0, 0, 0, false, 0, 0.0, NPC_NEAR_FIRE_LEVEL_DB, 100.0, false);
+}
+
 // Level of a distant report, in dB. At the edge of the near radius the report
 // plays at full level and it falls a decibel per ten steps from there, which is
 // the falloff War Cry uses: clearly loud near the fight and still present on the
@@ -411,9 +442,17 @@ void npc_update_distant_report(npc_actor@ a)
 	int slot = npc_report_slot(a);
 	a.distant_slot = slot;
 	if (slot < 0) return;
-	dp.update_sound_position(slot, a.x, a.y, a.z);
 	double d = get_3d_distance(me.x, me.y, me.z, double(a.x), double(a.y), double(a.z));
-	dp.update_sound_start_values(slot, 0.0, float(npc_report_level_db(d)), 100.0);
+	double db = npc_report_level_db(d);
+	bool moved = (a.x != a.report_x || a.y != a.report_y || a.z != a.report_z);
+	bool changed = (absolute(db - a.report_db) >= 0.25);
+	if (!moved && !changed) return;
+	a.report_x = a.x;
+	a.report_y = a.y;
+	a.report_z = a.z;
+	a.report_db = db;
+	dp.update_sound_position(slot, a.x, a.y, a.z);
+	dp.update_sound_start_values(slot, 0.0, float(db), 100.0);
 }
 
 item_data@ npc_find_shield_item()
@@ -635,7 +674,40 @@ npc_actor@ npc_spawn_actor(bool is_enemy)
 	}
 
 	npc_actors.insert_last(a);
+	// A new character is announced, which is how the spawn count and the
+	// configured interval can be checked without looking for them on the map.
+	speak((is_enemy ? "Enemy" : "Friend") + " spawned at " + a.x + ", " + a.y + ", " + a.z + ".");
 	return a;
+}
+
+int npc_target_count(bool is_enemy)
+{
+	return is_enemy ? npc_enemy_target_count : npc_friend_target_count;
+}
+
+// Living characters of one side plus the ones already waiting for their turn.
+int npc_side_count(bool is_enemy)
+{
+	int n = 0;
+	for (uint i = 0; i < npc_actors.length(); i++)
+	{
+		npc_actor@ a = npc_actors[i];
+		if (a !is null && !a.dead && a.is_enemy == is_enemy) n++;
+	}
+	for (uint i = 0; i < npc_pending.length(); i++)
+	{
+		if (npc_pending[i].is_enemy == is_enemy) n++;
+	}
+	return n;
+}
+
+// Queues the next character of a side on the configured interval. The count is
+// respected exactly: a target of one enemy and one ally queues one of each.
+void npc_queue_spawn(bool is_enemy)
+{
+	if (npc_pending.length() > 512) return;
+	npc_pending.insert_last(npc_pending_spawn(is_enemy, npc_spawn_slot_ms));
+	npc_spawn_slot_ms += npc_respawn_delay;
 }
 
 void npc_start_for_map()
@@ -643,8 +715,22 @@ void npc_start_for_map()
 	npc_destroy_all();
 	npc_spawn_search_exhausted = false;
 	if (npc_enemy_target_count <= 0 && npc_friend_target_count <= 0) return;
-	for (int i = 0; i < npc_enemy_target_count; i++) npc_spawn_actor(true);
-	for (int i = 0; i < npc_friend_target_count; i++) npc_spawn_actor(false);
+	// Nothing is created while the map loads. Every character takes its turn on
+	// the configured interval, so the first one appears only after that time and
+	// a map with dozens of them loads exactly as fast as an empty one.
+	npc_spawn_slot_ms = npc_respawn_delay;
+	int enemies = npc_enemy_target_count;
+	int friends = npc_friend_target_count;
+	int turn = 0;
+	while (enemies > 0 || friends > 0)
+	{
+		bool enemy = false;
+		if (enemies > 0 && (friends <= 0 || (turn % 2) == 0)) enemy = true;
+		if (enemy) enemies--;
+		else friends--;
+		npc_queue_spawn(enemy);
+		turn++;
+	}
 }
 
 void npc_destroy_all()
@@ -905,7 +991,7 @@ void npc_fire_shot(npc_actor@ a, npc_weapon@ w, int tx, int ty, int tz, bool tar
 	if (pd <= NPC_NEAR_FIRE_DISTANCE)
 	{
 		string fire_snd = get_sound_path(w.sound_fire);
-		if (fire_snd != "") npc_play_positional(fire_snd, a.x, a.y, a.z);
+		if (fire_snd != "") npc_play_near_fire(fire_snd, a.x, a.y, a.z);
 	}
 	else
 	{
@@ -1280,8 +1366,12 @@ void npc_loop()
 		{
 			if (a.death_timer.elapsed >= NPC_DEATH_LINGER_MS)
 			{
-				npc_pending.insert_last(npc_pending_spawn(a.is_enemy, npc_respawn_delay));
+				bool enemy = a.is_enemy;
 				npc_actors.remove_at(uint(i));
+				// Replacement only while the side is below its configured count, so
+				// an ally never turns into a second enemy or the other way around.
+				if (npc_side_count(enemy) < npc_target_count(enemy))
+					npc_pending.insert_last(npc_pending_spawn(enemy, npc_respawn_delay));
 			}
 			continue;
 		}

@@ -42,6 +42,9 @@ CHANGED: An exchange of fire is heard as exactly one report per shot: up to ten 
 FIXED: The distant report used to fall back to the real shot of the weapon when no distant sample was configured, and that is what made a far exchange sound like the near crack crossing the map. The fallback is gone: without a distant sample the shot is simply not heard from afar.
 FIXED: The distant report level now follows the model of War Cry, which was the reference for this behaviour: the shot is played at full level from the near radius on and loses one tenth of a decibel per step, so 10 dB at 100 steps, 20 at 200 and 30 at 300, whatever the size of the map. The engine falloff is no longer involved: before, King Audio silenced the report at 500 units and the curve also dropped 12 dB by 40 steps, which is why an exchange a block away was barely there.
 FIXED: King Audio reaches silence at 125 / volume_step and the distant pool was set to 0.25, which is only 500 units, while the +6 dB gain it asked for was discarded because a sound volume cannot go above 0 dB. Far reports were therefore inaudible on any map bigger than a few hundred steps. The pool no longer attenuates by itself and the computed report level does all of it.
+CHANGED: The near crack is mixed three decibels below full scale. It is the loudest thing the characters do and several shooters overlapping at full level summed into clipping, which is what made a close exchange sound chopped; the distant report keeps the full level it needs to cross the map.
+CHANGED: The local pool of the characters grew from 64 to 192 voices. Each shot holds a slot for the length of its sample, and a squad of automatic weapons used to fill the pool and lose the newest shots.
+CHANGED: A running report is only rewritten when its shooter actually moves or when its level changes by at least a quarter of a decibel, instead of being pushed into the engine every frame.
 ADDED: A report that is still sounding follows the character that fired it: its position moves with the shooter and its level re-reads the distance to the player every frame, so walking towards or away from an exchange raises and lowers it instead of leaving it stuck where the first shot happened. Sustained fire reuses the running report rather than stacking a copy per round.
 KNOWN: Seven firearms carry no distant sample of their own (the auto pistol, the pistol, the auto rifle, the Awds SMG Uzi, the M17 Viper Uzi, the laser rifle and the crossbow), so they are not heard past ten steps until a sound_distant_fire is set in their .wpm file. Melee weapons are in the same situation by nature. The other 65 firearms already point at their own distant recordings.
 REMOVED: The sleep system leftovers, including the fade and lowpass handling that only existed for it. Lowpass now belongs only to diving under water, and the fade that remains is the one used when the world is reset.
@@ -68,21 +71,18 @@ FIXED: Weapon fire, reload, draw, empty and distant sounds are resolved from the
 
 BALANCE
 
-CHANGED: Pistols fire every 200 to 400 milliseconds, deal 200 to 400 damage and reach 11 to 13 steps. Their weight stays at the light end of the ladder.
-CHANGED: Revolvers share the pistol base, with a fire time of 200 to 400 milliseconds, but deal 300 to 800 damage and reach 15 to 20 steps.
-CHANGED: Shotguns are slower and heavier: 600 to 1500 milliseconds between shots, 800 to 1800 damage, 13 to 16 steps of reach and a walk interval above every pistol.
-CHANGED: Machine guns are the fastest weapons: 70 to 100 milliseconds between shots, 900 to 2000 damage, 18 to 22 steps of reach and a heavy walk interval. They are the only class that stays fully automatic.
-CHANGED: Rifles sit between machine guns and snipers: 250 to 500 milliseconds, 400 to 1285 damage, 25 to 30 steps and a heavier walk interval than a pistol.
-CHANGED: Sniper rifles fire every 1000 to 3000 milliseconds, deal 2500 to 4850 damage, reach 45 to 50 steps and are the heaviest firearms to carry.
-CHANGED: The cannon deals 3000 to 5000 damage, holds three rounds, reaches 50 steps and fires every three seconds. The other launchers scale down from it: the crossbow fires every 1.2 seconds for 800 to 1500 damage, the flamethrowers every second for 800 to 1500 damage and a shorter reach.
-CHANGED: Melee weapons are not firearms: a blade reaches 5 to 7 steps and deals 200 to 400 damage, with a swing time between 400 and 800 milliseconds and no weight penalty.
-CHANGED: The general ladder is kept everywhere: the bigger the weapon, the more damage it deals, the farther it reaches and the heavier it is to carry.
-CHECKED: All 80 weapon files were rewritten through one balance pass, so no weapon kept an old cadence, an old damage range or a combined mode.
+CHANGED: Damage, fire interval and reach of all 80 weapons now come from War Cry's own weapon table (wc-server/weapons.txt), each weapon mapped to its equivalent there. Damage was divided by five because the player here has 1000 health against War Cry's 5000, so the number of hits needed to kill is exactly the same as in War Cry.
+CHANGED: Fire intervals are War Cry's, per weapon, in milliseconds: the AK47, AUG and Galil every 200, the MP5 family every 250, the M4 every 350, the M16 and the M24 sniper every 500 milliseconds, the M82 every 4 seconds. Automatic weapons therefore fire at the same cadence as in War Cry instead of the stepped 70 to 3000 milliseconds the ladder used before.
+CHANGED: Reach is also War Cry's: 10 to 30 steps for pistols and submachine guns, 30 to 50 for rifles, 10 to 12 for shotguns, 300 to 500 for the sniper rifles (the M82 covers the whole map), 250 for the cannon.
+CHANGED: Melee weapons take their numbers from War Cry's crowbar, combat knife and katana: 3 to 5 steps of reach, one swing every 200 milliseconds and 60 to 120 damage.
+NOTE: War Cry's table is not a smooth ladder and it was copied as it is, as requested: its Ruger Security 6 revolver hits for 300 while its Beretta M9 hits for 20, its portable machine guns hit for 2000 and its M2 for 20000. A pistol fight and a rifle fight therefore feel as different here as they do there.
+CHECKED: All 80 weapon files were rewritten from that table, so no weapon kept an old cadence, an old damage range or an old reach.
 
 PERFORMANCE
 
 FIXED: Starting a game, loading a map and reloading the map after a construction change could stall for almost a minute. The enemy and ally spawn search tried 500 positions and, at each one, walked down every single height level of the map, and each of those lookups fell back to splitting every map line as text. The search now reads the native map directly, tries a bounded number of positions, and gives up for the whole map once a map proves to have no floor at all. The same map load now takes milliseconds.
 FIXED: Every enemy and ally movement check and every patrol pick used the same text fallback, which is what made the game stutter while characters walked. They read the native map now.
+FIXED: A map configured with more than a handful of enemies stalled while loading, because every one of them was created, armed, given healing items, given a patrol and given a draw sound inside the loading screen. Loading now only fills a queue, so a map with any number of characters loads as fast as an empty one.
 
 CONTROLS
 
@@ -122,6 +122,9 @@ ADDED: Kills are announced globally in English with attacker, victim, weapon and
 ADDED: The player's projectiles now hit enemies and allies.
 ADDED: Enemies and allies pick items up from the ground. When a character has no ammunition left for any firearm it carries and no healing items at all, it searches for a useful item within 25 steps, walks to it and collects it automatically from three steps away, exactly like the player does. Ammunition goes into the matching weapon's reserve and healing items go into its own supply. When nothing useful is nearby it keeps patrolling as usual.
 ADDED: The patrol and walking method is the one used by the original individual enemy and friend files: a target anywhere on the map is chosen, the character walks one tile per walking interval on both axes at once with the original facing values, and it only opens fire when the target is inside its own weapon's range, on one of the four cardinal lines and with a clear line of sight.
+FIXED: The configured amount is respected exactly. A spawner set to one enemy and one ally creates one of each and never more: a side is only refilled while its own count is below its own target, so an ally never turns into an extra enemy and the other way around.
+CHANGED: Characters are no longer created while the map loads. Each one is queued and appears on its own turn of the configured interval, so the first enemy or ally only spawns after that time in milliseconds and the rest follow one interval apart, alternating sides.
+ADDED: Every spawned character is announced by voice with its side and its coordinates, for example "Enemy spawned at 240, 180, 0.", so the count and the interval can be checked without searching the map.
 ADDED: A map that carries a safe zone disables combat for enemies and allies entirely. They keep patrolling and collecting items on that map, but they never target or attack anybody while they are there.
 
 REVERB ZONES
