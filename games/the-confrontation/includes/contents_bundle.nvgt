@@ -103,7 +103,7 @@ bool load_all_contents(bool force = false)
 	package_registry.resize(0);
 
 	parse_contents_bundle(text);
-	register_builtin_collectable_resources();
+	remove_legacy_material_items();
 	register_builtin_anti_death_card();
 	contents_bundle_loaded = true;
 	return true;
@@ -222,7 +222,6 @@ void decrypt_all_contents()
 	for (uint i = 0; i < item_registry.length(); i++)
 	{
 		item_data@ it = @item_registry[i];
-		if (is_builtin_collectable_resource(it.id)) continue;
 		string folder = ITEM_DIR + "/" + it.category;
 		if (!directory_exists(folder)) directory_create(folder);
 		file f;

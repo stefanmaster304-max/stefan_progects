@@ -14,15 +14,14 @@ string[] item_categories = {
 	"medical items",
 	"ammo",
 	"equipment",
-	"currency",
-	"materials"
+	"currency"
 };
 
 class item_data
 {
 	string id;
 	string name;
-	string category; // consumables, ammo, packages, equipment, currency, materials
+	string category; // medical items, ammo, equipment, currency
 	string subtype;
 	int heal_amount;
 	int capacity;
@@ -30,7 +29,6 @@ class item_data
 	string contains_items; // For packages: "health_potion:2;medkit:1"
 	string description;
 	int max_stack;
-	string ground_tiles; // Semicolon-separated platform tile patterns yielding this item when collected
 
 	// Consumables restore health.
 	bool restores_health;
@@ -55,7 +53,7 @@ class item_data
 	{
 		id = "";
 		name = "";
-		category = "materials";
+		category = "equipment";
 		subtype = "";
 		heal_amount = 0;
 		capacity = 30;
@@ -63,7 +61,6 @@ class item_data
 		contains_items = "";
 		description = "";
 		max_stack = 99;
-		ground_tiles = "";
 
 		restores_health = false;
 		quantity = 0;
@@ -82,100 +79,14 @@ class item_data
 
 item_data@[] item_registry(0);
 
-class builtin_resource_def
+// The old ground-resource system (grass, clay, glass, rope, ice, ...) is gone.
+// Anything that still carries its category is dropped when the item list is
+// built, so it never reaches the inventory, the editors or the platform menus.
+void remove_legacy_material_items()
 {
-	string id;
-	string name;
-	string description;
-	string sound_pickup;
-	string sound_draw;
-	builtin_resource_def()
+	for (int i = int(item_registry.length()) - 1; i >= 0; i--)
 	{
-		id = "";
-		name = "";
-		description = "";
-		sound_pickup = "";
-		sound_draw = "";
-	}
-	builtin_resource_def(const string&in p_id, const string&in p_name, const string&in p_desc, const string&in p_pickup, const string&in p_draw)
-	{
-		id = p_id;
-		name = p_name;
-		description = p_desc;
-		sound_pickup = p_pickup;
-		sound_draw = p_draw;
-	}
-}
-
-builtin_resource_def[] g_builtin_resources = {
-	builtin_resource_def("clay", "Clay", "Raw clay collected from the environment.", "getclay.ogg", "drawclay.ogg"),
-	builtin_resource_def("grass", "Grass", "Fresh grass collected from the environment.", "getgrass.ogg", "drawgrass.ogg"),
-	builtin_resource_def("dirt", "Dirt", "Loose dirt collected from the environment.", "getdirt.ogg", "drawdirt.ogg"),
-	builtin_resource_def("sand", "Sand", "Fine sand collected from the environment.", "getsand.ogg", "drawsand.ogg"),
-	builtin_resource_def("mud", "Mud", "Wet mud collected from the environment.", "getmud.ogg", "drawmud.ogg"),
-	builtin_resource_def("snow", "Snow", "Cold snow collected from the environment.", "getsnow.ogg", "drawsnow.ogg"),
-	builtin_resource_def("stone", "Stone", "Hard stone collected from the environment.", "getstone.ogg", "drawstone.ogg"),
-	builtin_resource_def("gravel", "Gravel", "Crushed gravel collected from the environment.", "getgravel.ogg", "drawgravel.ogg"),
-	builtin_resource_def("rocks", "Rocks", "Rough rocks collected from the environment.", "getrocks.ogg", "drawrocks.ogg"),
-	builtin_resource_def("leaves", "Leaves", "Foliage and leaves collected from the environment.", "getleaves.ogg", "drawleaves.ogg"),
-	builtin_resource_def("weed", "Weed", "Wild weed collected from the environment.", "getweed.ogg", "drawweed.ogg"),
-	builtin_resource_def("branch", "Branch", "Wooden branch collected from the environment.", "getbranch.ogg", "drawbranch.ogg"),
-	builtin_resource_def("wood", "Wood", "Raw wood collected from the environment.", "getwood.ogg", "drawwood.ogg"),
-	builtin_resource_def("ice", "Ice", "Frozen ice collected from the environment.", "getice.ogg", "drawice.ogg"),
-	builtin_resource_def("water", "Water", "Water collected from the environment.", "getwater.ogg", "drawwater.ogg"),
-	builtin_resource_def("glass", "Glass", "Glass shards collected from the environment.", "getglass.ogg", "drawglass.ogg"),
-	builtin_resource_def("metal", "Metal", "Metal scrap collected from the environment.", "getmetal.ogg", "drawmetal.ogg"),
-	builtin_resource_def("bottle_cap", "Bottle Cap", "A discarded bottle cap.", "getbottle_cap.ogg", "drawbottle_cap.ogg")
-};
-
-bool is_builtin_collectable_resource(const string&in id)
-{
-	for (uint i = 0; i < g_builtin_resources.length(); i++)
-	{
-		if (g_builtin_resources[i].id == id) return true;
-	}
-	return false;
-}
-
-item_data@ create_builtin_resource_data(const string&in id)
-{
-	for (uint i = 0; i < g_builtin_resources.length(); i++)
-	{
-		if (g_builtin_resources[i].id == id)
-		{
-			item_data it;
-			it.id = g_builtin_resources[i].id;
-			it.name = g_builtin_resources[i].name;
-			it.category = "materials";
-			it.subtype = "raw";
-			it.description = g_builtin_resources[i].description;
-			it.heal_amount = 0;
-			it.restores_health = false;
-			it.max_stack = 999;
-			it.sound_pickup = g_builtin_resources[i].sound_pickup;
-			it.sound_loot = g_builtin_resources[i].sound_pickup;
-			it.sound_draw = g_builtin_resources[i].sound_draw;
-			return it;
-		}
-	}
-	return null;
-}
-
-void register_builtin_collectable_resources()
-{
-	for (uint i = 0; i < g_builtin_resources.length(); i++)
-	{
-		string id = g_builtin_resources[i].id;
-		bool found = false;
-		for (uint j = 0; j < item_registry.length(); j++)
-		{
-			if (item_registry[j].id == id) { found = true; break; }
-		}
-		if (!found)
-		{
-			item_data@ it = create_builtin_resource_data(id);
-			if (it !is null) item_registry.insert_last(it);
-		}
+		if (item_registry[uint(i)].category == "materials") item_registry.remove_at(uint(i));
 	}
 }
 
@@ -261,7 +172,6 @@ void parse_item_config(item_data@ it, const string&in content)
 		else if (key == "sound_hit") it.sound_hit = val;
 		else if (key == "sound_break") it.sound_break = val;
 		else if (key == "sound_distant_hit" || key == "sound_distant_break") it.sound_distant_hit = val;
-		else if (key == "ground_tiles" || key == "ground_tile" || key == "collect_from_tiles" || key == "collectible_from") it.ground_tiles = val;
 	}
 
 	// Non-consumable categories never restore health.
@@ -316,12 +226,6 @@ string serialize_item_config(item_data@ it)
 		if (it.sound_pickup != "") s_out += "sound_pickup=" + it.sound_pickup + "\n";
 		if (it.sound_draw != "") s_out += "sound_draw=" + it.sound_draw + "\n";
 	}
-	else if (it.category == "materials")
-	{
-		if (it.sound_loot != "") s_out += "sound_loot=" + it.sound_loot + "\n";
-		if (it.sound_pickup != "") s_out += "sound_pickup=" + it.sound_pickup + "\n";
-		if (it.sound_draw != "") s_out += "sound_draw=" + it.sound_draw + "\n";
-	}
 	else if (it.category == "equipment")
 	{
 		if (it.capacity > 0) s_out += "capacity=" + it.capacity + "\n";
@@ -336,7 +240,6 @@ string serialize_item_config(item_data@ it)
 		if (it.sound_plant != "") s_out += "sound_plant=" + it.sound_plant + "\n";
 		if (it.sound_loop != "") s_out += "sound_loop=" + it.sound_loop + "\n";
 	}
-	if (it.ground_tiles != "") s_out += "ground_tiles=" + it.ground_tiles + "\n";
 	if (it.sound_open != "") s_out += "sound_open=" + it.sound_open + "\n";
 	if (it.sound_close != "") s_out += "sound_close=" + it.sound_close + "\n";
 	return s_out;
@@ -348,7 +251,6 @@ string serialize_all_items_bundle()
 	for (uint i = 0; i < item_registry.length(); i++)
 	{
 		item_data@ it = @item_registry[i];
-		if (is_builtin_collectable_resource(it.id)) continue;
 		if (is_protected_item(it.id)) continue;
 		s += "[item:" + it.id + "]\n";
 	s += "category=" + it.category + "\n";
@@ -374,7 +276,6 @@ string serialize_all_items_bundle()
 		s += "sound_hit=" + it.sound_hit + "\n";
 		s += "sound_break=" + it.sound_break + "\n";
 		s += "sound_distant_hit=" + it.sound_distant_hit + "\n";
-		if (it.ground_tiles != "") s += "ground_tiles=" + it.ground_tiles + "\n";
 		s += "\n";
 	}
 	return s;
@@ -432,7 +333,6 @@ void parse_items_bundle(const string&in content)
 		else if (key == "sound_hit") current.sound_hit = val;
 		else if (key == "sound_break") current.sound_break = val;
 		else if (key == "sound_distant_hit" || key == "sound_distant_break") current.sound_distant_hit = val;
-		else if (key == "ground_tiles" || key == "ground_tile" || key == "collect_from_tiles" || key == "collectible_from") current.ground_tiles = val;
 	}
 
 	// Same normalization as parse_item_config: equipment never uses the
@@ -562,8 +462,9 @@ void load_all_items_config(bool force = false)
 		}
 	}
 
-	// 3. Register built-in collectable ground resources directly in code
-	register_builtin_collectable_resources();
+	// 3. Legacy material items are dropped on load so the old resource system
+	// cannot come back through a settings file that still lists them.
+	remove_legacy_material_items();
 	register_builtin_anti_death_card();
 }
 
@@ -577,15 +478,6 @@ item_data@ find_item_data(const string&in id)
 	for (uint i = 0; i < item_registry.length(); i++)
 	{
 		if (item_registry[i].id == id) return item_registry[i];
-	}
-	if (is_builtin_collectable_resource(id))
-	{
-		item_data@ it = create_builtin_resource_data(id);
-		if (it !is null)
-		{
-			item_registry.insert_last(it);
-			return it;
-		}
 	}
 	return null;
 }
@@ -622,7 +514,7 @@ bool is_item_encrypted(const string&in id = "")
 
 bool delete_item_file(const string&in id)
 {
-	if (id == "" || is_item_encrypted(id) || is_builtin_collectable_resource(id)) return false;
+	if (id == "" || is_item_encrypted(id)) return false;
 	item_data@ it = find_item_data(id);
 	if (it !is null)
 	{

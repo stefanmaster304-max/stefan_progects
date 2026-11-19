@@ -383,11 +383,6 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 		btn_loot = form.create_button("&loot sound" + get_snd_count_label(it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
 		btn_draw = form.create_button("&draw sound" + get_snd_count_label(it.sound_draw));
 	}
-	else if (it.category == "materials")
-	{
-		btn_loot = form.create_button("&loot sound" + get_snd_count_label(it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
-		btn_draw = form.create_button("&draw sound" + get_snd_count_label(it.sound_draw));
-	}
 
 	form.set_disallowed_chars(in_mstack, "0123456789", true, "Numbers only.");
 	if (in_heal != -1) form.set_disallowed_chars(in_heal, "0123456789", true, "Numbers only.");
@@ -586,8 +581,7 @@ void add_item_flow()
 	string[] available_cats = {
 		"medical items",
 		"ammo",
-		"equipment",
-		"materials"
+		"equipment"
 	};
 	for (uint i = 0; i < available_cats.length(); i++)
 	{
@@ -629,7 +623,6 @@ void add_item_flow()
 	else if (chosen_cat == "ammo") { it.capacity = 30; it.ammo_type = "9x19mm"; }
 	else if (chosen_cat == "packages") { it.contains_items = "health_potion:2;medkit:1"; }
 	else if (chosen_cat == "equipment") { it.capacity = 150; it.heal_amount = 0; }
-	else if (chosen_cat == "materials") { it.subtype = "container"; it.description = "A crafted container constructed by humans."; it.max_stack = 10; }
 
 	item_edit_form(it.id, true, false, chosen_cat, "");
 }

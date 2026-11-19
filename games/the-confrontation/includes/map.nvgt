@@ -602,8 +602,7 @@ else if (cmd == "platform")
 {
 if (parsed.length() >= 8)
 {
-string p_collectible = (parsed.length() >= 9) ? parsed[8].trim_whitespace() : "";
-spawn_platform(int(string_to_number(parsed[1])), int(string_to_number(parsed[2])), int(string_to_number(parsed[3])), int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])), parsed[7], p_collectible);
+spawn_platform(int(string_to_number(parsed[1])), int(string_to_number(parsed[2])), int(string_to_number(parsed[3])), int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])), parsed[7]);
 }
 }
 else if (cmd == "wall")
@@ -835,14 +834,12 @@ sync_map_and_neighbor_sources(name);
 apply_ambient_volume();
 apply_music_volume();
 check_map_exploration(name, int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
-}void spawn_platform(int minx, int maxx, int miny, int maxy, int minz, int maxz, string type, string collectible = "")
+}void spawn_platform(int minx, int maxx, int miny, int maxy, int minz, int maxz, string type)
+
 {
 
-g_active_map.add_tile(minx, maxx, miny, maxy, minz, maxz, type, collectible);
-if (collectible != "")
-	map.insert_last(minx+":"+maxx+":"+miny+":"+maxy+":"+minz+":"+maxz+":"+type+":"+collectible);
-else
-	map.insert_last(minx+":"+maxx+":"+miny+":"+maxy+":"+minz+":"+maxz+":"+type);
+g_active_map.add_tile(minx, maxx, miny, maxy, minz, maxz, type);
+map.insert_last(minx+":"+maxx+":"+miny+":"+maxy+":"+minz+":"+maxz+":"+type);
 }
 
 void spawn_wall(int minx, int maxx, int miny, int maxy, int minz, int maxz, string type)
@@ -1005,32 +1002,6 @@ string get_tile_at(int x, int y, int z)
 		}
 	}
 	return final;
-}
-
-string get_platform_collectible_at(int x, int y, int z)
-{
-	string col = g_active_map.get_tile_collectible(x, y, z);
-	if (col != "") return col;
-	for (int i = int(map.length()) - 1; i >= 0; i--)
-	{
-		string[] parsed = string_split(map[i], ":", false);
-		if (parsed.length() >= 7)
-		{
-			int minx = string_to_number(parsed[0]);
-			int maxx = string_to_number(parsed[1]);
-			int miny = string_to_number(parsed[2]);
-			int maxy = string_to_number(parsed[3]);
-			int minz = string_to_number(parsed[4]);
-			int maxz = string_to_number(parsed[5]);
-			if (minx <= x && maxx >= x && miny <= y && maxy >= y && minz <= z && maxz >= z)
-			{
-				if (parsed.length() >= 8)
-					return parsed[7];
-				return "";
-			}
-		}
-	}
-	return "";
 }
 
 bool is_deep_water_tile_name(const string&in name)
@@ -1223,26 +1194,45 @@ bool is_map_encrypted(const string&in name)
 	return false;
 }
 
+// Floor names are the folders that exist under "Map Platforms", and nothing
+// else. The old material names (grass, clay, glass, rope, ice, ...) are not
+// surfaces any more, so they must never reach this list.
+string[] platform_surface_options()
+{
+	string[] raw = get_map_sound_folders("builder/construction/platforms/*");
+	string[] list;
+	dictionary seen;
+	for (uint i = 0; i < raw.length(); i++)
+	{
+		string key = string_to_lower_case(raw[i]);
+		if (key == "" || seen.exists(key)) continue;
+		seen[key] = true;
+		list.insert_last(raw[i]);
+	}
+	list.sort_ascending();
+	return list;
+}
+
+bool platform_preview_play(const string&in name, double vol, double pitch)
+{
+	if (name == "") return false;
+	string snd = get_platform_sound(name, "step");
+	if (snd == "") return false;
+	builder_preview_sound.close();
+	if (!builder_preview_sound.load(snd)) return false;
+	// The reverb builder points this shared preview sound at its own mixer, and
+	// that mix holds the direct signal 8 to 20 dB down. A floor preview belongs
+	// on the master bus, at the volume the sliders ask for.
+	builder_preview_sound.set_mixer(null);
+	builder_preview_sound.play_looped();
+	builder_preview_sound.volume = vol;
+	builder_preview_sound.pitch = pitch;
+	return true;
+}
+
 void build_platform()
 {
-	string disallowed_nums = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ `!@#$%^&*()[]{};:'\"\\|,<>?_/.+=~";
-	string[] platform_dirs = get_map_sound_folders("builder/construction/platforms/*");
-
-	// Collect all surface options: sound folders and materials
-	load_all_items_config();
-	string[] all_platform_options;
-	for (uint i = 0; i < platform_dirs.length(); i++)
-	{
-		all_platform_options.insert_last(platform_dirs[i]);
-	}
-	for (uint i = 0; i < item_registry.length(); i++)
-	{
-		if (item_registry[i].category == "materials" && all_platform_options.find(item_registry[i].id) == -1)
-		{
-			all_platform_options.insert_last(item_registry[i].id);
-		}
-	}
-	all_platform_options.sort_ascending();
+	string[] platform_dirs = platform_surface_options();
 
 	audio_form f;
 	f.create_window("Add Platform", false, true, false);
@@ -1259,67 +1249,74 @@ void build_platform()
 	f.set_disallowed_chars(i_minz, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxz, "0123456789-", true, "Numbers only.");
 
-	int tile_ctrl = f.create_list("Surface Texture or Material (Space to preview)");
-	for (uint i = 0; i < all_platform_options.length(); i++)
+	int tile_ctrl = f.create_list("Floor Platform (Space to preview)");
+	for (uint i = 0; i < platform_dirs.length(); i++)
 	{
-		string p_name = all_platform_options[i];
+		string p_name = platform_dirs[i];
 		string display_name = p_name;
 		if (is_deep_water_tile_name(p_name))
 			display_name += " [Deep Water - Dive Only]";
 		else if (is_shallow_water_tile_name(p_name))
 			display_name += " [Shallow Water - Walkable]";
-		else
-		{
-			item_data@ mat_it = get_item_data(p_name);
-			if (mat_it !is null && mat_it.category == "materials")
-			{
-				display_name += " [Material: " + mat_it.name + "]";
-			}
-		}
 		f.add_list_item(tile_ctrl, display_name);
 	}
 
-	int chk_collectible = f.create_checkbox("Allow collectable resources from this platform", false);
-	int i_resource_name = f.create_input_box("Resource item name to collect (e.g. clay, grass)", "");
+	// Preview controls, the same pair the sound source and ambience builders use.
+	int vol_s = f.create_slider("volume", 0, -100, 0, "", 5);
+	int pit_s = f.create_slider("pitch", 100, 5, 500, "", 5);
 
 	int btn_ok = f.create_button("Add Platform", true);
 	int btn_cancel = f.create_button("Cancel", false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus_silently(i_minx);
 
-	int[] input_boxes = {i_minx, i_maxx, i_miny, i_maxy, i_minz, i_maxz, i_resource_name};
-	f.set_state(i_resource_name, false, false);
+	int[] input_boxes = {i_minx, i_maxx, i_miny, i_maxy, i_minz, i_maxz};
+	bool preview_playing = false;
+	int last_preview_pos = -1;
+	timer space_preview_timer;
 	while (true)
 	{
 		wait(5);
 		f.monitor();
 		update_form_input_keyboard_sound(f, input_boxes);
-		bool allow_col = f.is_checked(chk_collectible);
-		f.set_state(i_resource_name, allow_col, allow_col);
-		if (key_down(KEY_SPACE) && f.get_current_focus() == tile_ctrl)
+
+		int pos = f.get_list_position(tile_ctrl);
+		string opt_name = (pos >= 0 && pos < int(platform_dirs.length())) ? platform_dirs[pos] : "";
+		int cur_focus = f.get_current_focus();
+		bool in_preview_group = (cur_focus == tile_ctrl || cur_focus == vol_s || cur_focus == pit_s);
+
+		// The sliders act on the running preview, so the floor is judged by ear
+		// before it is written to the map.
+		if (preview_playing && builder_preview_sound.active)
 		{
-			int pos = f.get_list_position(tile_ctrl);
-			if (pos >= 0 && pos < int(all_platform_options.length()))
+			builder_preview_sound.volume = f.get_slider(vol_s);
+			builder_preview_sound.pitch = f.get_slider(pit_s);
+		}
+		if (preview_playing && pos != last_preview_pos)
+		{
+			last_preview_pos = pos;
+			preview_playing = platform_preview_play(opt_name, f.get_slider(vol_s), f.get_slider(pit_s));
+		}
+
+		bool space_hit = key_pressed(KEY_SPACE) || (key_down(KEY_SPACE) && space_preview_timer.elapsed >= 300);
+		if (space_hit && in_preview_group)
+		{
+			space_preview_timer.restart();
+			if (preview_playing)
 			{
-				string opt_name = all_platform_options[pos];
-				string snd = get_platform_sound(opt_name, "step");
-				if (snd == "")
-				{
-					item_data@ it = get_item_data(opt_name);
-					if (it !is null && it.sound_pickup != "") snd = get_sound_path(it.sound_pickup);
-				}
-				if (snd == "") snd = get_platform_sound("stone", "step");
-				if (snd != "" && builder_preview_sound.load(snd))
-				{
-					builder_preview_sound.play();
-				}
+				builder_preview_sound.close();
+				preview_playing = false;
 			}
-			wait(150);
+			else
+			{
+				last_preview_pos = pos;
+				preview_playing = platform_preview_play(opt_name, f.get_slider(vol_s), f.get_slider(pit_s));
+			}
 		}
 
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
 		{
-			builder_preview_sound.stop();
+			builder_preview_sound.close();
 			speak("canceled");
 			return;
 		}
@@ -1343,21 +1340,11 @@ void build_platform()
 			int y2 = int(string_to_number(ty2));
 			int z1 = int(string_to_number(tz1));
 			int z2 = int(string_to_number(tz2));
-			int pos = f.get_list_position(tile_ctrl);
-			string tile = (pos >= 0 && pos < int(all_platform_options.length())) ? all_platform_options[pos] : "grass";
+			int sel = f.get_list_position(tile_ctrl);
+			string tile = (sel >= 0 && sel < int(platform_dirs.length())) ? platform_dirs[sel] : "concrete";
 
-			builder_preview_sound.stop();
+			builder_preview_sound.close();
 			string line = "platform:" + x1 + ":" + x2 + ":" + y1 + ":" + y2 + ":" + z1 + ":" + z2 + ":" + tile;
-			if (allow_col)
-			{
-				string res_name = f.get_text(i_resource_name).trim_whitespace();
-				if (res_name == "") res_name = tile;
-				line += ":" + res_name;
-			}
-			else
-			{
-				line += ":none";
-			}
 			save_to_map(line);
 			return;
 		}

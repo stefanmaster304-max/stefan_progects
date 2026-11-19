@@ -125,3 +125,14 @@ FIXED: The looping platform sound of the builder now goes through its own mixer 
 MAPS
 
 FIXED: Saving the enemy and ally spawner rewrote the map from the parsed cache and could drop unrelated lines such as a map sound source. The spawner now reads the map file itself, replaces only its own line and keeps every other line untouched.
+
+MAPS (PLATFORMS)
+
+FIXED: The platform form lists exactly the folders that exist under "Map Platforms". Names from the deleted material registry no longer appear, which also ends the duplicates they created, such as the folder "Dirt" and the registry entry "dirt" listed side by side.
+ADDED: Volume and pitch sliders in the platform form, the same pair the sound source and ambience builders use. Both act on the running preview, so the floor sound is judged by ear before the platform is added.
+FIXED: Platform previews played 8 to 20 dB down because the shared preview sound stayed routed to the reverb builder's mixer after that form had been used. The preview now returns to the master bus and plays at the volume of the slider.
+
+RESOURCES
+
+REMOVED: The old ground resource system. The built-in materials are no longer defined or registered, the materials category is gone from the item editor, and an item that still carries that category in an old settings file is dropped when the item list is built.
+REMOVED: The "Allow collectable resources from this platform" checkbox, the resource name field and the collectible field written into platform lines. Older maps that still carry that extra field load normally, with the field read as nothing.

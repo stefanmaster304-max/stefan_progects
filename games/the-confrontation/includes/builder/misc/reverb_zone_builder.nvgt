@@ -44,18 +44,7 @@ double[] reverb_preset_values = {
 
 string[] reverb_zone_sound_options()
 {
-	string[] list = get_map_sound_folders("builder/construction/platforms/*");
-	list.sort_ascending();
-	// Platform sounds are named folders; a handful of maps use flats, so the
-	// materials registered by the items manager are offered too.
-	load_all_items_config();
-	for (uint i = 0; i < item_registry.length(); i++)
-	{
-		if (item_registry[i].category == "materials" && list.find(item_registry[i].id) == -1)
-			list.insert_last(item_registry[i].id);
-	}
-	list.sort_ascending();
-	return list;
+	return platform_surface_options();
 }
 
 // The preview has its own mixer so the reverb can be changed live without

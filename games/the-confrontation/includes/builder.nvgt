@@ -244,16 +244,7 @@ bool new_map_form()
 		return false;
 	}
 	string disallowed_nums = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ `!@#$%^&*()[]{};:'\"\\|,<>?_/.+=~";
-	string[] platform_dirs = get_map_sound_folders("builder/construction/platforms/*");
-	load_all_items_config();
-	for (uint i = 0; i < item_registry.length(); i++)
-	{
-		if (item_registry[i].category == "materials" && platform_dirs.find(item_registry[i].id) == -1)
-		{
-			platform_dirs.insert_last(item_registry[i].id);
-		}
-	}
-	platform_dirs.sort_ascending();
+	string[] platform_dirs = platform_surface_options();
 
 	audio_form f;
 	f.create_window("Create New Map", false, true, false);
