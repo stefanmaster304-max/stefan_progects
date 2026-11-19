@@ -520,7 +520,7 @@ weapon_data@ find_weapon_data(const string&in id)
 		if (reg_norm == norm) return weapon_registry[i];
 	}
 	// 3. Fallback common aliases (for legacy configs, NPCs, stores)
-	if (norm == "glock 17" || norm == "glock17") return find_weapon_data("glock_17_pistol");
+	if (norm == "glock 17" || norm == "glock17") return find_weapon_data("glock9mm");
 	if (norm == "ak47" || norm == "ak 47" || norm == "ak47 assault rifle") return find_weapon_data("AK74");
 	if (norm == "benelli m4" || norm == "benelli m4 shotgun") return find_weapon_data("beneli m4");
 	if (norm == "m6d magnum" || norm == "m6d magnum tactical") return find_weapon_data("magnum revouver");

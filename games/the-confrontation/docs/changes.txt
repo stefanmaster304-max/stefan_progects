@@ -46,7 +46,8 @@ CHANGED: The near crack is mixed three decibels below full scale. It is the loud
 CHANGED: The local pool of the characters grew from 64 to 192 voices. Each shot holds a slot for the length of its sample, and a squad of automatic weapons used to fill the pool and lose the newest shots.
 CHANGED: A running report is only rewritten when its shooter actually moves or when its level changes by at least a quarter of a decibel, instead of being pushed into the engine every frame.
 ADDED: A report that is still sounding follows the character that fired it: its position moves with the shooter and its level re-reads the distance to the player every frame, so walking towards or away from an exchange raises and lowers it instead of leaving it stuck where the first shot happened. Sustained fire reuses the running report rather than stacking a copy per round.
-KNOWN: Seven firearms carry no distant sample of their own (the auto pistol, the pistol, the auto rifle, the Awds SMG Uzi, the M17 Viper Uzi, the laser rifle and the crossbow), so they are not heard past ten steps until a sound_distant_fire is set in their .wpm file. Melee weapons are in the same situation by nature. The other 65 firearms already point at their own distant recordings.
+CHANGED: The weapons without a sound folder were deleted, so every firearm that remains has its own fire, distant, draw, reload and empty recordings; a weapon can no longer be offered with a missing sound.
+KNOWN: The crossbow and the melee weapons carry no distant sample, so past ten steps they are simply not heard. No weapon falls back to its real shot to fake a distant report.
 REMOVED: The sleep system leftovers, including the fade and lowpass handling that only existed for it. Lowpass now belongs only to diving under water, and the fade that remains is the one used when the world is reset.
 
 INVENTORY
@@ -68,15 +69,17 @@ CHANGED: The weapon builder offers the projectile as a navigable list of the kin
 CHANGED: The fire mode of a weapon is also a list with exactly two entries, semi-automatic and full automatic. The focused entry is the mode that is saved.
 FIXED: The time between shots of every weapon now follows its .wpm file exactly, and the weapon's own fire interval is what the enemies and allies use as well.
 FIXED: Weapon fire, reload, draw, empty and distant sounds are resolved from the weapon file and the sound folders, with no generic fallback sound.
+REMOVED: Eleven weapons whose sound folders had already been deleted also had their .wpm files deleted: the laser rifle, the flamethrower, the Awds SMG Uzi, the M17 Viper Uzi, the claw, the diamond sword, the auto pistol, the Glock 17 pistol, the pistol, the auto rifle and the Barrett M82 sniper rifle. The weapon list now holds 69 files, and the NPC arsenal, the store and the weapon builder only offer weapons whose sounds still exist.
+CHANGED: The "glock 17" alias now resolves to the Glock9mm, the only Glock that is left.
 
 BALANCE
 
-CHANGED: Damage, fire interval and reach of all 80 weapons now come from War Cry's own weapon table (wc-server/weapons.txt), each weapon mapped to its equivalent there. Damage was divided by five because the player here has 1000 health against War Cry's 5000, so the number of hits needed to kill is exactly the same as in War Cry.
-CHANGED: Fire intervals are War Cry's, per weapon, in milliseconds: the AK47, AUG and Galil every 200, the MP5 family every 250, the M4 every 350, the M16 and the M24 sniper every 500 milliseconds, the M82 every 4 seconds. Automatic weapons therefore fire at the same cadence as in War Cry instead of the stepped 70 to 3000 milliseconds the ladder used before.
-CHANGED: Reach is also War Cry's: 10 to 30 steps for pistols and submachine guns, 30 to 50 for rifles, 10 to 12 for shotguns, 300 to 500 for the sniper rifles (the M82 covers the whole map), 250 for the cannon.
-CHANGED: Melee weapons take their numbers from War Cry's crowbar, combat knife and katana: 3 to 5 steps of reach, one swing every 200 milliseconds and 60 to 120 damage.
-NOTE: War Cry's table is not a smooth ladder and it was copied as it is, as requested: its Ruger Security 6 revolver hits for 300 while its Beretta M9 hits for 20, its portable machine guns hit for 2000 and its M2 for 20000. A pistol fight and a rifle fight therefore feel as different here as they do there.
-CHECKED: All 80 weapon files were rewritten from that table, so no weapon kept an old cadence, an old damage range or an old reach.
+CHANGED: Damage and reach of every weapon still come from War Cry's own weapon table (wc-server/weapons.txt), each weapon mapped to its equivalent there. Damage was divided by five because the player here has 1000 health against War Cry's 5000, so the number of hits needed to kill is the same as in War Cry.
+CHANGED: Fire intervals were rebuilt weapon by weapon instead of being copied from War Cry: no two weapons share a cadence and every class sits in its own band. Submachine guns and machine guns run from 100 to 150 milliseconds, pistols from 160 to 290, the knife to the sword from 205 to 255, rifles from 300 to 540, revolvers from 560 to 700, shotguns from 720 to 1000, sniper rifles from 1100 to 2500 and the cannon at 3200 milliseconds.
+CHANGED: Inside each class the ladder follows the weight and the role of the weapon. The knife swings fastest (205 ms), then the machete (215), the axe (225), the katana (235), the longsword (245) and the sword (255). The Kel-Tec P318 is the quickest pistol (160 ms) and the long barrelled STP106 the slowest (290 ms). The Uzi is the quickest automatic (100 ms) and the M4 the slowest of that class (150 ms), with the Browning M2 at 140. The Ithica M37 is the quickest shotgun (720 ms) and the Benelli M4 the slowest (1000 ms). The Dragunov is the quickest sniper (1100 ms) and the Barret M150 the heaviest (2500 ms).
+CHANGED: Reach stays as War Cry's: 10 to 30 steps for pistols and submachine guns, 30 to 50 for rifles, 10 to 12 for shotguns, 300 to 500 for the sniper rifles, 250 for the cannon and 3 to 5 steps for melee weapons.
+NOTE: Damage values of War Cry are kept as they are, including the uneven ones: its Ruger Security 6 revolver hits harder than its Beretta M9, and its M2 heavy machine gun hits for 20000. A pistol fight and a rifle fight therefore feel as different here as they do there.
+CHECKED: All 69 remaining weapon files were rewritten, so no weapon kept an old cadence.
 
 PERFORMANCE
 
