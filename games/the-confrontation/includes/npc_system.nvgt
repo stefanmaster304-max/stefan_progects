@@ -276,16 +276,24 @@ void npc_init_pool()
 bool npc_tile_is_floor(int tx, int ty, int tz)
 {
 	if (tx < minx || tx > maxx || ty < miny || ty > maxy || tz < minz || tz > maxz) return false;
-	string tile = get_tile_at(tx, ty, tz);
+	// Native lookup only. get_tile_at() falls back to scanning every map line
+	// with a string split, and the spawn search calls this hundreds of
+	// thousands of times, which is what made map loading take a minute.
+	string tile = g_active_map.get_tile(tx, ty, tz);
 	if (tile == "") return false;
 	if (string_contains(string_to_lower_case(tile), "wall", 1) > -1) return false;
 	if (g_active_map.get_wall(tx, ty, tz) != "") return false;
 	return true;
 }
 
+// One exhausted search is enough for the whole map: a map without any floor
+// would otherwise repeat the full scan for every single character.
+bool npc_spawn_search_exhausted = false;
+
 bool npc_find_spawn(int &out sx, int &out sy, int &out sz)
 {
-	for (int attempt = 0; attempt < 500; attempt++)
+	if (npc_spawn_search_exhausted) return false;
+	for (int attempt = 0; attempt < 64; attempt++)
 	{
 		int tx = random(minx, maxx);
 		int ty = random(miny, maxy);
@@ -293,11 +301,12 @@ bool npc_find_spawn(int &out sx, int &out sy, int &out sz)
 		{
 			if (npc_tile_is_floor(tx, ty, tz))
 			{
-				sx = tx; sy = ty; sz = tz;
+				sx = tx; sy = ty; 			sz = tz;
 				return true;
 			}
 		}
 	}
+	npc_spawn_search_exhausted = true;
 	return false;
 }
 
@@ -576,6 +585,7 @@ npc_actor@ npc_spawn_actor(bool is_enemy)
 void npc_start_for_map()
 {
 	npc_destroy_all();
+	npc_spawn_search_exhausted = false;
 	if (npc_enemy_target_count <= 0 && npc_friend_target_count <= 0) return;
 	for (int i = 0; i < npc_enemy_target_count; i++) npc_spawn_actor(true);
 	for (int i = 0; i < npc_friend_target_count; i++) npc_spawn_actor(false);

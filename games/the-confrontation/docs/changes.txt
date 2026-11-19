@@ -75,6 +75,11 @@ CHANGED: Melee weapons are not firearms: a blade reaches 5 to 7 steps and deals 
 CHANGED: The general ladder is kept everywhere: the bigger the weapon, the more damage it deals, the farther it reaches and the heavier it is to carry.
 CHECKED: All 80 weapon files were rewritten through one balance pass, so no weapon kept an old cadence, an old damage range or a combined mode.
 
+PERFORMANCE
+
+FIXED: Starting a game, loading a map and reloading the map after a construction change could stall for almost a minute. The enemy and ally spawn search tried 500 positions and, at each one, walked down every single height level of the map, and each of those lookups fell back to splitting every map line as text. The search now reads the native map directly, tries a bounded number of positions, and gives up for the whole map once a map proves to have no floor at all. The same map load now takes milliseconds.
+FIXED: Every enemy and ally movement check and every patrol pick used the same text fallback, which is what made the game stutter while characters walked. They read the native map now.
+
 CONTROLS
 
 CHANGED: The Spacebar alone jumps again. It is the only jump key and it works on its own, without a modifier.
