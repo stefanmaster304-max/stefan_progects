@@ -26,10 +26,13 @@ const int NPC_NEAR_FIRE_DISTANCE = 10;
 const int NPC_LOCAL_SOUND_DISTANCE = 12;
 const double NPC_ITEM_SEARCH_DISTANCE = 25.0;
 const int NPC_ITEM_SEARCH_MS = 800;
-// Floor of the distant report level. The report starts at full level at the
-// near radius and falls with distance down to this floor, which keeps a fight
-// audible across the map without ever turning into a wall of sound.
-const double NPC_DISTANT_FIRE_FLOOR_DB = -26.0;
+// Falloff of the distant report, in dB per step. War Cry (the reference for
+// this behaviour) positions its distant gunshots with a volume step of 0.1, so
+// a report loses a tenth of a decibel per step: 10 dB at 100 steps, 30 at 300.
+// The same slope is reproduced here, and the floor below only exists so that a
+// map of any size keeps the report present instead of reaching true silence.
+const double NPC_DISTANT_FIRE_DB_PER_STEP = 0.1;
+const double NPC_DISTANT_FIRE_FLOOR_DB = -60.0;
 const int NPC_DEATH_LINGER_MS = 1000;
 
 // ---------------------------------------------------------------------------
@@ -366,14 +369,14 @@ void npc_play_positional(const string&in snd, int px, int py, int pz)
 }
 
 // Level of a distant report, in dB. At the edge of the near radius the report
-// plays at full level and it falls 20 dB per decade of distance from there, so
-// it is unmistakable across a small map and still audible on the far side of a
-// large one instead of dying out a few dozen steps away.
+// plays at full level and it falls a decibel per ten steps from there, which is
+// the falloff War Cry uses: clearly loud near the fight and still present on the
+// far side of the map, instead of dying out a few dozen steps away.
 double npc_report_level_db(double dist)
 {
 	double near_ref = double(NPC_NEAR_FIRE_DISTANCE);
 	if (dist < near_ref) dist = near_ref;
-	double db = -20.0 * log10(dist / near_ref);
+	double db = -(dist - near_ref) * NPC_DISTANT_FIRE_DB_PER_STEP;
 	if (db < NPC_DISTANT_FIRE_FLOOR_DB) db = NPC_DISTANT_FIRE_FLOOR_DB;
 	return db;
 }
