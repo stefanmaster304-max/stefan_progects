@@ -26,7 +26,10 @@ const int NPC_NEAR_FIRE_DISTANCE = 10;
 const int NPC_LOCAL_SOUND_DISTANCE = 12;
 const double NPC_ITEM_SEARCH_DISTANCE = 25.0;
 const int NPC_ITEM_SEARCH_MS = 800;
-const double NPC_DISTANT_FIRE_GAIN_DB = 6.0;
+// Floor of the distant report level. The report starts at full level at the
+// near radius and falls with distance down to this floor, which keeps a fight
+// audible across the map without ever turning into a wall of sound.
+const double NPC_DISTANT_FIRE_FLOOR_DB = -26.0;
 const int NPC_DEATH_LINGER_MS = 1000;
 
 // ---------------------------------------------------------------------------
@@ -200,6 +203,10 @@ class npc_actor
 	npc_actor@ target_actor;
 	bool target_is_player;
 
+	// Slot of this character's own distant report, so the report can follow it
+	// while it is still sounding. -1 means nothing is playing.
+	int distant_slot;
+
 	string lasthit;
 
 	npc_actor()
@@ -229,6 +236,7 @@ class npc_actor
 		@target_actor = null;
 		target_is_player = false;
 		lasthit = "";
+		distant_slot = -1;
 	}
 }
 
@@ -351,14 +359,43 @@ void npc_play_positional(const string&in snd, int px, int py, int pz)
 	npcp.play_3d(snd, me.x, me.y, me.z, px, py, pz, double(facing), false);
 }
 
-// Weapon reports are the only NPC sound allowed to cross the whole map. They
-// always play through dp at the shooter's position, with a small gain so the
-// report still reaches the far side of a large map instead of dying out.
-void npc_play_distant(const string&in snd, int px, int py, int pz)
+// Level of a distant report, in dB. At the edge of the near radius the report
+// plays at full level and it falls 20 dB per decade of distance from there, so
+// it is unmistakable across a small map and still audible on the far side of a
+// large one instead of dying out a few dozen steps away.
+double npc_report_level_db(double dist)
 {
-	if (snd == "") return;
-	dp.play_extended_3d(snd, me.x, me.y, me.z, px, py, pz, double(facing),
-		0, 0, 0, 0, 0, 0, false, 0, 0.0, NPC_DISTANT_FIRE_GAIN_DB, 100.0, false);
+	double near_ref = double(NPC_NEAR_FIRE_DISTANCE);
+	if (dist < near_ref) dist = near_ref;
+	double db = -20.0 * log10(dist / near_ref);
+	if (db < NPC_DISTANT_FIRE_FLOOR_DB) db = NPC_DISTANT_FIRE_FLOOR_DB;
+	return db;
+}
+
+// Weapon reports are the only NPC sound allowed to cross the whole map. Only
+// the weapon's own distant sample is used here: the real shot never travels.
+int npc_play_distant(const string&in snd, int px, int py, int pz)
+{
+	if (snd == "") return -1;
+	double d = get_3d_distance(me.x, me.y, me.z, double(px), double(py), double(pz));
+	return dp.play_extended_3d(snd, me.x, me.y, me.z, px, py, pz, double(facing),
+		0, 0, 0, 0, 0, 0, false, 0, 0.0, float(npc_report_level_db(d)), 100.0, false);
+}
+
+// A running report keeps following the character that fired it: its position
+// moves with the shooter and its level re-reads the distance to the player, so
+// walking towards or away from an exchange changes what is heard.
+void npc_update_distant_report(npc_actor@ a)
+{
+	if (a is null || a.distant_slot < 0) return;
+	if (!dp.sound_is_active(a.distant_slot))
+	{
+		a.distant_slot = -1;
+		return;
+	}
+	dp.update_sound_position(a.distant_slot, a.x, a.y, a.z);
+	double d = get_3d_distance(me.x, me.y, me.z, double(a.x), double(a.y), double(a.z));
+	dp.update_sound_start_values(a.distant_slot, 0.0, float(npc_report_level_db(d)), 100.0);
 }
 
 item_data@ npc_find_shield_item()
@@ -842,17 +879,34 @@ void npc_fire_shot(npc_actor@ a, npc_weapon@ w, int tx, int ty, int tz, bool tar
 	w.loaded -= 1;
 	npc_face_target(a, tx, ty);
 
-	string fire_snd = get_sound_path(w.sound_fire);
-	if (fire_snd != "")
+	// One report per shot, never both. Up to ten steps the player hears the
+	// real shot of the weapon; from there on only the weapon's distant sample,
+	// which is a different recording and the one allowed to cross the map.
+	int pd = int(round(get_3d_distance(me.x, me.y, me.z, double(a.x), double(a.y), double(a.z)), 0));
+	if (pd <= NPC_NEAR_FIRE_DISTANCE)
 	{
-		int pd = int(round(get_3d_distance(me.x, me.y, me.z, double(a.x), double(a.y), double(a.z)), 0));
-		if (pd <= NPC_NEAR_FIRE_DISTANCE)
-			npc_play_positional(fire_snd, a.x, a.y, a.z);
-		// The report always travels across the map, at any distance and on any
-		// map size; the near crack above is what stays local.
+		string fire_snd = get_sound_path(w.sound_fire);
+		if (fire_snd != "") npc_play_positional(fire_snd, a.x, a.y, a.z);
+	}
+	else
+	{
+		// No fallback to the real shot: a weapon without a distant sample is
+		// simply not heard from afar, instead of propagating a near crack.
 		string dist_snd = get_sound_path(w.sound_distant_fire);
-		if (dist_snd == "") dist_snd = fire_snd;
-		npc_play_distant(dist_snd, a.x, a.y, a.z);
+		if (dist_snd != "")
+		{
+			// A report that is still sounding is not restarted: it keeps following
+			// the shooter, so sustained fire does not stack dozens of copies.
+			if (a.distant_slot >= 0 && dp.sound_is_active(a.distant_slot))
+			{
+				npc_update_distant_report(a);
+			}
+			else
+			{
+				int slot = npc_play_distant(dist_snd, a.x, a.y, a.z);
+				if (slot >= 0) a.distant_slot = slot;
+			}
+		}
 	}
 
 	if (target_is_player)
@@ -1136,6 +1190,8 @@ void npc_combat_tick(npc_actor@ a)
 void npc_actor_tick(npc_actor@ a)
 {
 	if (a is null || a.dead) return;
+
+	npc_update_distant_report(a);
 
 	if (a.shield_pending && !a.shield_equipped && a.shield_timer.elapsed >= a.shield_delay)
 	{

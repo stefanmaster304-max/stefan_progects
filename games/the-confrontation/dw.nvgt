@@ -280,13 +280,16 @@ init_reverb_bus();
 	p.volume_step = 2.0;
 	sp.volume_step = 2.0;
 	itempool.volume_step = 2.0;
-	dp.volume_step = 0.25;
+	dp.volume_step = 0.001;
 	spool.volume_step = 2.0;
 	dp.pan_step = 1.0;
 	dp.behind_pitch_decrease = 0.0;
 	// Max audible radius for pools. The distant weapon pool is unbounded: its
-	// reports must reach the far side of any map, and the slow volume step below
-	// is what keeps them audible instead of silent past a few dozen steps.
+	// reports must reach the far side of any map. King Audio silences a sound at
+	// 125 / volume_step units, so this step (a range of 125,000) makes the
+	// engine's own falloff negligible; the report level is computed from the
+	// distance instead, in npc_report_level_db(), where a map of any size can be
+	// covered without the far shots sinking into silence.
 	dp.max_distance = 0;
 	dp.hrtf = true;
 p.position_smoothing = 0.0;
