@@ -317,9 +317,10 @@ is_in_game = true;
 while(true)
 {joy_update();
 weapon_system_loop();
-// Fire is hold-to-fire so full-auto and burst weapons behave correctly;
-// Triggered strictly by Control keys or configured "fire" key; strictly disabled on Spacebar or jump!
-if ((kb_down("fire") or key_down(KEY_LCONTROL) or key_down(KEY_RCONTROL)) and !key_down(KEY_SPACE) and !key_pressed(KEY_SPACE) and jumping == 0 and falling == false)
+// Fire is hold-to-fire for automatic weapons and one press per shot for
+// semi-automatic ones. Only the left Control key (or the configured fire
+// key) fires; the right Control key, Spacebar and jumping never fire.
+if ((kb_down("fire") or key_down(KEY_LCONTROL)) and !key_down(KEY_SPACE) and !key_pressed(KEY_SPACE) and jumping == 0 and falling == false)
 {
 	string active_w = current_weapon_id;
 	if (active_w == "" || find_weapon_data(active_w) is null)
@@ -336,12 +337,12 @@ if ((kb_down("fire") or key_down(KEY_LCONTROL) or key_down(KEY_RCONTROL)) and !k
 		{
 			fire_current_weapon();
 		}
-		else if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) || kb_pressed("fire"))
+		else if (key_pressed(KEY_LCONTROL) || kb_pressed("fire"))
 		{
 			speak("You cannot fire in a safe zone.");
 		}
 	}
-	else if ((key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) || kb_pressed("fire")) && current_weapon_id == "")
+	else if ((key_pressed(KEY_LCONTROL) || kb_pressed("fire")) && current_weapon_id == "")
 	{
 		speak("No weapon equipped.");
 	}
@@ -349,10 +350,6 @@ if ((kb_down("fire") or key_down(KEY_LCONTROL) or key_down(KEY_RCONTROL)) and !k
 if (kb_pressed("ammo_status") or key_pressed(KEY_A))
 {
 	speak_ammo_status();
-}
-if (key_pressed(KEY_V))
-{
-	cycle_fire_mode(current_weapon_id);
 }
 doorcheckloop();
 staircasecheckloop();
@@ -746,8 +743,9 @@ if (dmoving==false and movetimer.elapsed>=movetime)
 	}
 }
 if (me.z < minz) me.z = minz;
-// Jump is triggered with Ctrl + Space (both left and right control supported)
-if ((key_down(KEY_LCONTROL) or key_down(KEY_RCONTROL)) and key_pressed(KEY_SPACE) and jumping==0 and falling==false and dmoving==false)
+// Jump is triggered by the Spacebar alone. Ctrl + Space does nothing at
+// all, and Control alone only fires.
+if (key_pressed(KEY_SPACE) and !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
 {
 	if (is_sitting)
 	{

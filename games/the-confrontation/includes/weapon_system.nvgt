@@ -36,7 +36,7 @@ void equip_weapon(const string&in wid, bool silent = false)
 	current_weapon_id = wid;
 	weapon_next_fire_interval = w.firetime;
 	init_weapon_ammo(wid, w.capacity);
-	register_weapon_fire_modes(w);
+	register_weapon_fire_mode(w);
 	if (w.walktime > 0) walktime = w.walktime;
 	else walktime = 160;
 
@@ -66,8 +66,8 @@ void fire_current_weapon()
 	// not go through the game loop's own check.
 	if (is_safe(me.x, me.y, me.z)) return;
 
-	// Strict verification: When Spacebar is down/pressed, or while jumping/falling, firing is completely disabled.
-	// Pressing Ctrl + Space causes the character to jump; absolutely no firing sound should be produced while jumping.
+	// Firing is disabled while Spacebar is down/pressed and while jumping or
+	// falling, so a jump never produces a shot.
 	if (key_down(KEY_SPACE) || key_pressed(KEY_SPACE) || jumping == 1 || falling) return;
 
 	// While the reload sound is playing the weapon cannot fire and stays in
@@ -92,10 +92,10 @@ void fire_current_weapon()
 	// Ensure ammo is initialized for this weapon if not already done
 	init_weapon_ammo(w.id, w.capacity);
 
-	// Weapon firing key is restored to Control key (or configured "fire" key).
-	// Spacebar is completely excluded and strictly prohibited from firing.
-	bool trigger_pressed = (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) || kb_pressed("fire")) && !key_down(KEY_SPACE) && !key_pressed(KEY_SPACE);
-	bool trigger_held = (key_down(KEY_LCONTROL) || key_down(KEY_RCONTROL) || kb_down("fire")) && !key_down(KEY_SPACE) && !key_pressed(KEY_SPACE);
+	// Weapon firing key is the left Control key (or the configured "fire" key).
+	// The right Control key, Spacebar and jumping never fire.
+	bool trigger_pressed = (key_pressed(KEY_LCONTROL) || kb_pressed("fire")) && !key_down(KEY_SPACE) && !key_pressed(KEY_SPACE);
+	bool trigger_held = (key_down(KEY_LCONTROL) || kb_down("fire")) && !key_down(KEY_SPACE) && !key_pressed(KEY_SPACE);
 
 	if (!trigger_pressed && !trigger_held) return;
 
@@ -126,28 +126,13 @@ void fire_current_weapon()
 
 	int fmode = get_fire_mode(current_weapon_id);
 
-	// Validate trigger requirement per fire mode:
+	// Automatic weapons keep firing while the trigger is held; every other
+	// weapon needs one press per shot.
 	if (fmode == FIREMODE_AUTO)
 	{
 		if (!trigger_held) return;
 	}
-	else if (fmode == FIREMODE_BURST)
-	{
-		if (burst_rounds_remaining <= 0)
-		{
-			if (!trigger_pressed) return;
-			burst_rounds_remaining = 3;
-		}
-		else
-		{
-			if (!trigger_held)
-			{
-				burst_rounds_remaining = 0;
-				return;
-			}
-		}
-	}
-	else // Semi, Scattershot, Focused: all require an individual trigger press
+	else
 	{
 		if (!trigger_pressed) return;
 	}
@@ -157,7 +142,6 @@ void fire_current_weapon()
 	// to reload manually (R).
 	if (get_loaded_ammo(w.id) <= 0)
 	{
-		burst_rounds_remaining = 0;
 		string atype = (w.ammo_type != "") ? w.ammo_type : "ammo";
 		speak("Click. Out of " + atype + ".");
 		if (w.sound_empty_mag != "")
@@ -170,7 +154,6 @@ void fire_current_weapon()
 
 	// Consume one round per trigger event
 	consume_loaded_round(w.id);
-	if (fmode == FIREMODE_BURST) burst_rounds_remaining--;
 
 	// Play fire sound strictly from weapon configuration (no generic fallback)
 	if (w.sound_fire != "")
@@ -183,25 +166,8 @@ void fire_current_weapon()
 	int dmg = int(round(double(base_dmg) * res_mult, 0));
 	int spd = (w.speedtime > 0) ? w.speedtime : 5;
 
-	if (fmode == FIREMODE_SCATTERSHOT)
-	{
-		// Scattershot: throws a fan of projectiles simultaneously on trigger press.
-		for (int k = -2; k <= 2; k++)
-		{
-			int sdir = int(degree_limit(double(fire_dir) + double(k * 10)));
-			spawn_projectile(me.x, me.y, me.z, sdir, w.id, "bullet", dmg, spd, w.range, w.spread);
-		}
-	}
-	else if (fmode == FIREMODE_FOCUSED)
-	{
-		// Focused: a single high-damage, perfectly accurate shot.
-		spawn_projectile(me.x, me.y, me.z, fire_dir, w.id, "bullet", int(round(double(dmg) * 1.5, 0)), spd, w.range, 0);
-	}
-	else
-	{
-		// Semi / auto / burst: one real projectile per round, as configured.
-		spawn_projectile(me.x, me.y, me.z, fire_dir, w.id, "bullet", dmg, spd, w.range, w.spread);
-	}
+	// One real projectile per round, fired at the weapon's own interval.
+	spawn_projectile(me.x, me.y, me.z, fire_dir, w.id, "bullet", dmg, spd, w.range, w.spread);
 }
 
 void weapon_system_loop()

@@ -5,119 +5,33 @@
 // ---------------------------------------------------------------------------
 // Fire mode system
 // ---------------------------------------------------------------------------
+// A weapon has exactly one fire mode and it is chosen when the weapon is
+// created: either semi-automatic or full automatic. Nothing switches it at
+// runtime and there is no mode list.
 const int FIREMODE_SEMI = 0;
-const int FIREMODE_BURST = 1;
-const int FIREMODE_AUTO = 2;
-const int FIREMODE_SCATTERSHOT = 3;
-const int FIREMODE_FOCUSED = 4;
+const int FIREMODE_AUTO = 1;
 
-class fire_mode_info
-{
-	string weapon_name;
-	int[] modes;
-	int current_mode;
+dictionary weapon_fire_modes;
 
-	fire_mode_info(string wn, int[] m)
-	{
-		weapon_name = wn;
-		modes = m;
-		current_mode = 0;
-	}
-}
-
-fire_mode_info@[] fire_modes_list(0);
-int burst_rounds_remaining = 0;
-bool burst_firing = false;
-
-void register_fire_modes(string wn, int[] modes)
-{
-	for (uint i = 0; i < fire_modes_list.length(); i++)
-	{
-		if (fire_modes_list[i].weapon_name == wn)
-		{
-			fire_modes_list[i].modes = modes;
-			fire_modes_list[i].current_mode = 0;
-			return;
-		}
-	}
-	fire_mode_info fm(wn, modes);
-	fire_modes_list.insert_last(fm);
-}
-
-// Parse a weapon's configured fire_modes string ("semi;auto;burst") into the
-// real mode list used by the runtime. Called when the weapon is equipped.
-void register_weapon_fire_modes(weapon_data@ w)
+void register_weapon_fire_mode(weapon_data@ w)
 {
 	if (w is null) return;
-	int[] modes;
-	string fm = string_to_lower_case(w.fire_modes);
-	if (fm == "") fm = "semi";
-	fm = string_replace(fm, "/", ";", true);
-	fm = string_replace(fm, ",", ";", true);
-	string[]@ parts = string_split(fm, ";", true);
-	if (parts !is null)
-	{
-		for (uint i = 0; i < parts.length(); i++)
-		{
-			string p = parts[i].trim_whitespace();
-			if (p == "auto" || p == "automatic" || p == "full_auto") modes.insert_last(FIREMODE_AUTO);
-			else if (p == "burst") modes.insert_last(FIREMODE_BURST);
-			else if (p == "scattershot") modes.insert_last(FIREMODE_SCATTERSHOT);
-			else if (p == "focused") modes.insert_last(FIREMODE_FOCUSED);
-			else if (p == "semi" || p == "semi_auto" || p == "semiautomatic") modes.insert_last(FIREMODE_SEMI);
-		}
-	}
-	if (modes.length() == 0) modes.insert_last(FIREMODE_SEMI);
-	register_fire_modes(w.id, modes);
+	string fm = string_to_lower_case(w.fire_modes).trim_whitespace();
+	int mode = FIREMODE_SEMI;
+	if (fm == "auto" || fm == "automatic" || fm == "full_auto" || fm == "full automatic") mode = FIREMODE_AUTO;
+	weapon_fire_modes.set(w.id, mode);
 }
 
 int get_fire_mode(string wname)
 {
-	for (uint i = 0; i < fire_modes_list.length(); i++)
-	{
-		if (fire_modes_list[i].weapon_name == wname)
-		{
-			if (fire_modes_list[i].modes.length() == 0) return FIREMODE_SEMI;
-			return fire_modes_list[i].modes[fire_modes_list[i].current_mode];
-		}
-	}
-	return FIREMODE_SEMI;
+	int mode = FIREMODE_SEMI;
+	weapon_fire_modes.get(wname, mode);
+	return mode;
 }
 
 string fire_mode_name(int mode)
 {
-	if (mode == FIREMODE_SEMI) return "semi-automatic";
-	if (mode == FIREMODE_BURST) return "burst";
-	if (mode == FIREMODE_AUTO) return "full automatic";
-	if (mode == FIREMODE_SCATTERSHOT) return "scattershot";
-	if (mode == FIREMODE_FOCUSED) return "focused";
-	return "semi-automatic";
-}
-
-void cycle_fire_mode(string wname)
-{
-	if (wname == "")
-	{
-		speak("No weapon equipped.");
-		return;
-	}
-	for (uint i = 0; i < fire_modes_list.length(); i++)
-	{
-		if (fire_modes_list[i].weapon_name == wname)
-		{
-			if (fire_modes_list[i].modes.length() <= 1)
-			{
-				speak("This weapon only has one fire mode.");
-				return;
-			}
-			fire_modes_list[i].current_mode++;
-			if (fire_modes_list[i].current_mode >= int(fire_modes_list[i].modes.length()))
-				fire_modes_list[i].current_mode = 0;
-			speak(fire_mode_name(fire_modes_list[i].modes[fire_modes_list[i].current_mode]));
-			return;
-		}
-	}
-	speak("This weapon does not have selectable fire modes.");
+	return (mode == FIREMODE_AUTO) ? "full automatic" : "semi-automatic";
 }
 
 // ---------------------------------------------------------------------------

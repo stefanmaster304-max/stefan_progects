@@ -36,8 +36,11 @@ CHANGED: The sound pool was updated to the current King Audio components and now
 CHANGED: The spatial behaviour was rebuilt for King Audio: box clamping, distance gating, occlusion raycasts, position smoothing and the per-frame listener update were adapted to the engine instead of the old mixer.
 KEPT: The project customizations on top of the current King Audio set: low-pass filter command support, offset tracking and seeking in every play mode, start pitch applied after play() because King Audio ignores it before a channel exists, and a single king_system_update() per frame committed by the caller instead of once per pool.
 FIXED: Footsteps keep a constant volume of 0 dB and vary only in pitch, so walking no longer gets louder or quieter at random.
-REMOVED: The sleep system leftovers, including the fade and lowpass handling that only existed for it. Lowpass now belongs only to diving under water, and the fade that remains is the one used when the world is reset.
 FIXED: The sound pool no longer leaks slots or voices when a sound ends, is stopped or is replaced.
+FIXED: The local sounds of enemies and allies (footsteps, weapon draw, reload, shield equip, healing and the near crack of a shot) now have their own pool with a radius of a dozen steps. A fight far away is no longer heard as if it were next to the player.
+FIXED: Weapon reports of enemies and allies now always propagate across the whole map through the distant weapon pool, at any distance and on any map size, with a small gain so the report survives the distance. The distant pool no longer has a maximum radius and its volume falls slowly.
+FIXED: The distant report is played even when the player is close enough to hear the real shot, so an exchange of fire never loses its propagation.
+REMOVED: The sleep system leftovers, including the fade and lowpass handling that only existed for it. Lowpass now belongs only to diving under water, and the fade that remains is the one used when the world is reset.
 
 INVENTORY
 
@@ -50,10 +53,35 @@ FIXED: Using an item from the quick inventory keeps the focus usable when the it
 
 WEAPONS
 
-CHANGED: Every weapon reads its cadence, weight, time between shots, range, spread, damage, fire modes and ammunition from its own .wpm file. There is no longer any weapon timing, weight, ammunition rule or fire mode rule written in the code.
-REMOVED: The two functions that overrode the .wpm data with hardcoded values, the forced minimum and maximum shot times and the rule that treated every shotgun as semi automatic.
-FIXED: The time between shots of every weapon now follows its .wpm file exactly, so full automatic weapons, burst weapons and single shot weapons fire at the rate their file declares.
+CHANGED: Every weapon reads its cadence, weight, time between shots, range, spread, damage, fire mode and ammunition from its own .wpm file. There is no longer any weapon timing, weight, ammunition rule or fire mode rule written in the code.
+CHANGED: A weapon now has a single fire mode and it is chosen when the weapon is created: either semi-automatic or full automatic. Automatic weapons fire while the trigger is held, semi-automatic weapons need one press per shot.
+REMOVED: The burst, scattershot and focused modes, the mode lists that combined several of them, the mode switching key, the multiple-mode state, the round counter of burst fire and every branch, table, name and entry that referred to them, in the player weapons, in the weapon builder and in the enemies and allies.
+REMOVED: The minimum and maximum shot times. A weapon has one fire time and it is the only cadence that exists, in the file, in the weapon form, in the serialized bundle and in the loaded weapon data. Nothing calculates or clamps a range of shot times any more.
+CHANGED: The weapon builder offers the projectile as a navigable list of the kinds the game really launches: automatic, ballistic, bolt, ball, energy, plasma, missile, rocket, grenade, fire and drainage. The focused entry is the one saved and there is no check or uncheck action. The free text projectile field is gone.
+CHANGED: The fire mode of a weapon is also a list with exactly two entries, semi-automatic and full automatic. The focused entry is the mode that is saved.
+FIXED: The time between shots of every weapon now follows its .wpm file exactly, and the weapon's own fire interval is what the enemies and allies use as well.
 FIXED: Weapon fire, reload, draw, empty and distant sounds are resolved from the weapon file and the sound folders, with no generic fallback sound.
+
+BALANCE
+
+CHANGED: Pistols fire every 200 to 400 milliseconds, deal 200 to 400 damage and reach 11 to 13 steps. Their weight stays at the light end of the ladder.
+CHANGED: Revolvers share the pistol base, with a fire time of 200 to 400 milliseconds, but deal 300 to 800 damage and reach 15 to 20 steps.
+CHANGED: Shotguns are slower and heavier: 600 to 1500 milliseconds between shots, 800 to 1800 damage, 13 to 16 steps of reach and a walk interval above every pistol.
+CHANGED: Machine guns are the fastest weapons: 70 to 100 milliseconds between shots, 900 to 2000 damage, 18 to 22 steps of reach and a heavy walk interval. They are the only class that stays fully automatic.
+CHANGED: Rifles sit between machine guns and snipers: 250 to 500 milliseconds, 400 to 1285 damage, 25 to 30 steps and a heavier walk interval than a pistol.
+CHANGED: Sniper rifles fire every 1000 to 3000 milliseconds, deal 2500 to 4850 damage, reach 45 to 50 steps and are the heaviest firearms to carry.
+CHANGED: The cannon deals 3000 to 5000 damage, holds three rounds, reaches 50 steps and fires every three seconds. The other launchers scale down from it: the crossbow fires every 1.2 seconds for 800 to 1500 damage, the flamethrowers every second for 800 to 1500 damage and a shorter reach.
+CHANGED: Melee weapons are not firearms: a blade reaches 5 to 7 steps and deals 200 to 400 damage, with a swing time between 400 and 800 milliseconds and no weight penalty.
+CHANGED: The general ladder is kept everywhere: the bigger the weapon, the more damage it deals, the farther it reaches and the heavier it is to carry.
+CHECKED: All 80 weapon files were rewritten through one balance pass, so no weapon kept an old cadence, an old damage range or a combined mode.
+
+CONTROLS
+
+CHANGED: The Spacebar alone jumps again. It is the only jump key and it works on its own, without a modifier.
+REMOVED: Ctrl + Space. Pressing Control and Space together no longer jumps, does not fire and performs no action at all.
+CHANGED: Only the left Control key fires. The right Control key was removed from the firing key, from the default key binding and from every place that accepted either Control.
+CHANGED: The default binding of the fire action is now the left Control key instead of the Spacebar, so the keyboard focus and the jump can never share a key.
+REMOVED: The V key that switched the fire mode, because a weapon has a single mode.
 
 CURRENCY AND STORES
 
@@ -65,7 +93,7 @@ REMOVED: The stub that reported every store product as unavailable and the dead 
 DOCUMENTATION
 
 CHANGED: The documentation viewer now opens fixed English paths (docs/readme.txt, docs/game_guide.txt, docs/changes.txt) and lists only the files that actually exist.
-CHANGED: This changelog was rewritten from scratch for version 1.0.0.
+CHANGED: This changelog was rewritten from scratch for version 1.0.0 and its sections were consolidated, so no topic appears twice.
 
 CLEANUP
 
@@ -76,58 +104,30 @@ ENEMIES AND ALLIES
 
 ADDED: Enemies and allies that live entirely offline, with no network, no player list and no server messages. They spawn from a spawner line stored on the map, patrol the whole map and keep respawning after the configured delay.
 ADDED: An "enemy and ally spawner" entry in the construction menu that asks for the number of enemies, the number of allies and the respawn time in milliseconds, and writes them to the map.
-ADDED: Both sides fight with the player's own weapon files. Fire interval, fire modes, range, damage, magazine capacity, reserve ammunition, reload sound, draw sound and the walk weight come from the .wpm file of each weapon, an NPC switches weapons when its own runs dry and it falls back to melee.
+ADDED: Both sides fight with the player's own weapon files. Fire interval, fire mode, range, damage, magazine capacity, reserve ammunition, reload sound, draw sound and the walk weight come from the .wpm file of each weapon, an NPC switches weapons when its own runs dry and it falls back to melee.
 CHANGED: The walking pace of every NPC is random and slower than the player's. The weapon weight is added on top of that pace instead of replacing it, and melee weapons carry no weight penalty.
 ADDED: Enemies target allies and the player; allies only target enemies. Nobody damages the player during an exchange between an enemy and an ally: the player is hurt only when an enemy has chosen the player as its target.
 FIXED: An NPC no longer closes all the way to the target to line up a shot. Outside its weapon range it closes the distance, and once inside it sidesteps onto a firing line on the axis that leaves the greater distance, so a weapon is used at the range its own file declares.
 ADDED: Enemies and allies carry their own random ammunition, use healing items with a 5 to 10 second cooldown and equip a shield 5 to 10 seconds after spawning.
 ADDED: Kills are announced globally in English with attacker, victim, weapon and coordinates, for example "Enemy killed Friend at 500, 300, 0 with Mp5."
 ADDED: The player's projectiles now hit enemies and allies.
+ADDED: Enemies and allies pick items up from the ground. When a character has no ammunition left for any firearm it carries and no healing items at all, it searches for a useful item within 25 steps, walks to it and collects it automatically from three steps away, exactly like the player does. Ammunition goes into the matching weapon's reserve and healing items go into its own supply. When nothing useful is nearby it keeps patrolling as usual.
+ADDED: The patrol and walking method is the one used by the original individual enemy and friend files: a target anywhere on the map is chosen, the character walks one tile per walking interval on both axes at once with the original facing values, and it only opens fire when the target is inside its own weapon's range, on one of the four cardinal lines and with a clear line of sight.
+ADDED: A map that carries a safe zone disables combat for enemies and allies entirely. They keep patrolling and collecting items on that map, but they never target or attack anybody while they are there.
 
 REVERB ZONES
 
 ADDED: Reverb zones stored on maps and built with a form that offers only the native reverb of King Audio: decay, wet and dry level, diffusion, density, early and late delay, high frequency reference, high frequency decay ratio, low shelf frequency and gain, high cut and the early/late mix. No other effect is used.
 ADDED: A list of platform sounds with loop playback inside the reverb form, so a zone can be tuned while hearing the surface the map uses.
 ADDED: Every sound pool the player hears is routed through one reverb bus, so a zone reverberates everything and no zone leaves the game dry.
-
-SOUND
-
-FIXED: The local sounds of enemies and allies (footsteps, weapon draw, reload, shield equip, healing and the near crack of a shot) now have their own pool with a radius of a dozen steps. A fight far away is no longer heard as if it were next to the player.
-FIXED: Weapon reports of enemies and allies now always propagate across the whole map through the distant weapon pool, at any distance and on any map size, with a small gain so the report survives the distance. The distant pool no longer has a maximum radius and its volume falls slowly.
-FIXED: The distant report is played even when the player is close enough to hear the real shot, so an exchange of fire never loses its propagation.
-
-MAPS
-
-ADDED: Map lines for reverb zones and for the enemy and ally spawner.
-REMOVED: The reward for discovering a map. Finding a new map no longer pays gold, plays an unlock sound or announces a reward; discovery is only bookkeeping.
-
-ITEMS
-
-ADDED: A tandem warhead rocket and a ray beam cell, two ammunition types that did not exist in the ammo set.
-
-ENEMIES AND ALLIES (ITEM COLLECTION AND PATROL)
-
-ADDED: Enemies and allies pick items up from the ground. When a character has no ammunition left for any firearm it carries and no healing items at all, it searches for a useful item within 25 steps, walks to it and collects it automatically from three steps away, exactly like the player does. Ammunition goes into the matching weapon's reserve and healing items go into its own supply. When nothing useful is nearby it keeps patrolling as usual.
-ADDED: The patrol and walking method is the one used by the original individual enemy and friend files: a target anywhere on the map is chosen, the character walks one tile per walking interval on both axes at once with the original facing values, and it only opens fire when the target is inside its own weapon's range, on one of the four cardinal lines and with a clear line of sight.
-ADDED: A map that carries a safe zone disables combat for enemies and allies entirely. They keep patrolling and collecting items on that map, but they never target or attack anybody while they are there.
-ADDED: The player's death message now reports the coordinates and the weapon, for example "You were killed by an enemy at 300, 0, 0 with Mp5 on the safe map."
-
-PLAYER
-
-FIXED: Dying now empties the inventory. The death save wrote the inventory as it was, so the items came back with the next life; the inventory and the equipment are cleared before the death save is written.
-FIXED: Firing is blocked inside a safe zone even when a firing path does not go through the game loop's own safe zone check.
-
-REVERB ZONE PREVIEW
-
 ADDED: The reverb zone builder now offers a reverb type list before the sliders: room, small room, long room, hall, cathedral, cave, bathroom, arena, hangar, forest, tunnel and underwater. Choosing a type sets every slider at once.
 FIXED: The looping platform sound of the builder now goes through its own mixer with the native King Audio reverb attached, so the effect is heard while the sliders and the type are being changed instead of only after the zone is saved. Any slider change reconfigures the loop immediately.
 
 MAPS
 
+ADDED: Map lines for reverb zones and for the enemy and ally spawner.
+REMOVED: The reward for discovering a map. Finding a new map no longer pays gold, plays an unlock sound or announces a reward; discovery is only bookkeeping.
 FIXED: Saving the enemy and ally spawner rewrote the map from the parsed cache and could drop unrelated lines such as a map sound source. The spawner now reads the map file itself, replaces only its own line and keeps every other line untouched.
-
-MAPS (PLATFORMS)
-
 FIXED: The platform form lists exactly the folders that exist under "Map Platforms". Names from the deleted material registry no longer appear, which also ends the duplicates they created, such as the folder "Dirt" and the registry entry "dirt" listed side by side.
 ADDED: Volume and pitch sliders in the platform form, the same pair the sound source and ambience builders use. Both act on the running preview, so the floor sound is judged by ear before the platform is added.
 FIXED: Platform previews played 8 to 20 dB down because the shared preview sound stayed routed to the reverb builder's mixer after that form had been used. The preview now returns to the master bus and plays at the volume of the slider.
@@ -136,3 +136,13 @@ RESOURCES
 
 REMOVED: The old ground resource system. The built-in materials are no longer defined or registered, the materials category is gone from the item editor, and an item that still carries that category in an old settings file is dropped when the item list is built.
 REMOVED: The "Allow collectable resources from this platform" checkbox, the resource name field and the collectible field written into platform lines. Older maps that still carry that extra field load normally, with the field read as nothing.
+
+ITEMS
+
+ADDED: A tandem warhead rocket and a ray beam cell, two ammunition types that did not exist in the ammo set.
+
+PLAYER
+
+FIXED: Dying now empties the inventory. The death save wrote the inventory as it was, so the items came back with the next life; the inventory and the equipment are cleared before the death save is written.
+FIXED: Firing is blocked inside a safe zone even when a firing path does not go through the game loop's own safe zone check.
+ADDED: The player's death message now reports the coordinates and the weapon, for example "You were killed by an enemy at 300, 0, 0 with Mp5 on the safe map."

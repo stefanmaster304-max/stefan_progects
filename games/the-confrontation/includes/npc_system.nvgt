@@ -57,7 +57,6 @@ class npc_weapon
 	int loaded;
 	int reserve;
 	int reload_ms;
-	int burst_left;
 	string sound_fire;
 	string sound_distant_fire;
 	string sound_reload;
@@ -82,7 +81,6 @@ class npc_weapon
 		loaded = 0;
 		reserve = 0;
 		reload_ms = 2000;
-		burst_left = 0;
 		sound_fire = "";
 		sound_distant_fire = "";
 		sound_reload = "";
@@ -110,19 +108,10 @@ bool npc_weapon_usable(npc_weapon@ w)
 	return (w.loaded > 0 || w.reserve > 0);
 }
 
-string npc_first_fire_mode(const string&in modes)
+string npc_fire_mode_of(const string&in mode)
 {
-	string m = string_to_lower_case(modes);
-	m = string_replace(m, "/", ";", true);
-	m = string_replace(m, ",", ";", true);
-	string[]@ parts = string_split(m, ";", true);
-	if (parts is null) return "semi";
-	for (uint i = 0; i < parts.length(); i++)
-	{
-		string p = parts[i].trim_whitespace();
-		if (p == "auto" || p == "automatic" || p == "full_auto") return "auto";
-		if (p == "burst") return "burst";
-	}
+	string m = string_to_lower_case(mode).trim_whitespace();
+	if (m == "auto" || m == "automatic" || m == "full_auto" || m == "full automatic") return "auto";
 	return "semi";
 }
 
@@ -135,7 +124,7 @@ npc_weapon@ npc_make_weapon(weapon_data@ w)
 	nw.ammo_type = w.ammo_type;
 	nw.reserve_item = w.reserve_item;
 	nw.is_magazine = w.is_magazine;
-	nw.fire_mode = npc_first_fire_mode(w.fire_modes);
+	nw.fire_mode = npc_fire_mode_of(w.fire_modes);
 	nw.melee = w.melee;
 	nw.firetime = (w.firetime > 0) ? w.firetime : 500;
 	nw.walktime = w.walktime;
@@ -841,7 +830,6 @@ void npc_fire_shot(npc_actor@ a, npc_weapon@ w, int tx, int ty, int tz, bool tar
 	if (is_safe(tx, ty, tz)) return;
 
 	w.loaded -= 1;
-	w.burst_left = (w.fire_mode == "burst") ? (w.burst_left + 1) : 0;
 	npc_face_target(a, tx, ty);
 
 	string fire_snd = get_sound_path(w.sound_fire);
@@ -867,19 +855,9 @@ void npc_fire_shot(npc_actor@ a, npc_weapon@ w, int tx, int ty, int tz, bool tar
 		npc_take_damage(target_actor, dmg, a.id, w.name);
 	}
 
-	// Burst fire pauses after three rounds; auto and semi keep the weapon's
-	// configured interval.
-	if (w.fire_mode == "burst" && w.burst_left >= 3)
-	{
-		w.burst_left = 0;
-		a.fire_timer.restart();
-		a.fire_interval = w.firetime * 2;
-	}
-	else
-	{
-		a.fire_timer.restart();
-		a.fire_interval = w.firetime;
-	}
+	// The cadence of every shot is the weapon's own fire interval.
+	a.fire_timer.restart();
+	a.fire_interval = w.firetime;
 }
 
 bool npc_step_axis(npc_actor@ a, bool along_x, int dir)

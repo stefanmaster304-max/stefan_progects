@@ -290,28 +290,45 @@ string weapon_pick_sound_dialog(string action_key, string current_val)
 	return select_sound_by_category_dialog(action_key, current_val, "weapons", true);
 }
 
+// Every weapon is created with exactly one of these two modes.
 string[] available_fire_mode_keys = {
 	"semi",
-	"auto",
-	"burst",
-	"semi;auto",
-	"semi;burst;auto",
-	"burst;auto",
-	"scattershot",
-	"focused",
-	"semi;burst;auto;scattershot;focused"
+	"auto"
 };
 
 string[] available_fire_mode_names = {
 	"Semi-Automatic (semi)",
-	"Full Automatic (auto)",
-	"Burst Fire (burst)",
-	"Semi and Full Auto (semi;auto)",
-	"Semi, Burst and Auto (semi;burst;auto)",
-	"Burst and Auto (burst;auto)",
-	"Scattershot (scattershot)",
-	"Focused (focused)",
-	"All Modes (semi;burst;auto;scattershot;focused)"
+	"Full Automatic (auto)"
+};
+
+// Every projectile kind the game really launches. The weapon stores whichever
+// entry the keyboard focus stays on when the form is saved.
+string[] available_projectile_keys = {
+	"auto",
+	"ballistic",
+	"bolt",
+	"ball",
+	"energy",
+	"plasma",
+	"missile",
+	"rocket",
+	"grenade",
+	"fire",
+	"drainage"
+};
+
+string[] available_projectile_names = {
+	"Auto (derive from the ammunition)",
+	"Ballistic bullet",
+	"Bolt or arrow",
+	"Cannon ball",
+	"Energy beam",
+	"Plasma",
+	"Missile",
+	"Rocket",
+	"Grenade",
+	"Fire",
+	"Drainage"
 };
 
 void pick_weapon_ammo_dialog(weapon_data@ w, audio_form@ parent_form, int in_reserve, int in_type, int in_cap, int in_label, int in_mag, int in_disp)
@@ -445,7 +462,14 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 	int in_min_dmg = form.create_input_box("minimum damage", string(w.min_damage), "", 0, false, false, view_only);
 	int in_max_dmg = form.create_input_box("maximum damage", string(w.max_damage), "", 0, false, false, view_only);
 	int in_spread = form.create_input_box("spread accuracy (0 for perfect)", string(w.spread), "", 0, false, false, view_only);
-	int in_projectile = form.create_input_box("projectile launched (auto, ballistic, bolt, ball, energy, plasma, missile, rocket, grenade, fire, drainage)", w.projectile != "" ? w.projectile : "auto", "", 0, false, false, view_only);
+	int in_projectile = form.create_list("projectile launched (use arrow keys to navigate, the focused one is saved)", 0, false, true);
+	int projectile_pos = 0;
+	for (uint pi = 0; pi < available_projectile_keys.length(); pi++)
+	{
+		form.add_list_item(in_projectile, available_projectile_names[pi], available_projectile_keys[pi], -1, false, false);
+		if (normalize_projectile_name(w.projectile) == available_projectile_keys[pi]) projectile_pos = int(pi);
+	}
+	if (!view_only) form.set_list_position(in_projectile, projectile_pos, false);
 	int in_capacity = form.create_input_box("magazine/chamber capacity", string(w.capacity), "", 0, false, false, view_only);
 	form.set_disallowed_chars(in_firetime, "0123456789", true, "Numbers only.");
 	form.set_disallowed_chars(in_walktime, "0123456789", true, "Numbers only.");
@@ -470,12 +494,14 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 	// reload sound. The weapon cannot fire while that sound is playing.
 	int in_ammo_display = form.create_input_box("ammo display unit (rounds, shells, cells)", w.ammo_display, "", 0, false, false, view_only);
 	
-	int in_fire_modes_list = form.create_list("available fire modes (use arrow keys to focus and select)", 0, false, true);
+	int in_fire_modes_list = form.create_list("fire mode (choose semi-automatic or full automatic)", 0, false, true);
+	int fire_mode_pos = 0;
 	for (uint mi = 0; mi < available_fire_mode_keys.length(); mi++)
 	{
-		bool is_sel = (w.fire_modes == available_fire_mode_keys[mi]);
-		form.add_list_item(in_fire_modes_list, available_fire_mode_names[mi], available_fire_mode_keys[mi], -1, false, is_sel);
+		form.add_list_item(in_fire_modes_list, available_fire_mode_names[mi], available_fire_mode_keys[mi], -1, false, false);
+		if (w.fire_modes == available_fire_mode_keys[mi]) fire_mode_pos = int(mi);
 	}
+	if (!view_only) form.set_list_position(in_fire_modes_list, fire_mode_pos, false);
 
 	// Sound buttons
 	int btn_fire = form.create_button("&fire sound" + weapon_sound_count_label(w.sound_fire));
@@ -582,15 +608,18 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 				w.melee = form.is_checked(in_melee);
 				w.firetime = int(string_to_number(form.get_text(in_firetime)));
 				if (w.firetime < 4) w.firetime = 4;
-				w.firetime_min = w.firetime;
-				w.firetime_max = w.firetime;
 				w.walktime = int(string_to_number(form.get_text(in_walktime)));
 				w.speedtime = int(string_to_number(form.get_text(in_speedtime)));
 				w.range = int(string_to_number(form.get_text(in_range)));
 				w.min_damage = int(string_to_number(form.get_text(in_min_dmg)));
 				w.max_damage = int(string_to_number(form.get_text(in_max_dmg)));
 				w.spread = int(string_to_number(form.get_text(in_spread)));
-				w.projectile = normalize_projectile_name(form.get_text(in_projectile));
+				int chosen_projectile = form.get_list_position(in_projectile);
+				if (chosen_projectile >= 0 && chosen_projectile < int(available_projectile_keys.length()))
+				{
+					w.projectile = available_projectile_keys[chosen_projectile];
+				}
+				else w.projectile = "auto";
 				w.capacity = int(string_to_number(form.get_text(in_capacity)));
 				w.ammo_type = form.get_text(in_ammo_type);
 				w.reserve_item = form.get_text(in_reserve_item);
