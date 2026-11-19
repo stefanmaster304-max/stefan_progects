@@ -204,8 +204,10 @@ class npc_actor
 	bool target_is_player;
 
 	// Slot of this character's own distant report, so the report can follow it
-	// while it is still sounding. -1 means nothing is playing.
+	// while it is still sounding. -1 means nothing is playing. report_owner is
+	// the tag written into the pool, which survives a slot being recycled.
 	int distant_slot;
+	int report_owner;
 
 	string lasthit;
 
@@ -237,10 +239,14 @@ class npc_actor
 		target_is_player = false;
 		lasthit = "";
 		distant_slot = -1;
+		report_owner = 0;
 	}
 }
 
 npc_actor@[] npc_actors(0);
+// Hands every character its own report tag so two characters can never end up
+// moving the same pool slot.
+int npc_report_owner_seq = 1;
 
 class npc_pending_spawn
 {
@@ -382,20 +388,29 @@ int npc_play_distant(const string&in snd, int px, int py, int pz)
 		0, 0, 0, 0, 0, 0, false, 0, 0.0, float(npc_report_level_db(d)), 100.0, false);
 }
 
+// The slot of a character's running report, or -1 when nothing of its own is
+// sounding. Looking it up by owner also rejects a slot that was recycled.
+int npc_report_slot(npc_actor@ a)
+{
+	if (a is null || a.report_owner == 0) return -1;
+	int slot = dp.get_sound_by_owner("npc_report", a.report_owner);
+	if (slot < 0) return -1;
+	if (!dp.sound_is_active(slot)) return -1;
+	return slot;
+}
+
 // A running report keeps following the character that fired it: its position
 // moves with the shooter and its level re-reads the distance to the player, so
 // walking towards or away from an exchange changes what is heard.
 void npc_update_distant_report(npc_actor@ a)
 {
-	if (a is null || a.distant_slot < 0) return;
-	if (!dp.sound_is_active(a.distant_slot))
-	{
-		a.distant_slot = -1;
-		return;
-	}
-	dp.update_sound_position(a.distant_slot, a.x, a.y, a.z);
+	if (a is null) return;
+	int slot = npc_report_slot(a);
+	a.distant_slot = slot;
+	if (slot < 0) return;
+	dp.update_sound_position(slot, a.x, a.y, a.z);
 	double d = get_3d_distance(me.x, me.y, me.z, double(a.x), double(a.y), double(a.z));
-	dp.update_sound_start_values(a.distant_slot, 0.0, float(npc_report_level_db(d)), 100.0);
+	dp.update_sound_start_values(slot, 0.0, float(npc_report_level_db(d)), 100.0);
 }
 
 item_data@ npc_find_shield_item()
@@ -585,6 +600,7 @@ npc_actor@ npc_spawn_actor(bool is_enemy)
 	npc_actor@ a = npc_actor();
 	a.is_enemy = is_enemy;
 	a.id = (is_enemy ? "Enemy " : "Friend ") + random(1000, 9999);
+	a.report_owner = npc_report_owner_seq++;
 	a.nmap = mapname;
 	a.x = sx; a.y = sy; a.z = sz;
 	a.maxhp = random(1000, 5000);
@@ -897,14 +913,18 @@ void npc_fire_shot(npc_actor@ a, npc_weapon@ w, int tx, int ty, int tz, bool tar
 		{
 			// A report that is still sounding is not restarted: it keeps following
 			// the shooter, so sustained fire does not stack dozens of copies.
-			if (a.distant_slot >= 0 && dp.sound_is_active(a.distant_slot))
+			if (npc_report_slot(a) >= 0)
 			{
 				npc_update_distant_report(a);
 			}
 			else
 			{
 				int slot = npc_play_distant(dist_snd, a.x, a.y, a.z);
-				if (slot >= 0) a.distant_slot = slot;
+				if (slot >= 0)
+				{
+					dp.set_sound_owner(slot, "npc_report", a.report_owner);
+					a.distant_slot = slot;
+				}
 			}
 		}
 	}
