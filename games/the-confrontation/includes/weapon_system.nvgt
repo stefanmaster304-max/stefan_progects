@@ -106,7 +106,8 @@ void fire_current_weapon()
 	double res_mult = 1.0;
 	for (int ri = 0; ri < resurrections && res_mult < 1000000.0; ri++) res_mult *= 2.0;
 
-	int fire_dir = get_weapon_fire_direction(w);
+	int fire_dir = facing;
+	npc_instance@ target_npc = get_cardinal_weapon_target(w, fire_dir);
 
 	if (w.melee)
 	{
@@ -120,7 +121,15 @@ void fire_current_weapon()
 		// Spawn melee strike projectile / ray
 		int base_dmg = random(w.min_damage, w.max_damage);
 		int dmg = int(round(double(base_dmg) * res_mult, 0));
-		spawn_projectile(me.x, me.y, me.z, fire_dir, w.id, "melee", dmg, w.speedtime, w.range, 0);
+		if (target_npc !is null)
+		{
+			if (w.sound_hit != "") npc_play_positional(target_npc, w.sound_hit);
+			npc_take_damage(target_npc, dmg, "Player", (w.name != "") ? w.name : w.id);
+		}
+		else
+		{
+			spawn_projectile(me.x, me.y, me.z, fire_dir, w.id, "melee", dmg, w.speedtime, w.range, 0);
+		}
 		return;
 	}
 
@@ -166,8 +175,17 @@ void fire_current_weapon()
 	int dmg = int(round(double(base_dmg) * res_mult, 0));
 	int spd = (w.speedtime > 0) ? w.speedtime : 5;
 
-	// One real projectile per round, fired at the weapon's own interval.
-	spawn_projectile(me.x, me.y, me.z, fire_dir, w.id, "bullet", dmg, spd, w.range, 0);
+	if (target_npc !is null)
+	{
+		// Direct instant hit on cardinal aligned target:
+		if (w.sound_hit != "") npc_play_positional(target_npc, w.sound_hit);
+		npc_take_damage(target_npc, dmg, "Player", (w.name != "") ? w.name : w.id);
+	}
+	else
+	{
+		// No target in line of fire: bullet flies forward in fire_dir and impacts wall or expires at range
+		spawn_projectile(me.x, me.y, me.z, fire_dir, w.id, "bullet", dmg, spd, w.range, 0);
+	}
 }
 
 void weapon_system_loop()

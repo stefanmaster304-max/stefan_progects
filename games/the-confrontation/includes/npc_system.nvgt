@@ -53,7 +53,7 @@
 const int NPC_MAX_ACTIVE = 40;
 const int NPC_MAX_PER_SPAWNER = 20;
 const int NPC_DEATH_LINGER_MS = 1000;
-const int NPC_LOCAL_SOUND_DISTANCE = 40;
+const int NPC_LOCAL_SOUND_DISTANCE = 250;
 // A spawn that cannot be placed (no floor in the area, budget full) is retried
 // on this interval instead of every frame.
 const int NPC_SPAWN_RETRY_MS = 1000;
@@ -1081,24 +1081,27 @@ bool npc_projectile_aims_at(double fx, double fy, double fz, double tx, double t
 	        (ifx == npc.x && ify == npc.y && ifz == npc.z));
 }
 
-// Resolves weapon firing direction to target enemies straight ahead, straight behind,
-// straight to the left, or straight to the right, strictly within weapon range and line of sight.
+// Resolves weapon firing target and direction to hit enemies straight ahead, straight behind,
+// straight to the left, or straight to the right, strictly within weapon range.
+// A shot is blocked only if an actual solid wall exists between the player and target.
 // Diagonal targets are not in any of the 4 cardinal positions and are ignored.
-int get_weapon_fire_direction(weapon_data@ w)
+npc_instance@ get_cardinal_weapon_target(weapon_data@ w, int&out out_dir)
 {
 	int card = (int(round(double(facing) / 90.0, 0)) * 90) % 360;
 	if (card < 0) card += 360;
+	out_dir = card;
 
-	if (w is null || npc_instances.length() == 0) return card;
+	if (w is null || npc_instances.length() == 0) return null;
 
 	int dir_front = card;
 	int dir_right = (card + 90) % 360;
 	int dir_back  = (card + 180) % 360;
 	int dir_left  = (card + 270) % 360;
 
-	int best_dir = card;
+	npc_instance@ best_npc = null;
 	int best_dist = 999999;
 	int best_prio = 999;
+	int best_dir = card;
 
 	int px = int(round(me.x, 0));
 	int py = int(round(me.y, 0));
@@ -1149,7 +1152,8 @@ int get_weapon_fire_direction(weapon_data@ w)
 		}
 
 		if (dist > w.range) continue;
-		if (!has_line_of_sight(me.x, me.y, me.z, double(npc.x), double(npc.y), double(npc.z))) continue;
+		// A shot is blocked only if there is an actual solid wall in between
+		if (dist > 1 && npc_wall_between(px, py, npc.x, npc.y, pz)) continue;
 
 		int prio = 3;
 		if (target_dir == dir_front) prio = 0;
@@ -1161,10 +1165,19 @@ int get_weapon_fire_direction(weapon_data@ w)
 			best_dist = dist;
 			best_prio = prio;
 			best_dir = target_dir;
+			@best_npc = npc;
 		}
 	}
 
-	return best_dir;
+	out_dir = best_dir;
+	return best_npc;
+}
+
+int get_weapon_fire_direction(weapon_data@ w)
+{
+	int dir = 0;
+	get_cardinal_weapon_target(w, dir);
+	return dir;
 }
 
 // Called by the projectile system so the player's own shots can hit NPCs. The

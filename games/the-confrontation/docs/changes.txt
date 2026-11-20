@@ -5,6 +5,17 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 20, 2026 at 20:25
+-------------------------------------------------------------------------------
+
+1. Long-Distance 4-Cardinal Weapon Hits:
+   - Fixed long-range weapon hit detection so firearms (rifles, sniper rifles, pistols, revolvers, shotguns) hit aligned targets at any distance within weapon range in all 4 cardinal directions (straight ahead, straight behind, straight left, and straight right).
+   - Removed sampled raycast bottlenecks that prematurely dropped long-range shots. Solid walls remain the only obstacles capable of blocking direct fire.
+   - Expanded effective weapon ranges: rifles now reach 80 to 150 tiles, pistols 35 to 50 tiles, revolvers 45 to 60 tiles, and shotguns 25 to 35 tiles.
+   - Expanded NPC positional sound distance to 250 tiles so 3D audio hit impacts, pain sounds, and death announcements are clearly heard across the map.
+
+
+-------------------------------------------------------------------------------
 New on November 20, 2026 at 19:45
 -------------------------------------------------------------------------------
 
