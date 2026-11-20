@@ -61,24 +61,42 @@ const int NPC_SPAWN_RETRY_MS = 1000;
 // ---------------------------------------------------------------------------
 // Map spawners
 // ---------------------------------------------------------------------------
-// One line per NPC type on the map:
-// npcspawner:<npc id>:<count>:<respawn ms>:<min x>:<min y>:<min z>:<max x>:<max y>:<max z>
+// Unified single-line format:
+// npcspawner:<npc ids>:<count>:<respawn ms>:<min x>:<min y>:<min z>:<max x>:<max y>:<max z>:<respawn_after_death>
 // The six coordinates are the volume the NPCs of that line live in: they spawn
 // somewhere inside it and never walk out of it, on any axis.
 class npc_spawn_def
 {
-	string npc_id;
+	string raw_npc_ids;
+	string[] npc_ids;
 	int count;
 	int respawn_ms;
 	int rx0, ry0, rz0, rx1, ry1, rz1;
+	bool respawn_after_death;
 
-	npc_spawn_def(const string&in id, int amount, int respawn, int x0, int y0, int z0, int x1, int y1, int z1)
+	npc_spawn_def(const string&in id_list, int amount, int respawn, int x0, int y0, int z0, int x1, int y1, int z1, bool after_death = true)
 	{
-		npc_id = id;
+		raw_npc_ids = id_list.trim_whitespace();
 		count = amount;
 		respawn_ms = respawn;
 		rx0 = x0; ry0 = y0; rz0 = z0;
 		rx1 = x1; ry1 = y1; rz1 = z1;
+		respawn_after_death = after_death;
+
+		string sep = (string_contains(raw_npc_ids, ";", 1) > -1) ? ";" : ",";
+		string[]@ parts = string_split(raw_npc_ids, sep, false);
+		if (parts !is null)
+		{
+			for (uint i = 0; i < parts.length(); i++)
+			{
+				string tid = parts[i].trim_whitespace();
+				if (tid != "") npc_ids.insert_last(tid);
+			}
+		}
+		if (npc_ids.length() == 0 && raw_npc_ids != "")
+		{
+			npc_ids.insert_last(raw_npc_ids);
+		}
 	}
 }
 
@@ -89,7 +107,7 @@ void npc_reset_spawners()
 	npc_spawn_defs.resize(0);
 }
 
-void npc_add_spawner(const string&in npc_id, int count, int respawn_ms, int x0, int y0, int z0, int x1, int y1, int z1)
+void npc_add_spawner(const string&in npc_id, int count, int respawn_ms, int x0, int y0, int z0, int x1, int y1, int z1, bool respawn_after_death = true)
 {
 	if (npc_id == "") return;
 	if (count <= 0) return;
@@ -104,35 +122,70 @@ void npc_add_spawner(const string&in npc_id, int count, int respawn_ms, int x0, 
 	if (x1 > maxx) x1 = maxx;
 	if (y1 > maxy) y1 = maxy;
 	if (z1 > maxz) z1 = maxz;
-	npc_spawn_defs.insert_last(npc_spawn_def(npc_id, count, respawn_ms, x0, y0, z0, x1, y1, z1));
+	npc_spawn_defs.insert_last(npc_spawn_def(npc_id, count, respawn_ms, x0, y0, z0, x1, y1, z1, respawn_after_death));
 }
 
-// A spawner only refills with its own NPC type while that type is below its own
-// count, and only after one of its NPCs died. The replacement waits exactly
-// respawn_ms milliseconds counted from the death.
-class npc_spawner_state
+class npc_spawner_slot
 {
 	string npc_id;
+	timer death_timer;
+	bool waiting_respawn;
+	bool ever_spawned;
+
+	npc_spawner_slot(const string&in id)
+	{
+		npc_id = id;
+		waiting_respawn = false;
+		ever_spawned = false;
+	}
+}
+
+class npc_spawner_state
+{
+	string raw_npc_ids;
+	string[] npc_ids;
 	int count;
 	int respawn_ms;
 	int rx0, ry0, rz0, rx1, ry1, rz1;
-	bool populated;
-	bool waiting;
-	bool retry_backoff;
-	timer respawn_timer;
+	bool respawn_after_death;
+	bool initial_delay_done;
+	timer initial_timer;
+	npc_spawner_slot@[] slots;
 
-	npc_spawner_state(const string&in id, int amount, int respawn, int x0, int y0, int z0, int x1, int y1, int z1)
+	npc_spawner_state(const string&in id_list, int amount, int respawn, int x0, int y0, int z0, int x1, int y1, int z1, bool after_death = true)
 	{
-		npc_id = id;
+		raw_npc_ids = id_list.trim_whitespace();
 		count = amount;
 		if (count > NPC_MAX_PER_SPAWNER) count = NPC_MAX_PER_SPAWNER;
 		respawn_ms = respawn;
 		rx0 = x0; ry0 = y0; rz0 = z0;
 		rx1 = x1; ry1 = y1; rz1 = z1;
-		populated = false;
-		waiting = false;
-		retry_backoff = false;
-		respawn_timer.restart();
+		respawn_after_death = after_death;
+		initial_delay_done = false;
+		initial_timer.restart();
+
+		string sep = (string_contains(raw_npc_ids, ";", 1) > -1) ? ";" : ",";
+		string[]@ parts = string_split(raw_npc_ids, sep, false);
+		if (parts !is null)
+		{
+			for (uint i = 0; i < parts.length(); i++)
+			{
+				string tid = parts[i].trim_whitespace();
+				if (tid != "") npc_ids.insert_last(tid);
+			}
+		}
+		if (npc_ids.length() == 0 && raw_npc_ids != "")
+		{
+			npc_ids.insert_last(raw_npc_ids);
+		}
+
+		for (uint i = 0; i < npc_ids.length(); i++)
+		{
+			for (int c = 0; c < count; c++)
+			{
+				slots.insert_last(npc_spawner_slot(npc_ids[i]));
+			}
+		}
 	}
 }
 
@@ -160,6 +213,7 @@ class npc_instance
 	// walks outside the area on any axis, and its spawner counts it by index.
 	int rx0, ry0, rz0, rx1, ry1, rz1;
 	int spawner_index;
+	int slot_index;
 
 	timer move_timer;
 	timer attack_timer;
@@ -212,6 +266,7 @@ class npc_instance
 		rx0 = 0; ry0 = 0; rz0 = 0;
 		rx1 = 0; ry1 = 0; rz1 = 0;
 		spawner_index = -1;
+		slot_index = -1;
 		@voice_handle = null;
 		voice_slot = -1;
 		voice_index = 0;
@@ -277,7 +332,10 @@ void npc_tag_sound(npc_instance@ npc, int slot)
 void npc_follow_sounds(npc_instance@ npc)
 {
 	if (npc is null || !npc_pool_ready || npc.sound_owner == "") return;
-	npcp.update_sounds_3d(npc.sound_owner, npc.x, npc.y, npc.z);
+	if (npc.voice_handle !is null && npc.voice_handle.playing)
+	{
+		npcp.update_sounds_3d(npc.sound_owner, npc.x, npc.y, npc.z);
+	}
 }
 
 // Plays one of the NPC's sounds at its current tile and hands the slot to the
@@ -390,21 +448,35 @@ bool npc_wall_between(int x0, int y0, int x1, int y1, int z)
 // ---------------------------------------------------------------------------
 // Pathfinding
 // ---------------------------------------------------------------------------
-// A route over the tiles the NPC may walk in, four-way so it never cuts a
-// corner through a wall. The search is bounded by the NPC's own rectangle and by
-// an expansion budget, so a map-wide chase can never stall the frame loop.
-const int NPC_PATH_MAX_TILES = 20000;
-const int NPC_PATH_MAX_EXPANSIONS = 2000;
-const int NPC_PATH_RECALC_MS = 250;
-// Path searches allowed per world tick. Whatever happens, the frame loop never
-// pays for more than this, so any number of living NPCs can never freeze the
-// player: the ones without a route fall back to a direct step until their turn.
-const int NPC_PATH_SEARCHES_PER_TICK = 2;
-int npc_path_budget = NPC_PATH_SEARCHES_PER_TICK;
+const int NPC_PATH_MAX_EXPANSIONS = 800;
+const int NPC_PATH_RECALC_MS = 300;
+const int NPC_PATH_BUFFER_SIZE = 3600;
 
-// Binary min-heap for the open set. The old version scanned the whole open list
-// to find the best node and removed it with remove_at, which is quadratic and
-// was what stalled the game when a few NPCs had to plan a route.
+int[] npc_path_parent;
+int[] npc_path_score;
+int[] npc_path_visited_seq;
+int[] npc_path_closed_seq;
+int[] npc_path_walk_cache;
+int[] npc_path_cache_seq;
+int npc_path_seq = 0;
+
+void npc_ensure_path_buffers()
+{
+	if (int(npc_path_parent.length()) >= NPC_PATH_BUFFER_SIZE) return;
+	npc_path_parent.resize(NPC_PATH_BUFFER_SIZE);
+	npc_path_score.resize(NPC_PATH_BUFFER_SIZE);
+	npc_path_visited_seq.resize(NPC_PATH_BUFFER_SIZE);
+	npc_path_closed_seq.resize(NPC_PATH_BUFFER_SIZE);
+	npc_path_walk_cache.resize(NPC_PATH_BUFFER_SIZE);
+	npc_path_cache_seq.resize(NPC_PATH_BUFFER_SIZE);
+	for (int i = 0; i < NPC_PATH_BUFFER_SIZE; i++)
+	{
+		npc_path_visited_seq[i] = 0;
+		npc_path_closed_seq[i] = 0;
+		npc_path_cache_seq[i] = 0;
+	}
+}
+
 int[] npc_heap_key;
 int[] npc_heap_f;
 
@@ -463,11 +535,8 @@ bool npc_tile_walkable(npc_instance@ npc, int tx, int ty)
 	return npc_tile_is_floor(tx, ty, npc.z);
 }
 
-// Search window: the rectangle between the NPC and its goal, grown by a margin
-// so there is room to walk around a wall, clamped to the NPC's own area. Working
-// inside this window keeps a replan cheap on a big map, because the arrays never
-// grow past the patch of ground the NPC is actually walking through.
-const int NPC_PATH_MARGIN = 12;
+const int NPC_PATH_MARGIN = 8;
+const int NPC_MAX_STEP_WINDOW = 20;
 
 int npc_path_box_width(npc_instance@ npc)
 {
@@ -489,14 +558,32 @@ int npc_path_y(npc_instance@ npc, int key)
 	return key / npc_path_box_width(npc) + npc.path_by0;
 }
 
-// Stores the window for this plan on the instance, so the route keys can be
-// decoded after the search is done.
 void npc_set_path_box(npc_instance@ npc, int gx, int gy)
 {
-	int x0 = (npc.x < gx) ? npc.x : gx;
-	int x1 = (npc.x > gx) ? npc.x : gx;
-	int y0 = (npc.y < gy) ? npc.y : gy;
-	int y1 = (npc.y > gy) ? npc.y : gy;
+	if (gx < npc.rx0) gx = npc.rx0;
+	if (gx > npc.rx1) gx = npc.rx1;
+	if (gy < npc.ry0) gy = npc.ry0;
+	if (gy > npc.ry1) gy = npc.ry1;
+
+	int dx = gx - npc.x;
+	int dy = gy - npc.y;
+	int dist = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy);
+	int sub_x = gx;
+	int sub_y = gy;
+	if (dist > NPC_MAX_STEP_WINDOW)
+	{
+		sub_x = npc.x + (dx * NPC_MAX_STEP_WINDOW) / dist;
+		sub_y = npc.y + (dy * NPC_MAX_STEP_WINDOW) / dist;
+		if (sub_x < npc.rx0) sub_x = npc.rx0;
+		if (sub_x > npc.rx1) sub_x = npc.rx1;
+		if (sub_y < npc.ry0) sub_y = npc.ry0;
+		if (sub_y > npc.ry1) sub_y = npc.ry1;
+	}
+
+	int x0 = (npc.x < sub_x) ? npc.x : sub_x;
+	int x1 = (npc.x > sub_x) ? npc.x : sub_x;
+	int y0 = (npc.y < sub_y) ? npc.y : sub_y;
+	int y1 = (npc.y > sub_y) ? npc.y : sub_y;
 	x0 -= NPC_PATH_MARGIN;
 	y0 -= NPC_PATH_MARGIN;
 	x1 += NPC_PATH_MARGIN;
@@ -511,40 +598,10 @@ void npc_set_path_box(npc_instance@ npc, int gx, int gy)
 	npc.path_by1 = y1;
 }
 
-// A route is done when it reaches the goal tile itself, or - for a chase - any
-// tile next to it, because the NPC never steps onto the target's own tile.
 bool npc_path_goal_done(int cx, int cy, int gx, int gy, bool stop_next_to)
 {
 	if (stop_next_to) return npc_tile_gap(cx, gx) <= 1 && npc_tile_gap(cy, gy) <= 1;
 	return cx == gx && cy == gy;
-}
-
-// Tile keys to walk through, start excluded and goal included. An empty array
-// means no route exists inside the area.
-int[] npc_find_path(npc_instance@ npc, int gx, int gy, bool stop_next_to)
-{
-	int[] route;
-	if (npc is null) return route;
-	// Every route costs one unit of the frame budget. A frame with no budget
-	// left simply walks straight for now; the next frame plans again.
-	if (npc_path_budget <= 0) return route;
-	npc_path_budget--;
-
-	// First try the small window around the straight line: that is the normal
-	// case and it costs almost nothing. Only when the obstacle is longer than
-	// the window is the whole area searched before giving up.
-	npc_set_path_box(npc, gx, gy);
-	route = npc_path_search(npc, gx, gy, stop_next_to);
-	if (route.length() > 0) return route;
-
-	int w = npc.rx1 - npc.rx0 + 1;
-	int h = npc.ry1 - npc.ry0 + 1;
-	if (w <= 0 || h <= 0 || w * h > NPC_PATH_MAX_TILES) return route;
-	npc.path_bx0 = npc.rx0;
-	npc.path_by0 = npc.ry0;
-	npc.path_bx1 = npc.rx1;
-	npc.path_by1 = npc.ry1;
-	return npc_path_search(npc, gx, gy, stop_next_to);
 }
 
 int[] npc_path_search(npc_instance@ npc, int gx, int gy, bool stop_next_to)
@@ -554,46 +611,53 @@ int[] npc_path_search(npc_instance@ npc, int gx, int gy, bool stop_next_to)
 	int h = npc.path_by1 - npc.path_by0 + 1;
 	if (w <= 0 || h <= 0) return route;
 	int total = w * h;
-	if (total > NPC_PATH_MAX_TILES) return route;
+	if (total > NPC_PATH_BUFFER_SIZE) return route;
 
 	int start = npc_path_key(npc, npc.x, npc.y);
 	if (start < 0 || start >= total) return route;
 
-	int[] score;
-	score.resize(total);
-	int[] parent;
-	parent.resize(total);
-	bool[] closed;
-	closed.resize(total);
-	// Floor lookups are cached per search: each tile is asked the native map
-	// once instead of once per neighbour visit.
-	int[] walk_cache;
-	walk_cache.resize(total);
-	for (int i = 0; i < total; i++)
+	npc_ensure_path_buffers();
+	npc_path_seq++;
+	if (npc_path_seq > 1000000000)
 	{
-		score[i] = -1;
-		parent[i] = -1;
-		closed[i] = false;
-		walk_cache[i] = -1;
+		npc_path_seq = 1;
+		for (int i = 0; i < NPC_PATH_BUFFER_SIZE; i++)
+		{
+			npc_path_visited_seq[i] = 0;
+			npc_path_closed_seq[i] = 0;
+			npc_path_cache_seq[i] = 0;
+		}
 	}
 
 	npc_heap_key.resize(0);
 	npc_heap_f.resize(0);
-	score[start] = 0;
-	parent[start] = start;
+
+	npc_path_score[start] = 0;
+	npc_path_parent[start] = start;
+	npc_path_visited_seq[start] = npc_path_seq;
 	npc_heap_push(start, npc_tile_gap(npc.x, gx) + npc_tile_gap(npc.y, gy));
 
 	int goal = -1;
+	int best_node = start;
+	int best_dist = 999999;
 	int expansions = 0;
+
 	while (npc_heap_key.length() > 0 && expansions < NPC_PATH_MAX_EXPANSIONS)
 	{
 		int cur = npc_heap_pop();
-		if (closed[cur]) continue;
-		closed[cur] = true;
+		if (npc_path_closed_seq[cur] == npc_path_seq) continue;
+		npc_path_closed_seq[cur] = npc_path_seq;
 		expansions++;
 
 		int cx = npc_path_x(npc, cur);
 		int cy = npc_path_y(npc, cur);
+		int cur_d = npc_tile_gap(cx, gx) + npc_tile_gap(cy, gy);
+		if (cur_d < best_dist)
+		{
+			best_dist = cur_d;
+			best_node = cur;
+		}
+
 		if (npc_path_goal_done(cx, cy, gx, gy, stop_next_to))
 		{
 			goal = cur;
@@ -606,20 +670,34 @@ int[] npc_path_search(npc_instance@ npc, int gx, int gy, bool stop_next_to)
 		{
 			int tx = nx[d];
 			int ty = ny[d];
-			// Outside the window a key would alias another tile inside it, so the
-			// window edge is a hard border of the search.
 			if (tx < npc.path_bx0 || tx > npc.path_bx1 || ty < npc.path_by0 || ty > npc.path_by1) continue;
 			int nk = npc_path_key(npc, tx, ty);
-			if (nk < 0 || nk >= total || closed[nk]) continue;
-			if (walk_cache[nk] < 0) walk_cache[nk] = npc_tile_walkable(npc, tx, ty) ? 1 : 0;
-			if (walk_cache[nk] == 0) continue;
-			int next_score = score[cur] + 1;
-			if (score[nk] >= 0 && next_score >= score[nk]) continue;
-			score[nk] = next_score;
-			parent[nk] = cur;
+			if (nk < 0 || nk >= total || npc_path_closed_seq[nk] == npc_path_seq) continue;
+
+			int is_walk = 0;
+			if (npc_path_cache_seq[nk] == npc_path_seq)
+			{
+				is_walk = npc_path_walk_cache[nk];
+			}
+			else
+			{
+				is_walk = npc_tile_walkable(npc, tx, ty) ? 1 : 0;
+				npc_path_walk_cache[nk] = is_walk;
+				npc_path_cache_seq[nk] = npc_path_seq;
+			}
+			if (is_walk == 0) continue;
+
+			int next_score = npc_path_score[cur] + 1;
+			if (npc_path_visited_seq[nk] == npc_path_seq && next_score >= npc_path_score[nk]) continue;
+
+			npc_path_score[nk] = next_score;
+			npc_path_parent[nk] = cur;
+			npc_path_visited_seq[nk] = npc_path_seq;
 			npc_heap_push(nk, next_score + npc_tile_gap(tx, gx) + npc_tile_gap(ty, gy));
 		}
 	}
+
+	if (goal < 0 && best_node != start) goal = best_node;
 	if (goal < 0) return route;
 
 	int[] backwards;
@@ -627,60 +705,88 @@ int[] npc_path_search(npc_instance@ npc, int gx, int gy, bool stop_next_to)
 	while (walk != start && walk >= 0)
 	{
 		backwards.insert_last(walk);
-		if (parent[walk] == walk) break;
-		walk = parent[walk];
+		if (npc_path_parent[walk] == walk) break;
+		walk = npc_path_parent[walk];
 	}
 	for (int i = int(backwards.length()) - 1; i >= 0; i--)
 		route.insert_last(backwards[uint(i)]);
 	return route;
 }
 
-// One tile along the shortest route to a point. A wall is walked around: the
-// NPC follows the route tile by tile and, when it is blocked or no route exists
-// at all, it takes a direct step rather than standing still for good.
+int[] npc_find_path(npc_instance@ npc, int gx, int gy, bool stop_next_to)
+{
+	int[] route;
+	if (npc is null) return route;
+	npc_set_path_box(npc, gx, gy);
+	return npc_path_search(npc, gx, gy, stop_next_to);
+}
+
 void npc_walk_to(npc_instance@ npc, int tx, int ty, bool stop_next_to = false)
 {
 	if (npc is null) return;
 	if (npc.x == tx && npc.y == ty) return;
+	if (stop_next_to && npc_next_to_target(npc, tx, ty, npc.z)) return;
 
-	bool goal_changed = (npc.path_goal_x != tx || npc.path_goal_y != ty || npc.path_stop_next_to != stop_next_to);
-	if (goal_changed || npc.path.length() == 0)
+	if (tx < npc.rx0) tx = npc.rx0;
+	if (tx > npc.rx1) tx = npc.rx1;
+	if (ty < npc.ry0) ty = npc.ry0;
+	if (ty > npc.ry1) ty = npc.ry1;
+
+	int goal_gap = npc_tile_gap(npc.path_goal_x, tx) + npc_tile_gap(npc.path_goal_y, ty);
+	bool path_valid = (npc.path.length() > 0 && npc.path_index < int(npc.path.length()) && goal_gap <= 3);
+
+	if (path_valid)
 	{
-		if (!goal_changed && npc.path_timer.elapsed < NPC_PATH_RECALC_MS) return;
+		while (npc.path_index < int(npc.path.length()))
+		{
+			int key = npc.path[npc.path_index];
+			if (npc_path_x(npc, key) == npc.x && npc_path_y(npc, key) == npc.y) npc.path_index++;
+			else break;
+		}
+
+		if (npc.path_index < int(npc.path.length()))
+		{
+			int key = npc.path[npc.path_index];
+			int px = npc_path_x(npc, key);
+			int py = npc_path_y(npc, key);
+			if (npc_step_to(npc, px, py))
+			{
+				npc.path_index++;
+				return;
+			}
+			npc.path.resize(0);
+		}
+	}
+
+	if (npc.path_timer.elapsed >= NPC_PATH_RECALC_MS || npc.path.length() == 0)
+	{
 		npc.path = npc_find_path(npc, tx, ty, stop_next_to);
 		npc.path_index = 0;
 		npc.path_goal_x = tx;
 		npc.path_goal_y = ty;
 		npc.path_stop_next_to = stop_next_to;
 		npc.path_timer.restart();
-	}
 
-	// Tiles the NPC is already standing on are simply old news on the route.
-	while (npc.path_index < int(npc.path.length()))
-	{
-		int key = npc.path[npc.path_index];
-		if (npc_path_x(npc, key) == npc.x && npc_path_y(npc, key) == npc.y) npc.path_index++;
-		else break;
-	}
-
-	if (npc.path_index < int(npc.path.length()))
-	{
-		int key = npc.path[npc.path_index];
-		int px = npc_path_x(npc, key);
-		int py = npc_path_y(npc, key);
-		if (npc_step_to(npc, px, py))
+		while (npc.path_index < int(npc.path.length()))
 		{
-			npc.path_index++;
-			return;
+			int key = npc.path[npc.path_index];
+			if (npc_path_x(npc, key) == npc.x && npc_path_y(npc, key) == npc.y) npc.path_index++;
+			else break;
 		}
-		// The next tile got blocked after the route was built: drop it and let
-		// the next tick work out a fresh one.
-		npc.path.resize(0);
-		return;
+
+		if (npc.path_index < int(npc.path.length()))
+		{
+			int key = npc.path[npc.path_index];
+			int px = npc_path_x(npc, key);
+			int py = npc_path_y(npc, key);
+			if (npc_step_to(npc, px, py))
+			{
+				npc.path_index++;
+				return;
+			}
+		}
 	}
 
-	// No route inside the window: step straight at the goal, and if the wall is
-	// in the way slip sideways instead of standing still.
 	if (npc_step_toward(npc, tx, ty)) return;
 	int[] step_x = {1, -1, 0, 0};
 	int[] step_y = {0, 0, 1, -1};
@@ -916,6 +1022,19 @@ void npc_die(npc_instance@ npc, const string&in killer, const string&in weapon_n
 		// nothing, because no player was involved in the fight.
 		if (npc.data !is null) add_player_quantum_xp(npc.data.xp);
 	}
+
+	if (npc.spawner_index >= 0 && npc.spawner_index < int(npc_spawner_states.length()))
+	{
+		npc_spawner_state@ sp = npc_spawner_states[npc.spawner_index];
+		if (sp !is null && npc.slot_index >= 0 && npc.slot_index < int(sp.slots.length()))
+		{
+			if (sp.respawn_after_death)
+			{
+				sp.slots[npc.slot_index].waiting_respawn = true;
+				sp.slots[npc.slot_index].death_timer.restart();
+			}
+		}
+	}
 }
 
 void npc_take_damage(npc_instance@ npc, int dmg, const string&in killer, const string&in weapon_name)
@@ -947,12 +1066,105 @@ void npc_take_damage(npc_instance@ npc, int dmg, const string&in killer, const s
 bool npc_projectile_aims_at(double fx, double fy, double fz, double tx, double ty, double tz, npc_instance@ npc)
 {
 	if (npc is null) return false;
+	int ifx = int(round(fx, 0));
+	int ify = int(round(fy, 0));
+	int ifz = int(round(fz, 0));
+	int itx = int(round(tx, 0));
+	int ity = int(round(ty, 0));
+	int itz = int(round(tz, 0));
 	int axes = 0;
-	if (tx != fx) axes++;
-	if (ty != fy) axes++;
-	if (tz != fz) axes++;
+	if (itx != ifx) axes++;
+	if (ity != ify) axes++;
+	if (itz != ifz) axes++;
 	if (axes > 1) return false;
-	return (int(round(tx, 0)) == npc.x && int(round(ty, 0)) == npc.y && int(round(tz, 0)) == npc.z);
+	return ((itx == npc.x && ity == npc.y && itz == npc.z) ||
+	        (ifx == npc.x && ify == npc.y && ifz == npc.z));
+}
+
+// Resolves weapon firing direction to target enemies straight ahead, straight behind,
+// straight to the left, or straight to the right, strictly within weapon range and line of sight.
+// Diagonal targets are not in any of the 4 cardinal positions and are ignored.
+int get_weapon_fire_direction(weapon_data@ w)
+{
+	int card = (int(round(double(facing) / 90.0, 0)) * 90) % 360;
+	if (card < 0) card += 360;
+
+	if (w is null || npc_instances.length() == 0) return card;
+
+	int dir_front = card;
+	int dir_right = (card + 90) % 360;
+	int dir_back  = (card + 180) % 360;
+	int dir_left  = (card + 270) % 360;
+
+	int best_dir = card;
+	int best_dist = 999999;
+	int best_prio = 999;
+
+	int px = int(round(me.x, 0));
+	int py = int(round(me.y, 0));
+	int pz = int(round(me.z, 0));
+
+	for (uint i = 0; i < npc_instances.length(); i++)
+	{
+		npc_instance@ npc = npc_instances[i];
+		if (npc is null || npc.dead) continue;
+		if (npc.z != pz) continue;
+
+		int dx = npc.x - px;
+		int dy = npc.y - py;
+
+		int target_dir = -1;
+		int dist = 0;
+
+		// Only targets in the 4 straight positions (straight ahead, straight behind, straight left, straight right) are valid:
+		if (dx == 0 && dy > 0)
+		{
+			target_dir = 0; // North
+			dist = dy;
+		}
+		else if (dx == 0 && dy < 0)
+		{
+			target_dir = 180; // South
+			dist = -dy;
+		}
+		else if (dy == 0 && dx > 0)
+		{
+			target_dir = 90; // East
+			dist = dx;
+		}
+		else if (dy == 0 && dx < 0)
+		{
+			target_dir = 270; // West
+			dist = -dx;
+		}
+		else if (dx == 0 && dy == 0)
+		{
+			target_dir = card; // Point-blank on same tile
+			dist = 0;
+		}
+		else
+		{
+			// Diagonal target -> not in any of the four straight positions! Ignored!
+			continue;
+		}
+
+		if (dist > w.range) continue;
+		if (!has_line_of_sight(me.x, me.y, me.z, double(npc.x), double(npc.y), double(npc.z))) continue;
+
+		int prio = 3;
+		if (target_dir == dir_front) prio = 0;
+		else if (target_dir == dir_right || target_dir == dir_left) prio = 1;
+		else if (target_dir == dir_back) prio = 2;
+
+		if (dist < best_dist || (dist == best_dist && prio < best_prio))
+		{
+			best_dist = dist;
+			best_prio = prio;
+			best_dir = target_dir;
+		}
+	}
+
+	return best_dir;
 }
 
 // Called by the projectile system so the player's own shots can hit NPCs. The
@@ -989,9 +1201,6 @@ void npc_attack_player(npc_instance@ npc)
 	if (through > 0) health_damage_player(through, npc.data.name, "attack");
 }
 
-// ---------------------------------------------------------------------------
-// Behaviour
-// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // Voice
 // ---------------------------------------------------------------------------
@@ -1247,7 +1456,7 @@ void npc_instance_tick(npc_instance@ npc)
 // ---------------------------------------------------------------------------
 // Spawning
 // ---------------------------------------------------------------------------
-npc_instance@ npc_spawn_instance(const string&in npc_id, int spawner_index, int x0, int y0, int z0, int x1, int y1, int z1)
+npc_instance@ npc_spawn_instance(const string&in npc_id, int spawner_index, int slot_index, int x0, int y0, int z0, int x1, int y1, int z1)
 {
 	if (npc_instances.length() >= uint(NPC_MAX_ACTIVE)) return null;
 	npc_data@ data = find_npc_data(npc_id);
@@ -1259,6 +1468,7 @@ npc_instance@ npc_spawn_instance(const string&in npc_id, int spawner_index, int 
 	npc_instance@ npc = npc_instance();
 	@npc.data = data;
 	npc.spawner_index = spawner_index;
+	npc.slot_index = slot_index;
 	npc.sound_owner = "npc:" + npc_sound_owner_seq + ";";
 	npc_sound_owner_seq++;
 	npc.rx0 = x0; npc.ry0 = y0; npc.rz0 = z0;
@@ -1281,13 +1491,9 @@ npc_instance@ npc_spawn_instance(const string&in npc_id, int spawner_index, int 
 	npc_pick_patrol(npc);
 
 	npc_instances.insert_last(npc);
-	// Spawning is silent on purpose: a map with dozens of NPCs must not queue
-	// dozens of announcements while it starts.
 	return npc;
 }
 
-// Living NPCs belonging to one spawner line. Dead bodies are not counted, so a
-// spawner sees the loss as soon as its NPC really dies.
 int npc_count_for_spawner(int spawner_index)
 {
 	int n = 0;
@@ -1313,10 +1519,15 @@ void npc_start_for_map()
 	npc_spawner_states.resize(0);
 	load_all_npcs();
 	for (uint i = 0; i < npc_spawn_defs.length(); i++)
+	{
+		npc_spawn_def@ d = npc_spawn_defs[i];
+		if (d is null) continue;
 		npc_spawner_states.insert_last(npc_spawner_state(
-			npc_spawn_defs[i].npc_id, npc_spawn_defs[i].count, npc_spawn_defs[i].respawn_ms,
-			npc_spawn_defs[i].rx0, npc_spawn_defs[i].ry0, npc_spawn_defs[i].rz0,
-			npc_spawn_defs[i].rx1, npc_spawn_defs[i].ry1, npc_spawn_defs[i].rz1));
+			d.raw_npc_ids, d.count, d.respawn_ms,
+			d.rx0, d.ry0, d.rz0,
+			d.rx1, d.ry1, d.rz1,
+			d.respawn_after_death));
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -1324,63 +1535,50 @@ void npc_start_for_map()
 // ---------------------------------------------------------------------------
 void npc_loop()
 {
-	// Refill the pathfinding budget once per world tick, before any NPC plans.
-	npc_path_budget = NPC_PATH_SEARCHES_PER_TICK;
 	if (npc_instances.length() == 0 && npc_spawner_states.length() == 0) return;
 	if (npc_pool_ready) npcp.update_listener_3d(me.x, me.y, me.z, double(facing));
 
-	// Spawners never duplicate: the first population fills the area once, and
-	// after that a slot is refilled only when one of its own NPCs actually dies,
-	// waiting exactly the configured number of milliseconds from that death.
 	for (uint s = 0; s < npc_spawner_states.length(); s++)
 	{
 		npc_spawner_state@ sp = npc_spawner_states[s];
 		if (sp is null) continue;
-		int living = npc_count_for_spawner(int(s));
 
-		if (!sp.populated)
+		// Initial spawn delay when entering the map: must wait respawn_ms!
+		if (!sp.initial_delay_done)
 		{
-			while (living < sp.count)
+			if (sp.initial_timer.elapsed < sp.respawn_ms) continue;
+			sp.initial_delay_done = true;
+			for (uint k = 0; k < sp.slots.length(); k++)
 			{
-				if (npc_spawn_instance(sp.npc_id, int(s), sp.rx0, sp.ry0, sp.rz0, sp.rx1, sp.ry1, sp.rz1) is null)
+				npc_spawner_slot@ sl = sp.slots[k];
+				if (!sl.ever_spawned)
 				{
-					// No floor in the area, or the map already holds the entire
-					// population budget: stop here and try again later, never in a
-					// tight loop.
-					sp.retry_backoff = true;
-					break;
+					if (npc_spawn_instance(sl.npc_id, int(s), int(k), sp.rx0, sp.ry0, sp.rz0, sp.rx1, sp.ry1, sp.rz1) !is null)
+					{
+						sl.ever_spawned = true;
+					}
 				}
-				living++;
 			}
-			sp.populated = true;
-			sp.waiting = (living < sp.count);
-			sp.respawn_timer.restart();
 			continue;
 		}
 
-		if (living >= sp.count)
+		// Subsequent respawns after death: only if respawn_after_death is true
+		if (!sp.respawn_after_death) continue;
+
+		for (uint k = 0; k < sp.slots.length(); k++)
 		{
-			sp.waiting = false;
-			sp.retry_backoff = false;
-			continue;
+			npc_spawner_slot@ sl = sp.slots[k];
+			if (sl.waiting_respawn)
+			{
+				if (sl.death_timer.elapsed >= sp.respawn_ms)
+				{
+					if (npc_spawn_instance(sl.npc_id, int(s), int(k), sp.rx0, sp.ry0, sp.rz0, sp.rx1, sp.ry1, sp.rz1) !is null)
+					{
+						sl.waiting_respawn = false;
+					}
+				}
+			}
 		}
-
-		// A slot opened (an NPC died): start counting the respawn delay now.
-		if (!sp.waiting)
-		{
-			sp.waiting = true;
-			sp.respawn_timer.restart();
-			continue;
-		}
-
-		int wait_ms = sp.respawn_ms;
-		if (sp.retry_backoff && wait_ms < NPC_SPAWN_RETRY_MS) wait_ms = NPC_SPAWN_RETRY_MS;
-		if (sp.respawn_timer.elapsed < wait_ms) continue;
-		sp.respawn_timer.restart();
-		if (npc_spawn_instance(sp.npc_id, int(s), sp.rx0, sp.ry0, sp.rz0, sp.rx1, sp.ry1, sp.rz1) is null)
-			sp.retry_backoff = true;
-		else
-			sp.retry_backoff = false;
 	}
 
 	for (int i = int(npc_instances.length()) - 1; i >= 0; i--)
@@ -1395,8 +1593,6 @@ void npc_loop()
 		{
 			if (npc.death_timer.elapsed >= NPC_DEATH_LINGER_MS)
 			{
-				// The voice slot is persistent, so it is handed back before the
-				// instance goes away; one-shot clips simply expire on their own.
 				npc_release_voice(npc);
 				npc_instances.remove_at(uint(i));
 			}
@@ -1409,15 +1605,15 @@ void npc_loop()
 // ---------------------------------------------------------------------------
 // Map spawner line
 // ---------------------------------------------------------------------------
-void npc_save_spawner_to_map(const string&in npc_id, int count, int respawn_ms, int x0, int y0, int z0, int x1, int y1, int z1, bool refresh = true)
+void npc_save_spawner_to_map(const string&in npc_id, int count, int respawn_ms, int x0, int y0, int z0, int x1, int y1, int z1, bool respawn_after_death = true, bool refresh = true)
 {
 	if (SCRIPT_COMPILED || is_map_encrypted(mapname))
 	{
 		speak("Cannot edit an encrypted map.");
 		return;
 	}
-	string id = npc_id.trim_whitespace();
-	if (id == "") return;
+	string ids = npc_id.trim_whitespace();
+	if (ids == "") return;
 	if (count < 0) count = 0;
 	if (count > NPC_MAX_PER_SPAWNER) count = NPC_MAX_PER_SPAWNER;
 	if (respawn_ms < 0) respawn_ms = 0;
@@ -1436,11 +1632,14 @@ void npc_save_spawner_to_map(const string&in npc_id, int count, int respawn_ms, 
 	if (file_exists(path)) content = file_get_contents(path);
 	if (content == "") content = get_map_content_by_name(mapname);
 
-	string prefix = "npcspawner:" + id + ":";
-	string new_line = prefix + count + ":" + respawn_ms + ":" + x0 + ":" + y0 + ":" + z0 + ":" + x1 + ":" + y1 + ":" + z1;
+	string new_line = "npcspawner:" + ids + ":" + count + ":" + respawn_ms + ":" + x0 + ":" + y0 + ":" + z0 + ":" + x1 + ":" + y1 + ":" + z1 + ":" + (respawn_after_death ? "1" : "0");
 	string[]@ raw = string_split(string_replace(content, "\r", "", true), "\n", false);
 	string rebuilt = "";
 	bool replaced = false;
+
+	string sep = (string_contains(ids, ";", 1) > -1) ? ";" : ",";
+	string[]@ current_new_ids = string_split(ids, sep, false);
+
 	if (raw !is null)
 	{
 		for (uint i = 0; i < raw.length(); i++)
@@ -1448,19 +1647,49 @@ void npc_save_spawner_to_map(const string&in npc_id, int count, int respawn_ms, 
 			string line = raw[i].trim_whitespace();
 			if (line == "") continue;
 
-			// The NPC spawner is a new format: an id, a count, a respawn time and
-			// six area coordinates. Anything else that starts with npcspawner:
-			// belongs to a removed format and is dropped, never rewritten.
 			if (string_starts_with(line, "npcspawner:"))
 			{
 				string[]@ parts = string_split(line, ":", false);
-				bool valid = (parts !is null && parts.length() == 10 && string_to_number(parts[1]) <= 0);
-				if (string_starts_with(line, prefix))
+				if (parts !is null && parts.length() >= 10)
 				{
-					if (!replaced && count > 0) { rebuilt += new_line + "\n"; replaced = true; }
+					string existing_ids = parts[1].trim_whitespace();
+					bool overlaps = false;
+					if (existing_ids == ids) overlaps = true;
+					else
+					{
+						string ex_sep = (string_contains(existing_ids, ";", 1) > -1) ? ";" : ",";
+						string[]@ ex_parts = string_split(existing_ids, ex_sep, false);
+						if (ex_parts !is null && current_new_ids !is null)
+						{
+							for (uint a = 0; a < ex_parts.length(); a++)
+							{
+								for (uint b = 0; b < current_new_ids.length(); b++)
+								{
+									if (ex_parts[a].trim_whitespace() == current_new_ids[b].trim_whitespace())
+									{
+										overlaps = true;
+										break;
+									}
+								}
+								if (overlaps) break;
+							}
+						}
+					}
+
+					if (overlaps)
+					{
+						if (!replaced && count > 0)
+						{
+							rebuilt += new_line + "\n";
+							replaced = true;
+						}
+						continue;
+					}
+				}
+				else
+				{
 					continue;
 				}
-				if (!valid) continue;
 			}
 			rebuilt += line + "\n";
 		}

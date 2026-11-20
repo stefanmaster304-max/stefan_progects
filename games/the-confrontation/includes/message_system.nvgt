@@ -112,7 +112,6 @@ void broadcast_loop()
 // ---------------------------------------------------------------------------
 string format_player_death_message(const string&in killer, double x, double y, double z, const string&in weapon = "")
 {
-	string m_name = (mapname != "" ? mapname : "main");
 	string k = (killer != "" ? killer.trim_whitespace() : "an enemy");
 	string k_lower = string_to_lower_case(k);
 
@@ -126,7 +125,5 @@ string format_player_death_message(const string&in killer, double x, double y, d
 			article = "a ";
 	}
 
-	string coords = int(round(x, 0)) + ", " + int(round(y, 0)) + ", " + int(round(z, 0));
-	string wpart = (weapon != "") ? (" with " + weapon) : "";
-	return "You were killed by " + article + k_lower + " at " + coords + wpart + " on the " + m_name + " map.";
+	return "You were killed by " + article + k_lower + ".";
 }

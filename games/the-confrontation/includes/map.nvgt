@@ -688,18 +688,21 @@ else if (cmd == "item_spawner")
 }
 else if (cmd == "npcspawner")
 {
-	// The only accepted form is
-	// npcspawner:<npc id>:<count>:<respawn>:<min x>:<min y>:<min z>:<max x>:<max y>:<max z>
-	// Any other npcspawner line is a removed format (the enemy/ally spawner or
-	// the short lived version without an area) and is ignored completely.
-	if (parsed.length() == 10 && string_to_number(parsed[1]) <= 0)
+	if (parsed.length() >= 10 && string_to_number(parsed[1]) <= 0)
 	{
+		bool respawn_after_death = true;
+		if (parsed.length() >= 11)
+		{
+			string p10 = parsed[10].trim_whitespace();
+			respawn_after_death = (p10 == "1" || p10 == "true");
+		}
 		npc_add_spawner(
 			parsed[1].trim_whitespace(),
 			int(string_to_number(parsed[2])),
 			int(string_to_number(parsed[3])),
 			int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])),
-			int(string_to_number(parsed[7])), int(string_to_number(parsed[8])), int(string_to_number(parsed[9])));
+			int(string_to_number(parsed[7])), int(string_to_number(parsed[8])), int(string_to_number(parsed[9])),
+			respawn_after_death);
 	}
 }
 }

@@ -1,15 +1,15 @@
 # The Confront NPC
 name=coiote
 class=animal
-attack_speed=2000
-min_damage=600
-max_damage=900
+attack_speed=2500
+min_damage=870
+max_damage=1200
 detection_range=250
-attack_range=4
+attack_range=6
 walk_speed=550
 run_speed=230
 max_health=1000
-xp=200
+xp=400
 use_platform_footsteps=1
 drop_items_on_death=1
 death_drops=golden_crystal:1

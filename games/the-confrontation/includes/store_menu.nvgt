@@ -174,21 +174,9 @@ void store_fill_default_items()
 	}
 }
 
-// The spoken overview of the store: what it sells and how to move through it.
 string store_welcome_text()
 {
-	string cats = "";
-	for (uint i = 0; i < store_configs.length(); i++)
-	{
-		if (i > 0) cats += (i == store_configs.length() - 1) ? " and " : ", ";
-		cats += store_configs[i].display_name;
-	}
-	string text = "Hello, dear player, welcome to the store. Nothing is selected yet. ";
-	text += "The store has " + store_configs.length() + " categories: " + cats + ". ";
-	text += "Use the up and down arrows to move between categories, or press Tab to open the items of the selected category. ";
-	text += "In the item list, use the up and down arrows to move between items, the right arrow to add an item to the cart, and the left arrow to remove one. ";
-	text += "Press Enter to buy everything in the cart, F1 to hear your currency balances, F2 to hear the cart total, and Escape to leave the store.";
-	return text;
+	return "Welcome to the store! What would you like to buy today? Select items in one of the available categories.";
 }
 
 void store_main_menu()

@@ -1,14 +1,13 @@
 // builder/misc/npc_spawner_builder.nvgt - NPC spawner form.
 //
-// The map stores one line per NPC type:
-// npcspawner:<npc id>:<count>:<respawn>:<min x>:<min y>:<min z>:<max x>:<max y>:<max z>
+// The map stores a single consolidated line for selected NPCs:
+// npcspawner:<npc id(s)>:<count>:<respawn>:<min x>:<min y>:<min z>:<max x>:<max y>:<max z>:<respawn_after_death>
 //
-// Any number of NPCs can be checked at once; each one gets its own line and its
-// own population. The area is the volume the NPCs spawn in and are allowed to
-// walk in, on all three axes; they never leave it, even when their target does.
-// A dead NPC is replaced only after the configured respawn time, which is
-// counted in milliseconds from its death. A count of zero removes that NPC from
-// the map.
+// Any number of NPCs can be checked at once; they are saved in a single line.
+// The area is the volume the NPCs spawn in and are allowed to walk in.
+// If "respawn after death" is checked, a dead NPC is replaced only after the
+// configured respawn time counted in milliseconds from its death. A count of
+// zero removes those NPCs from the map.
 
 void build_npc_spawner()
 {
@@ -31,6 +30,7 @@ void build_npc_spawner()
 
 	int i_count = f.create_input_box("How many of each selected NPC should live in this area (0 removes it, maximum " + NPC_MAX_PER_SPAWNER + ")", "1");
 	int i_respawn = f.create_input_box("Respawn time after death in milliseconds", "30000");
+	int cb_respawn_after_death = f.create_checkbox("Only respawn after death", true);
 	int i_minx = f.create_input_box("Minimum x of the area the NPCs walk in", "" + int(minx));
 	int i_maxx = f.create_input_box("Maximum x of the area the NPCs walk in", "" + int(maxx));
 	int i_miny = f.create_input_box("Minimum y of the area the NPCs walk in", "" + int(miny));
@@ -80,6 +80,7 @@ void build_npc_spawner()
 			int y1 = int(string_to_number(f.get_text(i_maxy)));
 			int z0 = int(string_to_number(f.get_text(i_minz)));
 			int z1 = int(string_to_number(f.get_text(i_maxz)));
+			bool respawn_after_death = f.is_checked(cb_respawn_after_death);
 			if (count < 0) count = 0;
 			if (count > NPC_MAX_PER_SPAWNER)
 			{
@@ -88,15 +89,15 @@ void build_npc_spawner()
 			}
 			if (respawn_ms < 0) respawn_ms = 0;
 
+			string joined_ids = "";
 			for (uint c = 0; c < checked.length(); c++)
 			{
 				int pos = checked[c];
 				if (pos < 0 || pos >= int(npc_registry.length())) continue;
-				npc_save_spawner_to_map(npc_registry[uint(pos)].id, count, respawn_ms, x0, y0, z0, x1, y1, z1, false);
+				if (joined_ids != "") joined_ids += ",";
+				joined_ids += npc_registry[uint(pos)].id;
 			}
-			speak("map updated");
-			tempreset();
-			draw_map(mapname);
+			npc_save_spawner_to_map(joined_ids, count, respawn_ms, x0, y0, z0, x1, y1, z1, respawn_after_death, true);
 			return;
 		}
 	}

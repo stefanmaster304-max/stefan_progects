@@ -119,7 +119,7 @@ timer falltimer;
 int fallspeed=120;
 int deffallspeed=120;
 int health;
-int maxhealth=1000;
+int maxhealth=5000;
 int movetime;
 int walktime=160;
 int airtime=90;
@@ -361,12 +361,12 @@ bodyfallloop();
 	}
 update_game_world();
 wait(5);
-if (health <= 200 and health > 0)
+if (health <= 1000 and health > 0)
 {
 	if (!bleading.playing) bleading.play_looped();
 	if (!heartbeat.playing) heartbeat.play_looped();
 }
-if (health > 200 or health <= 0)
+if (health > 1000 or health <= 0)
 {
 	if (bleading.playing) bleading.stop();
 	if (heartbeat.playing) heartbeat.stop();
@@ -433,9 +433,6 @@ if ((kb_pressed("builder") or key_pressed(KEY_B)))
 		}
 	}
 }
-
-
-
 
 bool alt_held = (key_down(KEY_LMENU) || key_down(KEY_RMENU) || key_down(KEY_LALT) || key_down(KEY_RALT));
 bool vol_up_held = (!alt_held && (kb_down("volume_up") or key_down(KEY_HOME)));
@@ -1214,8 +1211,9 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         xprequired = get_xp_required(level);
         xp = loc.readn("xp");
         resurrections = loc.readn("resurrections");
-        maxhealth = 1000 + (200 * resurrections);
+        maxhealth = 5000 + (200 * resurrections);
         if (loc.d.exists("maxhealth")) maxhealth = loc.readn("maxhealth");
+        if (maxhealth < 5000) maxhealth = 5000;
         if (loc.d.exists("health")) health = loc.readn("health");
         else health = maxhealth;
 		normalize_player_xp(false);
@@ -1257,7 +1255,7 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         level = 1;
         xp = 0;
         resurrections = 0;
-        maxhealth = 1000;
+        maxhealth = 5000;
         health = maxhealth;
         xprequired = get_xp_required(level);
         current_weapon_id = "";

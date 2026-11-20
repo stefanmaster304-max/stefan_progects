@@ -1,659 +1,76 @@
-Version 1.0.0 - The Confront
-============================
+Changelog - The Confront
+========================
 
-This file is organised by area. Each entry appears once, in the section that
-owns it, so a topic can be read from top to bottom instead of being scattered
-through the document.
-
-1. NAME AND VERSION
-2. SOUND ENGINE
-3. SOUND AND MIXING
-4. NPC SYSTEM
-5. PLAYER
-6. WEAPONS
-7. AMMUNITION
-8. INVENTORY
-9. SHIELD
-10. STORE AND CURRENCY
-11. MAPS AND CONSTRUCTION
-12. CONTROLS
-13. STARTUP AND PERFORMANCE
-14. REMOVED SYSTEMS
-15. CLEANUP
-16. DOCUMENTATION
+This document records the chronological history of updates, improvements, and fixes for The Confront by release date and time.
 
 
-1. NAME AND VERSION
---------------------
+-------------------------------------------------------------------------------
+New on November 20, 2026 at 19:45
+-------------------------------------------------------------------------------
 
-CHANGED: The game is now called The Confront and its version is 1.0.0.
-CHANGED: The name and version are shown in the title bar and in every window
-title of the game and of the construction menu.
-CHANGED: settings/versions.cfg, the keybindings header, the contents bundle
-header, the NPC file header and the welcome broadcast carry the new name.
+1. Weapon Targeting Across 4 Cardinal Directions:
+   - Fixed weapon hit detection so targets aligned in all four cardinal lines (straight ahead, straight behind, straight left, and straight right) are valid and hit within range and line of sight.
+   - Weapons automatically target the closest valid enemy among the 4 directions rather than ignoring targets to the left, right, or rear.
+   - Non-cardinal (diagonal) targets remain strictly invalid and unhit.
 
+2. Weapon Damage Rebalancing:
+   - Pistols: Rebalanced damages with rich variations across all pistols, ranging between 480 and 790 damage.
+   - Revolvers: Rebalanced damages ranging between 400 and 700 damage.
+   - Rifles: Rebalanced damages ranging between 610 and 1500 damage.
+   - Shotguns: Rebalanced damages ranging between 550 and 1550 damage.
+   - Sniper Rifles: Rebalanced damages ranging between 900 and 3500 damage.
 
-2. SOUND ENGINE
-----------------
+3. Player Maximum Health:
+   - Raised player base maximum health from 1000 to 5000 to harmonize combat pacing and weapon power.
 
-CHANGED: The whole King Audio set is the outdated one again.
-lib/king_audio_engine.dll, lib/fmod.dll, lib/fmodstudio.dll and
-includes/sound_pool.nvgt are the outdated reference files, copied over the
-project copies, and the updated engine binary that was still stored next to
-them was deleted.
-FIXED: The updated pool was still the one being heard even after the libraries
-were swapped, because dw.exe had been built while the updated pool was in the
-project; the engine binary loaded at run time was already the outdated one. The
-release build was made again from the outdated pool, so the executable, the
-three libraries and the pool all belong to the same set.
-FIXED: Running the game from its source script still sounded like the updated
-engine, because the NVGT interpreter resolves #pragma plugin king_audio_engine
-from its own lib folder and not from the project's:
-C:\nvgt\lib\king_audio_engine.dll was the updated binary. That file is the
-outdated binary now, with the updated one kept beside it as
-king_audio_engine.updated.bak, so a source run and dw.exe load the same engine.
-ADDED: The two additions the game needs on top of the outdated pool, and
-nothing else: set_lowpass(), switched by the underwater state and kept on every
-sound so a reload stays muffled, and get_sound_position(), which resumes the map
-music where the previous map left it.
+4. Language Consistency:
+   - Standardized all in-game text and speech to English with zero language mixing.
+   - Cleaned store welcome speech and NPC spawner dialogs into concise English.
 
 
-3. SOUND AND MIXING
---------------------
+-------------------------------------------------------------------------------
+New on November 20, 2026 at 19:15
+-------------------------------------------------------------------------------
 
-FIXED: Footsteps keep a constant volume of 0 dB and vary only in pitch, so
-walking no longer gets louder or quieter at random.
-FIXED: The sound pool no longer leaks slots or voices when a sound ends, is
-stopped or is replaced.
-FIXED: The local character sounds (footsteps, weapon draw, reload, shield equip
-and healing) have their own bounded pool with a radius of a dozen steps. A fight
-far away is no longer heard as if it were next to the player.
-CHANGED: An exchange of fire is heard as exactly one report per shot: up to ten
-steps the player hears the real shot of the weapon, and from ten steps on only
-the weapon's own distant sample, which is a different recording. The near crack
-and the distant report never play at the same time and the near one never
-travels.
-FIXED: The distant report used to fall back to the real shot of the weapon when
-no distant sample was configured, and that is what made a far exchange sound
-like the near crack crossing the map. The fallback is gone: without a distant
-sample the shot is simply not heard from afar.
-FIXED: The distant report level follows the model of War Cry: the shot is played
-at full level from the near radius on and loses one tenth of a decibel per step
-(10 dB at 100 steps, 20 at 200, 30 at 300), whatever the size of the map. The
-engine falloff is no longer involved.
-FIXED: King Audio reaches silence at 125 / volume_step and the distant pool was
-set to 0.25, which is only 500 units, while the +6 dB gain it asked for was
-discarded because a sound volume cannot go above 0 dB. Far reports were
-therefore inaudible on any map bigger than a few hundred steps. The pool no
-longer attenuates by itself and the computed report level does all of it.
-CHANGED: The near crack is mixed three decibels below full scale. It is the
-loudest thing the characters do and several shooters overlapping at full level
-summed into clipping, which is what made a close exchange sound chopped; the
-distant report keeps the full level it needs to cross the map.
-CHANGED: A running report is only rewritten when its shooter actually moves or
-when its level changes by at least a quarter of a decibel, instead of being
-pushed into the engine every frame.
-ADDED: A report that is still sounding follows the character that fired it: its
-position moves with the shooter and its level re-reads the distance to the
-player every frame. Sustained fire reuses the running report instead of stacking
-a copy per round.
-CHANGED: The weapons without a sound folder were deleted, so every firearm that
-remains has its own fire, distant, draw, reload and empty recordings.
-KNOWN: The crossbow and the melee weapons carry no distant sample, so past ten
-steps they are simply not heard. No weapon falls back to its real shot to fake a
-distant report.
-CHANGED: Every pool in the game shares one attenuation: two decibels and one pan
-unit per step. Only the distant weapon reports keep their own computed falloff.
-REMOVED: The sleep system leftovers, including the fade and lowpass handling
-that only existed for it. Lowpass now belongs only to diving under water.
+1. NPC AI and Map Performance:
+   - Zero-allocation A* pathfinding using static generation-stamped buffers.
+   - Smooth 60+ FPS without player movement stutter or RAM spikes regardless of NPC count.
+   - Waypoint navigation guiding NPCs around walls and obstacles without straight-line beelining.
+   - Dynamic 3D audio updates restricted to active voices to eliminate CPU overhead.
+
+2. Unified Single-Line Map Spawners:
+   - Map spawner format consolidated into a single line per multi-NPC group:
+     Format: npcspawner:<id1,id2,...>:<count>:<respawn_ms>:<x0>:<y0>:<z0>:<x1>:<y1>:<z1>:<respawn_after_death>
+   - Spawners strictly respect configured quantities above zero without creating duplicate instances.
+   - Initial map entry delay: NPCs wait for the full configured millisecond timer before spawning randomly.
+   - "Only respawn after death" configuration: dead NPCs only respawn if enabled, waiting the exact configured cooldown.
+
+3. Player Death Announcement:
+   - Removed spatial coordinates and map names from death broadcasts, announcing strictly who killed the player.
 
 
-4. NPC SYSTEM
---------------
+-------------------------------------------------------------------------------
+New on November 18, 2026 at 09:30
+-------------------------------------------------------------------------------
 
-CHANGED: Every character on a map is an NPC. There are no enemies and no allies:
-the older, simpler enemy and ally system was removed and replaced by this NPC
-system, which follows the shape of the original NPC system.
-ADDED: An NPC Manager in the construction menu that creates, edits, deletes and
-lists NPCs. Each NPC is a plain text file with the .npc extension inside
-settings/npcs; the file name is the internal id and the runtime only loads those
-files.
-ADDED: Three NPC classes: animal, robot and zombie. The class is only a label
-chosen by the developer; the rules are identical for all three.
-CHANGED: Creating an NPC asks for its class once. The class list belongs to the
-first step of the create flow; the form that follows no longer repeats it and
-its title shows the class that was chosen. Editing an existing NPC still offers
-the class list, once, next to the other fields.
-CHANGED: The footstep sound of an NPC is now a single checkbox, "Allow using the
-map platform's footstep sounds?". When it is checked the NPC walks with the
-platform under its feet and the custom footstep picker stays hidden; when it is
-unchecked the picker appears and the NPC uses only the clips chosen there.
-ADDED: Every NPC field is configured by the developer in the manager: internal
-id, display name, class, attack speed in milliseconds, minimum and maximum
-damage, detection range, attack range, walking speed, running speed, maximum
-health, voice clips and the minimum and maximum silence between them, plus
-attack, pain and death sounds.
-ADDED: An NPC is aware of the player from the moment it spawns, wherever the
-player stands, and immediately pursues. It attacks as soon as the player is
-inside its attack range and keeps attacking on its own configured cadence,
-playing its own attack sound and dealing a random damage between its minimum and
-maximum.
-ADDED: Detection range is the NPC's vision. When it loses the player, for
-example because the player entered a safe zone, it patrols the map and only
-notices the player again inside that range.
-ADDED: Being damaged by the player makes the NPC furious. It plays its pain
-sound and switches from its walking speed to its running speed until it dies.
-ADDED: Voice clips are played while the NPC moves, with a random silence between
-two clips using the configured minimum and maximum delays. Death plays the death
-sound and announces the kill with the NPC name and coordinates in
-settings/killfeed.log.
-ADDED: XP per NPC, given to the player when the player kills it, with the level
-and resurrection handling that already existed.
-ADDED: Drops on death, with a flag and the list of items and quantities that
-land where the NPC falls.
-ADDED: The choice between the map platform footsteps and the NPC's own footstep
-clips, per NPC.
-ADDED: The platform fall sound (or its harder landing) when an NPC dies.
-ADDED: The player's projectiles hit NPCs, damage them, make them furious and can
-kill them.
-CHANGED: Voices use the rules of the old NPC system again: a clip is allowed to
-finish, it is repeated two or three times, then the list rotates, and the
-silence between clips is counted from the end of the clip between
-voice_min_delay and voice_max_delay.
-CHANGED: Every sound an NPC makes (attack, pain, footstep, voice and the fall of
-its body) follows it. Each slot it started is tagged with the NPC's own owner key
-in the pool and re-positioned on the NPC's tile every frame, so a clip no longer
-stays behind at the coordinate where it was triggered.
-FIXED: The NPC attacked from beyond its attack range. The range is whole tiles
-again, counted as the largest axis gap, so five tiles means five tiles from any
-angle and never a single step more.
-CHANGED: Attacking and walking have separate limits. A player inside the attack
-range is attacked even when standing outside the area the NPC may walk in; the
-NPC only refuses to walk out of its area, it never refuses a hit inside its
-reach.
-FIXED: An NPC was walking two tiles per step on a diagonal, so it closed in twice
-as fast. It now moves one tile per step on a single axis.
-FIXED: An NPC stopped attacking, went silent and stood still while it was being
-shot, because every hit restarted its attack cooldown. Damage no longer touches
-the attack timer, so the NPC keeps striking at its configured attack_speed while
-it is hit.
-FIXED: The NPC stopped attacking in the middle of a fight because its attack was
-gated by a line of sight check that flickers between two adjacent tiles. The
-attack now depends on the attack range and on a wall test that walks the tiles
-between the NPC and the player, so it can no longer hit through a wall.
-FIXED: An NPC could stand still for good with a wall between it and the player.
-Pursuit and patrol now follow a real route over the walkable tiles, four-way and
-never cutting a corner through a wall, recomputed only when the goal changes,
-runs out or gets blocked. A wall longer than the search window is walked around
-by widening the search to the NPC's whole area.
-CHANGED: Inside a safe zone an NPC keeps circling the player inside its own area
-instead of wandering at random.
-FIXED: Living NPCs could slow the game to a crawl and make the player unable to
-walk or jump. Route planning scanned the whole open set and removed from its
-middle with remove_at, four thousand times per NPC and replanned every quarter of
-a second, so a handful of NPCs spent all of the frame in the search. The open set
-is now a binary min-heap, floor lookups are cached per search, the expansion
-budget is smaller and at most two searches run per world tick, with the rest
-falling back to a direct step. A map with NPCs alive no longer affects the
-player's movement at all.
-CHANGED: The NPC pool uses the same attenuation curve as every other pool in the
-game, so an NPC fades exactly like the player's sounds, the map and the
-projectiles at the same distance.
+1. Identity and Versioning:
+   - Game officially renamed to "The Confront" (Version 1.0.0).
 
-4.1 NPC SPAWNER
-~~~~~~~~~~~~~~~~
+2. Sound Engine (King Audio & FMOD):
+   - Restored stable baseline for King Audio, FMOD, and sound pool architecture.
+   - Underwater low-pass filtering and cross-map music continuation.
+   - Constant 0 dB footstep mixing with natural pitch variations.
 
-ADDED: The NPC spawner in the construction menu places configured NPCs on the
-map. Several NPCs can be checked at once and each one gets its own population,
-count and respawn time. The form takes the minimum and maximum x, y and z of the
-area the NPCs spawn in and are allowed to walk in.
-ADDED: The area is a hard border on all three axes. The NPC spawns inside it,
-walks inside it and chases only inside it; a step that would cross an edge is
-refused, so the NPC can never leave it. When the player leaves the area the NPC
-cannot follow: it patrols the border closest to the player and waits, and attacks
-again as soon as the player returns inside the area.
-CHANGED: The map stores one npcspawner line per NPC type, in one format only:
-npcspawner:<npc id>:<count>:<respawn>:<min x>:<min y>:<min z>:<max x>:<max y>:<max z>.
-Lines from removed formats, including the old enemy/ally spawner and the older
-line without an area, are ignored by the map parser and dropped when the map is
-saved; no line falls back to the whole map anymore.
-CHANGED: A spawner never duplicates an NPC. The first population fills the area
-once and from then on a slot is refilled only after one of its own NPCs is
-actually killed, waiting exactly the configured respawn time counted from the
-death. A count of zero removes that NPC from the map.
-CHANGED: The NPC population is bounded so a map can never be overloaded. A map
-holds at most 40 living NPCs at once and one spawner line holds at most 20 of
-each type; a larger count is lowered and the spawner form says so. Spawning is
-silent, so dozens of NPCs no longer queue dozens of announcements while the map
-starts, and a spawn that cannot be placed is retried once per second instead of
-on every frame.
-REMOVED: The example NPCs. The game no longer creates a settings/npcs folder or
-writes any NPC of its own: with no files there the list stays empty until the
-developer creates them in the NPC Manager.
+3. Weapons, Ammunition, and Store:
+   - Curated firearm catalog of 69 verified weapons with complete audio.
+   - Main menu store organized into distinct category shelves charging native currencies (gold, golden crystal, diamond, silver).
 
 
-5. PLAYER
-----------
+-------------------------------------------------------------------------------
+New on August 15, 2026 at 12:22
+-------------------------------------------------------------------------------
 
-CHANGED: A resurrection costs 1500 levels instead of 2500, and every
-resurrection costs the same 1500, because the level counter restarts at 1 after
-each one.
-CHANGED: Every resurrection adds 200 maximum health: 1000 at the start, 1200
-after the first resurrection, 1400 after the second, and so on. A saved game
-recomputes the same value from the resurrection count.
-CHANGED: The resurrection message names the resurrection number and the new
-maximum health, announces every map the resurrection unlocks and tells the player
-to leave the current map and return to the map menu to play it.
-FIXED: Dying now empties the inventory. The death save wrote the inventory as it
-was, so the items came back with the next life; the inventory and the equipment
-are cleared before the death save is written.
-FIXED: Firing is blocked inside a safe zone even when a firing path does not go
-through the game loop's own safe zone check.
-CHANGED: The player's death message reports the coordinates and the weapon, for
-example "You were killed by the bear at 300, 0, 0 with Mp5 on the safe map."
-CHANGED: Taking damage plays one of Tristan's voices 1 to 16 at random instead
-of the generic pain clips.
-CHANGED: Dying is one event now: Tristan's voice 17, the three numbered death
-effects (misc331, misc333 and misc334) and the platform fall sound all start
-together, and the main menu waits for every one of them to finish.
-
-
-6. WEAPONS
------------
-
-CHANGED: Every weapon reads its cadence, weight, time between shots, range,
-spread, damage, fire mode and ammunition from its own .wpm file. There is no
-weapon timing, weight, ammunition rule or fire mode rule written in the code.
-CHANGED: A weapon has a single fire mode, chosen when the weapon is created:
-either semi-automatic or full automatic. Automatic weapons fire while the
-trigger is held, semi-automatic weapons need one press per shot.
-REMOVED: The burst, scattershot and focused modes, the mode lists that combined
-several of them, the mode switching key, the multiple-mode state, the round
-counter of burst fire and every branch, table, name and entry that referred to
-them.
-REMOVED: The minimum and maximum shot times. A weapon has one fire time and it
-is the only cadence that exists, in the file, in the weapon form, in the
-serialized bundle and in the loaded weapon data.
-CHANGED: The weapon builder offers the projectile as a navigable list of the
-kinds the game really launches: automatic, ballistic, bolt, ball, energy, plasma,
-missile, rocket, grenade, fire and drainage. The focused entry is the one saved
-and there is no check or uncheck action. The free text projectile field is gone.
-CHANGED: The fire mode of a weapon is also a list with exactly two entries,
-semi-automatic and full automatic. The focused entry is the mode that is saved.
-FIXED: Weapon fire, reload, draw, empty and distant sounds are resolved from the
-weapon file and the sound folders, with no generic fallback sound.
-REMOVED: Eleven weapons whose sound folders had already been deleted also had
-their .wpm files deleted: the laser rifle, the flamethrower, the Awds SMG Uzi,
-the M17 Viper Uzi, the claw, the diamond sword, the auto pistol, the Glock 17
-pistol, the pistol, the auto rifle and the Barrett M82 sniper rifle. The weapon
-list now holds 69 files, and the store and the weapon builder only offer weapons
-whose sounds still exist.
-CHANGED: The "glock 17" alias now resolves to the Glock9mm, the only Glock that
-is left.
-FIXED: A shot hits an NPC anywhere along the line it travels, not only when it
-lands exactly on the target's tile. The projectile system tests the whole stroke
-of each step and counts a hit within one tile of the NPC's centre, so a weapon
-connects from any angle instead of only straight ahead, straight behind, straight
-right or straight left.
-FIXED: A hit on an NPC could still read as a miss because nothing announced it:
-the weapon's hit sample was only played against walls. The weapon's own hit sound
-now plays on the target. NPC health was not touched: the bear has 2400 health,
-so a pistol doing 54 to 66 damage needs about forty rounds to bring it down.
-CHANGED: The firearms that had no impact sample of their own now play the shared
-body impacts from the bullets folder: bullet_impact_body1 to bullet_impact_body16,
-picked at random, on the target that was hit. Thirty-five weapons were set this
-way.
-CHANGED: The firearms that had no ricochet sample of their own now play
-bulletwhiz1 to bulletwhiz8 where the shot stops on a wall, through the same
-ricochet field the six weapons with their own recording already used. Fifty-four
-weapons were set this way. The melee weapons and the launchers, which fire a
-shell instead of a bullet, are unchanged.
-
-6.1 BALANCE
-~~~~~~~~~~~~
-
-CHANGED: Damage and reach of every weapon come from War Cry's own weapon table
-(wc-server/weapons.txt), each weapon mapped to its equivalent there. Damage was
-divided by five because the player here has 1000 health against War Cry's 5000,
-so the number of hits needed to kill is the same as in War Cry.
-CHANGED: Fire intervals were rebuilt weapon by weapon: no two weapons share a
-cadence and every class sits in its own band. Submachine guns and machine guns
-run from 100 to 150 milliseconds, pistols from 160 to 290, the knife to the sword
-from 205 to 255, rifles from 300 to 540, revolvers from 560 to 700, shotguns from
-720 to 1000, sniper rifles from 1100 to 2500 and the cannon at 3200 milliseconds.
-CHANGED: Inside each class the ladder follows the weight and the role of the
-weapon. The knife swings fastest (205 ms), then the machete (215), the axe (225),
-the katana (235), the longsword (245) and the sword (255). The Kel-Tec P318 is
-the quickest pistol (160 ms) and the long barrelled STP106 the slowest (290 ms).
-The Uzi is the quickest automatic (100 ms) and the M4 the slowest of that class
-(150 ms), with the Browning M2 at 140. The Ithica M37 is the quickest shotgun
-(720 ms) and the Benelli M4 the slowest (1000 ms). The Dragunov is the quickest
-sniper (1100 ms) and the Barret M150 the heaviest (2500 ms).
-CHANGED: Reach stays as War Cry's: 10 to 30 steps for pistols and submachine guns,
-30 to 50 for rifles, 10 to 12 for shotguns, 300 to 500 for the sniper rifles, 250
-for the cannon and 3 to 5 steps for melee weapons.
-NOTE: Damage values of War Cry are kept as they are, including the uneven ones:
-its Ruger Security 6 revolver hits harder than its Beretta M9, and its M2 heavy
-machine gun hits for 20000. A pistol fight and a rifle fight therefore feel as
-different here as they do there.
-CHECKED: All 69 remaining weapon files were rewritten, so no weapon kept an old
-cadence.
-
-
-7. AMMUNITION
---------------
-
-ADDED: A tandem warhead rocket and a ray beam cell, two ammunition types that did
-not exist in the ammo set.
-
-
-8. INVENTORY
--------------
-
-REMOVED: The complete inventory menu. The full inventory window, its list, its
-categories, its navigation, its item actions, its open and close state and its
-own key handling were deleted.
-CHANGED: The quick inventory is the only inventory interface. Tab and Shift+Tab
-move the focus from item to item in a cycle and announce the item, its amount and
-the position in the list.
-CHANGED: Enter uses the focused quick inventory item: a healing item is used only
-while health is below its maximum, a shield is equipped and a weapon is equipped.
-CHANGED: Escape does nothing and announces nothing, because there is no open or
-closed state and no "quick inventory closed" message any more.
-REMOVED: The unused inventory position variable and every leftover of the old full
-inventory mode.
-FIXED: Using an item from the quick inventory keeps the focus usable when the item
-is consumed or the list becomes empty.
-
-
-9. SHIELD
-----------
-
-FIXED: The metal shield now carries all twelve configured impact sounds
-(shieldhit1 to shieldhit12) and its break sound uses shieldbreak, shieldbreak1,
-shieldbreak2 and shieldbreak3. A surviving hit picks one configured impact sound
-at random, and a shield without an impact sound falls back to the same random set.
-
-
-10. STORE AND CURRENCY
------------------------
-
-CHANGED: The store left the maps. It is a single place opened from a Store entry
-in the main menu; the map interaction key no longer opens a shop and stores can
-no longer be placed on a map.
-CHANGED: The store is organised in categories (Medical Items, Weapons and
-Ammunition by default), each one with its own items, prices and currency. Up and
-down move through the categories, Tab moves to the item list of the selected
-category and back, left and right remove from and add to the cart, Enter buys the
-cart, Escape leaves.
-CHANGED: The store no longer focuses the first category when it opens: it only
-reads the welcome message, which explains the categories and the controls. A
-category is announced after the player presses an arrow, Tab or Enter.
-CHANGED: The builder's store manager is a category manager: create a category,
-edit its name, currency and items, or delete it. The default categories are
-created when they are missing, and the medical and ammunition shelves start
-stocked from the item registry.
-CHANGED: The general category no longer exists. An existing general category and
-its files are deleted when the store loads, and the medical items it used to sell
-live in the Medical Items shelf.
-REMOVED: The four coins that were hardcoded in the game. The four native
-currencies (gold, golden crystal, diamond and silver) are ordinary item files and
-the store uses them like any other item.
-REMOVED: The currency aliases and legacy names that were accepted in silence, and
-the hidden fallback that charged gold whenever a currency could not be found. A
-store now charges exactly the currency it declares.
-FIXED: The four currencies are offered by the store as payment methods, can be
-spent, earned and checked, and appear in the store currency selection.
-FIXED: A store category could not be deleted: the store reopened the list of
-categories it already had and the three starting shelves were recreated whenever
-they were missing, so a deleted category came back on the next open. The
-automatic shelves are created once per installation and a marker records that,
-the deleted category is removed from memory, from the loose files and from the
-encrypted bundle, and the store and the builder list exactly the categories that
-exist. A category that only lived in one of those places is removed as well.
-REMOVED: The stub that reported every store product as unavailable and the dead
-store code that surrounded it. A store product is granted only when its item
-exists, with no silent substitution.
-
-
-11. MAPS AND CONSTRUCTION
---------------------------
-
-ADDED: A map menu between Play and the game. Play lists the maps the player has
-unlocked and asks "select your map"; the chosen map is loaded, and the player
-continues at the saved position only in the map that was saved.
-CHANGED: The map list offers only unlocked maps. A map is unlocked when it exists
-on disk and its minimum level and resurrection requirements are met, and maps the
-player cannot enter yet never appear in the list.
-ADDED: When Play is used with no map on disk, or with no map unlocked, a native
-message box titled "No maps found" explains the reason and waits for Enter before
-returning to the main menu.
-REMOVED: The reward for discovering a map. Finding a new map no longer pays gold,
-plays an unlock sound or announces a reward; discovery is only bookkeeping.
-FIXED: Saving an NPC spawner rewrote the map from the parsed cache and could drop
-unrelated lines such as a map sound source. The spawner now reads the map file
-itself, replaces only its own line and keeps every other line untouched.
-FIXED: The platform form lists exactly the folders that exist under "Map
-Platforms". Names from the deleted material registry no longer appear.
-ADDED: Volume and pitch sliders in the platform form, the same pair the sound
-source and ambience builders use. Both act on the running preview, so the floor
-sound is judged by ear before the platform is added.
-FIXED: Platform previews played 8 to 20 dB down because the shared preview sound
-stayed routed to a removed builder's mixer after that form had been used. The
-preview now plays on the master bus at the volume of the slider.
-CHANGED: The map parser reads only the current map lines. The lines of the
-systems removed in section 14 - travelpoint, store, reverbzone, door, sign and
-checkpoint - are not read at all, and an old map that still carries them loads
-without creating anything for them.
-CHANGED: A map that does not declare its six bounds is not accepted: it is
-reported as an old format and the game returns to the main menu.
-CHANGED: The Create New Map form asks for the progression of the map in the same
-place as its bounds: minimum level to enter, maximum level to enter, the
-resurrection at which this map unlocks and the maximum resurrection to enter. A
-minimum resurrection of 0 means the map is available from the start, and a
-maximum of 0 means there is no upper limit. The four values are written to the
-map file and are the same ones the map menu and the resurrection message read,
-so there is no second, duplicate rule anywhere.
-
-
-12. CONTROLS
--------------
-
-CHANGED: The Spacebar alone jumps again. It is the only jump key and it works on
-its own, without a modifier.
-REMOVED: Ctrl + Space. Pressing Control and Space together no longer jumps, does
-not fire and performs no action at all.
-CHANGED: Only the left Control key fires. The right Control key was removed from
-the firing key, from the default key binding and from every place that accepted
-either Control.
-CHANGED: The default binding of the fire action is the left Control key instead
-of the Spacebar, so the keyboard focus and the jump can never share a key.
-REMOVED: The V key that switched the fire mode, because a weapon has a single
-mode.
-CHANGED: The keybindings menu lists only the actions that still exist. The
-tracking actions and every joystick and gamepad action left with their systems.
-The construction menu carries no key mapping of its own: keys are only rebound
-from Options > Keybindings, and there is no joystick, gamepad or controller
-mapping anywhere in the game.
-REMOVED: The keyboard typing sound system. The theme engine, the five samples,
-the theme selector dialog, the "Select keyboard typing sound theme" option, the
-preference that stored the theme and every form that played typing sounds were
-deleted. Typing in an input box is silent now.
-
-
-13. STARTUP AND PERFORMANCE
-----------------------------
-
-FIXED: Starting a game, loading a map and reloading the map after a construction
-change could stall for almost a minute. The enemy and ally spawn search tried 500
-positions and, at each one, walked down every single height level of the map, and
-each of those lookups fell back to splitting every map line as text. The search
-now reads the native map directly, tries a bounded number of positions, and gives
-up for the whole map once a map proves to have no floor at all. The same map load
-now takes milliseconds.
-FIXED: Every enemy and ally movement check and every patrol pick used the same
-text fallback, which is what made the game stutter while characters walked. They
-read the native map now.
-FIXED: A map configured with more than a handful of characters stalled while
-loading, because every one of them was created, armed, given healing items, given
-a patrol and given a draw sound inside the loading screen. Loading now only fills
-a queue, so a map with any number of characters loads as fast as an empty one.
-FIXED: The window had to wait for every content registry before it could appear.
-The maps bundle, the stores, the items, the packages, the weapons and the
-default shield were loaded before show_window(), so the first thing the player
-saw was a delay. Those registries are now loaded on first use - init() when a
-game starts, the store menu, the builders - and the window appears in about half
-a second instead of a second or more.
-FIXED: Launching the game could hang before the menu when the update server
-answered slowly or not at all: the startup check waited up to twenty seconds, with
-fifteen second connect and receive timeouts and a retry on top. The check now
-gives up in a few seconds and the menu opens immediately either way.
-CHANGED: The NPC audio pool is created on demand instead of at startup, so
-launching the game no longer pays for 128 audio slots it may never use.
-
-
-14. REMOVED SYSTEMS
---------------------
-
-REMOVED: The original complete NPC system. The old NPC runtime, the old NPC class
-and its state, the old spawning and spawning points, the old management menu and
-builder tools, the navigation, the combat and decision code, the voices in the
-sound pools and every helper that only existed to serve it were deleted. The NPC
-system described in section 4 is the new one.
-REMOVED: The enemy and ally system that was added after it to be simpler. Enemies
-and friends no longer exist anywhere in the game: they were removed and replaced
-by the new NPC system, which keeps the shape of the original one. The old
-enemy/ally spawner line is discarded when a map loads.
-REMOVED: Hitting, targeting, damaging and killing enemies and allies. The
-player progression that lived inside that runtime was moved into its own player
-module, so the player systems keep working without it.
-
-REMOVED: The complete hands system. The left hand and the right hand slots, the
-second hand, the hand switching, the per-hand weapon state, the per-hand drawing,
-firing and reloading rules, the dual wielding and every message, sound and check
-that referred to a hand were deleted.
-CHANGED: The player now has one equipped weapon at a time. Equipping a weapon
-replaces the previous one, and firing, reloading, ammunition and the walk speed
-always read the single equipped weapon.
-
-REMOVED: The complete day and night system. The game calendar, the world clock,
-sunrise and sunset, dawn and dusk twilight, noon, midnight, the day phases, the
-seasons, the leap years, the weekdays, the holidays, the solstices and equinoxes
-and the moon phases are all gone. Nothing in the game measures or advances time
-any more.
-REMOVED: Every spoken time and date announcement: sunrise, morning, noon,
-afternoon, sunset, twilight, night, midnight, the year change, the holiday and
-solstice messages, the upcoming holiday warnings and the full moon announcements.
-REMOVED: The world clock persistence, including its own save file
-settings/game_time.dat. Saving, dying, leaving the game, changing maps and
-starting a new game no longer write or read any calendar state. The old save file
-was deleted as well.
-REMOVED: The Shift+T shortcut that spoke the current game time, date, season, day
-phase, moon phase, solstice and holiday.
-REMOVED: The day and night time limits of map sound sources and map ambience: the
-"Use day and night time limits" checkbox, the start hour, start minute, end hour,
-end minute and fade duration sliders, the time window stored in the map lines and
-the cross-fades that followed the time of day. A sound source now simply plays at
-the volume of its volume slider, and an ambience simply plays while the player is
-inside its area.
-REMOVED: The calendar object that could be placed on maps: its builder entry, its
-builder form, its runtime class, its spawn and check functions, its press and loop
-sounds, its map line and its access to the game date, season, holiday and moon
-phase.
-REMOVED: The clock object that could be placed on maps: its builder entry, its
-builder form, its runtime class, its spawn and check functions, its press and loop
-sounds, its map line and its access to the game time.
-REMOVED: The "calendar" and "clock" entries from the construction menu, together
-with their sound folder translations and the fallback sound names that belonged to
-them.
-REMOVED: The map content that was built on the removed system: the night ambience
-of the main map, the day and night music pairs of the main map and of the north
-ocean, and the day and night ocean sources of the north ocean. Every map keeps one
-ambience and one source per area that is always available.
-REMOVED: The entire collection of time driven logic that the removal left behind,
-including the unused helpers for time windows, the unused decibel conversion
-helper and the dead branches that called them.
-
-REMOVED: The message of the day system in full. The daily message pool, its file
-settings/daily_messages.txt, its state file settings/daily_msg_state.dat, the pool
-loader, the sequential rotation, the index persistence, the daily announcement at
-startup, the F1 announcement and the "daily message manager" entry in the
-construction menu were deleted.
-CHANGED: Only the rolling announcements remain. They are read from
-settings/broadcasts.txt and one random message is spoken every 10 to 15 minutes,
-without any reference to a day, a date or a world clock.
-
-REMOVED: The whole travel point system, manual and automatic. Shift+Enter no
-longer triggers a travel point, walking, jumping and falling no longer check for
-automatic travel points, the builder no longer offers the travelpoint entry, and
-map files no longer create travel points. The travelpoint include file itself is
-deleted, its flag and its native map area are gone, and a "travelpoint:" line in a
-map is not read at all.
-REMOVED: Neighbour map discovery through travel points. Sound sources are loaded
-for the map the player is in, without following travel point lines to other maps.
-
-REMOVED: Store spawning on maps, completely. The map parser no longer reads a
-"store:" line, nothing creates or tracks a shop area on a map, and the code that
-placed a store on the map and opened it with the interaction key is deleted.
-
-REMOVED: The complete reverb zone system. The reverb zone runtime, its bus, the
-native reverb configuration, the zone classes and areas, the reverb zone builder
-and its type and platform preview lists, the "reverb zone" entry in the
-construction menu and the "reverbzone:" map line were deleted. No sound is routed
-through a reverb bus any more: every pool plays on the master bus.
-REMOVED: The complete door system. The door class and its opening, closing and
-locking states, its sounds, its animation and movement timer, the door builder,
-the "door" entry in the construction menu, the "door" map line, the native map
-door area and the interaction check that ran on every step were deleted. Enter no
-longer opens or checks a door.
-REMOVED: The complete tracking system. The tracking runtime, its target list, its
-menu, its arrival check, its 3D beacon loop, the tracking query and tracking menu
-keys and their default bindings were deleted. The W and X keys are free again and
-the tracking actions no longer appear in the keybindings menu.
-REMOVED: The complete joystick and gamepad support. The joystick runtime, the
-joystick helper library, the binding file settings/joystick.txt, the joystick
-settings menu in Options, the "Joystick Settings" button, the vibration and
-capture code and every joy_* call in the game were deleted. The keyboard is the
-only input device: menus, dialogs and the store no longer poll a joystick.
-REMOVED: The complete checkpoint system. The checkpoint class and its activation,
-the checkpoint builder, the "checkpoint" entry in the construction menu, the
-"checkpoint" map line and its per-step check were deleted. The map spawnpoint
-state it used to hold now lives with the spawnpoint builder.
-REMOVED: The complete keyboard typing sound system, together with its
-"keyboards" sound root and its option in the settings menu.
-REMOVED: The complete sign system. The sign class and its press and loop sounds,
-the sign builder, the "sign" entry in the construction menu, the "sign" map line,
-the sign sound folder translation and its default sound fallback were deleted.
-
-REMOVED: The old ground resource system. The built-in materials are no longer
-defined or registered, the materials category is gone from the item editor, and
-an item that still carries that category in an old settings file is dropped when
-the item list is built.
-REMOVED: The "Allow collectable resources from this platform" checkbox, the
-resource name field and the collectible field written into platform lines. Older
-maps that still carry that extra field load normally, with the field read as
-nothing.
-
-
-15. CLEANUP
-------------
-
-REMOVED: Dead code found in a full source sweep: the unused session clock string
-and its timer, the unused focused item variable, the readable time helper that
-only served the session clock, the include that loaded it, and the orphaned daily
-message and game time save files.
-CHECKED: All .nvgt sources, map lines and settings files were searched for broken,
-disabled, commented out, duplicated, fallback, generic, placeholder and stub code.
-The remaining candidate matches were legitimate API returns, real configuration
-defaults, encrypted and legacy file readers that still open real files, and asset
-resolution paths that must exist.
-
-
-16. DOCUMENTATION
-------------------
-
-CHANGED: This changelog is organised by category and every topic appears once, so
-the reader knows where each subject belongs.
-CHANGED: The documentation viewer opens fixed English paths (docs/readme.txt,
-docs/game_guide.txt, docs/changes.txt) and lists only the files that actually
-exist.
+1. Core Engine Foundation:
+   - Spatial 3D coordinate system (X, Y, Z).
+   - Screen reader output (NVDA, SAPI, JAWS) and speech synthesis.
+   - HRTF 3D positioning and distance attenuation.
