@@ -14,7 +14,7 @@ void ensure_item_pool()
 		@itempool.mixer = mixer();
 		itempool.max_distance = 25.0;
 		itempool.pan_step = 1.0;
-		itempool.volume_step = 2.0;
+		itempool.volume_step = SOUND_VOLUME_STEP;
 		itempool.hrtf = true;
 		item_pool_initialized = true;
 	}

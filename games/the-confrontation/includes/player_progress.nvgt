@@ -14,14 +14,28 @@ void add_player_quantum_xp(int amount)
 		xp = 0;
 		xprequired = get_xp_required(level);
 
-		int old_max = maxhealth;
-		maxhealth = int(round(double(maxhealth) * 1.20, 0));
-		if (maxhealth <= old_max) maxhealth = old_max + 100;
+		// Every resurrection raises the maximum health by a fixed 200: 1000 at the
+		// start, 1200 after the first resurrection, 1400 after the second, and so on.
+		maxhealth += 200;
 		health = maxhealth;
 
 		string resurrection_sound = get_player_sound("resurrection");
 		if (sound_file_exists(resurrection_sound)) p.play_stationary(resurrection_sound, false);
-		speak("Congratulations! You have achieved a new resurrection, and your resurrection is now " + resurrections + ". You have become a little stronger than before.");
+
+		string maps_note = "";
+		string[]@ new_maps = @get_maps_unlocked_at_resurrection(resurrections);
+		if (new_maps !is null && new_maps.length() > 0)
+		{
+			string list = "";
+			for (uint nm = 0; nm < new_maps.length(); nm++)
+			{
+				if (list != "") list += ", ";
+				list += new_maps[nm];
+			}
+			maps_note = " A new map is now unlocked: " + list + ". Leave the map you are in and return to the map menu to play it.";
+		}
+
+		speak("Congratulations, dear player! You have achieved resurrection number " + resurrections + ". Your maximum health is now " + maxhealth + "." + maps_note);
 	}
 	save_location();
 }
@@ -45,6 +59,37 @@ bool check_and_use_anti_death_card()
 	return false;
 }
 
+// Loads and starts every sound of the player's death at once: Tristan's voice
+// 17, the three numbered death effects and the platform's fall sound. Missing
+// files are skipped; no generic clip is substituted for them.
+sound@[] start_player_death_sounds()
+{
+	sound@[] started;
+	string[]@ paths = get_player_death_sounds();
+	for (uint i = 0; i < paths.length(); i++)
+	{
+		if (paths[i] == "") continue;
+		sound@ s = sound();
+		if (!s.load(paths[i])) continue;
+		s.play();
+		started.insert_last(s);
+	}
+
+	string fall_path = get_platform_sound(gmt(), "fall");
+	if (fall_path == "") fall_path = get_platform_sound(gmt(), "hardland");
+	if (fall_path == "") fall_path = get_player_sound("fall");
+	if (fall_path != "")
+	{
+		sound@ fs = sound();
+		if (fs.load(fall_path))
+		{
+			fs.play();
+			started.insert_last(fs);
+		}
+	}
+	return started;
+}
+
 void player_die(const string&in cause_message)
 {
 	if (check_and_use_anti_death_card())
@@ -59,25 +104,30 @@ void player_die(const string&in cause_message)
 	if (bleading.playing) bleading.stop();
 	if (heartbeat.playing) heartbeat.stop();
 
-	string death_path = pick_player_death_sound();
-	sound death_snd;
-	if (death_path != "") death_snd.load(death_path);
-
-	string fall_path = get_platform_sound(gmt(), "fall");
-	if (fall_path == "") fall_path = get_platform_sound(gmt(), "hardland");
-	if (fall_path == "") fall_path = get_player_sound("fall");
-	if (fall_path == "") fall_path = get_sound_path("player/sit.ogg");
-
-	sound fall_snd;
-	if (fall_path != "") fall_snd.load(fall_path);
-
-	if (death_snd.active) death_snd.play();
-	if (fall_snd.active) fall_snd.play();
-
-	while (death_snd.playing || fall_snd.playing)
+	// The death ensemble (voice 17 plus the three numbered effects) and the
+	// platform fall sound all start together, so the fall reads as one event.
+	sound@[] death_snds = start_player_death_sounds();
+	timer death_wait;
+	death_wait.restart();
+	while (death_wait.elapsed < 30000)
 	{
+		bool any_playing = false;
+		for (uint i = 0; i < death_snds.length(); i++)
+		{
+			if (death_snds[i] !is null && death_snds[i].playing)
+			{
+				any_playing = true;
+				break;
+			}
+		}
+		if (!any_playing) break;
 		wait(5);
 	}
+	for (uint i = 0; i < death_snds.length(); i++)
+	{
+		if (death_snds[i] !is null) death_snds[i].stop();
+	}
+	death_snds.resize(0);
 
 	sp.destroy_all();
 	p.destroy_all();

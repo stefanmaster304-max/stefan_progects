@@ -1,4 +1,4 @@
-// weapon_system.nvgt - Modular Weapon Runtime Engine for The Confrontation.
+// weapon_system.nvgt - Modular Weapon Runtime Engine for The Confront.
 // Manages weapon equipping, firing, projectile emission, and sound dispatch.
 // Strictly no explosives and no silencers/suppressors.
 

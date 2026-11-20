@@ -199,8 +199,11 @@ int shield_process_damage(int incoming_dmg, const string&in damage_source = "bul
 		return 0;
 	}
 
-	// Shield survives the blow: play impact hit sound and drain durability
-	string hit_snd = (it !is null && it.sound_hit != "") ? it.sound_hit : "shieldhit" + random(1, 12) + ".ogg";
+	// Shield survives the blow: play a random impact sound from the ones
+	// configured on the shield (a semicolon separated list is picked from at
+	// random) and drain durability.
+	string hit_snd = (it !is null) ? it.sound_hit : "";
+	if (hit_snd == "") hit_snd = "shieldhit1.ogg;shieldhit2.ogg;shieldhit3.ogg;shieldhit4.ogg;shieldhit5.ogg;shieldhit6.ogg;shieldhit7.ogg;shieldhit8.ogg;shieldhit9.ogg;shieldhit10.ogg;shieldhit11.ogg;shieldhit12.ogg";
 	string hit_path = get_sound_path(hit_snd);
 	if (hit_path != "") p.play_stationary(hit_path, false);
 
@@ -231,8 +234,8 @@ void register_default_shield_if_missing()
 	// Shield durability is a damage pool; the absorption field stays unused.
 	it.heal_amount = 0;
 	it.sound_use = "shieldon.ogg";
-	it.sound_hit = "shieldhit1.ogg";
-	it.sound_break = "shieldbreak.ogg";
+	it.sound_hit = "shieldhit1.ogg;shieldhit2.ogg;shieldhit3.ogg;shieldhit4.ogg;shieldhit5.ogg;shieldhit6.ogg;shieldhit7.ogg;shieldhit8.ogg;shieldhit9.ogg;shieldhit10.ogg;shieldhit11.ogg;shieldhit12.ogg";
+	it.sound_break = "shieldbreak.ogg;shieldbreak1.ogg;shieldbreak2.ogg;shieldbreak3.ogg";
 	it.sound_distant_hit = "shieldbreakdist1.ogg";
 
 	if (save_item_config(it))

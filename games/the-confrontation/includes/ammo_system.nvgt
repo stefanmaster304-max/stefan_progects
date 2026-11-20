@@ -1,4 +1,4 @@
-// ammo_system.nvgt - Modular inventory-backed ammunition system for The Confrontation.
+// ammo_system.nvgt - Modular inventory-backed ammunition system for The Confront.
 // Weapons track currently loaded ammo; spare ammo lives in player inventory.
 // Supports magazines, loose ammo belts/boxes, energy cells, and fuel canisters.
 

@@ -1,4 +1,4 @@
-// includes/updater.nvgt - Update system for The Confrontation.
+// includes/updater.nvgt - Update system for The Confront.
 // Every download goes to the temporary update folder first, is validated and
 // only then replaces the live file. Failures are retried, and the player always
 // hears a specific reason. Progress is announced with NVGT tone beeps, never
@@ -94,7 +94,7 @@ void save_updater_settings()
 	file f;
 	if (f.open("settings/versions.cfg", "w"))
 	{
-		f.write("# The Confrontation Version and Update Settings\n");
+		f.write("# The Confront Version and Update Settings\n");
 		f.write("game_version=" + current_game_version + "\n");
 		f.write("content_version=" + current_content_version + "\n");
 		f.write("sounds_version=" + current_sounds_version + "\n");
@@ -606,14 +606,17 @@ int fetch_manifest(string&out body, string&out error_message)
 	error_message = "";
 
 	http h;
-	h.connect_timeout = 15000;
-	h.receive_timeout = 15000;
-	h.max_retries = 1;
+	// The startup check must never hold the game. A slow or unreachable server
+	// is given a few seconds and then the menu opens exactly as if there were
+	// no update: no retry storm, no thirty second freeze before the menu.
+	h.connect_timeout = 3000;
+	h.receive_timeout = 4000;
+	h.max_retries = 0;
 
 	bool started = h.get(update_manifest_url);
 
 	timer request_timer;
-	while (!h.complete && request_timer.elapsed < 20000)
+	while (!h.complete && request_timer.elapsed < 4000)
 	{
 		wait(10);
 		if (key_pressed(KEY_ESCAPE))

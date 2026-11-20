@@ -1,0 +1,16 @@
+map: florest
+minx: 0
+maxx: 250
+miny: 0
+maxy: 250
+minz: 0
+maxz: 250
+minlevel: 1
+maxlevel: 0
+minresurrection: 0
+maxresurrection: 0
+platform:0:250:0:250:0:0:grass3
+source:0:250:0:250:0:250:musical30:0:90
+source:0:250:0:250:0:250:forest1:0:100
+npcspawner:coiote:3:30000:0:0:0:250:250:0
+npcspawner:rabbith:3:30000:0:0:0:250:250:0

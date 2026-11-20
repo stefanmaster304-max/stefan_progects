@@ -247,7 +247,6 @@ void build_item_spawner()
 		wait(5);
 		update_game_world();
 		sf.monitor();
-		update_form_input_keyboard_sound(sf, input_boxes);
 		if (key_pressed(KEY_ESCAPE) || sf.is_pressed(b_can))
 		{
 			speak("canceled");

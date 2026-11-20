@@ -1,369 +1,312 @@
-// npc_system.nvgt - Offline enemy and ally combat system for The Confrontation.
+// npc_system.nvgt - NPC runtime for The Confront.
 //
-// Adapted from the online enemy/friend classes that shipped separately. All
-// network dependencies are gone: no players array, no send_reliable, no remote
-// map lists, no server timers. Everything runs locally against the player and
-// the local NPC set.
+// There are no enemies and no allies anymore. Every character on the map is an
+// NPC loaded from settings/npcs/*.npc, and every NPC belongs to one of three
+// classes: animal, robot or zombie. The class changes nothing in the rules; it
+// only names what the character is. Behaviour comes entirely from the .npc file:
 //
-// Rules implemented here, exactly as designed:
-//   - Enemies attack allies AND the player.
-//   - Allies only attack enemies. Neither ever attack the player.
-//   - NPCs never damage the player during an enemy/ally exchange; the player is
-//     damaged only when an enemy has explicitly selected the player as target.
-//   - Every NPC uses the real weapon registry: fire interval, range, damage,
-//     fire mode, magazine capacity, reserve ammunition and melee fallback.
-//   - A shot only lands when the target is exactly in one of the four cardinal
-//     lines of the shooter (straight ahead, behind, left or right) and inside
-//     the weapon's range with a clear line of sight. Otherwise the NPC walks to
-//     re-align instead of firing.
-//   - NPCs carry their own ammunition and healing items, equip a shield a few
-//     seconds after spawning and use healing items with a cooldown.
-//   - Kills are announced globally with attacker, victim, weapon and coordinates.
-//   - Dead NPCs respawn only after the configured delay, keeping the configured
-//     count of enemies and allies.
+//   - The NPC is aware of the player as soon as it spawns, wherever the player
+//     stands, and immediately starts pursuing.
+//   - It attacks only when the player is inside its attack range, counted in
+//     whole tiles as the largest axis gap: an attack range of five means five
+//     tiles, never one step more, from any angle. Inside that range it attacks
+//     even when the player stands outside the area it may walk in, because
+//     attacking and walking have separate limits. Attacking never roots it in
+//     place: it keeps closing the distance, at a single tile per step so a
+//     diagonal approach is not faster, until it stands next to the player.
+//   - Walking is done on a route, not in a straight line: pursuit and patrol
+//     search the walkable tiles of the NPC's own area (four-way, so no corner is
+//     cut through a wall), walk the route tile by tile, and only plan again when
+//     the goal changes, the route runs out or the next tile is blocked. A long
+//     wall is walked around by widening the search to the whole area, so an NPC
+//     is never left pushing against a wall.
+//   - Detection and attack ranges are whole tiles, exactly the integer numbers
+//     written in the .npc file.
+//   - Detection range is its vision: after it loses the player (safe zone, for
+//     example) it only notices the player again inside that range.
+//   - When the player damages it, it becomes furious and runs at run_speed
+//     instead of walk_speed, forever, until it dies.
+//   - Its voices follow the old NPC system: a clip is repeated two or three
+//     times, then the list rotates, and the silence between clips is counted
+//     from the end of the clip, between voice_min_delay and voice_max_delay.
+//   - Its footsteps are the map's platform sound, or its own clips when it is
+//     set to custom steps.
+//   - Killing it gives the player the XP configured for it, plays the platform
+//     fall sound as the body hits the floor, and drops its configured items.
+//   - Its spawner also gives it a volume, min and max on X, Y and Z. Those six
+//     numbers are a hard border: the NPC spawns inside, walks inside and
+//     chases only inside. If the player leaves the volume the NPC cannot
+//     follow, so it patrols the border closest to the player and attacks again
+//     the moment the player steps back in.
+//   - Death plays its death sound, announces the kill and queues a replacement
+//     on the respawn time configured for its spawner. A spawner never adds an
+//     NPC that is still alive: it only replaces one that actually died.
+//
+// The rules are the same for the player's projectiles: a hit damages the NPC,
+// provokes fury and can kill it.
 
-const int NPC_NEAR_FIRE_DISTANCE = 10;
-const int NPC_LOCAL_SOUND_DISTANCE = 12;
-const double NPC_ITEM_SEARCH_DISTANCE = 25.0;
-const int NPC_ITEM_SEARCH_MS = 800;
-// Falloff of the distant report, in dB per step. War Cry (the reference for
-// this behaviour) positions its distant gunshots with a volume step of 0.1, so
-// a report loses a tenth of a decibel per step: 10 dB at 100 steps, 30 at 300.
-// The same slope is reproduced here, and the floor below only exists so that a
-// map of any size keeps the report present instead of reaching true silence.
-const double NPC_DISTANT_FIRE_DB_PER_STEP = 0.1;
-const double NPC_DISTANT_FIRE_FLOOR_DB = -60.0;
-// Level of the near crack. It is the loudest thing the NPCs do and it only
-// carries a dozen steps, so a few decibels below full scale leave headroom for
-// several shooters at once and keep the summed mix from clipping, which is what
-// made a close exchange sound chopped.
-const float NPC_NEAR_FIRE_LEVEL_DB = -3.0;
+#include "npc_data.nvgt"
+
+// Population budget. Maps are shared between every spawner line, so the total
+// is what protects the frame loop: a line asking for hundreds of NPCs can never
+// flood the map, it simply fills up to the budget and waits.
+const int NPC_MAX_ACTIVE = 40;
+const int NPC_MAX_PER_SPAWNER = 20;
 const int NPC_DEATH_LINGER_MS = 1000;
+const int NPC_LOCAL_SOUND_DISTANCE = 40;
+// A spawn that cannot be placed (no floor in the area, budget full) is retried
+// on this interval instead of every frame.
+const int NPC_SPAWN_RETRY_MS = 1000;
 
 // ---------------------------------------------------------------------------
-// Spawner configuration (stored on the map)
+// Map spawners
 // ---------------------------------------------------------------------------
-int npc_enemy_target_count = 0;
-int npc_friend_target_count = 0;
-int npc_respawn_delay = 30000;
-
-// ---------------------------------------------------------------------------
-// Per-NPC weapon copy
-// ---------------------------------------------------------------------------
-class npc_weapon
+// One line per NPC type on the map:
+// npcspawner:<npc id>:<count>:<respawn ms>:<min x>:<min y>:<min z>:<max x>:<max y>:<max z>
+// The six coordinates are the volume the NPCs of that line live in: they spawn
+// somewhere inside it and never walk out of it, on any axis.
+class npc_spawn_def
 {
-	string id;
-	string name;
-	string ammo_type;
-	string reserve_item;
-	bool is_magazine;
-	string fire_mode;
-	bool melee;
-	int firetime;
-	int walktime;
-	int range;
-	int min_damage;
-	int max_damage;
-	int capacity;
-	int loaded;
-	int reserve;
-	int reload_ms;
-	string sound_fire;
-	string sound_distant_fire;
-	string sound_reload;
-	string sound_draw;
-	string sound_empty_mag;
+	string npc_id;
+	int count;
+	int respawn_ms;
+	int rx0, ry0, rz0, rx1, ry1, rz1;
 
-	npc_weapon()
+	npc_spawn_def(const string&in id, int amount, int respawn, int x0, int y0, int z0, int x1, int y1, int z1)
 	{
-		id = "";
-		name = "";
-		ammo_type = "";
-		reserve_item = "";
-		is_magazine = false;
-		fire_mode = "semi";
-		melee = false;
-		firetime = 500;
-		walktime = 0;
-		range = 10;
-		min_damage = 50;
-		max_damage = 100;
-		capacity = 1;
-		loaded = 0;
-		reserve = 0;
-		reload_ms = 2000;
-		sound_fire = "";
-		sound_distant_fire = "";
-		sound_reload = "";
-		sound_draw = "";
-		sound_empty_mag = "";
+		npc_id = id;
+		count = amount;
+		respawn_ms = respawn;
+		rx0 = x0; ry0 = y0; rz0 = z0;
+		rx1 = x1; ry1 = y1; rz1 = z1;
 	}
 }
 
-int npc_reload_time_for_class(const string&in wclass)
+npc_spawn_def@[] npc_spawn_defs(0);
+
+void npc_reset_spawners()
 {
-	string c = string_to_lower_case(wclass);
-	if (string_contains(c, "pistol", 1) > -1 || string_contains(c, "revolver", 1) > -1) return 1200;
-	if (string_contains(c, "machine_gun", 1) > -1) return 4200;
-	if (string_contains(c, "launcher", 1) > -1) return 3000;
-	if (string_contains(c, "shotgun", 1) > -1) return 2600;
-	if (string_contains(c, "sniper", 1) > -1 || string_contains(c, "rifle", 1) > -1) return 2000;
-	if (string_contains(c, "energy", 1) > -1) return 1800;
-	return 2000;
+	npc_spawn_defs.resize(0);
 }
 
-bool npc_weapon_usable(npc_weapon@ w)
+void npc_add_spawner(const string&in npc_id, int count, int respawn_ms, int x0, int y0, int z0, int x1, int y1, int z1)
 {
-	if (w is null) return false;
-	if (w.melee) return true;
-	return (w.loaded > 0 || w.reserve > 0);
+	if (npc_id == "") return;
+	if (count <= 0) return;
+	if (count > NPC_MAX_PER_SPAWNER) count = NPC_MAX_PER_SPAWNER;
+	if (respawn_ms < 0) respawn_ms = 0;
+	if (x0 > x1) { int t = x0; x0 = x1; x1 = t; }
+	if (y0 > y1) { int t = y0; y0 = y1; y1 = t; }
+	if (z0 > z1) { int t = z0; z0 = z1; z1 = t; }
+	if (x0 < minx) x0 = minx;
+	if (y0 < miny) y0 = miny;
+	if (z0 < minz) z0 = minz;
+	if (x1 > maxx) x1 = maxx;
+	if (y1 > maxy) y1 = maxy;
+	if (z1 > maxz) z1 = maxz;
+	npc_spawn_defs.insert_last(npc_spawn_def(npc_id, count, respawn_ms, x0, y0, z0, x1, y1, z1));
 }
 
-string npc_fire_mode_of(const string&in mode)
+// A spawner only refills with its own NPC type while that type is below its own
+// count, and only after one of its NPCs died. The replacement waits exactly
+// respawn_ms milliseconds counted from the death.
+class npc_spawner_state
 {
-	string m = string_to_lower_case(mode).trim_whitespace();
-	if (m == "auto" || m == "automatic" || m == "full_auto" || m == "full automatic") return "auto";
-	return "semi";
-}
+	string npc_id;
+	int count;
+	int respawn_ms;
+	int rx0, ry0, rz0, rx1, ry1, rz1;
+	bool populated;
+	bool waiting;
+	bool retry_backoff;
+	timer respawn_timer;
 
-npc_weapon@ npc_make_weapon(weapon_data@ w)
-{
-	if (w is null) return null;
-	npc_weapon@ nw = npc_weapon();
-	nw.id = w.id;
-	nw.name = (w.name != "") ? w.name : w.id;
-	nw.ammo_type = w.ammo_type;
-	nw.reserve_item = w.reserve_item;
-	nw.is_magazine = w.is_magazine;
-	nw.fire_mode = npc_fire_mode_of(w.fire_modes);
-	nw.melee = w.melee;
-	nw.firetime = (w.firetime > 0) ? w.firetime : 500;
-	nw.walktime = w.walktime;
-	nw.range = (w.range > 0) ? w.range : 10;
-	nw.min_damage = w.min_damage;
-	nw.max_damage = w.max_damage;
-	nw.capacity = (w.capacity > 0) ? w.capacity : 1;
-	nw.loaded = w.melee ? 0 : nw.capacity;
-	nw.reserve = 0;
-	if (!w.melee)
+	npc_spawner_state(const string&in id, int amount, int respawn, int x0, int y0, int z0, int x1, int y1, int z1)
 	{
-		if (w.is_magazine) nw.reserve = random(0, 3);
-		else nw.reserve = random(0, nw.capacity * 3);
+		npc_id = id;
+		count = amount;
+		if (count > NPC_MAX_PER_SPAWNER) count = NPC_MAX_PER_SPAWNER;
+		respawn_ms = respawn;
+		rx0 = x0; ry0 = y0; rz0 = z0;
+		rx1 = x1; ry1 = y1; rz1 = z1;
+		populated = false;
+		waiting = false;
+		retry_backoff = false;
+		respawn_timer.restart();
 	}
-	nw.reload_ms = npc_reload_time_for_class(w.wclass);
-	nw.sound_fire = w.sound_fire;
-	nw.sound_distant_fire = w.sound_distant_fire;
-	nw.sound_reload = w.sound_reload;
-	nw.sound_draw = w.sound_draw;
-	nw.sound_empty_mag = w.sound_empty_mag;
-	return nw;
 }
 
+npc_spawner_state@[] npc_spawner_states(0);
+
 // ---------------------------------------------------------------------------
-// NPC actor
+// NPC instance
 // ---------------------------------------------------------------------------
-class npc_actor
+class npc_instance
 {
-	string id;
-	bool is_enemy;
-	string nmap;
+	npc_data@ data;
 
 	int x, y, z;
 	int facing;
+	int hp;
+	int maxhp;
 
-	int hp, maxhp;
 	bool dead;
-
-	npc_weapon@[] weapons;
-	int weapon_index;
-
-	int heal_amount;
-	string[] heal_items;
-	int heal_delay;
-	timer heal_timer;
-
-	bool shield_equipped;
-	int shield_durability;
-	bool shield_pending;
-	int shield_delay;
-	timer shield_timer;
-	string shield_item_id;
-
-	int move_interval;
-	timer move_timer;
-	int fire_interval;
-	timer fire_timer;
-	bool reloading;
-	timer reload_timer;
-	timer think_timer;
-	timer death_timer;
+	bool aware;
+	bool furious;
 
 	int patrol_x, patrol_y;
+
+	// Area this NPC was placed in and the spawner that owns it. The NPC never
+	// walks outside the area on any axis, and its spawner counts it by index.
+	int rx0, ry0, rz0, rx1, ry1, rz1;
+	int spawner_index;
+
+	timer move_timer;
+	timer attack_timer;
+	timer death_timer;
 	timer patrol_timer;
 
-	// Ground item the NPC is walking to while it has nothing left to use.
-	// 0 means no item chosen and triggers a new search after a short pause.
-	int item_target;
-	timer item_search_timer;
+	// Voice playback, ported from the old NPC system: the current clip owns a
+	// persistent pool slot, is allowed to finish, then rotates to the next clip
+	// only after being repeated two or three times. The silence between clips is
+	// the configured window measured after the clip really ended.
+	timer voice_delay_timer;
+	sound@ voice_handle;
+	int voice_slot;
+	int voice_index;
+	int voice_repeats_done;
+	int voice_repeats_target;
+	int voice_delay_target;
+	bool voice_waiting_delay;
 
-	// Target bookkeeping. target_is_player marks the only case in which this
-	// NPC is allowed to damage the player.
-	npc_actor@ target_actor;
-	bool target_is_player;
+	// Owner key every sound of this NPC carries in the NPC pool. The pool moves
+	// all of them at once with update_sounds_3d(), so there is no parallel list of
+	// slots and handles to keep in sync.
+	string sound_owner;
 
-	// Slot of this character's own distant report, so the report can follow it
-	// while it is still sounding. -1 means nothing is playing. report_owner is
-	// the tag written into the pool, which survives a slot being recycled.
-	int distant_slot;
-	int report_owner;
-	// Last position and level written into the report slot. They keep the pool
-	// from being rewritten every single frame with values that did not change.
-	int report_x, report_y, report_z;
-	double report_db;
+	// Route to the current goal, as tile keys inside the NPC's own rectangle.
+	// The route is recomputed only when the goal changes, runs out or becomes
+	// blocked, so a chase around a wall costs nothing on ordinary frames.
+	int[] path;
+	int path_index;
+	int path_goal_x, path_goal_y;
+	bool path_stop_next_to;
+	int path_bx0, path_by0, path_bx1, path_by1;
+	timer path_timer;
 
-	string lasthit;
+	// Bearing used to walk a circle around the player inside a safe zone.
+	double patrol_angle;
 
-	npc_actor()
+	npc_instance()
 	{
-		id = "";
-		is_enemy = true;
-		nmap = "";
+		@data = null;
 		x = 0; y = 0; z = 0;
 		facing = north;
-		hp = 1000;
-		maxhp = 1000;
+		hp = 1;
+		maxhp = 1;
 		dead = false;
-		weapon_index = 0;
-		heal_amount = 0;
-		heal_delay = 0;
-		shield_equipped = false;
-		shield_durability = 0;
-		shield_pending = true;
-		shield_delay = 5000;
-		shield_item_id = "";
-		move_interval = 250;
-		fire_interval = 500;
-		reloading = false;
+		aware = true;
+		furious = false;
 		patrol_x = 0;
 		patrol_y = 0;
-		item_target = 0;
-		@target_actor = null;
-		target_is_player = false;
-		lasthit = "";
-		distant_slot = -1;
-		report_owner = 0;
-		report_x = 0;
-		report_y = 0;
-		report_z = 0;
-		report_db = 1000.0;
+		rx0 = 0; ry0 = 0; rz0 = 0;
+		rx1 = 0; ry1 = 0; rz1 = 0;
+		spawner_index = -1;
+		@voice_handle = null;
+		voice_slot = -1;
+		voice_index = 0;
+		voice_repeats_done = 0;
+		voice_repeats_target = 2;
+		voice_delay_target = 1500;
+		voice_waiting_delay = false;
+		patrol_angle = 0.0;
+		sound_owner = "";
+		path_index = 0;
+		path_goal_x = -1;
+		path_goal_y = -1;
+		path_stop_next_to = false;
+		path_bx0 = 0;
+		path_by0 = 0;
+		path_bx1 = 0;
+		path_by1 = 0;
 	}
 }
 
-npc_actor@[] npc_actors(0);
-// Hands every character its own report tag so two characters can never end up
-// moving the same pool slot.
-int npc_report_owner_seq = 1;
-// Each queued character waits for its own turn on the configured interval, so a
-// map with many characters fills up over time instead of all at once.
-int npc_spawn_slot_ms = 0;
+npc_instance@[] npc_instances(0);
 
-class npc_pending_spawn
-{
-	bool is_enemy;
-	int delay;
-	timer t;
+// Source of the per-NPC owner keys. The trailing separator keeps one key from
+// being a prefix of another (npc:1; is not a prefix of npc:10;), because the pool
+// matches owners by prefix.
+int npc_sound_owner_seq = 0;
 
-	npc_pending_spawn(bool enemy, int wait_ms)
-	{
-		is_enemy = enemy;
-		delay = wait_ms;
-		t.restart();
-	}
-}
-npc_pending_spawn@[] npc_pending(0);
-
-// Pool for everything the NPC does inside arm's reach: footsteps, weapon draw,
-// reload, shield, healing and the near crack of a gunshot. Its audible radius
-// is a dozen steps, so a fight on the other side of the map is not heard as if
-// it were happening next to the player. Distant gun reports use the separate
-// dp pool, which is the one that travels across the whole map.
-sound_pool npcp(192);
+// ---------------------------------------------------------------------------
+// Audio
+// ---------------------------------------------------------------------------
+// The pool is created on first use, not when the script starts: 128 audio slots
+// are only paid for once an NPC actually has something to play, so launching the
+// game never waits for them.
+sound_pool@ npcp = null;
 bool npc_pool_ready = false;
 
 void npc_init_pool()
 {
 	if (npc_pool_ready) return;
 	npc_pool_ready = true;
+	@npcp = sound_pool(128);
 	npcp.max_distance = NPC_LOCAL_SOUND_DISTANCE;
-	// Bigger than the number of characters the spawner allows by default: every
-	// gunshot takes a slot for the length of its sample, and a handful of
-	// automatic weapons used to fill the pool and make the newest shots vanish.
-	npcp.volume_step = 3.0;
-	npcp.pan_step = 1.0;
+	// The same attenuation as every other pool in the game: the NPC is not
+	// faded by a rule of its own, it is faded exactly like the player's sounds,
+	// the map and the projectiles at the same distance.
+	npcp.volume_step = SOUND_VOLUME_STEP;
+	npcp.pan_step = SOUND_PAN_STEP;
 	npcp.hrtf = true;
 	npcp.behind_pitch_decrease = 0.0;
-	if (reverb_bus_ready) @npcp.mixer = @reverb_zone_bus;
 	npcp.update_listener_3d(me.x, me.y, me.z, double(facing));
 }
 
-// ---------------------------------------------------------------------------
-// Map helpers
-// ---------------------------------------------------------------------------
-bool npc_tile_is_floor(int tx, int ty, int tz)
+// Tags a slot with the NPC's owner key. From then on the pool knows the sound
+// belongs to this NPC, and destroying or moving its sounds is a single call.
+void npc_tag_sound(npc_instance@ npc, int slot)
 {
-	if (tx < minx || tx > maxx || ty < miny || ty > maxy || tz < minz || tz > maxz) return false;
-	// Native lookup only. get_tile_at() falls back to scanning every map line
-	// with a string split, and the spawn search calls this hundreds of
-	// thousands of times, which is what made map loading take a minute.
-	string tile = g_active_map.get_tile(tx, ty, tz);
-	if (tile == "") return false;
-	if (string_contains(string_to_lower_case(tile), "wall", 1) > -1) return false;
-	if (g_active_map.get_wall(tx, ty, tz) != "") return false;
-	return true;
+	if (npc is null || slot < 0 || !npc_pool_ready || npc.sound_owner == "") return;
+	npcp.set_sound_owner(slot, npc.sound_owner);
 }
 
-// One exhausted search is enough for the whole map: a map without any floor
-// would otherwise repeat the full scan for every single character.
-bool npc_spawn_search_exhausted = false;
-
-bool npc_find_spawn(int &out sx, int &out sy, int &out sz)
+// Moves every sound this NPC still has playing to its current tile, using the
+// pool's own owner lookup.
+void npc_follow_sounds(npc_instance@ npc)
 {
-	if (npc_spawn_search_exhausted) return false;
-	for (int attempt = 0; attempt < 64; attempt++)
-	{
-		int tx = random(minx, maxx);
-		int ty = random(miny, maxy);
-		for (int tz = maxz; tz >= minz; tz--)
-		{
-			if (npc_tile_is_floor(tx, ty, tz))
-			{
-				sx = tx; sy = ty; 			sz = tz;
-				return true;
-			}
-		}
-	}
-	npc_spawn_search_exhausted = true;
-	return false;
+	if (npc is null || !npc_pool_ready || npc.sound_owner == "") return;
+	npcp.update_sounds_3d(npc.sound_owner, npc.x, npc.y, npc.z);
 }
 
-bool npc_can_step_to(int tx, int ty, int tz)
+// Plays one of the NPC's sounds at its current tile and hands the slot to the
+// follow list, so the clip keeps moving with the NPC until it ends.
+void npc_play_positional(npc_instance@ npc, const string&in snd)
 {
-	return npc_tile_is_floor(tx, ty, tz);
+	if (npc is null || snd == "") return;
+	string path = get_sound_path(snd);
+	if (path == "") return;
+	npc_init_pool();
+	int slot = npcp.play_3d(path, me.x, me.y, me.z, npc.x, npc.y, npc.z, double(facing), false);
+	npc_tag_sound(npc, slot);
+}
+
+// Picks one clip out of a semicolon separated list. An empty list returns an
+// empty string, which every caller treats as "no sound configured".
+string npc_pick_clip(const string&in list)
+{
+	if (list == "") return "";
+	string[]@ parts = string_split(list, ";", true);
+	if (parts is null || parts.length() == 0) return "";
+	if (parts.length() == 1) return parts[0].trim_whitespace();
+	int idx = random(0, int(parts.length()) - 1);
+	return parts[uint(idx)].trim_whitespace();
 }
 
 // ---------------------------------------------------------------------------
-// Damage, death and kill feed
+// Kill feed
 // ---------------------------------------------------------------------------
-string npc_short_name(const string&in who)
-{
-	string w = who;
-	if (w == "") return "Someone";
-	if (string_starts_with(string_to_lower_case(w), "enemy")) return "Enemy";
-	if (string_starts_with(string_to_lower_case(w), "friend")) return "Friend";
-	if (w == "Player") return "Player";
-	return w;
-}
-
 void npc_write_kill_line(const string&in line)
 {
 	string path = "settings/killfeed.log";
@@ -373,1034 +316,1128 @@ void npc_write_kill_line(const string&in line)
 	file_put_contents(path, old + line + "\n");
 }
 
-void npc_announce_kill(const string&in killer, const string&in victim, const string&in weapon_name, int mx, int my, int mz)
+// ---------------------------------------------------------------------------
+// Map helpers
+// ---------------------------------------------------------------------------
+bool npc_tile_is_floor(int tx, int ty, int tz)
 {
-	string line = npc_short_name(killer) + " killed " + npc_short_name(victim) + " at " + mx + ", " + my + ", " + mz + " with " + weapon_name + ".";
-	npc_write_kill_line(line);
-	speak(line);
+	if (tx < minx || tx > maxx || ty < miny || ty > maxy || tz < minz || tz > maxz) return false;
+	string tile = g_active_map.get_tile(tx, ty, tz);
+	if (tile == "") return false;
+	if (string_contains(string_to_lower_case(tile), "wall", 1) > -1) return false;
+	if (g_active_map.get_wall(tx, ty, tz) != "") return false;
+	return true;
 }
 
-void npc_play_positional(const string&in snd, int px, int py, int pz)
+bool npc_find_spawn(int x0, int y0, int z0, int x1, int y1, int z1, int &out sx, int &out sy, int &out sz)
 {
-	if (snd == "") return;
-	npc_init_pool();
-	npcp.play_3d(snd, me.x, me.y, me.z, px, py, pz, double(facing), false);
-}
-
-// The near crack itself: the real shot of the weapon, heard only by somebody
-// standing within ten steps of the shooter. It is mixed below full scale so a
-// whole squad firing automatic weapons does not sum into a clipped, chopped
-// mix, which is the "cut" that was heard around a close exchange.
-void npc_play_near_fire(const string&in snd, int px, int py, int pz)
-{
-	if (snd == "") return;
-	npc_init_pool();
-	npcp.play_extended_3d(snd, me.x, me.y, me.z, px, py, pz, double(facing),
-		0, 0, 0, 0, 0, 0, false, 0, 0.0, NPC_NEAR_FIRE_LEVEL_DB, 100.0, false);
-}
-
-// Level of a distant report, in dB. At the edge of the near radius the report
-// plays at full level and it falls a decibel per ten steps from there, which is
-// the falloff War Cry uses: clearly loud near the fight and still present on the
-// far side of the map, instead of dying out a few dozen steps away.
-double npc_report_level_db(double dist)
-{
-	double near_ref = double(NPC_NEAR_FIRE_DISTANCE);
-	if (dist < near_ref) dist = near_ref;
-	double db = -(dist - near_ref) * NPC_DISTANT_FIRE_DB_PER_STEP;
-	if (db < NPC_DISTANT_FIRE_FLOOR_DB) db = NPC_DISTANT_FIRE_FLOOR_DB;
-	return db;
-}
-
-// Weapon reports are the only NPC sound allowed to cross the whole map. Only
-// the weapon's own distant sample is used here: the real shot never travels.
-int npc_play_distant(const string&in snd, int px, int py, int pz)
-{
-	if (snd == "") return -1;
-	double d = get_3d_distance(me.x, me.y, me.z, double(px), double(py), double(pz));
-	return dp.play_extended_3d(snd, me.x, me.y, me.z, px, py, pz, double(facing),
-		0, 0, 0, 0, 0, 0, false, 0, 0.0, float(npc_report_level_db(d)), 100.0, false);
-}
-
-// The slot of a character's running report, or -1 when nothing of its own is
-// sounding. Looking it up by owner also rejects a slot that was recycled.
-int npc_report_slot(npc_actor@ a)
-{
-	if (a is null || a.report_owner == 0) return -1;
-	int slot = dp.get_sound_by_owner("npc_report", a.report_owner);
-	if (slot < 0) return -1;
-	if (!dp.sound_is_active(slot)) return -1;
-	return slot;
-}
-
-// A running report keeps following the character that fired it: its position
-// moves with the shooter and its level re-reads the distance to the player, so
-// walking towards or away from an exchange changes what is heard.
-void npc_update_distant_report(npc_actor@ a)
-{
-	if (a is null) return;
-	int slot = npc_report_slot(a);
-	a.distant_slot = slot;
-	if (slot < 0) return;
-	double d = get_3d_distance(me.x, me.y, me.z, double(a.x), double(a.y), double(a.z));
-	double db = npc_report_level_db(d);
-	bool moved = (a.x != a.report_x || a.y != a.report_y || a.z != a.report_z);
-	bool changed = (absolute(db - a.report_db) >= 0.25);
-	if (!moved && !changed) return;
-	a.report_x = a.x;
-	a.report_y = a.y;
-	a.report_z = a.z;
-	a.report_db = db;
-	dp.update_sound_position(slot, a.x, a.y, a.z);
-	dp.update_sound_start_values(slot, 0.0, float(db), 100.0);
-}
-
-item_data@ npc_find_shield_item()
-{
-	item_data@ found = find_item_data("metal_shield");
-	if (found !is null) return found;
-	for (uint i = 0; i < item_registry.length(); i++)
+	for (int attempt = 0; attempt < 64; attempt++)
 	{
-		item_data@ candidate = @item_registry[i];
-		if (candidate.category == "equipment" && is_shield_item_data(candidate))
-			return candidate;
-	}
-	return null;
-}
-
-void npc_equip_shield(npc_actor@ a)
-{
-	if (a is null || a.shield_equipped) return;
-	item_data@ shield_item = npc_find_shield_item();
-	if (shield_item is null) return;
-	a.shield_equipped = true;
-	a.shield_item_id = shield_item.id;
-	a.shield_durability = (shield_item.capacity > 0) ? shield_item.capacity : SHIELD_DEFAULT_DURABILITY;
-	if (shield_item.sound_use != "")
-	{
-		string snd = get_sound_path(shield_item.sound_use);
-		if (snd != "") npc_play_positional(snd, a.x, a.y, a.z);
-	}
-}
-
-void npc_die(npc_actor@ a, const string&in killer, const string&in weapon_name)
-{
-	if (a is null || a.dead) return;
-	a.dead = true;
-	a.death_timer.restart();
-	@a.target_actor = null;
-	a.target_is_player = false;
-	npc_announce_kill(killer, a.id, weapon_name, a.x, a.y, a.z);
-	if (killer == "Player") kills += 1;
-}
-
-void npc_take_damage(npc_actor@ a, int dmg, const string&in killer, const string&in weapon_name)
-{
-	if (a is null || a.dead || dmg <= 0) return;
-	a.lasthit = killer + "|" + weapon_name;
-
-	if (a.shield_equipped)
-	{
-		item_data@ shield_item = get_item_data(a.shield_item_id);
-		if (a.shield_durability <= dmg)
+		int tx = random(x0, x1);
+		int ty = random(y0, y1);
+		// Only floors inside the configured volume count, so an NPC can never
+		// appear above or below the area it is allowed to walk in.
+		for (int tz = z1; tz >= z0; tz--)
 		{
-			// The blow is entirely spent breaking the shield, exactly like the
-			// player's own shield rules.
-			a.shield_equipped = false;
-			a.shield_durability = 0;
-			if (shield_item !is null && shield_item.sound_break != "")
+			if (npc_tile_is_floor(tx, ty, tz))
 			{
-				string brk = get_sound_path(shield_item.sound_break);
-				if (brk != "") npc_play_positional(brk, a.x, a.y, a.z);
+				sx = tx; sy = ty; sz = tz;
+				return true;
 			}
+		}
+	}
+	return false;
+}
+
+bool npc_can_step_to(int tx, int ty, int tz)
+{
+	return npc_tile_is_floor(tx, ty, tz);
+}
+
+// Is that tile solid? The same test the floor check uses, answered the other way
+// around, plus the map bounds.
+bool npc_tile_is_wall(int tx, int ty, int tz)
+{
+	if (tx < minx || tx > maxx || ty < miny || ty > maxy || tz < minz || tz > maxz) return true;
+	if (g_active_map.get_wall(tx, ty, tz) != "") return true;
+	return string_contains(string_to_lower_case(g_active_map.get_tile(tx, ty, tz)), "wall", 1) > -1;
+}
+
+// Walks the straight tile line between two tiles and reports a wall in between.
+// Both ends are excluded, so two neighbours always have a clear line. The answer
+// depends only on the pair of tiles, which is what makes it stable frame after
+// frame: unlike a sampled line of sight, it cannot flicker and stop an attack.
+bool npc_wall_between(int x0, int y0, int x1, int y1, int z)
+{
+	int dx = (x1 > x0) ? (x1 - x0) : (x0 - x1);
+	int dy = (y1 > y0) ? (y1 - y0) : (y0 - y1);
+	int sx = (x1 >= x0) ? 1 : -1;
+	int sy = (y1 >= y0) ? 1 : -1;
+	int err = dx - dy;
+	int cx = x0;
+	int cy = y0;
+	while (cx != x1 || cy != y1)
+	{
+		int e2 = 2 * err;
+		if (e2 > -dy) { err -= dy; cx += sx; }
+		if (e2 < dx) { err += dx; cy += sy; }
+		if (cx == x1 && cy == y1) break;
+		if (npc_tile_is_wall(cx, cy, z)) return true;
+	}
+	return false;
+}
+
+// ---------------------------------------------------------------------------
+// Pathfinding
+// ---------------------------------------------------------------------------
+// A route over the tiles the NPC may walk in, four-way so it never cuts a
+// corner through a wall. The search is bounded by the NPC's own rectangle and by
+// an expansion budget, so a map-wide chase can never stall the frame loop.
+const int NPC_PATH_MAX_TILES = 20000;
+const int NPC_PATH_MAX_EXPANSIONS = 2000;
+const int NPC_PATH_RECALC_MS = 250;
+// Path searches allowed per world tick. Whatever happens, the frame loop never
+// pays for more than this, so any number of living NPCs can never freeze the
+// player: the ones without a route fall back to a direct step until their turn.
+const int NPC_PATH_SEARCHES_PER_TICK = 2;
+int npc_path_budget = NPC_PATH_SEARCHES_PER_TICK;
+
+// Binary min-heap for the open set. The old version scanned the whole open list
+// to find the best node and removed it with remove_at, which is quadratic and
+// was what stalled the game when a few NPCs had to plan a route.
+int[] npc_heap_key;
+int[] npc_heap_f;
+
+void npc_heap_push(int key, int f)
+{
+	npc_heap_key.insert_last(key);
+	npc_heap_f.insert_last(f);
+	int i = int(npc_heap_key.length()) - 1;
+	while (i > 0)
+	{
+		int p = (i - 1) / 2;
+		if (npc_heap_f[p] <= npc_heap_f[i]) break;
+		int tk = npc_heap_key[p];
+		npc_heap_key[p] = npc_heap_key[i];
+		npc_heap_key[i] = tk;
+		int tf = npc_heap_f[p];
+		npc_heap_f[p] = npc_heap_f[i];
+		npc_heap_f[i] = tf;
+		i = p;
+	}
+}
+
+int npc_heap_pop()
+{
+	int top = npc_heap_key[0];
+	int last = int(npc_heap_key.length()) - 1;
+	npc_heap_key[0] = npc_heap_key[last];
+	npc_heap_f[0] = npc_heap_f[last];
+	npc_heap_key.remove_at(uint(last));
+	npc_heap_f.remove_at(uint(last));
+	int n = int(npc_heap_key.length());
+	int i = 0;
+	while (true)
+	{
+		int l = i * 2 + 1;
+		if (l >= n) break;
+		int r = l + 1;
+		int m = l;
+		if (r < n && npc_heap_f[r] < npc_heap_f[l]) m = r;
+		if (npc_heap_f[i] <= npc_heap_f[m]) break;
+		int tk = npc_heap_key[i];
+		npc_heap_key[i] = npc_heap_key[m];
+		npc_heap_key[m] = tk;
+		int tf = npc_heap_f[i];
+		npc_heap_f[i] = npc_heap_f[m];
+		npc_heap_f[m] = tf;
+		i = m;
+	}
+	return top;
+}
+
+bool npc_tile_walkable(npc_instance@ npc, int tx, int ty)
+{
+	if (npc is null) return false;
+	if (!npc_point_in_area(npc, tx, ty, npc.z)) return false;
+	return npc_tile_is_floor(tx, ty, npc.z);
+}
+
+// Search window: the rectangle between the NPC and its goal, grown by a margin
+// so there is room to walk around a wall, clamped to the NPC's own area. Working
+// inside this window keeps a replan cheap on a big map, because the arrays never
+// grow past the patch of ground the NPC is actually walking through.
+const int NPC_PATH_MARGIN = 12;
+
+int npc_path_box_width(npc_instance@ npc)
+{
+	return npc.path_bx1 - npc.path_bx0 + 1;
+}
+
+int npc_path_key(npc_instance@ npc, int tx, int ty)
+{
+	return (ty - npc.path_by0) * npc_path_box_width(npc) + (tx - npc.path_bx0);
+}
+
+int npc_path_x(npc_instance@ npc, int key)
+{
+	return key % npc_path_box_width(npc) + npc.path_bx0;
+}
+
+int npc_path_y(npc_instance@ npc, int key)
+{
+	return key / npc_path_box_width(npc) + npc.path_by0;
+}
+
+// Stores the window for this plan on the instance, so the route keys can be
+// decoded after the search is done.
+void npc_set_path_box(npc_instance@ npc, int gx, int gy)
+{
+	int x0 = (npc.x < gx) ? npc.x : gx;
+	int x1 = (npc.x > gx) ? npc.x : gx;
+	int y0 = (npc.y < gy) ? npc.y : gy;
+	int y1 = (npc.y > gy) ? npc.y : gy;
+	x0 -= NPC_PATH_MARGIN;
+	y0 -= NPC_PATH_MARGIN;
+	x1 += NPC_PATH_MARGIN;
+	y1 += NPC_PATH_MARGIN;
+	if (x0 < npc.rx0) x0 = npc.rx0;
+	if (y0 < npc.ry0) y0 = npc.ry0;
+	if (x1 > npc.rx1) x1 = npc.rx1;
+	if (y1 > npc.ry1) y1 = npc.ry1;
+	npc.path_bx0 = x0;
+	npc.path_by0 = y0;
+	npc.path_bx1 = x1;
+	npc.path_by1 = y1;
+}
+
+// A route is done when it reaches the goal tile itself, or - for a chase - any
+// tile next to it, because the NPC never steps onto the target's own tile.
+bool npc_path_goal_done(int cx, int cy, int gx, int gy, bool stop_next_to)
+{
+	if (stop_next_to) return npc_tile_gap(cx, gx) <= 1 && npc_tile_gap(cy, gy) <= 1;
+	return cx == gx && cy == gy;
+}
+
+// Tile keys to walk through, start excluded and goal included. An empty array
+// means no route exists inside the area.
+int[] npc_find_path(npc_instance@ npc, int gx, int gy, bool stop_next_to)
+{
+	int[] route;
+	if (npc is null) return route;
+	// Every route costs one unit of the frame budget. A frame with no budget
+	// left simply walks straight for now; the next frame plans again.
+	if (npc_path_budget <= 0) return route;
+	npc_path_budget--;
+
+	// First try the small window around the straight line: that is the normal
+	// case and it costs almost nothing. Only when the obstacle is longer than
+	// the window is the whole area searched before giving up.
+	npc_set_path_box(npc, gx, gy);
+	route = npc_path_search(npc, gx, gy, stop_next_to);
+	if (route.length() > 0) return route;
+
+	int w = npc.rx1 - npc.rx0 + 1;
+	int h = npc.ry1 - npc.ry0 + 1;
+	if (w <= 0 || h <= 0 || w * h > NPC_PATH_MAX_TILES) return route;
+	npc.path_bx0 = npc.rx0;
+	npc.path_by0 = npc.ry0;
+	npc.path_bx1 = npc.rx1;
+	npc.path_by1 = npc.ry1;
+	return npc_path_search(npc, gx, gy, stop_next_to);
+}
+
+int[] npc_path_search(npc_instance@ npc, int gx, int gy, bool stop_next_to)
+{
+	int[] route;
+	int w = npc_path_box_width(npc);
+	int h = npc.path_by1 - npc.path_by0 + 1;
+	if (w <= 0 || h <= 0) return route;
+	int total = w * h;
+	if (total > NPC_PATH_MAX_TILES) return route;
+
+	int start = npc_path_key(npc, npc.x, npc.y);
+	if (start < 0 || start >= total) return route;
+
+	int[] score;
+	score.resize(total);
+	int[] parent;
+	parent.resize(total);
+	bool[] closed;
+	closed.resize(total);
+	// Floor lookups are cached per search: each tile is asked the native map
+	// once instead of once per neighbour visit.
+	int[] walk_cache;
+	walk_cache.resize(total);
+	for (int i = 0; i < total; i++)
+	{
+		score[i] = -1;
+		parent[i] = -1;
+		closed[i] = false;
+		walk_cache[i] = -1;
+	}
+
+	npc_heap_key.resize(0);
+	npc_heap_f.resize(0);
+	score[start] = 0;
+	parent[start] = start;
+	npc_heap_push(start, npc_tile_gap(npc.x, gx) + npc_tile_gap(npc.y, gy));
+
+	int goal = -1;
+	int expansions = 0;
+	while (npc_heap_key.length() > 0 && expansions < NPC_PATH_MAX_EXPANSIONS)
+	{
+		int cur = npc_heap_pop();
+		if (closed[cur]) continue;
+		closed[cur] = true;
+		expansions++;
+
+		int cx = npc_path_x(npc, cur);
+		int cy = npc_path_y(npc, cur);
+		if (npc_path_goal_done(cx, cy, gx, gy, stop_next_to))
+		{
+			goal = cur;
+			break;
+		}
+
+		int[] nx = {cx + 1, cx - 1, cx, cx};
+		int[] ny = {cy, cy, cy + 1, cy - 1};
+		for (uint d = 0; d < 4; d++)
+		{
+			int tx = nx[d];
+			int ty = ny[d];
+			// Outside the window a key would alias another tile inside it, so the
+			// window edge is a hard border of the search.
+			if (tx < npc.path_bx0 || tx > npc.path_bx1 || ty < npc.path_by0 || ty > npc.path_by1) continue;
+			int nk = npc_path_key(npc, tx, ty);
+			if (nk < 0 || nk >= total || closed[nk]) continue;
+			if (walk_cache[nk] < 0) walk_cache[nk] = npc_tile_walkable(npc, tx, ty) ? 1 : 0;
+			if (walk_cache[nk] == 0) continue;
+			int next_score = score[cur] + 1;
+			if (score[nk] >= 0 && next_score >= score[nk]) continue;
+			score[nk] = next_score;
+			parent[nk] = cur;
+			npc_heap_push(nk, next_score + npc_tile_gap(tx, gx) + npc_tile_gap(ty, gy));
+		}
+	}
+	if (goal < 0) return route;
+
+	int[] backwards;
+	int walk = goal;
+	while (walk != start && walk >= 0)
+	{
+		backwards.insert_last(walk);
+		if (parent[walk] == walk) break;
+		walk = parent[walk];
+	}
+	for (int i = int(backwards.length()) - 1; i >= 0; i--)
+		route.insert_last(backwards[uint(i)]);
+	return route;
+}
+
+// One tile along the shortest route to a point. A wall is walked around: the
+// NPC follows the route tile by tile and, when it is blocked or no route exists
+// at all, it takes a direct step rather than standing still for good.
+void npc_walk_to(npc_instance@ npc, int tx, int ty, bool stop_next_to = false)
+{
+	if (npc is null) return;
+	if (npc.x == tx && npc.y == ty) return;
+
+	bool goal_changed = (npc.path_goal_x != tx || npc.path_goal_y != ty || npc.path_stop_next_to != stop_next_to);
+	if (goal_changed || npc.path.length() == 0)
+	{
+		if (!goal_changed && npc.path_timer.elapsed < NPC_PATH_RECALC_MS) return;
+		npc.path = npc_find_path(npc, tx, ty, stop_next_to);
+		npc.path_index = 0;
+		npc.path_goal_x = tx;
+		npc.path_goal_y = ty;
+		npc.path_stop_next_to = stop_next_to;
+		npc.path_timer.restart();
+	}
+
+	// Tiles the NPC is already standing on are simply old news on the route.
+	while (npc.path_index < int(npc.path.length()))
+	{
+		int key = npc.path[npc.path_index];
+		if (npc_path_x(npc, key) == npc.x && npc_path_y(npc, key) == npc.y) npc.path_index++;
+		else break;
+	}
+
+	if (npc.path_index < int(npc.path.length()))
+	{
+		int key = npc.path[npc.path_index];
+		int px = npc_path_x(npc, key);
+		int py = npc_path_y(npc, key);
+		if (npc_step_to(npc, px, py))
+		{
+			npc.path_index++;
 			return;
 		}
-		a.shield_durability -= dmg;
-		if (shield_item !is null && shield_item.sound_hit != "")
-		{
-			string hit = get_sound_path(shield_item.sound_hit);
-			if (hit != "") npc_play_positional(hit, a.x, a.y, a.z);
-		}
+		// The next tile got blocked after the route was built: drop it and let
+		// the next tick work out a fresh one.
+		npc.path.resize(0);
 		return;
 	}
 
-	a.hp -= dmg;
-	if (a.hp <= 0) npc_die(a, killer, weapon_name);
+	// No route inside the window: step straight at the goal, and if the wall is
+	// in the way slip sideways instead of standing still.
+	if (npc_step_toward(npc, tx, ty)) return;
+	int[] step_x = {1, -1, 0, 0};
+	int[] step_y = {0, 0, 1, -1};
+	int first = random(0, 3);
+	for (int k = 0; k < 4; k++)
+	{
+		int d = (first + k) % 4;
+		if (npc_step_to(npc, npc.x + step_x[uint(d)], npc.y + step_y[uint(d)])) return;
+	}
 }
 
-// Called by the projectile system so the player's own shots can kill NPCs.
-bool npc_projectile_intersect(double px, double py, double pz, int dmg, const string&in weapon_id)
+void npc_pick_patrol(npc_instance@ npc)
 {
-	if (npc_actors.length() == 0) return false;
-	for (uint i = 0; i < npc_actors.length(); i++)
+	if (npc is null) return;
+	for (int attempt = 0; attempt < 100; attempt++)
 	{
-		npc_actor@ a = npc_actors[i];
-		if (a.dead) continue;
-		if (get_3d_distance(px, py, pz, double(a.x), double(a.y), double(a.z)) > 1.2) continue;
+		int tx = random(npc.rx0, npc.rx1);
+		int ty = random(npc.ry0, npc.ry1);
+		if (npc_can_step_to(tx, ty, npc.z))
+		{
+			npc.patrol_x = tx;
+			npc.patrol_y = ty;
+			npc.patrol_timer.restart();
+			return;
+		}
+	}
+	npc.patrol_x = npc.x;
+	npc.patrol_y = npc.y;
+	npc.patrol_timer.restart();
+}
+
+// ---------------------------------------------------------------------------
+// Movement
+// ---------------------------------------------------------------------------
+void npc_face_target(npc_instance@ npc, int tx, int ty)
+{
+	if (npc is null) return;
+	if (tx > npc.x) npc.facing = east;
+	else if (tx < npc.x) npc.facing = west;
+	else if (ty > npc.y) npc.facing = north;
+	else if (ty < npc.y) npc.facing = south;
+}
+
+// Is that point inside the volume the NPC is allowed to walk in, on all three
+// axes? Everything that moves the NPC or decides its behaviour uses this.
+bool npc_point_in_area(npc_instance@ npc, int tx, int ty, int tz)
+{
+	if (npc is null) return false;
+	if (tx < npc.rx0 || tx > npc.rx1) return false;
+	if (ty < npc.ry0 || ty > npc.ry1) return false;
+	if (tz < npc.rz0 || tz > npc.rz1) return false;
+	return true;
+}
+
+bool npc_target_in_area(npc_instance@ npc, int tx, int ty, int tz)
+{
+	return npc_point_in_area(npc, tx, ty, tz);
+}
+
+// The step sound of one move: the platform under the NPC's feet when it is set
+// to use the map's platforms, otherwise its own clips. The platform falling back
+// to the custom list keeps a map without step sounds audible.
+void npc_play_step(npc_instance@ npc)
+{
+	if (npc is null || npc.data is null) return;
+	string step = "";
+	if (npc.data.use_platform_footsteps)
+	{
+		string tile = get_tile_at(npc.x, npc.y, npc.z);
+		if (tile != "" && tile != "empty") step = get_platform_sound(tile, "step");
+	}
+	if (step == "") step = npc_pick_clip(npc.data.sound_footsteps);
+	if (step != "") npc_play_positional(npc, step);
+}
+
+bool npc_step_to(npc_instance@ npc, int nx, int ny)
+{
+	if (npc is null) return false;
+	// The configured area is a hard border: the NPC walks, patrols and chases
+	// only inside it, on every axis. A step that would cross an edge is simply
+	// refused, so the NPC can never leave no matter where its target runs.
+	if (!npc_point_in_area(npc, nx, ny, npc.z)) return false;
+	if (!npc_can_step_to(nx, ny, npc.z)) return false;
+	if (nx > npc.x) npc.facing = east;
+	else if (nx < npc.x) npc.facing = west;
+	else if (ny > npc.y) npc.facing = north;
+	else if (ny < npc.y) npc.facing = south;
+	npc.x = nx;
+	npc.y = ny;
+	npc_play_step(npc);
+	return true;
+}
+
+// One tile per call on a single axis, so an approach is never faster on a
+// diagonal. The axis with the larger gap is tried first and the other axis
+// carries the NPC around an obstacle when the first one is blocked.
+bool npc_step_toward(npc_instance@ npc, int tx, int ty)
+{
+	if (npc is null) return false;
+	int dx = tx - npc.x;
+	int dy = ty - npc.y;
+	if (dx == 0 && dy == 0) return false;
+	int sx = (dx > 0) ? 1 : ((dx < 0) ? -1 : 0);
+	int sy = (dy > 0) ? 1 : ((dy < 0) ? -1 : 0);
+	if (npc_tile_gap(npc.x, tx) >= npc_tile_gap(npc.y, ty))
+	{
+		if (sx != 0 && npc_step_to(npc, npc.x + sx, npc.y)) return true;
+		if (sy != 0 && npc_step_to(npc, npc.x, npc.y + sy)) return true;
+	}
+	else
+	{
+		if (sy != 0 && npc_step_to(npc, npc.x, npc.y + sy)) return true;
+		if (sx != 0 && npc_step_to(npc, npc.x + sx, npc.y)) return true;
+	}
+	return false;
+}
+
+// How many whole tiles separate the NPC from a point, axis by axis.
+int npc_tile_gap(int from, int to)
+{
+	int gap = from - to;
+	if (gap < 0) gap = -gap;
+	return gap;
+}
+
+// True when the NPC already stands on one of the eight tiles around the target.
+// That is the closest it ever gets: it never steps onto the target's own tile.
+bool npc_next_to_target(npc_instance@ npc, int tx, int ty, int tz)
+{
+	if (npc is null) return false;
+	if (npc.z != tz) return false;
+	return npc_tile_gap(npc.x, tx) <= 1 && npc_tile_gap(npc.y, ty) <= 1;
+}
+
+// Whole tiles between the NPC and a point, counted the way a player counts
+// steps on a square grid: the largest of the three axis gaps. A diagonal
+// neighbour is one step away, never 1.41, so an attack range of five tiles means
+// exactly five tiles and never a single step more.
+int npc_step_gap(npc_instance@ npc, int tx, int ty, int tz)
+{
+	if (npc is null) return 0;
+	int gap = npc_tile_gap(npc.x, tx);
+	int gy = npc_tile_gap(npc.y, ty);
+	int gz = npc_tile_gap(npc.z, tz);
+	if (gy > gap) gap = gy;
+	if (gz > gap) gap = gz;
+	return gap;
+}
+
+// The attack range is in whole tiles and is a hard limit: outside it the NPC
+// never attacks, whatever the angle.
+bool npc_in_attack_reach(npc_instance@ npc, int tx, int ty, int tz)
+{
+	if (npc is null || npc.data is null) return false;
+	return npc_step_gap(npc, tx, ty, tz) <= npc.data.attack_range;
+}
+
+// Attacking does not root the NPC in place. Until it reaches a tile next to the
+// target it keeps stepping closer at its walking or running pace, so a target
+// that stops moving is approached instead of being attacked from far away.
+void npc_close_in(npc_instance@ npc, int tx, int ty)
+{
+	if (npc is null || npc.data is null) return;
+	if (npc_next_to_target(npc, tx, ty, npc.z)) return;
+	int speed = npc.furious ? npc.data.run_speed : npc.data.walk_speed;
+	if (npc.move_timer.elapsed < speed) return;
+	npc.move_timer.restart();
+	npc_walk_to(npc, tx, ty, true);
+}
+
+// ---------------------------------------------------------------------------
+// Death drops
+// ---------------------------------------------------------------------------
+// Semicolon separated item_id:quantity pairs. A pair without a quantity drops
+// a single unit. The item lands on the ground exactly where the NPC fell.
+void npc_drop_death_items(npc_instance@ npc)
+{
+	if (npc is null || npc.data is null) return;
+	if (!npc.data.drop_items_on_death || npc.data.death_drops == "") return;
+	string[]@ drops = string_split(npc.data.death_drops, ";", true);
+	if (drops is null) return;
+	for (uint i = 0; i < drops.length(); i++)
+	{
+		string spec = drops[i].trim_whitespace();
+		if (spec == "") continue;
+		string item_id = spec;
+		int qty = 1;
+		int col = string_contains(spec, ":", 1);
+		if (col != -1)
+		{
+			item_id = string_left(spec, col).trim_whitespace();
+			qty = int(string_to_number(spec.substr(col + 1).trim_whitespace()));
+			if (qty < 1) qty = 1;
+		}
+		if (item_id == "") continue;
+		spawn_ground_item(item_id, qty, npc.x, npc.y, npc.z, 180000, 480000, "items/item.ogg", 300);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Damage and death
+// ---------------------------------------------------------------------------
+void npc_die(npc_instance@ npc, const string&in killer, const string&in weapon_name)
+{
+	if (npc is null || npc.dead) return;
+	npc.dead = true;
+	npc.death_timer.restart();
+	npc.aware = false;
+	if (npc.data !is null)
+	{
+		npc_play_positional(npc, npc.data.sound_death);
+
+		// The body hits the floor of the platform the NPC was standing on: its
+		// fall sound, or the harder landing of platforms that only define that.
+		string tile = get_tile_at(npc.x, npc.y, npc.z);
+		if (tile != "" && tile != "empty")
+		{
+			string fall = get_platform_sound(tile, "fall");
+			if (fall == "") fall = get_platform_sound(tile, "hardland");
+			if (fall != "") npc_play_positional(npc, fall);
+		}
+
+		npc_drop_death_items(npc);
+
+		string line = killer + " killed " + npc.data.name + " at " + npc.x + ", " + npc.y + ", " + npc.z + " with " + weapon_name + ".";
+		npc_write_kill_line(line);
+		speak(line);
+	}
+	if (killer == "Player")
+	{
+		kills += 1;
+		// Only the player earns experience: an NPC killed by another NPC pays
+		// nothing, because no player was involved in the fight.
+		if (npc.data !is null) add_player_quantum_xp(npc.data.xp);
+	}
+}
+
+void npc_take_damage(npc_instance@ npc, int dmg, const string&in killer, const string&in weapon_name)
+{
+	if (npc is null || npc.dead || dmg <= 0) return;
+	if (npc.data is null) return;
+
+	// Being attacked is what turns an NPC furious: from now on it runs at the
+	// configured running pace instead of walking.
+	// Damage never touches the attack cooldown. Restarting it here made every
+	// hit push the next attack back, so a fast automatic weapon kept an NPC
+	// silent and harmless forever. The cooldown belongs to the attack cadence
+	// alone: the NPC keeps striking at its configured attack_speed while it is
+	// being shot.
+	npc.furious = true;
+	npc.aware = true;
+	npc_play_positional(npc, npc.data.sound_pain);
+
+	npc.hp -= dmg;
+	if (npc.hp <= 0) npc_die(npc, killer, weapon_name);
+}
+
+// The player's shots are straight: every projectile moves exactly one tile per
+// tick along a single axis. A shot only counts as a hit when the step is
+// perfectly aligned (it travels on one axis, never diagonally) and the tile it
+// reaches is exactly the NPC's tile. So the aim has to be straight ahead,
+// straight behind, straight left or straight right; anything else, even an NPC
+// standing inside the field of view, is not hit.
+bool npc_projectile_aims_at(double fx, double fy, double fz, double tx, double ty, double tz, npc_instance@ npc)
+{
+	if (npc is null) return false;
+	int axes = 0;
+	if (tx != fx) axes++;
+	if (ty != fy) axes++;
+	if (tz != fz) axes++;
+	if (axes > 1) return false;
+	return (int(round(tx, 0)) == npc.x && int(round(ty, 0)) == npc.y && int(round(tz, 0)) == npc.z);
+}
+
+// Called by the projectile system so the player's own shots can hit NPCs. The
+// step goes from where the projectile was to where it is now.
+bool npc_projectile_intersect(double fx, double fy, double fz, double tx, double ty, double tz, int dmg, const string&in weapon_id)
+{
+	if (npc_instances.length() == 0) return false;
+	for (uint i = 0; i < npc_instances.length(); i++)
+	{
+		npc_instance@ npc = npc_instances[i];
+		if (npc is null || npc.dead) continue;
+		if (!npc_projectile_aims_at(fx, fy, fz, tx, ty, tz, npc)) continue;
 		weapon_data@ w = find_weapon_data(weapon_id);
 		string wname = (w !is null && w.name != "") ? w.name : weapon_id;
-		npc_take_damage(a, dmg, "Player", wname);
+		// The weapon's own impact sound plays on the target: that is the feedback
+		// that tells the player the shot connected. NPCs whose pain clip is not
+		// configured would otherwise take damage in complete silence.
+		if (w !is null && w.sound_hit != "") npc_play_positional(npc, w.sound_hit);
+		npc_take_damage(npc, dmg, "Player", wname);
 		return true;
 	}
 	return false;
+}
+
+// ---------------------------------------------------------------------------
+// Attack
+// ---------------------------------------------------------------------------
+void npc_attack_player(npc_instance@ npc)
+{
+	if (npc is null || npc.data is null || npc.dead) return;
+	npc_play_positional(npc, npc.data.sound_attack);
+	int dmg = random(npc.data.min_damage, npc.data.max_damage);
+	int through = shield_process_damage(dmg, "melee");
+	if (through > 0) health_damage_player(through, npc.data.name, "attack");
+}
+
+// ---------------------------------------------------------------------------
+// Behaviour
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Voice
+// ---------------------------------------------------------------------------
+// Same rules as the old NPC system: the current clip owns a persistent pool
+// slot and is allowed to finish, each clip is repeated two or three times before
+// the list rotates to the next one, and the silence between clips is counted
+// from the moment the clip really ended, between voice_min_delay and
+// voice_max_delay.
+void npc_release_voice(npc_instance@ npc)
+{
+	if (npc is null) return;
+	if (npc.voice_handle !is null && npc.voice_slot >= 0 && npc_pool_ready
+		&& npc.voice_slot < int(npcp.items.length())
+		&& npcp.items[npc.voice_slot].handle is npc.voice_handle)
+	{
+		npcp.destroy_sound(npc.voice_slot);
+	}
+	@npc.voice_handle = null;
+	npc.voice_slot = -1;
+}
+
+void npc_voice_pick_delay(npc_instance@ npc)
+{
+	if (npc is null || npc.data is null) return;
+	int min_delay = (npc.data.voice_min_delay > 0) ? npc.data.voice_min_delay : 1500;
+	int max_delay = (npc.data.voice_max_delay >= min_delay) ? npc.data.voice_max_delay : min_delay;
+	npc.voice_delay_target = random(min_delay, max_delay);
+	npc.voice_delay_timer.restart();
+	npc.voice_waiting_delay = true;
+}
+
+void npc_update_voice(npc_instance@ npc)
+{
+	if (npc is null || npc.data is null || npc.dead) return;
+	if (npc.data.sound_voice == "") return;
+	if (get_3d_distance(me.x, me.y, me.z, double(npc.x), double(npc.y), double(npc.z)) > NPC_LOCAL_SOUND_DISTANCE) return;
+
+	// A clip is still playing: let it end, then start the silence only now.
+	if (npc.voice_handle !is null)
+	{
+		if (npc.voice_slot >= 0 && npc_pool_ready && npc.voice_slot < int(npcp.items.length())
+			&& npcp.items[npc.voice_slot].handle is npc.voice_handle && npc.voice_handle.playing)
+		{
+			return;
+		}
+		npc_release_voice(npc);
+		npc_voice_pick_delay(npc);
+		return;
+	}
+
+	if (npc.voice_waiting_delay)
+	{
+		if (npc.voice_delay_timer.elapsed < npc.voice_delay_target) return;
+		npc.voice_waiting_delay = false;
+	}
+
+	string[]@ clips = string_split(npc.data.sound_voice, ";", true);
+	if (clips is null || clips.length() == 0) return;
+	if (npc.voice_index >= int(clips.length())) npc.voice_index = 0;
+
+	string clip = clips[uint(npc.voice_index)].trim_whitespace();
+	npc.voice_repeats_done++;
+	if (npc.voice_repeats_done >= npc.voice_repeats_target)
+	{
+		npc.voice_repeats_done = 0;
+		npc.voice_repeats_target = random(2, 3);
+		npc.voice_index = (npc.voice_index + 1) % int(clips.length());
+	}
+	string path = (clip != "") ? get_sound_path(clip) : "";
+	if (path == "")
+	{
+		// An empty entry or a missing file must not be retried every frame.
+		npc_voice_pick_delay(npc);
+		return;
+	}
+	npc_init_pool();
+	// Persistent: the pool must never recycle the voice slot for another sound
+	// while the clip plays, or the finished detection reads a foreign handle.
+	int slot = npcp.play_extended_3d(path, me.x, me.y, me.z, npc.x, npc.y, npc.z, double(facing), 0, 0, 0, 0, 0, 0, false, 0, 0.0, 0.0, 100.0, true);
+	if (slot >= 0)
+	{
+		npc.voice_slot = slot;
+		@npc.voice_handle = npcp.items[slot].handle;
+		npc_tag_sound(npc, slot);
+	}
+	else
+	{
+		// Out of range or no slot: go back to waiting instead of retrying every frame.
+		npc_voice_pick_delay(npc);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Patrol
+// ---------------------------------------------------------------------------
+// Inside a safe zone nothing can be attacked, so the NPC keeps walking a circle
+// around the player, within its own area, instead of wandering off: it surrounds
+// the player and is already close when the zone is left.
+void npc_circle_patrol(npc_instance@ npc, int px, int py)
+{
+	if (npc is null || npc.data is null) return;
+	npc.patrol_angle += 40.0;
+	while (npc.patrol_angle >= 360.0) npc.patrol_angle -= 360.0;
+	double rad = npc.patrol_angle * 0.01745329251;
+	int radius = 3;
+	int tx = px + int(round(cos(rad) * double(radius), 0));
+	int ty = py + int(round(sin(rad) * double(radius), 0));
+	if (tx < npc.rx0) tx = npc.rx0;
+	if (tx > npc.rx1) tx = npc.rx1;
+	if (ty < npc.ry0) ty = npc.ry0;
+	if (ty > npc.ry1) ty = npc.ry1;
+	npc.patrol_x = tx;
+	npc.patrol_y = ty;
+	if (npc.move_timer.elapsed < npc.data.walk_speed) return;
+	npc.move_timer.restart();
+	npc_walk_to(npc, tx, ty);
+}
+
+void npc_patrol_tick(npc_instance@ npc)
+{
+	if (npc is null || npc.data is null) return;
+	double d = get_3d_distance(double(npc.x), double(npc.y), double(npc.z), double(npc.patrol_x), double(npc.patrol_y), double(npc.z));
+	if (d < 1.0 || npc.patrol_timer.elapsed > 20000) npc_pick_patrol(npc);
+	if (npc.move_timer.elapsed >= npc.data.walk_speed)
+	{
+		npc.move_timer.restart();
+		npc_walk_to(npc, npc.patrol_x, npc.patrol_y);
+	}
+}
+
+// The target is unreachable: it stands outside the area this NPC is allowed to
+// walk in. The NPC does not freeze and it does not leave either - it keeps
+// patrolling along the border closest to the target, waiting for it to come
+// back. As soon as the target steps inside the area again, the hunt resumes.
+void npc_patrol_edge(npc_instance@ npc)
+{
+	if (npc is null || npc.dead || npc.data is null) return;
+	if (npc.move_timer.elapsed < npc.data.walk_speed) return;
+	npc.move_timer.restart();
+
+	int tx = int(round(me.x, 0));
+	int ty = int(round(me.y, 0));
+
+	// Closest point inside the area to the target: where the NPC should stand.
+	int ex = tx;
+	int ey = ty;
+	if (ex < npc.rx0) ex = npc.rx0;
+	if (ex > npc.rx1) ex = npc.rx1;
+	if (ey < npc.ry0) ey = npc.ry0;
+	if (ey > npc.ry1) ey = npc.ry1;
+
+	// Still walking to the border: head straight for that edge point.
+	if (npc.x != ex || npc.y != ey)
+	{
+		npc_walk_to(npc, ex, ey);
+		return;
+	}
+
+	// Already on the edge nearest the target: patrol that border instead of
+	// standing still, so it keeps scanning the area for the returning target.
+	if (tx < npc.rx0 || tx > npc.rx1)
+	{
+		npc.patrol_x = ex;
+		npc.patrol_y = random(npc.ry0, npc.ry1);
+	}
+	else if (ty < npc.ry0 || ty > npc.ry1)
+	{
+		npc.patrol_x = random(npc.rx0, npc.rx1);
+		npc.patrol_y = ey;
+	}
+	else
+	{
+		// The target is outside the area only on the z axis: walk the whole
+		// edge under it while staying on the allowed floor.
+		npc.patrol_x = ex;
+		npc.patrol_y = random(npc.ry0, npc.ry1);
+	}
+	npc_walk_to(npc, npc.patrol_x, npc.patrol_y);
+}
+
+void npc_instance_tick(npc_instance@ npc)
+{
+	if (npc is null || npc.dead || npc.data is null) return;
+
+	npc_follow_sounds(npc);
+	npc_update_voice(npc);
+
+	int px = int(round(me.x, 0));
+	int py = int(round(me.y, 0));
+	int pz = int(round(me.z, 0));
+
+	// A safe zone suspends the hunt completely: the NPC keeps surrounding the
+	// player and loses its awareness, and it only notices the player again inside
+	// its detection range once the hunt resumes.
+	if (is_safe(px, py, pz) || is_safe(npc.x, npc.y, npc.z))
+	{
+		npc.aware = false;
+		npc_circle_patrol(npc, px, py);
+		return;
+	}
+
+	int gap = npc_step_gap(npc, px, py, pz);
+	if (!npc.aware && gap <= npc.data.detection_range) npc.aware = true;
+
+	if (!npc.aware)
+	{
+		npc_patrol_tick(npc);
+		return;
+	}
+
+	// The player is only a valid target to walk to while standing inside the
+	// area this NPC may walk in. Attacking is a different rule: whatever the
+	// walk limits are, a target inside the attack range can be hit.
+	bool target_in_area = npc_target_in_area(npc, px, py, pz);
+
+	// The attack is decided by the attack range and by the tiles between the two
+	// of them. The wall rule walks the tile line between the pair, so it gives the
+	// same answer every frame: an NPC never hits through a wall, and a clear hit
+	// is never lost to a flickering check either.
+	if (npc_in_attack_reach(npc, px, py, pz) && !npc_wall_between(npc.x, npc.y, px, py, npc.z))
+	{
+		npc_face_target(npc, px, py);
+		if (npc.attack_timer.elapsed >= npc.data.attack_speed)
+		{
+			npc.attack_timer.restart();
+			npc_attack_player(npc);
+		}
+		// Keep advancing while attacking, but only where it is allowed to walk:
+		// it stops when it is on a tile next to the player, or at the edge of its
+		// area when the player stands beyond it.
+		if (target_in_area) npc_close_in(npc, px, py);
+		return;
+	}
+
+	if (!target_in_area)
+	{
+		// Hunt the edge; never cross it.
+		npc_patrol_edge(npc);
+		return;
+	}
+
+	// Pursuit inside the area: walking pace while calm, running pace after
+	// being attacked. Every step is bound-checked, so even a target just
+	// inside the border cannot pull the NPC across it.
+	int speed = npc.furious ? npc.data.run_speed : npc.data.walk_speed;
+	if (npc.move_timer.elapsed >= speed)
+	{
+		npc.move_timer.restart();
+		npc_walk_to(npc, px, py, true);
+	}
 }
 
 // ---------------------------------------------------------------------------
 // Spawning
 // ---------------------------------------------------------------------------
-void npc_pick_patrol(npc_actor@ a)
+npc_instance@ npc_spawn_instance(const string&in npc_id, int spawner_index, int x0, int y0, int z0, int x1, int y1, int z1)
 {
-	if (a is null) return;
-	for (int attempt = 0; attempt < 100; attempt++)
-	{
-		int tx = random(minx, maxx);
-		int ty = random(miny, maxy);
-		if (npc_can_step_to(tx, ty, a.z))
-		{
-			a.patrol_x = tx;
-			a.patrol_y = ty;
-			a.patrol_timer.restart();
-			return;
-		}
-	}
-	a.patrol_x = a.x;
-	a.patrol_y = a.y;
-	a.patrol_timer.restart();
-}
+	if (npc_instances.length() >= uint(NPC_MAX_ACTIVE)) return null;
+	npc_data@ data = find_npc_data(npc_id);
+	if (data is null) return null;
 
-void npc_assign_arsenal(npc_actor@ a)
-{
-	load_all_weapons_wpm();
-	string[] ranged_ids;
-	string[] melee_ids;
-	for (uint i = 0; i < weapon_registry.length(); i++)
-	{
-		weapon_data@ w = @weapon_registry[i];
-		if (w is null) continue;
-		if (w.melee) melee_ids.insert_last(w.id);
-		else ranged_ids.insert_last(w.id);
-	}
-
-	int wanted = (int(ranged_ids.length()) < 4) ? int(ranged_ids.length()) : 4;
-	for (int n = 0; n < wanted; n++)
-	{
-		for (int attempt = 0; attempt < 40; attempt++)
-		{
-			if (ranged_ids.length() == 0) break;
-			int idx = random(0, int(ranged_ids.length()) - 1);
-			string wid = ranged_ids[uint(idx)];
-			bool already = false;
-			for (uint k = 0; k < a.weapons.length(); k++)
-			{
-				if (a.weapons[k].id == wid) { already = true; break; }
-			}
-			if (already) continue;
-			npc_weapon@ nw = npc_make_weapon(find_weapon_data(wid));
-			if (nw !is null) a.weapons.insert_last(nw);
-			break;
-		}
-	}
-
-	// A melee weapon is always carried: it is the last resort when every
-	// firearm is out of ammunition, exactly as requested.
-	if (melee_ids.length() > 0)
-	{
-		int midx = random(0, int(melee_ids.length()) - 1);
-		npc_weapon@ mw = npc_make_weapon(find_weapon_data(melee_ids[uint(midx)]));
-		if (mw !is null) a.weapons.insert_last(mw);
-	}
-
-	// Start with a ranged weapon when one exists.
-	a.weapon_index = 0;
-	for (uint i = 0; i < a.weapons.length(); i++)
-	{
-		if (!a.weapons[i].melee) { a.weapon_index = int(i); break; }
-	}
-}
-
-void npc_assign_healing(npc_actor@ a)
-{
-	load_all_items_config();
-	string[] heal_ids;
-	for (uint i = 0; i < item_registry.length(); i++)
-	{
-		item_data@ it = @item_registry[i];
-		if (it is null) continue;
-		if (it.category == "medical items" && it.heal_amount > 0) heal_ids.insert_last(it.id);
-	}
-	if (heal_ids.length() == 0) return;
-	int count = random(1, 5);
-	for (int n = 0; n < count; n++)
-		a.heal_items.insert_last(heal_ids[uint(random(0, int(heal_ids.length()) - 1))]);
-}
-
-npc_actor@ npc_spawn_actor(bool is_enemy)
-{
 	int sx = 0, sy = 0, sz = 0;
-	if (!npc_find_spawn(sx, sy, sz)) return null;
+	if (!npc_find_spawn(x0, y0, z0, x1, y1, z1, sx, sy, sz)) return null;
 
-	npc_actor@ a = npc_actor();
-	a.is_enemy = is_enemy;
-	a.id = (is_enemy ? "Enemy " : "Friend ") + random(1000, 9999);
-	a.report_owner = npc_report_owner_seq++;
-	a.nmap = mapname;
-	a.x = sx; a.y = sy; a.z = sz;
-	a.maxhp = random(1000, 5000);
-	a.hp = a.maxhp;
-	// Walking pace of the NPC itself, deliberately slower than the player's
-	// 160 ms base step. The weapon weight is added on top of it.
-	a.move_interval = random(240, 360);
-	a.facing = random(0, 3) * 90;
-	a.shield_delay = random(5000, 10000);
-	a.shield_timer.restart();
-	a.fire_timer.restart();
-	a.move_timer.restart();
-	a.think_timer.restart();
-	a.item_search_timer.restart();
+	npc_instance@ npc = npc_instance();
+	@npc.data = data;
+	npc.spawner_index = spawner_index;
+	npc.sound_owner = "npc:" + npc_sound_owner_seq + ";";
+	npc_sound_owner_seq++;
+	npc.rx0 = x0; npc.ry0 = y0; npc.rz0 = z0;
+	npc.rx1 = x1; npc.ry1 = y1; npc.rz1 = z1;
+	npc.hp = data.max_health;
+	npc.maxhp = data.max_health;
+	npc.x = sx; npc.y = sy; npc.z = sz;
+	npc.facing = random(0, 3) * 90;
+	// The NPC knows where the player is from the moment it appears.
+	npc.aware = true;
+	npc.attack_timer.restart();
+	npc.move_timer.restart();
+	npc.voice_delay_timer.restart();
+	npc.patrol_timer.restart();
 
-	npc_assign_arsenal(a);
-	npc_assign_healing(a);
-	npc_pick_patrol(a);
+	// First voice comes after the configured silence, not immediately.
+	npc_voice_pick_delay(npc);
+	npc.voice_index = 0;
+	npc.voice_repeats_target = random(2, 3);
+	npc_pick_patrol(npc);
 
-	npc_weapon@ start = npc_current_weapon(a);
-	if (start !is null)
-	{
-		a.fire_interval = start.firetime;
-		if (!start.melee && start.sound_draw != "")
-		{
-			string draw = get_sound_path(start.sound_draw);
-			npc_play_positional(draw, a.x, a.y, a.z);
-		}
-	}
-
-	npc_actors.insert_last(a);
-	// A new character is announced, which is how the spawn count and the
-	// configured interval can be checked without looking for them on the map.
-	speak((is_enemy ? "Enemy" : "Friend") + " spawned at " + a.x + ", " + a.y + ", " + a.z + ".");
-	return a;
+	npc_instances.insert_last(npc);
+	// Spawning is silent on purpose: a map with dozens of NPCs must not queue
+	// dozens of announcements while it starts.
+	return npc;
 }
 
-int npc_target_count(bool is_enemy)
-{
-	return is_enemy ? npc_enemy_target_count : npc_friend_target_count;
-}
-
-// Living characters of one side plus the ones already waiting for their turn.
-int npc_side_count(bool is_enemy)
+// Living NPCs belonging to one spawner line. Dead bodies are not counted, so a
+// spawner sees the loss as soon as its NPC really dies.
+int npc_count_for_spawner(int spawner_index)
 {
 	int n = 0;
-	for (uint i = 0; i < npc_actors.length(); i++)
+	for (uint i = 0; i < npc_instances.length(); i++)
 	{
-		npc_actor@ a = npc_actors[i];
-		if (a !is null && !a.dead && a.is_enemy == is_enemy) n++;
-	}
-	for (uint i = 0; i < npc_pending.length(); i++)
-	{
-		if (npc_pending[i].is_enemy == is_enemy) n++;
+		npc_instance@ npc = npc_instances[i];
+		if (npc is null || npc.dead || npc.data is null) continue;
+		if (npc.spawner_index == spawner_index) n++;
 	}
 	return n;
 }
 
-// Queues the next character of a side on the configured interval. The count is
-// respected exactly: a target of one enemy and one ally queues one of each.
-void npc_queue_spawn(bool is_enemy)
+void npc_destroy_all()
 {
-	if (npc_pending.length() > 512) return;
-	npc_pending.insert_last(npc_pending_spawn(is_enemy, npc_spawn_slot_ms));
-	npc_spawn_slot_ms += npc_respawn_delay;
+	npc_instances.resize(0);
+	npc_spawner_states.resize(0);
+	if (npc_pool_ready) npcp.destroy_all();
 }
 
 void npc_start_for_map()
 {
 	npc_destroy_all();
-	npc_spawn_search_exhausted = false;
-	if (npc_enemy_target_count <= 0 && npc_friend_target_count <= 0) return;
-	// Nothing is created while the map loads. Every character takes its turn on
-	// the configured interval, so the first one appears only after that time and
-	// a map with dozens of them loads exactly as fast as an empty one.
-	npc_spawn_slot_ms = npc_respawn_delay;
-	int enemies = npc_enemy_target_count;
-	int friends = npc_friend_target_count;
-	int turn = 0;
-	while (enemies > 0 || friends > 0)
-	{
-		bool enemy = false;
-		if (enemies > 0 && (friends <= 0 || (turn % 2) == 0)) enemy = true;
-		if (enemy) enemies--;
-		else friends--;
-		npc_queue_spawn(enemy);
-		turn++;
-	}
-}
-
-void npc_destroy_all()
-{
-	npc_actors.resize(0);
-	npc_pending.resize(0);
-	if (npc_pool_ready) npcp.destroy_all();
+	npc_spawner_states.resize(0);
+	load_all_npcs();
+	for (uint i = 0; i < npc_spawn_defs.length(); i++)
+		npc_spawner_states.insert_last(npc_spawner_state(
+			npc_spawn_defs[i].npc_id, npc_spawn_defs[i].count, npc_spawn_defs[i].respawn_ms,
+			npc_spawn_defs[i].rx0, npc_spawn_defs[i].ry0, npc_spawn_defs[i].rz0,
+			npc_spawn_defs[i].rx1, npc_spawn_defs[i].ry1, npc_spawn_defs[i].rz1));
 }
 
 // ---------------------------------------------------------------------------
-// Inventory and weapon handling
+// Loop
 // ---------------------------------------------------------------------------
-npc_weapon@ npc_current_weapon(npc_actor@ a)
-{
-	if (a is null || a.weapons.length() == 0) return null;
-	if (a.weapon_index < 0 || a.weapon_index >= int(a.weapons.length())) a.weapon_index = 0;
-	return a.weapons[uint(a.weapon_index)];
-}
-
-void npc_switch_weapon(npc_actor@ a)
-{
-	if (a is null || a.weapons.length() == 0) return;
-	int start = a.weapon_index;
-	for (uint step = 1; step <= a.weapons.length(); step++)
-	{
-		int idx = (start + int(step)) % int(a.weapons.length());
-		if (npc_weapon_usable(a.weapons[uint(idx)]))
-		{
-			a.weapon_index = idx;
-			a.reloading = false;
-			npc_weapon@ nw = a.weapons[uint(idx)];
-			if (nw.sound_draw != "")
-			{
-				string draw = get_sound_path(nw.sound_draw);
-				npc_play_positional(draw, a.x, a.y, a.z);
-			}
-			return;
-		}
-	}
-	// Nothing usable: keep the melee weapon if one is carried.
-	for (uint i = 0; i < a.weapons.length(); i++)
-	{
-		if (a.weapons[i].melee) { a.weapon_index = int(i); return; }
-	}
-}
-
-void npc_start_reload(npc_actor@ a, npc_weapon@ w)
-{
-	if (a is null || w is null || w.melee || a.reloading) return;
-	if (w.reserve <= 0) return;
-	a.reloading = true;
-	a.reload_timer.restart();
-	if (w.sound_reload != "")
-	{
-		string snd = get_sound_path(w.sound_reload);
-		npc_play_positional(snd, a.x, a.y, a.z);
-	}
-}
-
-void npc_finish_reload(npc_actor@ a, npc_weapon@ w)
-{
-	if (a is null || w is null) return;
-	if (w.reserve > 0)
-	{
-		w.reserve -= 1;
-		w.loaded = w.capacity;
-	}
-	a.reloading = false;
-}
-
-void npc_use_heal(npc_actor@ a)
-{
-	if (a is null || a.heal_items.length() == 0) return;
-	int idx = random(0, int(a.heal_items.length()) - 1);
-	string item_id = a.heal_items[uint(idx)];
-	item_data@ it = get_item_data(item_id);
-	if (it is null) return;
-	a.heal_items.remove_at(uint(idx));
-	a.hp += it.heal_amount;
-	if (a.hp > a.maxhp) a.hp = a.maxhp;
-	if (it.sound_use != "")
-	{
-		string snd = get_sound_path(it.sound_use);
-		npc_play_positional(snd, a.x, a.y, a.z);
-	}
-	a.heal_delay = random(5000, 10000);
-	a.heal_timer.restart();
-}
-
-// ---------------------------------------------------------------------------
-// Perception and combat
-// ---------------------------------------------------------------------------
-bool npc_aligned(npc_actor@ a, int tx, int ty, int tz)
-{
-	if (a is null) return false;
-	if (a.z != tz) return false;
-	return (a.x == tx || a.y == ty);
-}
-
-void npc_face_target(npc_actor@ a, int tx, int ty)
-{
-	if (a is null) return;
-	if (tx > a.x) a.facing = east;
-	else if (tx < a.x) a.facing = west;
-	else if (ty > a.y) a.facing = north;
-	else if (ty < a.y) a.facing = south;
-}
-
-npc_actor@ npc_nearest_opponent(npc_actor@ a, bool &out is_player, int &out tx, int &out ty, int &out tz)
-{
-	is_player = false;
-	tx = a.x; ty = a.y; tz = a.z;
-	// The original files give every enemy and friend a target anywhere on the
-	// map and let it walk there, so the whole map is crossed and the two sides
-	// only shoot when they meet inside a weapon's range.
-	int best = 1000000;
-	npc_actor@ found = null;
-
-	for (uint i = 0; i < npc_actors.length(); i++)
-	{
-		npc_actor@ other = npc_actors[i];
-		if (other is a || other.dead) continue;
-		if (other.is_enemy == a.is_enemy) continue;
-		int d = int(get_3d_distance(double(a.x), double(a.y), double(a.z), double(other.x), double(other.y), double(other.z)));
-		if (d < best)
-		{
-			best = d;
-			@found = other;
-			tx = other.x; ty = other.y; tz = other.z;
-		}
-	}
-
-	// Only enemies consider the player, and never while the player stands in a
-	// safe zone (the player cannot fire there either).
-	if (a.is_enemy && !is_safe(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0))))
-	{
-		int dp = int(get_3d_distance(double(a.x), double(a.y), double(a.z), me.x, me.y, me.z));
-		if (dp < best)
-		{
-			best = dp;
-			@found = null;
-			is_player = true;
-			tx = int(round(me.x, 0));
-			ty = int(round(me.y, 0));
-			tz = int(round(me.z, 0));
-		}
-	}
-	return found;
-}
-
-int npc_step_interval(npc_actor@ a)
-{
-	npc_weapon@ w = npc_current_weapon(a);
-	int interval = a.move_interval;
-	// The weight follows the player's rule (the walktime of the .wpm file) but
-	// it is added to the NPC's own random pace instead of replacing it, so an
-	// NPC never walks as fast as the player. Melee weapons carry no penalty.
-	if (w !is null && !w.melee && w.walktime > 160)
-		interval += (w.walktime - 160) * 2;
-	return interval;
-}
-
-bool npc_target_valid(npc_actor@ a)
-{
-	if (a is null) return false;
-	if (a.target_is_player) return true;
-	if (a.target_actor is null) return false;
-	if (a.target_actor.dead) return false;
-	return true;
-}
-
-void npc_try_move(npc_actor@ a, int nx, int ny)
-{
-	if (a is null) return;
-	if (!npc_can_step_to(nx, ny, a.z)) return;
-	a.x = nx;
-	a.y = ny;
-	string tile = get_tile_at(a.x, a.y, a.z);
-	string step = get_platform_sound(tile, "step");
-	if (step != "") npc_play_positional(step, a.x, a.y, a.z);
-}
-
-// Walks exactly like the original enemy and friend files: x first, then y, with
-// both axes allowed to change on the same tick, one tile per walking interval
-// and the same facing values.
-void npc_step_toward(npc_actor@ a, int tx, int ty)
-{
-	if (a is null) return;
-	bool moved = false;
-	if (a.x < tx && npc_can_step_to(a.x + 1, a.y, a.z)) { a.x += 1; a.facing = east; moved = true; }
-	else if (a.x > tx && npc_can_step_to(a.x - 1, a.y, a.z)) { a.x -= 1; a.facing = west; moved = true; }
-	if (a.y < ty && npc_can_step_to(a.x, a.y + 1, a.z)) { a.y += 1; a.facing = north; moved = true; }
-	else if (a.y > ty && npc_can_step_to(a.x, a.y - 1, a.z)) { a.y -= 1; a.facing = south; moved = true; }
-	if (moved)
-	{
-		string tile = get_tile_at(a.x, a.y, a.z);
-		string step = get_platform_sound(tile, "step");
-		if (step != "") npc_play_positional(step, a.x, a.y, a.z);
-	}
-}
-
-void npc_patrol_tick(npc_actor@ a)
-{
-	if (a is null) return;
-	if (get_3d_distance(double(a.x), double(a.y), double(a.z), double(a.patrol_x), double(a.patrol_y), double(a.z)) < 1.0 || a.patrol_timer.elapsed > 20000)
-		npc_pick_patrol(a);
-	if (a.move_timer.elapsed >= npc_step_interval(a))
-	{
-		a.move_timer.restart();
-		npc_step_toward(a, a.patrol_x, a.patrol_y);
-	}
-}
-
-void npc_fire_shot(npc_actor@ a, npc_weapon@ w, int tx, int ty, int tz, bool target_is_player, npc_actor@ target_actor)
-{
-	if (a is null || w is null) return;
-
-	int dmg = random(w.min_damage, w.max_damage);
-	if (w.melee)
-	{
-		if (!npc_aligned(a, tx, ty, tz)) return;
-		if (get_3d_distance(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz)) > double(w.range)) return;
-		if (w.sound_fire != "")
-		{
-			string snd = get_sound_path(w.sound_fire);
-			npc_play_positional(snd, a.x, a.y, a.z);
-		}
-		npc_face_target(a, tx, ty);
-		if (target_is_player)
-		{
-			int through = shield_process_damage(dmg, "melee");
-			if (through > 0) health_damage_player(through, a.id, w.name);
-		}
-		else if (target_actor !is null)
-		{
-			npc_take_damage(target_actor, dmg, a.id, w.name);
-		}
-		return;
-	}
-
-	if (w.loaded <= 0) return;
-
-	// The target must still be exactly on one of the four cardinal lines and
-	// inside the weapon's real range, otherwise no shot is fired at all.
-	if (!npc_aligned(a, tx, ty, tz)) return;
-	double dist = get_3d_distance(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz));
-	if (dist > double(w.range)) return;
-	if (!has_line_of_sight(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz))) return;
-	if (is_safe(tx, ty, tz)) return;
-
-	w.loaded -= 1;
-	npc_face_target(a, tx, ty);
-
-	// One report per shot, never both. Up to ten steps the player hears the
-	// real shot of the weapon; from there on only the weapon's distant sample,
-	// which is a different recording and the one allowed to cross the map.
-	int pd = int(round(get_3d_distance(me.x, me.y, me.z, double(a.x), double(a.y), double(a.z)), 0));
-	if (pd <= NPC_NEAR_FIRE_DISTANCE)
-	{
-		string fire_snd = get_sound_path(w.sound_fire);
-		if (fire_snd != "") npc_play_near_fire(fire_snd, a.x, a.y, a.z);
-	}
-	else
-	{
-		// No fallback to the real shot: a weapon without a distant sample is
-		// simply not heard from afar, instead of propagating a near crack.
-		string dist_snd = get_sound_path(w.sound_distant_fire);
-		if (dist_snd != "")
-		{
-			// A report that is still sounding is not restarted: it keeps following
-			// the shooter, so sustained fire does not stack dozens of copies.
-			if (npc_report_slot(a) >= 0)
-			{
-				npc_update_distant_report(a);
-			}
-			else
-			{
-				int slot = npc_play_distant(dist_snd, a.x, a.y, a.z);
-				if (slot >= 0)
-				{
-					dp.set_sound_owner(slot, "npc_report", a.report_owner);
-					a.distant_slot = slot;
-				}
-			}
-		}
-	}
-
-	if (target_is_player)
-	{
-		int through = shield_process_damage(dmg, "bullet");
-		if (through > 0) health_damage_player(through, a.id, w.name);
-	}
-	else if (target_actor !is null)
-	{
-		npc_take_damage(target_actor, dmg, a.id, w.name);
-	}
-
-	// The cadence of every shot is the weapon's own fire interval.
-	a.fire_timer.restart();
-	a.fire_interval = w.firetime;
-}
-
-bool npc_step_axis(npc_actor@ a, bool along_x, int dir)
-{
-	if (a is null || dir == 0) return false;
-	int nx = a.x;
-	int ny = a.y;
-	if (along_x) nx += dir;
-	else ny += dir;
-	if (!npc_can_step_to(nx, ny, a.z)) return false;
-	npc_try_move(a, nx, ny);
-	return true;
-}
-
-// ---------------------------------------------------------------------------
-// Ground item collection
-// ---------------------------------------------------------------------------
-// An NPC only goes looking when it has nothing left: no healing item and no
-// loaded or reserve ammunition on any firearm. Melee weapons do not count as
-// inventory to use, so a melee-only NPC with no healing items searches too.
-bool npc_needs_items(npc_actor@ a)
-{
-	if (a is null) return false;
-	if (a.heal_items.length() > 0) return false;
-	for (uint i = 0; i < a.weapons.length(); i++)
-	{
-		npc_weapon@ w = a.weapons[i];
-		if (w !is null && !w.melee && (w.loaded > 0 || w.reserve > 0)) return false;
-	}
-	return true;
-}
-
-bool npc_weapon_takes_item(npc_weapon@ w, item_data@ it)
-{
-	if (w is null || it is null || w.melee) return false;
-	if (it.id != "" && string_to_lower_case(it.id) == string_to_lower_case(w.reserve_item)) return true;
-	if (it.ammo_type != "" && w.ammo_type != "" && string_to_lower_case(it.ammo_type) == string_to_lower_case(w.ammo_type)) return true;
-	return false;
-}
-
-bool npc_item_is_useful(npc_actor@ a, item_data@ it)
-{
-	if (a is null || it is null) return false;
-	if (it.category == "medical items" && it.heal_amount > 0) return true;
-	for (uint i = 0; i < a.weapons.length(); i++)
-	{
-		if (npc_weapon_takes_item(a.weapons[i], it)) return true;
-	}
-	return false;
-}
-
-ground_item@ npc_ground_item_by_id(int gid)
-{
-	if (gid <= 0) return null;
-	for (uint i = 0; i < ground_items.length(); i++)
-	{
-		if (ground_items[i] !is null && ground_items[i].id == gid) return ground_items[i];
-	}
-	return null;
-}
-
-int npc_find_useful_ground_item(npc_actor@ a)
-{
-	int best_id = 0;
-	double best = NPC_ITEM_SEARCH_DISTANCE;
-	for (uint i = 0; i < ground_items.length(); i++)
-	{
-		ground_item@ gi = ground_items[i];
-		if (gi is null) continue;
-		if (abs(double(gi.z) - double(a.z)) > 1.0) continue;
-		item_data@ it = get_item_data(gi.item_id);
-		if (!npc_item_is_useful(a, it)) continue;
-		double d = get_3d_distance(double(a.x), double(a.y), double(a.z), gi.x, gi.y, gi.z);
-		if (d < best)
-		{
-			best = d;
-			best_id = gi.id;
-		}
-	}
-	return best_id;
-}
-
-void npc_collect_ground_item(npc_actor@ a, ground_item@ gi)
-{
-	if (a is null || gi is null) return;
-	item_data@ it = get_item_data(gi.item_id);
-
-	string snd = "";
-	if (it !is null && it.sound_pickup != "") snd = get_sound_path(it.sound_pickup);
-	if (snd == "") snd = get_sound_path("items/itemget1.ogg");
-	if (snd != "") npc_play_positional(snd, a.x, a.y, a.z);
-
-	if (it !is null)
-	{
-		if (it.category == "medical items" && it.heal_amount > 0)
-		{
-			int count = gi.amount;
-			if (count < 1) count = 1;
-			if (count > 10) count = 10;
-			for (int n = 0; n < count; n++) a.heal_items.insert_last(it.id);
-		}
-		else
-		{
-			int add = (it.quantity > 0) ? it.quantity : ((it.capacity > 0) ? it.capacity : 1);
-			for (uint i = 0; i < a.weapons.length(); i++)
-			{
-				npc_weapon@ w = a.weapons[i];
-				if (!npc_weapon_takes_item(w, it)) continue;
-				if (w.is_magazine) w.reserve += 1;
-				else w.reserve += add;
-			}
-		}
-	}
-
-	if (gi.sound_slot != -1)
-	{
-		itempool.destroy_sound(gi.sound_slot);
-		gi.sound_slot = -1;
-	}
-	for (uint i = 0; i < ground_items.length(); i++)
-	{
-		if (ground_items[i] is gi)
-		{
-			ground_items.remove_at(i);
-			break;
-		}
-	}
-	a.item_target = 0;
-}
-
-// Returns true while the NPC is busy walking to an item or has just collected
-// one, so the caller knows the tick was used.
-bool npc_item_tick(npc_actor@ a)
-{
-	if (a is null) return false;
-	if (!npc_needs_items(a))
-	{
-		a.item_target = 0;
-		return false;
-	}
-
-	ground_item@ gi = npc_ground_item_by_id(a.item_target);
-	if (gi is null)
-	{
-		if (a.item_search_timer.elapsed < NPC_ITEM_SEARCH_MS) return false;
-		a.item_search_timer.restart();
-		a.item_target = npc_find_useful_ground_item(a);
-		gi = npc_ground_item_by_id(a.item_target);
-		if (gi is null) return false;
-	}
-
-	// Same collection rule as the player: the item is taken automatically as
-	// soon as the character is within three steps of it.
-	double d = get_3d_distance(double(a.x), double(a.y), double(a.z), gi.x, gi.y, gi.z);
-	if (d <= 3.0)
-	{
-		npc_collect_ground_item(a, gi);
-		return true;
-	}
-
-	if (a.move_timer.elapsed >= npc_step_interval(a))
-	{
-		a.move_timer.restart();
-		npc_step_toward(a, int(round(gi.x, 0)), int(round(gi.y, 0)));
-	}
-	return true;
-}
-
-void npc_combat_tick(npc_actor@ a)
-{
-	npc_weapon@ w = npc_current_weapon(a);
-	if (w is null) return;
-
-	if (a.reloading)
-	{
-		if (a.reload_timer.elapsed >= w.reload_ms) npc_finish_reload(a, w);
-		return;
-	}
-
-	if (!npc_target_valid(a))
-	{
-		@a.target_actor = null;
-		a.target_is_player = false;
-	}
-
-	int tx = 0, ty = 0, tz = 0;
-	bool has_target = false;
-	if (a.target_is_player)
-	{
-		tx = int(round(me.x, 0)); ty = int(round(me.y, 0)); tz = int(round(me.z, 0));
-		has_target = true;
-	}
-	else if (a.target_actor !is null)
-	{
-		tx = a.target_actor.x; ty = a.target_actor.y; tz = a.target_actor.z;
-		has_target = true;
-	}
-
-	if (!has_target)
-	{
-		// No living opponent on the map at all: walk it at random.
-		npc_patrol_tick(a);
-		return;
-	}
-
-	bool aligned = npc_aligned(a, tx, ty, tz);
-	double dist = get_3d_distance(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz));
-
-	if (!w.melee && !npc_weapon_usable(w)) npc_switch_weapon(a);
-	w = npc_current_weapon(a);
-	if (w is null) return;
-
-	if (!w.melee && w.loaded <= 0)
-	{
-		if (w.reserve > 0) npc_start_reload(a, w);
-		else npc_switch_weapon(a);
-		return;
-	}
-
-	bool in_range = (dist <= double(w.range));
-	bool clear = has_line_of_sight(double(a.x), double(a.y), double(a.z), double(tx), double(ty), double(tz));
-
-	if (aligned && in_range && clear && !is_safe(tx, ty, tz))
-	{
-		if (a.fire_timer.elapsed >= a.fire_interval)
-			npc_fire_shot(a, w, tx, ty, tz, a.target_is_player, a.target_actor);
-		return;
-	}
-
-	// Inside the weapon's range the NPC only sidesteps onto a firing line. It
-	// must never keep closing in: walking all the way to the target's tile is
-	// what made an MP5 carrier end up on top of the player before shooting.
-	// Aligning on the axis that leaves the greater distance keeps the NPC at
-	// the edge of its range instead of at zero distance.
-	if (in_range && clear)
-	{
-		if (a.move_timer.elapsed < npc_step_interval(a)) return;
-		a.move_timer.restart();
-		int adx = abs(tx - a.x);
-		int ady = abs(ty - a.y);
-		int dirx = (tx > a.x) ? 1 : ((tx < a.x) ? -1 : 0);
-		int diry = (ty > a.y) ? 1 : ((ty < a.y) ? -1 : 0);
-		bool moved;
-		if (adx >= ady)
-			moved = npc_step_axis(a, false, diry);
-		else
-			moved = npc_step_axis(a, true, dirx);
-		if (!moved)
-		{
-			// The firing line is blocked by geometry: try the other axis instead
-			// of standing still and never shooting.
-			if (adx >= ady) npc_step_axis(a, true, dirx);
-			else npc_step_axis(a, false, diry);
-		}
-		return;
-	}
-
-	// Out of range: close the distance until the weapon can reach.
-	if (a.move_timer.elapsed >= npc_step_interval(a))
-	{
-		a.move_timer.restart();
-		npc_step_toward(a, tx, ty);
-	}
-}
-
-void npc_actor_tick(npc_actor@ a)
-{
-	if (a is null || a.dead) return;
-
-	npc_update_distant_report(a);
-
-	if (a.shield_pending && !a.shield_equipped && a.shield_timer.elapsed >= a.shield_delay)
-	{
-		npc_equip_shield(a);
-		a.shield_pending = false;
-	}
-
-	if (a.hp < a.maxhp && a.heal_items.length() > 0 && a.heal_timer.elapsed >= a.heal_delay)
-		npc_use_heal(a);
-
-	// A map that carries a safe zone forbids combat outright: enemies and allies
-	// keep walking it and may still pick items up, but they never target or
-	// attack anybody while they are on that map.
-	if (safezones.length() > 0)
-	{
-		@a.target_actor = null;
-		a.target_is_player = false;
-		if (npc_item_tick(a)) return;
-		npc_patrol_tick(a);
-		return;
-	}
-
-	if (a.think_timer.elapsed >= 350)
-	{
-		a.think_timer.restart();
-		bool is_player = false;
-		int tx = 0, ty = 0, tz = 0;
-		npc_actor@ target = npc_nearest_opponent(a, is_player, tx, ty, tz);
-		if (target !is null || is_player)
-		{
-			@a.target_actor = target;
-			a.target_is_player = is_player;
-		}
-	}
-
-	// An empty-handed NPC diverts to a useful item even in the middle of a
-	// pursuit, exactly like the player picks items up by walking over them.
-	if (npc_item_tick(a)) return;
-
-	npc_combat_tick(a);
-}
-
 void npc_loop()
 {
-	if (npc_actors.length() == 0 && npc_pending.length() == 0) return;
+	// Refill the pathfinding budget once per world tick, before any NPC plans.
+	npc_path_budget = NPC_PATH_SEARCHES_PER_TICK;
+	if (npc_instances.length() == 0 && npc_spawner_states.length() == 0) return;
 	if (npc_pool_ready) npcp.update_listener_3d(me.x, me.y, me.z, double(facing));
 
-	for (int r = int(npc_pending.length()) - 1; r >= 0; r--)
+	// Spawners never duplicate: the first population fills the area once, and
+	// after that a slot is refilled only when one of its own NPCs actually dies,
+	// waiting exactly the configured number of milliseconds from that death.
+	for (uint s = 0; s < npc_spawner_states.length(); s++)
 	{
-		if (npc_pending[uint(r)].t.elapsed >= npc_pending[uint(r)].delay)
+		npc_spawner_state@ sp = npc_spawner_states[s];
+		if (sp is null) continue;
+		int living = npc_count_for_spawner(int(s));
+
+		if (!sp.populated)
 		{
-			bool enemy = npc_pending[uint(r)].is_enemy;
-			npc_pending.remove_at(uint(r));
-			npc_spawn_actor(enemy);
+			while (living < sp.count)
+			{
+				if (npc_spawn_instance(sp.npc_id, int(s), sp.rx0, sp.ry0, sp.rz0, sp.rx1, sp.ry1, sp.rz1) is null)
+				{
+					// No floor in the area, or the map already holds the entire
+					// population budget: stop here and try again later, never in a
+					// tight loop.
+					sp.retry_backoff = true;
+					break;
+				}
+				living++;
+			}
+			sp.populated = true;
+			sp.waiting = (living < sp.count);
+			sp.respawn_timer.restart();
+			continue;
 		}
+
+		if (living >= sp.count)
+		{
+			sp.waiting = false;
+			sp.retry_backoff = false;
+			continue;
+		}
+
+		// A slot opened (an NPC died): start counting the respawn delay now.
+		if (!sp.waiting)
+		{
+			sp.waiting = true;
+			sp.respawn_timer.restart();
+			continue;
+		}
+
+		int wait_ms = sp.respawn_ms;
+		if (sp.retry_backoff && wait_ms < NPC_SPAWN_RETRY_MS) wait_ms = NPC_SPAWN_RETRY_MS;
+		if (sp.respawn_timer.elapsed < wait_ms) continue;
+		sp.respawn_timer.restart();
+		if (npc_spawn_instance(sp.npc_id, int(s), sp.rx0, sp.ry0, sp.rz0, sp.rx1, sp.ry1, sp.rz1) is null)
+			sp.retry_backoff = true;
+		else
+			sp.retry_backoff = false;
 	}
 
-	for (int i = int(npc_actors.length()) - 1; i >= 0; i--)
+	for (int i = int(npc_instances.length()) - 1; i >= 0; i--)
 	{
-		npc_actor@ a = npc_actors[uint(i)];
-		if (a is null) { npc_actors.remove_at(uint(i)); continue; }
-		if (a.dead)
+		npc_instance@ npc = npc_instances[uint(i)];
+		if (npc is null)
 		{
-			if (a.death_timer.elapsed >= NPC_DEATH_LINGER_MS)
+			npc_instances.remove_at(uint(i));
+			continue;
+		}
+		if (npc.dead)
+		{
+			if (npc.death_timer.elapsed >= NPC_DEATH_LINGER_MS)
 			{
-				bool enemy = a.is_enemy;
-				npc_actors.remove_at(uint(i));
-				// Replacement only while the side is below its configured count, so
-				// an ally never turns into a second enemy or the other way around.
-				if (npc_side_count(enemy) < npc_target_count(enemy))
-					npc_pending.insert_last(npc_pending_spawn(enemy, npc_respawn_delay));
+				// The voice slot is persistent, so it is handed back before the
+				// instance goes away; one-shot clips simply expire on their own.
+				npc_release_voice(npc);
+				npc_instances.remove_at(uint(i));
 			}
 			continue;
 		}
-		npc_actor_tick(a);
+		npc_instance_tick(npc);
 	}
 }
 
 // ---------------------------------------------------------------------------
 // Map spawner line
 // ---------------------------------------------------------------------------
-void npc_save_spawner_to_map(int enemies, int friends, int respawn_ms)
+void npc_save_spawner_to_map(const string&in npc_id, int count, int respawn_ms, int x0, int y0, int z0, int x1, int y1, int z1, bool refresh = true)
 {
 	if (SCRIPT_COMPILED || is_map_encrypted(mapname))
 	{
 		speak("Cannot edit an encrypted map.");
 		return;
 	}
-	if (enemies < 0) enemies = 0;
-	if (friends < 0) friends = 0;
-	if (respawn_ms < 1000) respawn_ms = 1000;
+	string id = npc_id.trim_whitespace();
+	if (id == "") return;
+	if (count < 0) count = 0;
+	if (count > NPC_MAX_PER_SPAWNER) count = NPC_MAX_PER_SPAWNER;
+	if (respawn_ms < 0) respawn_ms = 0;
+	if (x0 > x1) { int t = x0; x0 = x1; x1 = t; }
+	if (y0 > y1) { int t = y0; y0 = y1; y1 = t; }
+	if (z0 > z1) { int t = z0; z0 = z1; z1 = t; }
+	if (x0 < minx) x0 = minx;
+	if (y0 < miny) y0 = miny;
+	if (z0 < minz) z0 = minz;
+	if (x1 > maxx) x1 = maxx;
+	if (y1 > maxy) y1 = maxy;
+	if (z1 > maxz) z1 = maxz;
 
 	string path = MAP_DIR + "/" + mapname + ".map";
-	// Read the map file itself, not the parsed cache, so every unrelated line
-	// (sources, zones, spawners of other tools) survives the rewrite untouched.
 	string content = "";
 	if (file_exists(path)) content = file_get_contents(path);
 	if (content == "") content = get_map_content_by_name(mapname);
-	string new_line = "npcspawner:" + enemies + ":" + friends + ":" + respawn_ms;
 
+	string prefix = "npcspawner:" + id + ":";
+	string new_line = prefix + count + ":" + respawn_ms + ":" + x0 + ":" + y0 + ":" + z0 + ":" + x1 + ":" + y1 + ":" + z1;
 	string[]@ raw = string_split(string_replace(content, "\r", "", true), "\n", false);
 	string rebuilt = "";
 	bool replaced = false;
@@ -1409,22 +1446,31 @@ void npc_save_spawner_to_map(int enemies, int friends, int respawn_ms)
 		for (uint i = 0; i < raw.length(); i++)
 		{
 			string line = raw[i].trim_whitespace();
+			if (line == "") continue;
+
+			// The NPC spawner is a new format: an id, a count, a respawn time and
+			// six area coordinates. Anything else that starts with npcspawner:
+			// belongs to a removed format and is dropped, never rewritten.
 			if (string_starts_with(line, "npcspawner:"))
 			{
-				if (!replaced) { rebuilt += new_line + "\n"; replaced = true; }
-				continue;
+				string[]@ parts = string_split(line, ":", false);
+				bool valid = (parts !is null && parts.length() == 10 && string_to_number(parts[1]) <= 0);
+				if (string_starts_with(line, prefix))
+				{
+					if (!replaced && count > 0) { rebuilt += new_line + "\n"; replaced = true; }
+					continue;
+				}
+				if (!valid) continue;
 			}
-			if (line != "") rebuilt += line + "\n";
+			rebuilt += line + "\n";
 		}
 	}
-	if (!replaced) rebuilt += new_line + "\n";
+	if (!replaced && count > 0) rebuilt += new_line + "\n";
 
 	file_put_contents(path, rebuilt);
 	map_bundle_cache[mapname] = rebuilt;
 	invalidate_map_lines_cache(mapname);
-	npc_enemy_target_count = enemies;
-	npc_friend_target_count = friends;
-	npc_respawn_delay = respawn_ms;
+	if (!refresh) return;
 	speak("map updated");
 	tempreset();
 	draw_map(mapname);

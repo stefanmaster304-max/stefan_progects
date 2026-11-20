@@ -1,0 +1,20 @@
+# The Confront NPC
+name=rabbith
+class=animal
+attack_speed=400
+min_damage=200
+max_damage=260
+detection_range=250
+attack_range=3
+walk_speed=320
+run_speed=190
+max_health=400
+xp=25
+use_platform_footsteps=1
+drop_items_on_death=1
+death_drops=gold:1
+voice_min_delay=80
+voice_max_delay=100
+sound_voice=npcs/rabbit/rabbit_voice1.ogg;npcs/rabbit/rabbit_voice2.ogg;npcs/rabbit/rabbit_voice3.ogg;npcs/rabbit/rabbit_voice4.ogg;npcs/rabbit/rabbit_voice5.ogg
+sound_pain=npcs/rabbit/rabbitpain3.ogg;npcs/rabbit/rabbitpain4.ogg;npcs/rabbit/rabbitpain5.ogg
+sound_death=npcs/rabbit/rabbitpain1.ogg;npcs/rabbit/rabbitpain2.ogg

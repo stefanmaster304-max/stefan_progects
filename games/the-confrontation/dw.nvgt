@@ -2,7 +2,7 @@
 #pragma plugin king_audio_engine
 
 // Player posture state (sitting / standing). Kept engine-side so every module
-// (doors, staircases, vitals, gameplay loop) can share it without a dedicated
+// (staircases, vitals, gameplay loop) can share it without a dedicated
 // pose system.
 bool is_sitting = false;
 timer sitting_speech_debounce;
@@ -13,11 +13,8 @@ string ver = "1.0.0";
 #include "includes/sound_paths.nvgt"
 #include"includes/rotation.nvgt"
 #include"includes/hip.nvgt"
-#include"includes/store.nvgt"
 #include"includes/sound_pool.nvgt"
-#include"includes/travelpoint.nvgt"
 #include"includes/bodyfall.nvgt"
-#include"includes/door.nvgt"
 #include "speech.nvgt"
 #include"includes/sd.nvgt"
 #include"includes/map.nvgt"
@@ -27,24 +24,21 @@ string ver = "1.0.0";
 #include "includes/documentation.nvgt"
 #include"includes/dlg.nvgt"
 #include"includes/dlgplayer.nvgt"
-#include"includes/keyboard_sounds.nvgt"
 #include"includes/menu.nvgt"
 #include "includes/updater.nvgt"
 #include"includes/keybinds.nvgt"
-#include"includes/joystick.nvgt"
 #include "includes/virtualizer.nvgt"
 #include "includes/builder.nvgt"
 #include"includes/inventory.nvgt"
 #include"includes/m_pro.nvgt"
-#include"includes/tracking.nvgt"
 #include"includes/store_cfg.nvgt"
 #include"includes/contents_bundle.nvgt"
 #include"includes/store_menu.nvgt"
 #include"includes/store_manager.nvgt"
 #include"includes/shield_system.nvgt"
 #include"includes/message_system.nvgt"
-#include"includes/reverb_zone.nvgt"
 #include"includes/npc_system.nvgt"
+#include"includes/npc_manager.nvgt"
 #include"includes/verify_files.nvgt"
 #include "includes/world_runtime.nvgt"
 int x, y, z;
@@ -60,6 +54,7 @@ int confirm_exit=1;
 int verbalize_zones=1;
 int enable_player_pain_sounds=1;
 bool has_moved=false;
+bool dmoving=false;
 bool player_walked_since_stop=false;
 
 bool confirm_exit_dialog()
@@ -166,9 +161,11 @@ void normalize_player_xp(bool announce = false)
 	}
 }
 
+// Every resurrection costs the same 1500 levels, whatever resurrection the
+// player is on: the level counter restarts at 1 after each one.
 int get_resurrection_levels_required(int r)
 {
-	return 2500;
+	return 1500;
 }
 
 double xprequired=50;
@@ -248,15 +245,10 @@ void main()
 	if (!directory_exists(prefsdir)) directory_create(prefsdir);
 	readprefs();
 	kb_init();
-	joy_init();
-	load_maps_bundle();
-	init_stores();
-	load_all_items_config();
-	load_all_packages();
-	register_default_shield_if_missing();
-	load_all_weapons_wpm();
 
-show_window("The Confrontation "+ver);
+// Content registries are loaded when something actually needs them: init() for
+// a game, the store menu, the builders. The window must not wait for them.
+show_window("The Confront "+ver);
 wait(100);
 if (!verify_files()) exit();
 play_logo_intro();
@@ -276,13 +268,13 @@ dlg("Settings file not found, creating a new settings file...");
 // King Audio uses Steam Audio HRTF for spatial rendering.
 king_global_hrtf = true;
 king_realistic_distance = false;
-init_reverb_bus();
-	p.volume_step = 2.0;
-	sp.volume_step = 2.0;
-	itempool.volume_step = 2.0;
+
+	p.volume_step = SOUND_VOLUME_STEP;
+	sp.volume_step = SOUND_VOLUME_STEP;
+	itempool.volume_step = SOUND_VOLUME_STEP;
 	dp.volume_step = 0.001;
-	spool.volume_step = 2.0;
-	dp.pan_step = 1.0;
+	spool.volume_step = SOUND_VOLUME_STEP;
+	dp.pan_step = SOUND_PAN_STEP;
 	// War Cry lowers the pitch of its distant reports by 6 when the sound sits
 	// behind the listener, and the same cue is used here.
 	dp.behind_pitch_decrease = 6.0;
@@ -290,18 +282,15 @@ init_reverb_bus();
 	// reports must reach the far side of any map. King Audio silences a sound at
 	// 125 / volume_step units, so this step (a range of 125,000) makes the
 	// engine's own falloff negligible; the report level is computed from the
-	// distance instead, in npc_report_level_db(), where a map of any size can be
-	// covered without the far shots sinking into silence.
+	// distance instead, so a map of any size can be covered without the far
+	// shots sinking into silence.
 	dp.max_distance = 0;
 	dp.hrtf = true;
-p.position_smoothing = 0.0;
-sp.position_smoothing = 0.0;
-dp.position_smoothing = 0.0;
-p.pan_step = 1.0;
-sp.pan_step = 1.0;
-itempool.pan_step = 1.0;
-dp.pan_step = 1.0;
-spool.pan_step = 1.0;
+p.pan_step = SOUND_PAN_STEP;
+sp.pan_step = SOUND_PAN_STEP;
+itempool.pan_step = SOUND_PAN_STEP;
+dp.pan_step = SOUND_PAN_STEP;
+spool.pan_step = SOUND_PAN_STEP;
 p.hrtf = true;
 sp.hrtf = true;
 p.behind_pitch_decrease = 0.0;
@@ -320,7 +309,7 @@ void game()
 {
 is_in_game = true;
 while(true)
-{joy_update();
+{
 weapon_system_loop();
 // Fire is hold-to-fire for automatic weapons and one press per shot for
 // semi-automatic ones. Only the left Control key (or the configured fire
@@ -356,16 +345,13 @@ if (kb_pressed("ammo_status") or key_pressed(KEY_A))
 {
 	speak_ammo_status();
 }
-doorcheckloop();
 staircasecheckloop();
 szloop();
 checkloc();
 text_square_check();
-checkpoints_check();
 ground_item_loop();
 map_item_spawner_loop();
 bodyfallloop();
-	tracking_loop();
 	broadcast_loop();
 	update_sources();
 	if (autosave_timer.elapsed >= 30000)
@@ -441,9 +427,9 @@ if ((kb_pressed("builder") or key_pressed(KEY_B)))
 	{
 		if (!SCRIPT_COMPILED && !is_map_encrypted(mapname))
 		{
-			show_window("The Confrontation - Construction Menu");
+			show_window("The Confront - Construction Menu");
 			buildmenu();
-			show_window("The Confrontation " + ver + (mapname != "" ? " - " + mapname : ""));
+			show_window("The Confront " + ver + (mapname != "" ? " - " + mapname : ""));
 		}
 	}
 }
@@ -638,9 +624,10 @@ speak("" + health + " out of " + maxhealth + " health.");
 }
     if (health<=0)
     {
-        // Death by health alone. The unified death sequence speaks "You died.",
-        // plays the player's death sound first (when present) and then the
-        // platform-fall sound, waiting for each to finish before the main menu.
+        // Death by health alone. The unified death sequence speaks "You died."
+        // and starts the whole death ensemble at once - Tristan's voice 17, the
+        // three numbered death effects and the platform fall sound - waiting for
+        // all of them before the main menu.
         player_die("You died.");
     }
 if (key_pressed(KEY_TAB) and jumping == 0 and falling == false)
@@ -660,30 +647,12 @@ if (quick_inv_focused and (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENT
 {
 	quick_inventory_handle_enter();
 }
-// Shift+Enter interacts with travel points.
-else if (shiftisdown() and (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER)))
-{
-	if (is_sitting)
-	{
-		speak("You are sitting. Press Q to stand up.");
-	}
-	else
-	{
-		checktravelpoint();
-	}
-}
-// Plain Enter interacts with doors and stores only.
+// Plain Enter only reminds a seated player to stand up.
 else if (!shiftisdown() and (kb_pressed("use") or key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER)))
 {
 	if (is_sitting)
 	{
 		speak("You are sitting. Press Q to stand up.");
-	}
-	else if (doorcheck()) { }
-	else if (checkstores()) { }
-	else
-	{
-		speak("Nothing to interact with here.");
 	}
 }
 if (kb_pressed("coordinates") or key_pressed(KEY_C))
@@ -696,14 +665,6 @@ if (kb_pressed("coordinates") or key_pressed(KEY_C))
 	{
 		speak(int(round(me.x, 0)) + ", " + int(round(me.y, 0)) + ", " + int(round(me.z, 0)));
 	}
-}
-if ((kb_pressed("tracking_query") or key_pressed(KEY_W)))
-{
-	query_tracking();
-}
-if (!altisdown() && !key_down(KEY_LALT) && !key_down(KEY_RALT) && (kb_pressed("tracking_menu") or key_pressed(KEY_X)))
-{
-	open_tracking_menu();
 }
 walktime = get_current_walktime();
 if (jumping==1)
@@ -785,15 +746,14 @@ if (ascending==false and jumptimer.elapsed>=jumptime2 and atapex==false)
 {
 jumptimer.restart();
 me.z-=1;
-checkforplatforms();
-check_automatic_travelpoints(0, 0, -1);
+	checkforplatforms();
 }
 if (ascending==true and jumptimer.elapsed>=jumptime)
 {
 jumptimer.restart();
 me.z+=1;
-checkforplatforms();
-check_automatic_travelpoints(0, 0, 1);
+	checkforplatforms();
+
 if (me.z>=ty2)
 {
 ascending=false;
@@ -814,8 +774,8 @@ if(falltimer.elapsed>=falltime && me.z > minz)
 {
 falltimer.restart();
 me.z--;
-fallcounter++;
-check_automatic_travelpoints(0, 0, -1);
+	fallcounter++;
+
 }
 bool landed = false;
 if (me.z <= minz)
@@ -907,8 +867,6 @@ if (is_underwater && !is_water_tile(int(me.x), int(me.y), int(me.z)))
 
 if (hit_boundary && target.x == old.x && target.y == old.y && target.z == old.z)
 {
-	if (check_automatic_travelpoints(attempt_dx, attempt_dy, attempt_dz, true))
-		return;
 	return;
 }
 
@@ -917,8 +875,6 @@ if (me.x != step_start.x || me.y != step_start.y || me.z != step_start.z)
 	has_moved = true;
 	player_walked_since_stop = true;
 	check_map_exploration(mapname, int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
-	if (check_automatic_travelpoints(attempt_dx, attempt_dy, attempt_dz, false))
-		return;
 }
 playstep();
 }
@@ -1047,7 +1003,6 @@ cancel_reload();
 fade_pool(@sp, -50, 10);
 fade_pool(@p, -50, 10);
 fade_pool(@dp, -50, 10);
-tracking_active = false;
 bleading.stop();
 heartbeat.stop();
 	clear_all_map_states();
@@ -1058,21 +1013,16 @@ heartbeat.stop();
 	dp.destroy_all();
 	dp.update_listener_3d(0, 0, 0, 0);
 	killbodyfalls();
-killstores();
 itempool.update_listener_3d(0, 0, 0, 0);
 killsrcs();
-destroy_all_travelpoints();
-destroy_all_doors();
 destroy_all_staircases();
 destroy_all_builder_objects();
 npc_destroy_all();
-destroy_all_reverb_zones();
 map.resize(0);
 zones.resize(0);
 safezones.resize(0);
 	remove_all_equipment();
 	is_sitting = false;
-tracking_active = false;
 health = maxhealth;
 }
 double stn(string str)
@@ -1158,17 +1108,6 @@ if (sd.d.exists("check_updates_on_startup"))
 {
 check_updates_on_startup=int(sd.readn("check_updates_on_startup"));
 }
-if (sd.d.exists("keyboard_sound_theme"))
-{
-current_keyboard_theme=sd.read("keyboard_sound_theme");
-if (current_keyboard_theme == "") current_keyboard_theme = "keyboard1";
-set_global_keyboard_sound_theme(current_keyboard_theme);
-}
-else
-{
-current_keyboard_theme = "keyboard1";
-set_global_keyboard_sound_theme("keyboard1");
-}
 }
 void writeprefs()
 {
@@ -1184,7 +1123,6 @@ void writeprefs()
     sd.add("menu_music_choice",menu_music_choice);
     sd.add("enable_player_pain_sounds",enable_player_pain_sounds);
     sd.add("check_updates_on_startup",check_updates_on_startup);
-    sd.add("keyboard_sound_theme",current_keyboard_theme);
     sd.save();
     save_updater_settings();
 }
@@ -1276,7 +1214,7 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         xprequired = get_xp_required(level);
         xp = loc.readn("xp");
         resurrections = loc.readn("resurrections");
-        maxhealth = 1000 * (1.0 + (resurrections * 0.3));
+        maxhealth = 1000 + (200 * resurrections);
         if (loc.d.exists("maxhealth")) maxhealth = loc.readn("maxhealth");
         if (loc.d.exists("health")) health = loc.readn("health");
         else health = maxhealth;
@@ -1334,18 +1272,14 @@ void tempreset_internal(bool save_state, const string&in target_map = "")
     g_active_map.reset_data();
     destroy_all_projectiles();
     killbodyfalls();
-    killstores();
     itempool.destroy_all();
     itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
     dp.destroy_all();
     dp.update_listener_3d(me.x, me.y, me.z, double(facing));
     seamless_switch_map_sources(mapname, target_map);
-    destroy_all_travelpoints();
-    destroy_all_doors();
     destroy_all_staircases();
     destroy_all_builder_objects();
     npc_destroy_all();
-    destroy_all_reverb_zones();
     map.resize(0);
     zones.resize(0);
 safezones.resize(0);

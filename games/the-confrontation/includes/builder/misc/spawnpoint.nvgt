@@ -1,4 +1,17 @@
-// includes/builder/misc/spawnpoint.nvgt - Spawnpoint builder
+// includes/builder/misc/spawnpoint.nvgt - Spawnpoint builder and state
+
+int map_spawn_x = 0;
+int map_spawn_y = 0;
+int map_spawn_z = 0;
+bool has_map_spawnpoint = false;
+
+void set_map_spawnpoint(int x, int y, int z)
+{
+	map_spawn_x = x;
+	map_spawn_y = y;
+	map_spawn_z = z;
+	has_map_spawnpoint = true;
+}
 
 void build_spawnpoint()
 {

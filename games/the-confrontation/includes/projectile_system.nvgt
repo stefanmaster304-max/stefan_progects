@@ -15,8 +15,8 @@ void ensure_bullet_pool()
 	{
 		@bulletpool.mixer = mixer();
 		bulletpool.max_distance = 60.0;
-		bulletpool.pan_step = 1.0;
-		bulletpool.volume_step = 2.0;
+		bulletpool.pan_step = SOUND_PAN_STEP;
+		bulletpool.volume_step = SOUND_VOLUME_STEP;
 		bulletpool.hrtf = true;
 		bullet_pool_initialized = true;
 	}
@@ -247,6 +247,12 @@ void projectile_loop()
 		{
 			pproj.speedtimer.restart();
 
+			// The whole stroke of this tick is tested, not only its end point, so a
+			// shot connects with a target standing anywhere along the line it
+			// travels instead of only when it lands exactly on the target's tile.
+			double from_x = pproj.x;
+			double from_y = pproj.y;
+			double from_z = pproj.z;
 			vector next_pos = move(pproj.x, pproj.y, pproj.z, pproj.direction, 0);
 			pproj.x = next_pos.x;
 			pproj.y = next_pos.y;
@@ -257,7 +263,7 @@ void projectile_loop()
 
 			// A projectile that reaches an enemy or an ally damages it, so the
 			// player can fight the NPC set with the same weapons it uses.
-			if (npc_projectile_intersect(pproj.x, pproj.y, pproj.z, pproj.damage, pproj.weapon_id))
+			if (npc_projectile_intersect(from_x, from_y, from_z, pproj.x, pproj.y, pproj.z, pproj.damage, pproj.weapon_id))
 			{
 				active_projectiles.remove_at(uint(i));
 				continue;

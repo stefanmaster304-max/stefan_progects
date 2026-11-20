@@ -1,4 +1,4 @@
-# The Confrontation - keybindings
+# The Confront - keybindings
 # Format: action=key name
 # To restore the default for an action, delete its line.
 
@@ -16,10 +16,6 @@ level_status=L
 kills=K
 facing=F
 builder=B
-tracking_query=W
-tracking_prev=-
-tracking_next==
-tracking_startstop=Backspace
 volume_up=Home
 volume_down=End
 stairs_up=Page Up

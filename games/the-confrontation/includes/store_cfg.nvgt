@@ -535,14 +535,76 @@ void decrypt_stores()
 
 bool is_store_encrypted(const string&in name = "")
 {
+	if (name != "")
+	{
+		// A single loose category file is editable even when an encrypted bundle
+		// happens to exist for the rest of the content.
+		if (file_exists(STORE_DIR+"/"+name+".st") || file_exists(STORE_DIR+"/"+name+".txt")) return false;
+	}
 	return is_content_encrypted() || file_exists(SHOPS_DAT_PATH) || file_exists(STORES_DAT_PATH) || file_exists("data/shops.dat") || file_exists("data/stores.dat") || file_exists("shops.dat") || file_exists("stores.dat");
 }
+
+// True when a store category exists in memory or as one of its files.
+bool store_category_exists(const string&in id)
+{
+	if (id == "") return false;
+	if (find_store(id) !is null) return true;
+	if (file_exists(STORE_DIR+"/"+id+".st")) return true;
+	if (file_exists(STORE_DIR+"/"+id+".txt")) return true;
+	if (file_exists(STORE_DIR+"/"+id+".dat")) return true;
+	if (file_exists("stores/"+id+".st")) return true;
+	if (file_exists("stores/"+id+".txt")) return true;
+	if (file_exists("data/stores/"+id+".dat")) return true;
+	return false;
+}
+
+// Removes a store category from memory, from the loose store files and from the
+// encrypted bundle, so a category that no longer exists cannot be loaded again.
+// A category that only exists in one of those places is removed as well.
+bool store_remove_category(const string&in id)
+{
+	if (id == "") return false;
+	bool removed = store_category_exists(id);
+	for (int i = int(store_configs.length()) - 1; i >= 0; i--)
+	{
+		if (store_configs[i].name == id)
+			store_configs.remove_at(i);
+	}
+	file_delete(STORE_DIR+"/"+id+".st");
+	file_delete(STORE_DIR+"/"+id+".txt");
+	file_delete(STORE_DIR+"/"+id+".dat");
+	file_delete("stores/"+id+".st");
+	file_delete("stores/"+id+".txt");
+	file_delete("data/stores/"+id+".dat");
+	if (file_exists(SHOPS_DAT_PATH))
+	{
+		if (store_configs.length() > 0) encrypt_all_stores_silent();
+		else file_delete(SHOPS_DAT_PATH);
+	}
+	return removed;
+}
+
+// The three shelves a brand new installation starts with: medical items,
+// weapons and ammunition. They are normal store configurations, so the builder
+// can rename, delete or add more. A marker records that this happened once, so
+// a category the developer deleted is never created again on the next start.
+const string STORE_DEFAULTS_MARKER = "settings/stores/.defaults_created";
 
 void create_default_stores()
 {
 	ensure_store_dir();
+	if (file_exists(STORE_DEFAULTS_MARKER)) return;
+	// An installation that already has categories is not a new one: remember
+	// that, so deleting every category later still sticks.
+	string[]@ existing = list_store_files();
+	if (existing !is null && existing.length() > 0)
+	{
+		file_put_contents(STORE_DEFAULTS_MARKER, "1");
+		return;
+	}
 
-	string[] defaults = {"general"};
+	string[] defaults = {"medical", "weapons", "ammunition"};
+	string[] default_names = {"Medical Items", "Weapons", "Ammunition"};
 	for (uint i = 0; i < defaults.length(); i++)
 	{
 		string st = STORE_DIR+"/"+defaults[i]+".st";
@@ -550,14 +612,11 @@ void create_default_stores()
 		store_cfg@ s;
 		@s = @store_cfg();
 		s.name = defaults[i];
-		s.display_name = "General Store";
+		s.display_name = default_names[i];
 		s.currency = "gold";
-		s.item_names.insert_last("health_potion");
-		s.item_prices.insert_last("100");
-		s.item_names.insert_last("medkit");
-		s.item_prices.insert_last("100");
 		store_configs.insert_last(s);
 		string cfg = serialize_store_st(s);
 		put_store_content(st, cfg);
 	}
+	file_put_contents(STORE_DEFAULTS_MARKER, "1");
 }

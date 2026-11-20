@@ -24,7 +24,7 @@ string get_contents_bundle_path()
 // never leak into another registry while parsing.
 string serialize_all_contents_bundle()
 {
-	string s = "# The Confrontation Contents Bundle v1.0\n\n";
+	string s = "# The Confront Contents Bundle v1.0\n\n";
 	s += "[section:items]\n" + serialize_all_items_bundle() + "\n";
 	s += "[section:weapons]\n" + serialize_all_weapons_bundle() + "\n";
 	s += "[section:stores]\n" + serialize_all_stores_bundle() + "\n";

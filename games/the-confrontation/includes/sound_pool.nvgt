@@ -1,27 +1,25 @@
-/* sound_pool.nvgt -- king_audio_engine version (updated set).
+/* sound_pool.nvgt - King Audio Engine version
+ * Adapted from BGT/NVGT sound_pool for use with king_audio_engine (FMOD + Steam Audio HRTF).
+ * All spatial positioning uses king_audio's set_position() which handles HRTF internally.
  *
- * This is a DERIVED WORK, not original code. It began as the sound pool that
- * ships with BGT and NVGT and was reworked for king_audio_engine: all spatial
- * positioning now goes through king_audio's set_position(), which handles HRTF
- * internally, and the box clamping, distance gating and smoothing were changed
- * to suit it.
+ * Original Copyright (C) 2010-2014 Blastbay Studios
+ * King Audio adaptation - 2026
  *
- * Project additions kept on top of the current set: low-pass filter command
- * support, offset tracking and seeking for every play mode, start pitch applied
- * after play() (king_audio ignores it before a channel exists), and the caller
- * commits king_system_update() once per frame instead of once per pool.
- *
- * Original: Copyright (C) 2010-2014 Blastbay Studios, under a zlib-like
- * license. That license asks three things and they are met here: the origin is
- * not misrepresented, this file is marked as a modified version, and the notice
- * is kept.
- *
- * Modifications: Copyright (c) 2026 Zodiac Games (Eray Bolat), released under
- * the same terms as the original so this file stays as free as it arrived.
+ * This file is the outdated King Audio set, unmodified, with two additions the
+ * game needs: set_lowpass(), used by the underwater state, and
+ * get_sound_position(), used to resume the map music where it stopped.
  */
 #include "rotation.nvgt"
 #pragma plugin king_audio_engine
 bool sound_pool_default_y_elevation = false;
+
+// One attenuation for the whole game. Every pool - the player's own sounds, the
+// map, the items, the projectiles and the NPCs - uses these same numbers, so a
+// sound is attenuated exactly like any other sound at the same distance. The
+// distant weapon reports are the only pool with their own falloff, because they
+// compute their level from the distance instead of letting the engine do it.
+const float SOUND_VOLUME_STEP = 2.0;
+const float SOUND_PAN_STEP = 1.0;
 
 class sound_pool_item {
 	sound@ handle;
@@ -57,15 +55,13 @@ class sound_pool_item {
 	timer last_memory_push;
 	string extra_data;
 	string[] fx_list;
+	// Low-pass command kept on the item so a looping sound that is reloaded
+	// after leaving earshot comes back already muffled.
 	string pool_lowpass_fx;
 	float last_set_lx = -999999.0, last_set_ly = -999999.0, last_set_lz = -999999.0;
 	float last_set_sx = -999999.0, last_set_sy = -999999.0, last_set_sz = -999999.0;
 	float last_set_rot = -999999.0;
 	float last_set_pitch = -999999.0;
-	// The position the ear is given: it follows the real position over a few
-	// frames rather than jumping to it.
-	float sm_sx = 0, sm_sy = 0, sm_sz = 0;
-	bool sm_valid = false;
 
 	sound_pool_item() {
 		reset();
@@ -104,13 +100,12 @@ class sound_pool_item {
 		stream = false;
 		last_memory_push.restart();
 		extra_data = "";
-		pool_lowpass_fx = "";
 		fx_list.resize(0);
+		pool_lowpass_fx = "";
 		last_set_lx = -999999.0; last_set_ly = -999999.0; last_set_lz = -999999.0;
 		last_set_sx = -999999.0; last_set_sy = -999999.0; last_set_sz = -999999.0;
 		last_set_rot = -999999.0;
 		last_set_pitch = -999999.0;
-		sm_sx = 0; sm_sy = 0; sm_sz = 0; sm_valid = false;
 	}
 
 	/*
@@ -119,22 +114,13 @@ class sound_pool_item {
 	void update(float listener_x, float listener_y, float listener_z, double rotation, int max_distance) {
 		if (@handle == null)
 			return;
-		if (handle.active == true && handle.playing == true) {
-			double cur_pos = handle.position;
-			if (cur_pos > 0) start_offset = cur_pos;
-		}
-		if (max_distance > 0 and filename != "") {
+		if (max_distance > 0 and looping == true and filename != "") {
 			int total_distance = get_total_distance(listener_x, listener_y, listener_z);
-			// Apply the same audible boundary to every source type. Culling only
-			// looping sounds left one-shots (howls, footsteps, ambience) faintly
-			// audible after crossing the whole map.
-			if (total_distance > max_distance) {
-				if (handle.active == true) handle.close();
+			if (total_distance > max_distance and handle.active == true) {
+				handle.close();
 				return;
 			}
-			// Only looping sources may be restarted after they re-enter the radius.
-			// One-shot sounds that have been culled must not restart.
-			if (looping == true and handle.active == false) {
+			if (total_distance <= max_distance and handle.active == false) {
 				if (stream) {
 					if (@packfile != null)
 						handle.stream(filename, packfile);
@@ -147,6 +133,8 @@ class sound_pool_item {
 						handle.load(filename);
 				}
 				if (handle.active == true) {
+					if (start_offset > 0)
+						handle.seek(start_offset);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
 					handle.pan = start_pan;
 					handle.volume = start_volume;
@@ -156,8 +144,6 @@ class sound_pool_item {
 						handle.set_fx(pool_lowpass_fx);
 					if (paused == false)
 						handle.play_looped();
-					if (start_offset > 0)
-						handle.seek(start_offset);
 				}
 				return;
 			}
@@ -220,24 +206,6 @@ class sound_pool_item {
 		else
 			sound_z = eff_listener_z;
 
-		// A source position can jump in a single frame: tile coordinates are whole
-		// numbers, server updates arrive in steps, and the box clamp moves the
-		// effective position around. On a nearby sound a one-unit step is a 45-90
-		// degree change of direction, and the pan/HRTF matrix snaps to it. Measured:
-		// about ten broadband bursts a second on abrupt direction jumps, and none at
-		// all when the source moved along a straight line. Following the position
-		// over a few frames spreads that step out.
-		if (!sm_valid) { sm_sx = sound_x; sm_sy = sound_y; sm_sz = sound_z; sm_valid = true; }
-		else {
-			sm_sx += (sound_x - sm_sx) * 0.35;
-			sm_sy += (sound_y - sm_sy) * 0.35;
-			sm_sz += (sound_z - sm_sz) * 0.35;
-			if (abs(sound_x - sm_sx) < 0.05) sm_sx = sound_x;
-			if (abs(sound_y - sm_sy) < 0.05) sm_sy = sound_y;
-			if (abs(sound_z - sm_sz) < 0.05) sm_sz = sound_z;
-		}
-		sound_x = sm_sx; sound_y = sm_sy; sound_z = sm_sz;
-
 		// Adjust listener rotation by theta offset (all in degrees)
 		float eff_rotation = rotation - theta;
 		while (eff_rotation < 0) eff_rotation += 360.0;
@@ -266,16 +234,6 @@ class sound_pool_item {
 			float local_y = dx * sin_r + dy * cos_r;
 			if (local_y < 0) pitch -= behind_pitch_decrease;
 		}
-		// NOTE (measured): behind_pitch_decrease steps the pitch from 100% to 95%
-		// exactly at the front/back boundary, and that leaves a discontinuity you
-		// can measure in the waveform -- with a pure 480 Hz tone and a full 360
-		// degree turn, a value of 5 produced a jump 75 times the median, and a
-		// value of 0 produced none at all. Ramping the pitch instead was tried and
-		// did NOT help (the jump stayed the same size): the problem is not the size
-		// of the pitch step but the SetPitch call itself, and ramping only makes it
-		// happen more often. The code is therefore left as it was. If you want the
-		// clicks gone, set the pool's behind_pitch_decrease to 0 and lose the
-		// front/back pitch cue.
 		if (pitch != last_set_pitch) {
 			handle.pitch = pitch;
 			last_set_pitch = pitch;
@@ -347,23 +305,42 @@ class sound_pool {
 	float volume_step;
 	float behind_pitch_decrease;
 	bool hrtf = king_global_hrtf;
-	// Retained as a compatibility setting for existing callers. King Audio's
-	// own spatializer performs the smoothing and occlusion work.
-	float position_smoothing = 0.0;
 	mixer@ mixer = null;
 	king_pack@ pack_file = null;
+	// Muffling used by the underwater state: an engine low-pass applied to every
+	// sound of the pool, kept on each item so reloads keep it.
 	float pool_lowpass_cutoff = 0.0;
 	float pool_lowpass_resonance = 1.0;
+
+	void set_lowpass(float cutoff_hz, float resonance = 1.0) {
+		if (cutoff_hz <= 0.0 || cutoff_hz >= 20000.0) {
+			if (pool_lowpass_cutoff <= 0.0)
+				return;
+			pool_lowpass_cutoff = 0.0;
+			for (int i = 0; i <= int(highest_slot); i++) {
+				items[uint(i)].pool_lowpass_fx = "";
+				if (@items[uint(i)].handle != null && items[uint(i)].handle.active)
+					items[uint(i)].handle.set_fx("$pool_lp");
+			}
+			return;
+		}
+		pool_lowpass_cutoff = cutoff_hz;
+		pool_lowpass_resonance = resonance;
+		string fx_cmd = "$pool_lp:lowpass:" + int(cutoff_hz) + ":" + int(resonance);
+		for (int i = 0; i <= int(highest_slot); i++) {
+			items[uint(i)].pool_lowpass_fx = fx_cmd;
+			if (@items[uint(i)].handle != null && items[uint(i)].handle.active)
+				items[uint(i)].handle.set_fx(fx_cmd);
+		}
+	}
 
 	// Default constructor
 	sound_pool(int default_item_size = 100) {
 		items.resize(default_item_size);
 		max_distance = 0;
-		pan_step = 1.0;
-		volume_step = 2.0;
+		pan_step = SOUND_PAN_STEP;
+		volume_step = SOUND_VOLUME_STEP;
 		behind_pitch_decrease = 0.25;
-		pool_lowpass_cutoff = 0.0;
-		pool_lowpass_resonance = 1.0;
 		last_listener_x = 0;
 		last_listener_y = 0;
 		last_listener_z = 0;
@@ -460,12 +437,8 @@ class sound_pool {
 		}
 		for (uint i = 0; i < items[slot].fx_list.length(); i++)
 			items[slot].handle.set_fx(items[slot].fx_list[i]);
-		if (pool_lowpass_cutoff > 0.0 && pool_lowpass_cutoff < 20000.0) {
-			items[slot].pool_lowpass_fx = "$pool_lp:lowpass:" + int(pool_lowpass_cutoff) + ":" + int(pool_lowpass_resonance);
+		if (items[slot].pool_lowpass_fx != "")
 			items[slot].handle.set_fx(items[slot].pool_lowpass_fx);
-		} else {
-			items[slot].pool_lowpass_fx = "";
-		}
 		if (dimension > 0)
 			last_listener_x = listener_x;
 		if (dimension > 1) {
@@ -477,34 +450,11 @@ class sound_pool {
 		if (filename != "") {
 			items[slot].update(listener_x, listener_y, listener_z, rotation, max_distance);
 			if (!start_playing)
-			{
 				items[slot].paused = true;
-				if (items[slot].start_offset > 0)
-					items[slot].handle.seek(items[slot].start_offset);
-			}
 			else if (looping == true)
-			{
 				items[slot].handle.play_looped();
-				if (items[slot].start_offset > 0)
-					items[slot].handle.seek(items[slot].start_offset);
-			}
 			else
-			{
 				items[slot].handle.play();
-				if (items[slot].start_offset > 0)
-					items[slot].handle.seek(items[slot].start_offset);
-			}
-			// king_audio only accepts pitch once the sound owns a channel; setting it
-			// before play() is ignored, so the requested start pitch is applied here.
-			if (start_playing and items[slot].start_pitch != 100.0)
-				items[slot].handle.pitch = items[slot].start_pitch;
-			// In king, play() starts paused so the DSPs can be attached, and the
-			// volume and DSP state only reach the output on a later set_position
-			// call. The update() above runs BEFORE play(), so its cache is already
-			// populated, and if nothing then changes, set_position would never be
-			// called again -- loops started at login stayed silent. Invalidate the
-			// cache so the first update after play() definitely sends a position.
-			items[slot].last_set_lx = -999999.0;
 		}
 		if (slot > highest_slot)
 			highest_slot = slot;
@@ -525,11 +475,6 @@ class sound_pool {
 
 	int play_stationary_extended(string filename, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null) {
 		return play_extended(0, filename, null, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
-	}
-
-	// Compatibility overload for callers that explicitly request streaming.
-	int play_stationary_extended(string filename, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent, mixer@ mix, string[]@ fx, bool stream) {
-		return play_extended(0, filename, null, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
 	}
 
 	int play_1d(string filename, king_pack@ packfile, float listener_x, float sound_x, bool looping, bool persistent = false) {
@@ -655,7 +600,7 @@ class sound_pool {
 	}
 
 	void destroy_all() {
-		for (uint i = 0; i <= highest_slot && i < items.length(); i++)
+		for (uint i = 0; i < items.length(); i++)
 			items[i].reset();
 		highest_slot = 0;
 	}
@@ -680,34 +625,8 @@ class sound_pool {
 			if (refresh_y_is_elevation) items[i].y_is_elevation = this.y_is_elevation;
 			items[i].update(listener_x, listener_y, listener_z, rotation, max_distance);
 		}
-		// The game commits FMOD/Steam Audio once after every pool has submitted
-		// its transforms. Flushing here would commit four partial listener states
-		// per frame and can produce audible discontinuities.
-	}
-
-	void set_lowpass(float cutoff_hz, float resonance = 1.0) {
-		if (cutoff_hz <= 0.0 || cutoff_hz >= 20000.0) {
-			if (pool_lowpass_cutoff > 0.0) {
-				pool_lowpass_cutoff = 0.0;
-				for (int i = 0; i <= highest_slot; i++) {
-					items[i].pool_lowpass_fx = "";
-					if (items[i].handle !is null && items[i].handle.active) {
-						items[i].handle.set_fx("$pool_lp");
-					}
-				}
-			}
-			return;
-		}
-
-		pool_lowpass_cutoff = cutoff_hz;
-		pool_lowpass_resonance = resonance;
-		string fx_cmd = "$pool_lp:lowpass:" + int(cutoff_hz) + ":" + int(resonance);
-		for (int i = 0; i <= highest_slot; i++) {
-			items[i].pool_lowpass_fx = fx_cmd;
-			if (items[i].handle !is null && items[i].handle.active) {
-				items[i].handle.set_fx(fx_cmd);
-			}
-		}
+		// Flush FMOD 3D state after all sounds updated
+		king_system_update();
 	}
 
 	bool set_sound_owner(int slot, string owner, int priority = 0) {
@@ -726,8 +645,8 @@ class sound_pool {
 		return -1;
 	}
 
-	// Current playback position of a slot, used to resume looping ambience at the
-	// exact spot it was left when its map went out of range.
+	// Playback position of a slot in milliseconds, used to resume a looping
+	// music source where the previous map left it.
 	double get_sound_position(int slot) {
 		if (verify_slot(slot) == false || @items[slot].handle == null)
 			return 0.0;
@@ -834,11 +753,11 @@ class sound_pool {
 			items[slot].handle.volume = start_volume;
 			items[slot].handle.pitch = start_pitch;
 			if (changed) {
-				// king_audio only pushes a handle.volume/pitch/pan change through to the
-				// audible output on the next set_position call. While the player stands
-				// still, update_listener_position skips set_position because nothing has
-				// moved, so the new volume would never be heard. Invalidate the cache so
-				// the next frame is forced to send a position.
+				// king_audio, handle.volume/pitch/pan degisimini ancak set_position
+				// tekrar cagrildiginda audible output'a yansitiyor. Oyuncu hareket
+				// etmedigi surece update_listener_position cache yuzunden set_position'i
+				// atliyordu; burada cache'i invalidate ediyoruz ki bir sonraki frame
+				// set_position zorla cagrilsin ve yeni volume duyulsun.
 				items[slot].last_set_lx = -999999.0;
 			}
 			return true;
@@ -994,4 +913,4 @@ class sound_pool {
 		@current.handle = temp;
 		return slot;
 	}
-}
+}

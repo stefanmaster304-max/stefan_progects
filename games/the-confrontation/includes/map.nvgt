@@ -441,6 +441,38 @@ bool can_enter_map(string name, bool announce = true)
 	}return true;
 }
 
+// Maps whose minimum resurrection is exactly this one: the maps a new
+// resurrection unlocks. Read from the map file itself, the same field
+// can_enter_map checks.
+string[] get_maps_unlocked_at_resurrection(int res)
+{
+	string[] result;
+	string[] all = get_available_maps();
+	for (uint i = 0; i < all.length(); i++)
+	{
+		string name = all[i];
+		if (!map_exists_on_disk(name)) continue;
+		string content = get_map_content_by_name(name);
+		if (content == "") continue;
+		content = string_replace(content, "\r", "", true);
+		string[] lines = string_split(content, "\n", false);
+		int min_res = 0;
+		for (uint l = 0; l < lines.length(); l++)
+		{
+			string line = lines[l].trim_whitespace();
+			if (line == "" || string_left(line, 1) == ";" || string_left(line, 1) == "#") continue;
+			string[] parsed = string_split(line, ":", false);
+			if (parsed.length() < 2) parsed = string_split(line, " ", false);
+			if (parsed.length() < 2) continue;
+			string cmd = parsed[0].trim_whitespace();
+			if (cmd == "minresurrection" || cmd == "min_resurrection" || cmd == "minres")
+				min_res = int(string_to_number(parsed[1]));
+		}
+		if (min_res == res) result.insert_last(name);
+	}
+	return result;
+}
+
 void draw_map(string name, bool force_reload_sources = false)
 {
 bool map_already_saved = has_saved_map_state(name);
@@ -455,9 +487,7 @@ map_min_level = 1;
 map_max_level = 0;
 map_min_resurrection = 0;
 map_max_resurrection = 0;
-npc_enemy_target_count = 0;
-npc_friend_target_count = 0;
-npc_respawn_delay = 30000;
+npc_reset_spawners();
 string[] lines;
 if (map_parsed_lines_cache.exists(name))
 {
@@ -623,120 +653,11 @@ else if (cmd == "source")
 {
 	// Sound sources are managed uniformly and seamlessly by sync_map_and_neighbor_sources
 }
-else if (cmd == "store")
-{
-if (parsed.length() >= 8)
-{
-string store_id = parsed[1];
-        spawn_store(string_to_number(parsed[2]), string_to_number(parsed[3]), string_to_number(parsed[4]), string_to_number(parsed[5]), string_to_number(parsed[6]), string_to_number(parsed[7]), store_id);
-    }
-}
 else if (cmd == "safezone")
 {
 if (parsed.length() >= 7)
 {
 spawn_safezone(string_to_number(parsed[1]), string_to_number(parsed[2]), string_to_number(parsed[3]), string_to_number(parsed[4]), string_to_number(parsed[5]), string_to_number(parsed[6]));
-}
-}
-else if (cmd == "travelpoint")
-{
-	string[]@ tp_parts = string_split(line, ":", true);
-	if (tp_parts.length() >= 19)
-	{
-		int x1 = int(string_to_number(tp_parts[1]));
-		int x2 = int(string_to_number(tp_parts[2]));
-		int y1 = int(string_to_number(tp_parts[3]));
-		int y2 = int(string_to_number(tp_parts[4]));
-		int z1 = int(string_to_number(tp_parts[5]));
-		int z2 = int(string_to_number(tp_parts[6]));
-		string target_map = tp_parts[7];
-		int dx1 = int(string_to_number(tp_parts[8]));
-		int dx2 = int(string_to_number(tp_parts[9]));
-		int dy1 = int(string_to_number(tp_parts[10]));
-		int dy2 = int(string_to_number(tp_parts[11]));
-		int dz1 = int(string_to_number(tp_parts[12]));
-		int dz2 = int(string_to_number(tp_parts[13]));
-		string tp_text = tp_parts[14];
-		if (tp_text == "none") tp_text = "";
-		int min_l = int(string_to_number(tp_parts[15]));
-		int max_l = int(string_to_number(tp_parts[16]));
-		int min_r = int(string_to_number(tp_parts[17]));
-		int max_r = int(string_to_number(tp_parts[18]));
-		bool is_auto = false;
-		if (tp_parts.length() >= 20)
-		{
-			string auto_flag = tp_parts[19].trim_whitespace();
-			is_auto = (auto_flag == "1" || auto_flag == "true" || auto_flag == "auto");
-		}
-
-		if (target_map != "" && map_exists_on_disk(target_map))
-		{
-			spawn_travelpoint(x1, x2, y1, y2, z1, z2, target_map, dx1, dx2, dy1, dy2, dz1, dz2, tp_text, min_l, max_l, min_r, max_r, is_auto);
-		}
-	}
-	else if (tp_parts.length() >= 14)
-	{
-		int px = int(string_to_number(tp_parts[1]));
-		int py = int(string_to_number(tp_parts[2]));
-		int pz = int(string_to_number(tp_parts[3]));
-		string target_map = tp_parts[4];
-		int tx = (tp_parts[5] == "random_x") ? random(0, maxx) : int(string_to_number(tp_parts[5]));
-		int ty = (tp_parts[6] == "random_y") ? random(0, maxy) : int(string_to_number(tp_parts[6]));
-		int tz = int(string_to_number(tp_parts[7]));
-		string tp_text = tp_parts[8];
-		if (tp_text == "none") tp_text = "";
-		int min_l = int(string_to_number(tp_parts[9]));
-		int max_l = int(string_to_number(tp_parts[10]));
-		int min_r = int(string_to_number(tp_parts[11]));
-		int max_r = int(string_to_number(tp_parts[12]));
-
-		if (target_map != "" && map_exists_on_disk(target_map))
-		{
-			spawn_travelpoint(px, px, py, py, pz, pz, target_map, tx, tx, ty, ty, tz, tz, tp_text, min_l, max_l, min_r, max_r);
-		}
-	}
-	else if (tp_parts.length() >= 11)
-	{
-		int px = int(string_to_number(tp_parts[1]));
-		int py = int(string_to_number(tp_parts[2]));
-		int pz = int(string_to_number(tp_parts[3]));
-		string target_map = tp_parts[4];
-		int tx = (tp_parts[5] == "random_x") ? random(0, maxx) : int(string_to_number(tp_parts[5]));
-		int ty = (tp_parts[6] == "random_y") ? random(0, maxy) : int(string_to_number(tp_parts[6]));
-		int tz = int(string_to_number(tp_parts[7]));
-		string tp_text = tp_parts[8];
-		if (tp_text == "none") tp_text = "";
-		int min_r = int(string_to_number(tp_parts[9]));
-
-		if (target_map != "" && map_exists_on_disk(target_map))
-		{
-			spawn_travelpoint(px, px, py, py, pz, pz, target_map, tx, tx, ty, ty, tz, tz, tp_text, 1, 0, min_r, 0);
-		}
-	}
-	else if (tp_parts.length() >= 10)
-	{
-		int px = int(string_to_number(tp_parts[1]));
-		int py = int(string_to_number(tp_parts[2]));
-		int pz = int(string_to_number(tp_parts[3]));
-		string target_map = tp_parts[4];
-		int tx = (tp_parts[5] == "random_x") ? random(0, maxx) : int(string_to_number(tp_parts[5]));
-		int ty = (tp_parts[6] == "random_y") ? random(0, maxy) : int(string_to_number(tp_parts[6]));
-		int tz = int(string_to_number(tp_parts[7]));
-		string tp_text = tp_parts[8];
-		if (tp_text == "none") tp_text = "";
-		int min_r = int(string_to_number(tp_parts[9]));
-
-		if (target_map != "" && map_exists_on_disk(target_map))
-		{
-			spawn_travelpoint(px, px, py, py, pz, pz, target_map, tx, tx, ty, ty, tz, tz, tp_text, 1, 0, min_r, 0);
-		}
-	}
-}
-else if (cmd == "door")
-{
-if (parsed.length() >= 12)
-{
-spawn_door(int(string_to_number(parsed[1])), int(string_to_number(parsed[2])), int(string_to_number(parsed[3])), int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])), int(string_to_number(parsed[7])), parsed[8], parsed[9], parsed[10], parsed[11]);
 }
 }
 else if (cmd == "staircase")
@@ -747,35 +668,11 @@ string stile = (parsed.length() >= 9) ? parsed[8] : parsed[7];
 spawn_staircase(int(string_to_number(parsed[1])), int(string_to_number(parsed[2])), int(string_to_number(parsed[3])), int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])), stile);
 }
 }
-else if (cmd == "sign")
-{
-if (parsed.length() >= 6)
-{
-int cx = int(string_to_number(parsed[1]));
-int cy = int(string_to_number(parsed[2]));
-int cz = int(string_to_number(parsed[3]));
-string ctype = parsed[parsed.length() - 1];
-string ctext = "";
-for (uint k = 4; k < parsed.length() - 1; k++)
-{
-if (k > 4) ctext += ":";
-ctext += parsed[k];
-}
-spawn_sign(cx, cy, cz, ctext, ctype);
-}
-}
 else if (cmd == "text_square")
 {
 if (parsed.length() >= 8)
 {
 spawn_text_square(int(string_to_number(parsed[1])), int(string_to_number(parsed[2])), int(string_to_number(parsed[3])), int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])), parsed[7]);
-}
-}
-else if (cmd == "checkpoint")
-{
-if (parsed.length() >= 5)
-{
-spawn_checkpoint(int(string_to_number(parsed[1])), int(string_to_number(parsed[2])), int(string_to_number(parsed[3])), parsed[4]);
 }
 }
 else if (cmd == "spawnpoint")
@@ -789,31 +686,20 @@ else if (cmd == "item_spawner")
 {
 	if (!map_already_saved) read_item_spawner(parsed);
 }
-else if (cmd == "reverbzone")
-{
-	if (parsed.length() >= 20)
-	{
-		spawn_reverb_zone(
-			int(string_to_number(parsed[1])), int(string_to_number(parsed[2])),
-			int(string_to_number(parsed[3])), int(string_to_number(parsed[4])),
-			int(string_to_number(parsed[5])), int(string_to_number(parsed[6])),
-			string_to_number(parsed[7]), string_to_number(parsed[8]), string_to_number(parsed[9]),
-			string_to_number(parsed[10]), string_to_number(parsed[11]), string_to_number(parsed[12]),
-			string_to_number(parsed[13]), string_to_number(parsed[14]), string_to_number(parsed[15]),
-			string_to_number(parsed[16]), string_to_number(parsed[17]), string_to_number(parsed[18]),
-			string_to_number(parsed[19]));
-	}
-}
 else if (cmd == "npcspawner")
 {
-	if (parsed.length() >= 4)
+	// The only accepted form is
+	// npcspawner:<npc id>:<count>:<respawn>:<min x>:<min y>:<min z>:<max x>:<max y>:<max z>
+	// Any other npcspawner line is a removed format (the enemy/ally spawner or
+	// the short lived version without an area) and is ignored completely.
+	if (parsed.length() == 10 && string_to_number(parsed[1]) <= 0)
 	{
-		npc_enemy_target_count = int(string_to_number(parsed[1]));
-		npc_friend_target_count = int(string_to_number(parsed[2]));
-		npc_respawn_delay = int(string_to_number(parsed[3]));
-		if (npc_enemy_target_count < 0) npc_enemy_target_count = 0;
-		if (npc_friend_target_count < 0) npc_friend_target_count = 0;
-		if (npc_respawn_delay < 1000) npc_respawn_delay = 1000;
+		npc_add_spawner(
+			parsed[1].trim_whitespace(),
+			int(string_to_number(parsed[2])),
+			int(string_to_number(parsed[3])),
+			int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])),
+			int(string_to_number(parsed[7])), int(string_to_number(parsed[8])), int(string_to_number(parsed[9])));
 	}
 }
 }
@@ -1220,9 +1106,7 @@ bool platform_preview_play(const string&in name, double vol, double pitch)
 	if (snd == "") return false;
 	builder_preview_sound.close();
 	if (!builder_preview_sound.load(snd)) return false;
-	// The reverb builder points this shared preview sound at its own mixer, and
-	// that mix holds the direct signal 8 to 20 dB down. A floor preview belongs
-	// on the master bus, at the volume the sliders ask for.
+	// A floor preview belongs on the master bus, at the volume the sliders ask for.
 	builder_preview_sound.set_mixer(null);
 	builder_preview_sound.play_looped();
 	builder_preview_sound.volume = vol;
@@ -1278,7 +1162,6 @@ void build_platform()
 	{
 		wait(5);
 		f.monitor();
-		update_form_input_keyboard_sound(f, input_boxes);
 
 		int pos = f.get_list_position(tile_ctrl);
 		string opt_name = (pos >= 0 && pos < int(platform_dirs.length())) ? platform_dirs[pos] : "";
@@ -1385,7 +1268,6 @@ void build_wall()
 	{
 		wait(5);
 		f.monitor();
-		update_form_input_keyboard_sound(f, input_boxes);
 		if (key_down(KEY_SPACE) && f.get_current_focus() == wall_ctrl)
 		{
 			int pos = f.get_list_position(wall_ctrl);
@@ -1464,7 +1346,6 @@ void build_safe_zone()
 	{
 		wait(5);
 		f.monitor();
-		update_form_input_keyboard_sound(f, input_boxes);
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
 		{
 			speak("canceled");
@@ -1518,7 +1399,6 @@ void build_text_zone()
 	{
 		wait(5);
 		f.monitor();
-		update_form_input_keyboard_sound(f, input_boxes);
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
 		{
 			speak("canceled");

@@ -1,8 +1,8 @@
 // Menu navigation helper: true when a menu action is pressed, with hold-to-
-// repeat so the keyboard arrows AND the joystick D-pad scroll menus
-// comfortably. The navigation actions (menu_up, menu_down, menu_left,
-// menu_right, menu_activate, menu_back, menu_home, menu_end) are rebindable
-// from the keybindings menu and answer the joystick too. Repeat profile:
+// repeat so the keyboard arrows scroll menus comfortably. The navigation
+// actions (menu_up, menu_down, menu_left, menu_right, menu_activate,
+// menu_back, menu_home, menu_end) are rebindable from the keybindings menu.
+// Repeat profile:
 // immediate edge, then 250ms, then 100ms while held (close to the old
 // key_hold feel but with instant first response).
 dictionary menu_nav_latch;
@@ -297,7 +297,6 @@ int[] num_keys={KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9,KEY_0,KEY_
 while(true)
 {
 update_game_world();
-joy_update();
 if(enable_first_letter_navigation)
 {
 string char=get_characters();
@@ -341,7 +340,6 @@ if(@callback_handle!=null)
 int callback_result=callback_handle(this, callback_data);
 if(callback_result!=0)
 {
-joy_menu_closed();
 running=false;
 return callback_result;
 }
@@ -446,7 +444,6 @@ if(menu_position!=0 and item_list[menu_position-1].activate)
 {
 play_enter_sound();
 last_position=menu_position;
-joy_menu_closed();
 running=false;
 return menu_position;
 }
@@ -454,7 +451,6 @@ return menu_position;
 
 if(allow_escape and (key_pressed(KEY_ESCAPE) or kb_pressed("menu_back")))
 {
-joy_menu_closed();
 running=false;
 return 0;
 }

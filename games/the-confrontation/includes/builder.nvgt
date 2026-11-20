@@ -11,23 +11,14 @@
 
 // Misc Builders & Runtime
 #include "builder/misc/spawnpoint.nvgt"
-#include "builder/misc/checkpoint.nvgt"
 
 // Interaction Builders & Runtime
-#include "builder/interaction/sign.nvgt"
 #include "builder/interaction/text_square.nvgt"
-#include "builder/misc/reverb_zone_builder.nvgt"
 #include "builder/misc/npc_spawner_builder.nvgt"
 
 void destroy_all_builder_objects()
 {
-	for (uint i = 0; i < signs.length(); i++)
-	{
-		if (signs[i].loop_sound != -1) sp.destroy_sound(signs[i].loop_sound);
-	}
-	signs.resize(0);
 	text_squares.resize(0);
-	checkpoints.resize(0);
 	destroy_all_ground_items();
 	destroy_all_map_spawners();
 	destroy_all_projectiles();
@@ -49,21 +40,17 @@ void buildmenu()
 		"platform - add platforms and walkable surfaces to your map",
 		"staircase - add staircases to connect different elevations",
 		"wall - add solid blocking walls to your map",
-		"door - add interactive doors with open, close and lock states",
 		"safe zone - add safe zones where combat damage is disabled",
 		"text zone - add trigger zones that display or speak text when entered",
-		"travelpoint - add teleportation and map transition points",
 		"spawnpoint - set the default player spawn coordinates on this map",
-		"checkpoint - add checkpoints to save player position and progress",
-		"sign - add readable signs and bulletin boards",
 		"text square - add text zones that speak text on specific coordinates",
 		"items manager - add, edit, remove and create new items",
 		"package manager - create, edit, view and delete packages",
 		"item spawner - configure item drops and map pickup spawners",
 		"weapon manager - add, edit, remove and create new weapons",
-		"store manager - add, remove and edit existing shops or create new ones",
-		"reverb zone - add a reverberant area using King Audio native reverb",
-		"enemy and ally spawner - generate enemies and allies on this map",
+		"store categories - add, edit and remove store categories and choose their items",
+		"npc manager - create, edit and delete NPCs",
+		"npc spawner - place configured NPCs on this map",
 		"map manager and tools - manage maps, properties, backup and tools",
 		"delete current map - permanently delete the active map file"
 	};
@@ -75,20 +62,16 @@ void buildmenu()
 		"platform",
 		"staircase",
 		"wall",
-		"door",
 		"safe_zone",
 		"text_zone",
-		"travelpoint",
 		"spawnpoint",
-		"checkpoint",
-		"sign",
 		"text_square",
 		"items_manager",
 		"package_manager",
 		"item_spawner",
 		"weapon_manager",
 		"store_manager",
-		"reverb_zone",
+		"npc_manager",
 		"npc_spawner",
 		"map_manager_tools",
 		"delete_map"
@@ -197,19 +180,15 @@ void buildobj(string buildtype)
 	else if (buildtype == "platform") build_platform();
 	else if (buildtype == "wall") build_wall();
 	else if (buildtype == "staircase") build_staircase();
-	else if (buildtype == "door") build_door();
 	else if (buildtype == "safe_zone") build_safe_zone();
 	else if (buildtype == "text_zone") build_text_zone();
-	else if (buildtype == "travelpoint") build_travelpoint();
 	else if (buildtype == "spawnpoint") build_spawnpoint();
-	else if (buildtype == "checkpoint") build_checkpoint();
-	else if (buildtype == "sign") build_sign();
 	else if (buildtype == "text_square") build_text_square();
 	else if (buildtype == "items_manager") item_chooser();
 	else if (buildtype == "package_manager") package_manager_menu();
 	else if (buildtype == "item_spawner") build_item_spawner();
 	else if (buildtype == "weapon_manager") weapon_chooser();
-	else if (buildtype == "reverb_zone") build_reverb_zone();
+	else if (buildtype == "npc_manager") npc_manager_menu();
 	else if (buildtype == "npc_spawner") build_npc_spawner();
 }
 
@@ -255,10 +234,10 @@ bool new_map_form()
 	int nm_maxy = f.create_input_box("Maximum Y", "100");
 	int nm_minz = f.create_input_box("Minimum Z", "0");
 	int nm_maxz = f.create_input_box("Maximum Z", "20");
-	int nm_min_lvl = f.create_input_box("Minimum Level", "1");
-	int nm_max_lvl = f.create_input_box("Maximum Level (0 for unlimited)", "0");
-	int nm_min_res = f.create_input_box("Minimum Resurrection", "0");
-	int nm_max_res = f.create_input_box("Maximum Resurrection (0 for unlimited)", "0");
+	int nm_min_lvl = f.create_input_box("Minimum level to enter", "1");
+	int nm_max_lvl = f.create_input_box("Maximum level to enter (0 for unlimited)", "0");
+	int nm_min_res = f.create_input_box("Resurrection at which this map unlocks", "0");
+	int nm_max_res = f.create_input_box("Maximum resurrection to enter (0 for unlimited)", "0");
 	f.set_disallowed_chars(nm_minx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(nm_maxx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(nm_miny, "0123456789-", true, "Numbers only.");
@@ -377,19 +356,16 @@ bool ask_go_to_new_map_dialog(const string&in name)
 	{
 		wait(5);
 		update_game_world();
-		joy_update();
 		if (key_pressed(KEY_LEFT) or key_pressed(KEY_RIGHT) or key_pressed(KEY_UP) or key_pressed(KEY_DOWN) or kb_pressed("menu_left") or kb_pressed("menu_right") or kb_pressed("menu_up") or kb_pressed("menu_down"))
 		{
 			speak(msg);
 		}
 		if (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER) or key_pressed(KEY_Y) or kb_pressed("menu_activate"))
 		{
-			joy_menu_closed();
 			return true;
 		}
 		if (key_pressed(KEY_ESCAPE) or key_pressed(KEY_N) or kb_pressed("menu_back"))
 		{
-			joy_menu_closed();
 			return false;
 		}
 	}
@@ -476,7 +452,6 @@ void map_editor_menu()
 					wait(5);
 					update_game_world();
 					af.monitor();
-					update_form_input_keyboard_sound(af, in_add);
 					if (key_pressed(KEY_ESCAPE) || af.is_pressed(b_can)) break;
 					if (af.is_pressed(b_ok))
 					{
@@ -521,7 +496,6 @@ void map_editor_menu()
 						wait(5);
 						update_game_world();
 						ef.monitor();
-						update_form_input_keyboard_sound(ef, in_edit);
 						if (key_pressed(KEY_ESCAPE) || ef.is_pressed(b_can)) break;
 						if (ef.is_pressed(b_save))
 						{

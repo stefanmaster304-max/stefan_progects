@@ -1,25 +1,24 @@
-// store_menu.nvgt - TW-style cart store menu (offline adaptation)
+// store_menu.nvgt - The single store, opened from the main menu.
 //
-// Based on the cart store UI from TW (includes/storemenu.nvgt):
-//   Up/Down          - move between products
-//   Right arrow      - add a product to the cart (increases quantity)
-//   Left arrow       - remove a product from the cart (decreases quantity)
-//   Home / End       - add / remove 10 units of the product
-//   Shift + Enter    - type the exact amount you want to buy
-//   F1               - speak your currency balances
-//   F2               - speak the cart total
-//   Enter            - buy everything in the cart and finish
-//   Escape           - exit without buying
+// The store is not tied to any map: it is one place, opened from the main menu.
+// Its categories are the store configurations in settings/stores. Every item of
+// a category is charged in that category's own currency.
 //
-// TW validates and grants purchases on its server (send_reliable "use_coin").
-// Here everything is done locally and offline: the cart is checked against the
-// player's inventory balances, the currency is deducted and the items are
-// granted immediately. No network code.
+//   Up / Down   - move between categories (the first press selects the first
+//                 category; nothing is selected when the store opens)
+//   Tab         - open the items of the selected category (Tab again returns)
+//   Up / Down   - in the item list, move between items
+//   Right       - add one unit of the item to the cart
+//   Left        - remove one unit of the item from the cart
+//   Enter       - buy everything in the cart (or open a category)
+//   F1          - speak the currency balances
+//   F2          - speak the cart total
+//   Escape      - leave the store
 //
-// Items never carry their own payment method anymore: every item in a store is
-// charged in the store's own currency (store.currency), so no item is ever
-// left without a payment method and the whole cart is always paid in that one
-// currency.
+// Everything is local and offline: the cart is checked against the player's
+// inventory balances, the currency is deducted and the items are granted
+// immediately. No item carries its own payment method; the store's currency
+// charges the whole cart.
 
 const string CURRENCY_GOLD = "gold";
 const string CURRENCY_GOLDEN_CRYSTAL = "golden_crystal";
@@ -79,207 +78,255 @@ string store_charge_currency(store_cfg@ s)
 	return normalize_currency(s.currency);
 }
 
-void store_menu_cart(store_cfg@ s)
+// ---------------------------------------------------------------------------
+// Main menu store
+// ---------------------------------------------------------------------------
+int[][] store_browse_amounts;
+
+void store_browse_resize_cart(int cat)
 {
-	if (s is null)
-	{
-		speak("Store not found.");
-		return;
-	}
-	if (s.item_names.length() == 0)
-	{
-		speak("This store has no items.");
-		return;
-	}
+	store_browse_amounts.resize(store_configs.length());
+	int n = int(store_configs[cat].item_names.length());
+	if (int(store_browse_amounts[cat].length()) != n) store_browse_amounts[cat].resize(n);
+}
 
-	string[] names = s.item_names;
-	string[] prices = s.item_prices;
+void store_browse_announce_category(int cat)
+{
+	store_cfg@ s = store_configs[cat];
+	store_browse_resize_cart(cat);
+	speak(s.display_name + ", category " + (cat + 1) + " of " + store_configs.length() + ", " + s.item_names.length() + " items. Press Tab to browse the items of this category.");
+}
+
+void store_browse_announce_item(int cat, int item)
+{
+	store_cfg@ s = store_configs[cat];
+	string iname = get_item_display_name(s.item_names[item]);
+	speak(iname + ", " + s.item_prices[item] + " " + store_charge_currency(s) + ", in the cart: " + store_browse_amounts[cat][item] + ".");
+}
+
+void store_browse_buy(int cat)
+{
+	store_cfg@ s = store_configs[cat];
 	string currency = store_charge_currency(s);
+	int total_cost = 0;
+	int total_items = 0;
+	for (uint i = 0; i < s.item_names.length(); i++)
+	{
+		int q = store_browse_amounts[cat][i];
+		if (q <= 0) continue;
+		total_cost += int(stn(s.item_prices[i])) * q;
+		total_items += q;
+	}
+	if (total_items == 0)
+	{
+		speak("Your cart is empty.");
+		return;
+	}
+	int balance = get_item_count(currency);
+	if (balance < total_cost)
+	{
+		string err_snd = get_sound_path("misc/error.ogg;error.ogg");
+		if (err_snd != "") p.play_stationary(err_snd, false);
+		speak("You don't have enough " + currency + ". You need " + total_cost + " and have " + balance + ".");
+		return;
+	}
 
-	int[] amounts(names.length());
-	int[] costs(names.length());
-	int counter = 0;
+	give(currency, -total_cost);
+	string summary = "";
+	for (uint i = 0; i < s.item_names.length(); i++)
+	{
+		int q = store_browse_amounts[cat][i];
+		if (q <= 0) continue;
+		if (!store_grant_product(s.item_names[i], q))
+		{
+			give(currency, total_cost);
+			speak("The purchase could not be delivered; your payment was returned.");
+			return;
+		}
+		store_browse_amounts[cat][i] = 0;
+		if (summary != "") summary += ", ";
+		summary += q + " " + get_item_display_name(s.item_names[i]);
+	}
 
-	// Drain any Enter/Use key from world interaction before starting store loop
+	string buy_snd = get_sound_path("player/storepurchase.ogg;items/buy.ogg;items/storepurchase.ogg;storepurchase.ogg;buy.ogg");
+	if (buy_snd != "") p.play_stationary(buy_snd, false);
+	speak("Purchased " + summary + " for " + total_cost + " " + currency + ".");
+}
+
+// Gives the medical and ammunition shelves a starting stock taken from the item
+// registry, so the store is usable before the builder edits it. Categories that
+// already have items are left untouched.
+void store_fill_default_items()
+{
+	load_all_items_config();
+	for (uint i = 0; i < store_configs.length(); i++)
+	{
+		store_cfg@ s = store_configs[i];
+		if (s.item_names.length() > 0) continue;
+		string want = (s.name == "medical") ? "medical items" : ((s.name == "ammunition") ? "ammo" : "");
+		if (want == "") continue;
+		for (uint r = 0; r < item_registry.length(); r++)
+		{
+			if (item_registry[r].category != want) continue;
+			s.item_names.insert_last(item_registry[r].id);
+			s.item_prices.insert_last((want == "ammo") ? "5" : "100");
+		}
+	}
+}
+
+// The spoken overview of the store: what it sells and how to move through it.
+string store_welcome_text()
+{
+	string cats = "";
+	for (uint i = 0; i < store_configs.length(); i++)
+	{
+		if (i > 0) cats += (i == store_configs.length() - 1) ? " and " : ", ";
+		cats += store_configs[i].display_name;
+	}
+	string text = "Hello, dear player, welcome to the store. Nothing is selected yet. ";
+	text += "The store has " + store_configs.length() + " categories: " + cats + ". ";
+	text += "Use the up and down arrows to move between categories, or press Tab to open the items of the selected category. ";
+	text += "In the item list, use the up and down arrows to move between items, the right arrow to add an item to the cart, and the left arrow to remove one. ";
+	text += "Press Enter to buy everything in the cart, F1 to hear your currency balances, F2 to hear the cart total, and Escape to leave the store.";
+	return text;
+}
+
+void store_main_menu()
+{
+	init_stores();
+	load_all_items_config();
+	store_fill_default_items();
+	if (store_configs.length() == 0)
+	{
+		speak("The store has no categories yet.");
+		return;
+	}
+
 	while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
 	{
 		wait(5);
 	}
 
-	speak("Store menu. Use the up and down arrows to move between products. Press the right arrow to add a product to the cart and increase its quantity, and the left arrow to decrease the quantity. Press enter to buy the products in the basket and finish the process, and press escape to exit. All prices are in " + currency + ".");
+	speak(store_welcome_text());
+
+	int cat = 0;
+	int item = 0;
+	bool in_items = false;
+	// Nothing is focused when the store opens: the first category is only
+	// selected after the player presses an arrow, Tab or Enter.
+	bool has_category = false;
+	store_browse_resize_cart(cat);
 
 	while (true)
 	{
 		wait(5);
 		update_game_world();
-		joy_update();
+
 		if (key_pressed(KEY_ESCAPE) || kb_pressed("menu_back"))
 		{
 			play("menuclick");
-			joy_menu_closed();
-			break;
+			return;
 		}
 
-		// Enter or Numpad Enter: Buy selected quantity or prompt for quantity and buy immediately.
-		if (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER) or kb_pressed("menu_activate"))
+		if (key_pressed(KEY_TAB))
 		{
-			string iname = get_item_display_name(names[counter]);
-			int price = int(stn(prices[counter]));
-			int balance = get_item_count(currency);
-
-			// If current item has no quantity queued via arrows, prompt for exact quantity and buy immediately
-			if (amounts[counter] <= 0)
+			if (!has_category)
 			{
-				int max_qty = (price > 0) ? (balance / price) : 9999;
-				if (max_qty < 0) max_qty = 0;
-
-				string input = v.input("Enter the amount of " + iname + " you want to buy. You can afford " + max_qty + ".", "1");
-				while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("menu_activate"))
-				{
-					wait(5);
-				}
-
-				int count = int(stn(input));
-				if (count <= 0)
-				{
-					speak("Purchase canceled.");
-					continue;
-				}
-
-				int total_cost = price * count;
-				if (balance < total_cost)
-				{
-					string err_snd = get_sound_path("misc/error.ogg;error.ogg");
-					if (err_snd != "") p.play_stationary(err_snd, false);
-					else play("error");
-					speak("You don't have enough " + currency + ". You need " + total_cost + " and have " + balance + ".");
-					continue;
-				}
-
-				// Complete purchase immediately!
-				give(currency, -total_cost);
-				if (!store_grant_product(names[counter], count))
-				{
-					give(currency, total_cost);
-					speak("The purchase could not be delivered; your payment was returned.");
-					continue;
-				}
-
-				string buy_snd = get_sound_path("player/storepurchase.ogg;items/buy.ogg;items/storepurchase.ogg;storepurchase.ogg;buy.ogg");
-				if (buy_snd != "") p.play_stationary(buy_snd, false);
-				else play("buy");
-
-				speak("Purchased " + count + " " + iname + " for " + total_cost + " " + currency + ".");
-				amounts[counter] = 0;
-				costs[counter] = 0;
-				continue;
+				has_category = true;
+				cat = 0;
+				in_items = false;
 			}
-
-			// If items were already added to cart via arrow keys, checkout the cart immediately!
-			int total_cost = 0;
-			int total_items = 0;
-			for (uint ci = 0; ci < names.length(); ci++)
+			store_cfg@ s = store_configs[cat];
+			if (s.item_names.length() == 0)
 			{
-				total_cost += costs[ci];
-				total_items += amounts[ci];
+				speak(s.display_name + " has no items.");
 			}
-
-			if (balance < total_cost)
+			else
 			{
-				string err_snd = get_sound_path("misc/error.ogg;error.ogg");
-				if (err_snd != "") p.play_stationary(err_snd, false);
-				else play("error");
-				speak("You don't have enough " + currency + ". You need " + total_cost + " and have " + balance + ".");
-				continue;
+				in_items = !in_items;
+				item = 0;
+				play("menuclick");
+				if (in_items) store_browse_announce_item(cat, item);
+				else store_browse_announce_category(cat);
 			}
-
-			// Buy: deduct the currency and grant the items.
-			give(currency, -total_cost);
-			string bought_summary = "";
-			bool cart_granted = true;
-			for (uint i = 0; i < names.length(); i++)
-			{
-				if (amounts[i] <= 0) continue;
-				if (!store_grant_product(names[i], amounts[i]))
-				{
-					cart_granted = false;
-					break;
-				}
-				if (bought_summary != "") bought_summary += ", ";
-				bought_summary += amounts[i] + " " + get_item_display_name(names[i]);
-				amounts[i] = 0;
-				costs[i] = 0;
-			}
-			if (!cart_granted)
-			{
-				give(currency, total_cost);
-				speak("The purchase could not be delivered; your payment was returned.");
-				continue;
-			}
-
-			string buy_snd = get_sound_path("player/storepurchase.ogg;items/buy.ogg;items/storepurchase.ogg;storepurchase.ogg;buy.ogg");
-			if (buy_snd != "") p.play_stationary(buy_snd, false);
-			else play("buy");
-
-			speak("Purchased " + bought_summary + " for " + total_cost + " " + currency + ".");
 			continue;
 		}
 
-		if (key_pressed(KEY_UP) or kb_pressed("menu_up"))
+		if (!in_items)
 		{
-			if (counter > 0)
+			if (key_pressed(KEY_UP) || kb_pressed("menu_up"))
 			{
-				counter--;
-				play("menuclick");
+				if (!has_category)
+				{
+					has_category = true;
+					cat = 0;
+				}
+				else if (cat > 0) cat--;
+				else play("menuedge");
+				store_browse_announce_category(cat);
 			}
-			else
+			if (key_pressed(KEY_DOWN) || kb_pressed("menu_down"))
+			{
+				if (!has_category)
+				{
+					has_category = true;
+					cat = 0;
+				}
+				else if (cat < int(store_configs.length()) - 1) cat++;
+				else play("menuedge");
+				store_browse_announce_category(cat);
+			}
+			// Left and right do nothing in the category list.
+			if (key_pressed(KEY_LEFT) || key_pressed(KEY_RIGHT))
 			{
 				play("menuedge");
 			}
-			string iname = get_item_display_name(names[counter]);
-			speak(iname + ", " + prices[counter] + " " + currency + ", in the shopping cart: " + amounts[counter] + ".");
-		}
-		if (key_pressed(KEY_DOWN) or kb_pressed("menu_down"))
-		{
-			if (counter < int(names.length()) - 1)
+			if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || kb_pressed("menu_activate"))
 			{
-				counter++;
-				play("menuclick");
+				has_category = true;
+				store_cfg@ s = store_configs[cat];
+				if (s.item_names.length() == 0) speak(s.display_name + " has no items.");
+				else
+				{
+					in_items = true;
+					item = 0;
+					store_browse_announce_item(cat, item);
+				}
 			}
-			else
-			{
-				play("menuedge");
-			}
-			string iname = get_item_display_name(names[counter]);
-			speak(iname + ", " + prices[counter] + " " + currency + ", in the shopping cart: " + amounts[counter] + ".");
+			continue;
 		}
 
-		if (key_pressed(KEY_LEFT) or kb_pressed("menu_left"))
+		store_cfg@ s = store_configs[cat];
+		if (s.item_names.length() == 0)
 		{
-			if (amounts[counter] > 0 && costs[counter] > 0)
-			{
-				amounts[counter]--;
-				costs[counter] -= int(stn(prices[counter]));
-				speak("" + amounts[counter]);
-				play("menuclick");
-			}
-			else
-			{
-				speak("Nothing in the cart for this item.");
-				p.play_stationary(get_sound_path("misc/error.ogg"), false);
-			}
+			in_items = false;
+			continue;
 		}
-		if (key_pressed(KEY_RIGHT) or kb_pressed("menu_right"))
+		if (item >= int(s.item_names.length())) item = int(s.item_names.length()) - 1;
+		if (item < 0) item = 0;
+
+		if (key_pressed(KEY_UP) || kb_pressed("menu_up"))
 		{
-			int price = int(stn(prices[counter]));
-			int balance = get_item_count(currency);
-			int total_spent = 0;
-			for (uint ci = 0; ci < names.length(); ci++) total_spent += costs[ci];
-			if (balance - total_spent >= price)
+			if (item > 0) item--;
+			else play("menuedge");
+			store_browse_announce_item(cat, item);
+		}
+		if (key_pressed(KEY_DOWN) || kb_pressed("menu_down"))
+		{
+			if (item < int(s.item_names.length()) - 1) item++;
+			else play("menuedge");
+			store_browse_announce_item(cat, item);
+		}
+		if (key_pressed(KEY_RIGHT) || kb_pressed("menu_right"))
+		{
+			string currency = store_charge_currency(s);
+			int price = int(stn(s.item_prices[item]));
+			int spent = 0;
+			for (uint ci = 0; ci < s.item_names.length(); ci++) spent += int(stn(s.item_prices[ci])) * store_browse_amounts[cat][ci];
+			if (get_item_count(currency) - spent >= price)
 			{
-				amounts[counter]++;
-				costs[counter] += price;
-				speak("" + amounts[counter]);
+				store_browse_amounts[cat][item]++;
+				speak("" + store_browse_amounts[cat][item]);
 				play("menuenter");
 			}
 			else
@@ -288,39 +335,12 @@ void store_menu_cart(store_cfg@ s)
 				p.play_stationary(get_sound_path("misc/error.ogg"), false);
 			}
 		}
-		// Home / End adjust the cart quantity in steps of 10.
-		if (key_pressed(KEY_HOME))
+		if (key_pressed(KEY_LEFT) || kb_pressed("menu_left"))
 		{
-			int price = int(stn(prices[counter]));
-			int balance = get_item_count(currency);
-			int total_spent = 0;
-			for (uint ci = 0; ci < names.length(); ci++) total_spent += costs[ci];
-			int affordable = (price > 0) ? ((balance - total_spent) / price) : 10;
-			if (affordable < 0) affordable = 0;
-			int add = 10;
-			if (add > affordable) add = affordable;
-			if (add > 0)
+			if (store_browse_amounts[cat][item] > 0)
 			{
-				amounts[counter] += add;
-				costs[counter] += price * add;
-				speak("" + amounts[counter]);
-				play("menuenter");
-			}
-			else
-			{
-				speak("You don't have enough " + currency + " for 10 more.");
-				p.play_stationary(get_sound_path("misc/error.ogg"), false);
-			}
-		}
-		if (key_pressed(KEY_END))
-		{
-			if (amounts[counter] > 0)
-			{
-				int remove = 10;
-				if (remove > amounts[counter]) remove = amounts[counter];
-				amounts[counter] -= remove;
-				costs[counter] -= int(stn(prices[counter])) * remove;
-				speak("" + amounts[counter]);
+				store_browse_amounts[cat][item]--;
+				speak("" + store_browse_amounts[cat][item]);
 				play("menuclick");
 			}
 			else
@@ -329,22 +349,22 @@ void store_menu_cart(store_cfg@ s)
 				p.play_stationary(get_sound_path("misc/error.ogg"), false);
 			}
 		}
-
-		if (key_pressed(KEY_F1))
+		if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || kb_pressed("menu_activate"))
 		{
-			speak(store_cart_balances_text());
+			store_browse_buy(cat);
 		}
+		if (key_pressed(KEY_F1)) speak(store_cart_balances_text());
 		if (key_pressed(KEY_F2))
 		{
 			int total_items = 0;
 			int total_cost = 0;
-			for (uint i = 0; i < names.length(); i++)
+			for (uint ci = 0; ci < s.item_names.length(); ci++)
 			{
-				total_items += amounts[i];
-				total_cost += costs[i];
+				total_items += store_browse_amounts[cat][ci];
+				total_cost += int(stn(s.item_prices[ci])) * store_browse_amounts[cat][ci];
 			}
 			if (total_items == 0) speak("Your cart is empty.");
-			else speak("" + total_items + " items in the cart, total: " + total_cost + " " + currency + ".");
+			else speak("" + total_items + " items in the cart, total: " + total_cost + " " + store_charge_currency(s) + ".");
 		}
 	}
 }

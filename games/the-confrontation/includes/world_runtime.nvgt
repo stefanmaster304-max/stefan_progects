@@ -7,18 +7,14 @@ bool is_in_game = false;
 void update_game_world()
 {
 	if (!is_in_game || mapname == "") return;
-	doorcheckloop();
 	staircasecheckloop();
 	szloop();
 	checkloc();
 	text_square_check();
-	checkpoints_check();
 	ground_item_loop();
 	map_item_spawner_loop();
 	bodyfallloop();
-	tracking_loop();
 	npc_loop();
-	reverb_zone_loop();
 	broadcast_loop();
 	update_sources();
 	if (autosave_timer.elapsed >= 30000)

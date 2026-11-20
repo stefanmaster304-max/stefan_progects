@@ -1,0 +1,298 @@
+// npc_data.nvgt - NPC definitions and .npc file persistence.
+//
+// Every NPC is a plain text file in settings/npcs with the .npc extension.
+// The file name is the internal id; the file itself carries everything the
+// developer configured: display name, class (animal, robot or zombie), attack
+// cadence and damage, detection and attack ranges, walking and running paces,
+// health, voice clips with their silence window, and the attack, pain and
+// death sounds.
+//
+// The runtime never hardcodes any of those values: it loads the files and uses
+// exactly what they say.
+
+const string NPC_DIR = "settings/npcs";
+const string NPC_CLASS_ANIMAL = "animal";
+const string NPC_CLASS_ROBOT = "robot";
+const string NPC_CLASS_ZOMBIE = "zombie";
+
+class npc_data
+{
+	string id;
+	string name;
+	string npc_class; // animal, robot or zombie
+
+	int attack_speed; // milliseconds between two attacks
+	int min_damage;
+	int max_damage;
+
+	int detection_range; // whole tiles at which the NPC notices the player
+	int attack_range;    // whole tiles at which the NPC starts attacking
+
+	int walk_speed; // milliseconds per tile while calm
+	int run_speed;  // milliseconds per tile while furious
+
+	int max_health;
+
+	// Voice clips played while the NPC moves, with a random silence window
+	// between two of them. Multiple clips are separated by semicolons.
+	string sound_voice;
+	int voice_min_delay;
+	int voice_max_delay;
+
+	string sound_attack;
+	string sound_pain;
+	string sound_death;
+
+	// Experience the player earns when this NPC is killed by the player.
+	int xp;
+
+	// Death drops: item_id:quantity pairs separated by semicolons, dropped on
+	// the ground where the NPC falls, and only while the flag is on.
+	bool drop_items_on_death;
+	string death_drops;
+
+	// Footsteps: the floor platform of the map where the NPC walks, or its own
+	// clips. A custom list is also the fallback when the platform has none.
+	bool use_platform_footsteps;
+	string sound_footsteps;
+
+	npc_data()
+	{
+		id = "";
+		name = "";
+		npc_class = NPC_CLASS_ANIMAL;
+		attack_speed = 900;
+		min_damage = 20;
+		max_damage = 40;
+		detection_range = 30;
+		attack_range = 2;
+		walk_speed = 420;
+		run_speed = 260;
+		max_health = 500;
+		sound_voice = "";
+		voice_min_delay = 1500;
+		voice_max_delay = 3500;
+		sound_attack = "";
+		sound_pain = "";
+		sound_death = "";
+		xp = 50;
+		drop_items_on_death = false;
+		death_drops = "";
+		use_platform_footsteps = true;
+		sound_footsteps = "";
+	}
+}
+
+npc_data@[] npc_registry(0);
+
+string npc_class_of(const string&in value)
+{
+	string c = string_to_lower_case(value.trim_whitespace());
+	if (c == NPC_CLASS_ROBOT) return NPC_CLASS_ROBOT;
+	if (c == NPC_CLASS_ZOMBIE) return NPC_CLASS_ZOMBIE;
+	return NPC_CLASS_ANIMAL;
+}
+
+void ensure_npc_directories()
+{
+	if (!directory_exists("settings")) directory_create("settings");
+	if (!directory_exists(NPC_DIR)) directory_create(NPC_DIR);
+}
+
+npc_data@ find_npc_data(const string&in id)
+{
+	if (id == "") return null;
+	string target = string_to_lower_case(id);
+	for (uint i = 0; i < npc_registry.length(); i++)
+	{
+		if (string_to_lower_case(npc_registry[i].id) == target)
+			return @npc_registry[i];
+	}
+	return null;
+}
+
+void validate_npc_data(npc_data@ n)
+{
+	if (n is null) return;
+
+	n.npc_class = npc_class_of(n.npc_class);
+	if (n.name.trim_whitespace() == "") n.name = string_replace(n.id, "_", " ", true);
+
+	if (n.attack_speed < 100) n.attack_speed = 100;
+	if (n.min_damage < 1) n.min_damage = 1;
+	if (n.max_damage < n.min_damage) n.max_damage = n.min_damage;
+	if (n.detection_range < 1) n.detection_range = 30;
+	if (n.attack_range < 1) n.attack_range = 2;
+	if (n.walk_speed < 50) n.walk_speed = 50;
+	if (n.run_speed < 50) n.run_speed = 50;
+	if (n.run_speed > n.walk_speed) n.run_speed = n.walk_speed;
+	if (n.max_health < 1) n.max_health = 500;
+	if (n.voice_min_delay < 0) n.voice_min_delay = 0;
+	if (n.voice_max_delay < n.voice_min_delay) n.voice_max_delay = n.voice_min_delay;
+	n.sound_voice = n.sound_voice.trim_whitespace();
+	n.sound_attack = n.sound_attack.trim_whitespace();
+	n.sound_pain = n.sound_pain.trim_whitespace();
+	n.sound_death = n.sound_death.trim_whitespace();
+	n.sound_footsteps = n.sound_footsteps.trim_whitespace();
+	if (n.xp < 0) n.xp = 0;
+	if (n.death_drops != "")
+	{
+		// Duplicated tokens are dropped so the same item is never listed twice.
+		string[]@ toks = string_split(n.death_drops, ";", true);
+		string out_d = "";
+		if (toks !is null)
+		{
+			for (uint i = 0; i < toks.length(); i++)
+			{
+				string spec = toks[i].trim_whitespace();
+				if (spec == "") continue;
+				string id = spec;
+				int qty = 1;
+				int col = string_contains(spec, ":", 1);
+				if (col != -1)
+				{
+					id = string_left(spec, col).trim_whitespace();
+					qty = int(string_to_number(spec.substr(col + 1).trim_whitespace()));
+				}
+				if (id == "") continue;
+				if (qty < 1) qty = 1;
+				if (out_d != "") out_d += ";";
+				out_d += id + ":" + qty;
+			}
+		}
+		n.death_drops = out_d;
+	}
+	// A drops flag without any item would run empty logic on every death.
+	if (n.drop_items_on_death && n.death_drops == "") n.drop_items_on_death = false;
+}
+
+void parse_npc_content(npc_data@ n, const string&in content)
+{
+	if (n is null) return;
+	string[]@ lines = string_split(content, "\n", true);
+	if (lines is null) return;
+
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string line = lines[i].trim_whitespace();
+		if (line == "" || string_starts_with(line, "#") || string_starts_with(line, ";")) continue;
+		int eq = string_contains(line, "=", 1);
+		if (eq == -1) continue;
+
+		string key = string_left(line, eq).trim_whitespace();
+		string val = line.substr(eq + 1).trim_whitespace();
+
+		if (key == "name") n.name = val;
+		else if (key == "class" || key == "npc_class") n.npc_class = val;
+		else if (key == "attack_speed") n.attack_speed = int(string_to_number(val));
+		else if (key == "min_damage") n.min_damage = int(string_to_number(val));
+		else if (key == "max_damage") n.max_damage = int(string_to_number(val));
+		else if (key == "detection_range" || key == "detection") n.detection_range = int(string_to_number(val));
+		else if (key == "attack_range" || key == "attack") n.attack_range = int(string_to_number(val));
+		else if (key == "walk_speed") n.walk_speed = int(string_to_number(val));
+		else if (key == "run_speed") n.run_speed = int(string_to_number(val));
+		else if (key == "max_health" || key == "health") n.max_health = int(string_to_number(val));
+		else if (key == "sound_voice" || key == "voice") n.sound_voice = val;
+		else if (key == "voice_min_delay") n.voice_min_delay = int(string_to_number(val));
+		else if (key == "voice_max_delay") n.voice_max_delay = int(string_to_number(val));
+		else if (key == "sound_attack") n.sound_attack = val;
+		else if (key == "sound_pain") n.sound_pain = val;
+		else if (key == "sound_death") n.sound_death = val;
+		else if (key == "xp") n.xp = int(string_to_number(val));
+		else if (key == "drop_items_on_death" || key == "drop_on_death") n.drop_items_on_death = (val == "true" || val == "1");
+		else if (key == "death_drops" || key == "drop_items") n.death_drops = val;
+		else if (key == "use_platform_footsteps" || key == "platform_footsteps") n.use_platform_footsteps = (val == "true" || val == "1");
+		else if (key == "sound_footsteps" || key == "footsteps") n.sound_footsteps = val;
+	}
+}
+
+string serialize_npc_content(npc_data@ n)
+{
+	if (n is null) return "";
+	string s = "# The Confront NPC\n";
+	s += "name=" + n.name + "\n";
+	s += "class=" + n.npc_class + "\n";
+	s += "attack_speed=" + n.attack_speed + "\n";
+	s += "min_damage=" + n.min_damage + "\n";
+	s += "max_damage=" + n.max_damage + "\n";
+	s += "detection_range=" + n.detection_range + "\n";
+	s += "attack_range=" + n.attack_range + "\n";
+	s += "walk_speed=" + n.walk_speed + "\n";
+	s += "run_speed=" + n.run_speed + "\n";
+	s += "max_health=" + n.max_health + "\n";
+	s += "xp=" + n.xp + "\n";
+	s += "use_platform_footsteps=" + (n.use_platform_footsteps ? "1" : "0") + "\n";
+	s += "drop_items_on_death=" + (n.drop_items_on_death ? "1" : "0") + "\n";
+	if (n.death_drops != "") s += "death_drops=" + n.death_drops + "\n";
+	if (n.sound_footsteps != "") s += "sound_footsteps=" + n.sound_footsteps + "\n";
+	s += "voice_min_delay=" + n.voice_min_delay + "\n";
+	s += "voice_max_delay=" + n.voice_max_delay + "\n";
+	if (n.sound_voice != "") s += "sound_voice=" + n.sound_voice + "\n";
+	if (n.sound_attack != "") s += "sound_attack=" + n.sound_attack + "\n";
+	if (n.sound_pain != "") s += "sound_pain=" + n.sound_pain + "\n";
+	if (n.sound_death != "") s += "sound_death=" + n.sound_death + "\n";
+	return s;
+}
+
+bool save_npc_file(npc_data@ n)
+{
+	if (n is null || n.id == "") return false;
+	validate_npc_data(n);
+	ensure_npc_directories();
+	string path = NPC_DIR + "/" + n.id + ".npc";
+	file_put_contents(path, serialize_npc_content(n));
+
+	npc_data@ existing = find_npc_data(n.id);
+	if (existing is null)
+		npc_registry.insert_last(n);
+	return true;
+}
+
+void delete_npc_file(const string&in id)
+{
+	if (id == "") return;
+	string path = NPC_DIR + "/" + id + ".npc";
+	if (file_exists(path)) file_delete(path);
+	for (int i = int(npc_registry.length()) - 1; i >= 0; i--)
+	{
+		if (string_to_lower_case(npc_registry[i].id) == string_to_lower_case(id))
+		{
+			npc_registry.remove_at(uint(i));
+			break;
+		}
+	}
+}
+
+void load_all_npcs(bool force = false)
+{
+	if (!force && npc_registry.length() > 0) return;
+
+	// Nothing is ever created here: no folder, no example NPC. Until the
+	// developer writes an .npc file the list is simply empty.
+	npc_registry.resize(0);
+	if (!directory_exists(NPC_DIR)) return;
+
+	string[]@ files = find_files(NPC_DIR + "/*.npc");
+	if (files !is null)
+	{
+		for (uint i = 0; i < files.length(); i++)
+		{
+			string fname = files[i];
+			string id = fname;
+			if (string_ends_with(string_to_lower_case(id), ".npc")) id = id.substr(0, id.length() - 4);
+
+			file f;
+			if (f.open(NPC_DIR + "/" + fname, "r"))
+			{
+				string c = f.read();
+				f.close();
+
+				npc_data@ n = @npc_data();
+				n.id = id;
+				parse_npc_content(n, c);
+				validate_npc_data(n);
+				npc_registry.insert_last(n);
+			}
+		}
+	}
+}

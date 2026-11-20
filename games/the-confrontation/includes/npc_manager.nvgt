@@ -1,0 +1,458 @@
+// npc_manager.nvgt - NPC Manager: create, edit, delete and list the .npc files.
+//
+// Every field of an NPC is a choice of the developer. Nothing is derived from
+// code: the manager writes exactly the values typed here into
+// settings/npcs/<id>.npc and the runtime reads them back.
+
+string npc_manager_pick_sound(const string&in title, const string&in current_val)
+{
+	return select_sound_by_category_dialog(title, current_val, "", true);
+}
+
+string npc_sound_count_label(const string&in val)
+{
+	if (val == "") return "";
+	string[]@ parts = string_split(val, ";", true);
+	int count = (parts !is null && parts.length() > 0) ? int(parts.length()) : 1;
+	return " (" + count + " selected)";
+}
+
+// Death drops: the items checked here are the ones that land on the ground when
+// this NPC dies. The result is stored as item_id:quantity pairs separated by
+// semicolons, which is exactly what the runtime reads.
+bool npc_drop_list_has(const string&in drops, const string&in item_id)
+{
+	if (drops == "" || item_id == "") return false;
+	string[]@ toks = string_split(drops, ";", true);
+	if (toks is null) return false;
+	for (uint i = 0; i < toks.length(); i++)
+	{
+		string spec = toks[i].trim_whitespace();
+		int col = string_contains(spec, ":", 1);
+		if (col != -1) spec = string_left(spec, col).trim_whitespace();
+		if (string_to_lower_case(spec) == string_to_lower_case(item_id)) return true;
+	}
+	return false;
+}
+
+string npc_pick_death_drops_dialog(const string&in current_drops)
+{
+	load_all_items_config();
+	if (item_registry.length() == 0)
+	{
+		speak("No items found in " + ITEM_DIR + ".");
+		return current_drops;
+	}
+
+	audio_form pf;
+	pf.create_window("Select Death Drop Items (Space to check/uncheck; Enter to save)", false, true, false);
+	int list = pf.create_list("Available items (Space to check/uncheck)", 0, true, true);
+
+	for (uint i = 0; i < item_registry.length(); i++)
+	{
+		string iid = item_registry[i].id;
+		string iname = (item_registry[i].name != "") ? item_registry[i].name : iid;
+		bool is_sel = npc_drop_list_has(current_drops, iid);
+		pf.add_list_item(list, iname + " (" + iid + ")", iid, -1, false, is_sel);
+	}
+
+	int b_save = pf.create_button("&Save Drop Items", true);
+	int b_clear = pf.create_button("&Clear Selection", false);
+	int b_cancel = pf.create_button("&Cancel", false, true);
+	pf.focus(list);
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		pf.monitor();
+
+		if (pf.is_pressed(b_save) || key_pressed(KEY_RETURN))
+		{
+			int[]@ checked = pf.get_checked_list_items(list);
+			string result = "";
+			if (checked !is null && checked.length() > 0)
+			{
+				for (uint i = 0; i < checked.length(); i++)
+				{
+					int idx = checked[i];
+					if (idx < 0 || idx >= int(item_registry.length())) continue;
+					if (result != "") result += ";";
+					result += item_registry[uint(idx)].id + ":1";
+				}
+			}
+			else
+			{
+				int cur_pos = pf.get_list_position(list);
+				if (cur_pos >= 0 && cur_pos < int(item_registry.length()))
+					result = item_registry[uint(cur_pos)].id + ":1";
+			}
+			return result;
+		}
+
+		if (pf.is_pressed(b_clear))
+			return "";
+
+		if (pf.is_pressed(b_cancel) || key_pressed(KEY_ESCAPE))
+			return current_drops;
+	}
+	return current_drops;
+}
+
+string npc_sanitize_id(const string&in raw)
+{
+	string id = string_to_lower_case(raw.trim_whitespace());
+	id = string_replace(id, " ", "_", true);
+	id = string_replace(id, "/", "_", true);
+	id = string_replace(id, "\\", "_", true);
+	id = string_replace(id, ":", "_", true);
+	return id;
+}
+
+void npc_edit_form(npc_data@ n, bool is_new)
+{
+	if (n is null) return;
+
+	audio_form form;
+	form.create_window(is_new ? ("Create New NPC - " + n.npc_class) : ("Edit NPC: " + n.name), true, true, false);
+
+	int in_id = form.create_input_box("Internal ID (file name, e.g. urso)", n.id, "", 0, !is_new);
+	int in_name = form.create_input_box("Display name", n.name);
+
+	// The class is chosen once, in the create flow. The form only carries the
+	// class list when an existing NPC is being edited, so creating never asks
+	// for the same class twice.
+	int in_class = -1;
+	if (!is_new)
+	{
+		int def_class = 0;
+		if (n.npc_class == NPC_CLASS_ROBOT) def_class = 1;
+		else if (n.npc_class == NPC_CLASS_ZOMBIE) def_class = 2;
+		in_class = form.create_list("NPC class", 0, false, false);
+		form.add_list_item(in_class, "Animal", NPC_CLASS_ANIMAL, -1, false, (def_class == 0));
+		form.add_list_item(in_class, "Robot", NPC_CLASS_ROBOT, -1, false, (def_class == 1));
+		form.add_list_item(in_class, "Zombie", NPC_CLASS_ZOMBIE, -1, false, (def_class == 2));
+		form.set_list_position(in_class, def_class, false);
+	}
+
+	int in_attack_speed = form.create_input_box("Attack speed, milliseconds between attacks", "" + n.attack_speed);
+	int in_min_dmg = form.create_input_box("Minimum damage", "" + n.min_damage);
+	int in_max_dmg = form.create_input_box("Maximum damage", "" + n.max_damage);
+	int in_detection = form.create_input_box("Detection range, whole tiles (vision to find the player)", "" + n.detection_range);
+	int in_attack_range = form.create_input_box("Attack range, whole tiles (distance at which it attacks)", "" + n.attack_range);
+	int in_walk = form.create_input_box("Walking speed, milliseconds per tile", "" + n.walk_speed);
+	int in_run = form.create_input_box("Running speed, milliseconds per tile (when furious)", "" + n.run_speed);
+	int in_health = form.create_input_box("Maximum health", "" + n.max_health);
+
+	int in_xp = form.create_input_box("Experience given to the player when it dies", "" + n.xp);
+
+	int cb_drop = form.create_checkbox("Drop items on the ground when it dies", n.drop_items_on_death);
+	int btn_drops = form.create_button("Select dropped items" + npc_sound_count_label(n.death_drops));
+
+	int cb_platform_steps = form.create_checkbox("Allow using the map platform's footstep sounds?", n.use_platform_footsteps);
+	int btn_steps = form.create_button("Select custom footstep sounds" + npc_sound_count_label(n.sound_footsteps));
+
+	int in_voice_min = form.create_input_box("Minimum silence between voice clips, milliseconds", "" + n.voice_min_delay);
+	int in_voice_max = form.create_input_box("Maximum silence between voice clips, milliseconds", "" + n.voice_max_delay);
+
+	int btn_voice = form.create_button("Select voice clips" + npc_sound_count_label(n.sound_voice));
+	int btn_attack = form.create_button("Select attack sound" + npc_sound_count_label(n.sound_attack));
+	int btn_pain = form.create_button("Select pain sound" + npc_sound_count_label(n.sound_pain));
+	int btn_death = form.create_button("Select death sound" + npc_sound_count_label(n.sound_death));
+
+	form.set_disallowed_chars(in_detection, "0123456789", true, "Whole numbers only.");
+	form.set_disallowed_chars(in_attack_range, "0123456789", true, "Whole numbers only.");
+	form.set_disallowed_chars(in_attack_speed, "0123456789", true, "Numbers only.");
+	form.set_disallowed_chars(in_min_dmg, "0123456789", true, "Numbers only.");
+	form.set_disallowed_chars(in_max_dmg, "0123456789", true, "Numbers only.");
+	form.set_disallowed_chars(in_walk, "0123456789", true, "Numbers only.");
+	form.set_disallowed_chars(in_run, "0123456789", true, "Numbers only.");
+	form.set_disallowed_chars(in_health, "0123456789", true, "Numbers only.");
+	form.set_disallowed_chars(in_xp, "0123456789", true, "Numbers only.");
+	form.set_disallowed_chars(in_voice_min, "0123456789", true, "Numbers only.");
+	form.set_disallowed_chars(in_voice_max, "0123456789", true, "Numbers only.");
+
+	int btn_save = form.create_button("&Save NPC", true);
+	int btn_cancel = form.create_button("&Cancel", false, true);
+	form.set_default_controls(btn_save, btn_cancel);
+	form.focus(is_new ? in_id : in_name);
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		form.monitor();
+
+		// The custom footstep picker only exists while the platform footsteps
+		// are not allowed: with the box checked the NPC uses the map platform.
+		bool use_map_steps = form.is_checked(cb_platform_steps);
+		form.set_state(btn_steps, !use_map_steps, !use_map_steps);
+
+		if (form.is_pressed(btn_voice))
+		{
+			n.sound_voice = npc_manager_pick_sound("Voice clips (multiple allowed)", n.sound_voice);
+			form.set_text(btn_voice, "Select voice clips" + npc_sound_count_label(n.sound_voice));
+			speak("Voice clips updated.");
+		}
+		if (form.is_pressed(btn_attack))
+		{
+			n.sound_attack = npc_manager_pick_sound("Attack sound", n.sound_attack);
+			form.set_text(btn_attack, "Select attack sound" + npc_sound_count_label(n.sound_attack));
+			speak("Attack sound updated.");
+		}
+		if (form.is_pressed(btn_pain))
+		{
+			n.sound_pain = npc_manager_pick_sound("Pain sound", n.sound_pain);
+			form.set_text(btn_pain, "Select pain sound" + npc_sound_count_label(n.sound_pain));
+			speak("Pain sound updated.");
+		}
+		if (form.is_pressed(btn_death))
+		{
+			n.sound_death = npc_manager_pick_sound("Death sound", n.sound_death);
+			form.set_text(btn_death, "Select death sound" + npc_sound_count_label(n.sound_death));
+			speak("Death sound updated.");
+		}
+		if (form.is_pressed(btn_drops))
+		{
+			n.death_drops = npc_pick_death_drops_dialog(n.death_drops);
+			form.set_text(btn_drops, "Select dropped items" + npc_sound_count_label(n.death_drops));
+			speak("Dropped items updated.");
+		}
+		if (form.is_pressed(btn_steps))
+		{
+			n.sound_footsteps = npc_manager_pick_sound("Custom footstep sounds (multiple allowed)", n.sound_footsteps);
+			form.set_text(btn_steps, "Select custom footstep sounds" + npc_sound_count_label(n.sound_footsteps));
+			speak("Footstep sounds updated.");
+		}
+
+		if (form.is_pressed(btn_save))
+		{
+			string target_id = is_new ? npc_sanitize_id(form.get_text(in_id)) : n.id;
+			if (target_id == "")
+			{
+				speak("The internal ID cannot be empty.");
+				form.focus(in_id);
+				continue;
+			}
+			if (is_new && find_npc_data(target_id) !is null)
+			{
+				speak("An NPC with that internal ID already exists.");
+				form.focus(in_id);
+				continue;
+			}
+
+			n.id = target_id;
+			n.name = form.get_text(in_name).trim_whitespace();
+			if (n.name == "") n.name = string_replace(target_id, "_", " ", true);
+
+			if (!is_new)
+			{
+				int class_pos = form.get_list_position(in_class);
+				if (class_pos == 1) n.npc_class = NPC_CLASS_ROBOT;
+				else if (class_pos == 2) n.npc_class = NPC_CLASS_ZOMBIE;
+				else n.npc_class = NPC_CLASS_ANIMAL;
+			}
+
+			n.attack_speed = int(string_to_number(form.get_text(in_attack_speed)));
+			n.min_damage = int(string_to_number(form.get_text(in_min_dmg)));
+			n.max_damage = int(string_to_number(form.get_text(in_max_dmg)));
+			n.detection_range = int(string_to_number(form.get_text(in_detection)));
+			n.attack_range = int(string_to_number(form.get_text(in_attack_range)));
+			n.walk_speed = int(string_to_number(form.get_text(in_walk)));
+			n.run_speed = int(string_to_number(form.get_text(in_run)));
+			n.max_health = int(string_to_number(form.get_text(in_health)));
+			n.xp = int(string_to_number(form.get_text(in_xp)));
+			n.drop_items_on_death = form.is_checked(cb_drop);
+			n.use_platform_footsteps = form.is_checked(cb_platform_steps);
+			n.voice_min_delay = int(string_to_number(form.get_text(in_voice_min)));
+			n.voice_max_delay = int(string_to_number(form.get_text(in_voice_max)));
+
+			validate_npc_data(n);
+			if (save_npc_file(n))
+			{
+				load_all_npcs(true);
+				speak("NPC " + n.name + " saved successfully.");
+				return;
+			}
+			speak("Failed to save the NPC file.");
+		}
+
+		if (form.is_pressed(btn_cancel) || key_pressed(KEY_ESCAPE))
+		{
+			speak("NPC editing canceled.");
+			return;
+		}
+	}
+}
+
+void npc_create_flow()
+{
+	audio_form cf;
+	cf.create_window("Create New NPC", false, true, false);
+	int list = cf.create_list("Choose the NPC class", 0, false, false);
+	cf.add_list_item(list, "Animal", NPC_CLASS_ANIMAL, -1, false, true);
+	cf.add_list_item(list, "Robot", NPC_CLASS_ROBOT, -1, false, false);
+	cf.add_list_item(list, "Zombie", NPC_CLASS_ZOMBIE, -1, false, false);
+	int b_ok = cf.create_button("&Next", true);
+	int b_cancel = cf.create_button("&Cancel", false, true);
+	cf.set_default_controls(b_ok, b_cancel);
+	cf.focus(list);
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		cf.monitor();
+
+		if (key_pressed(KEY_ESCAPE) || cf.is_pressed(b_cancel))
+		{
+			speak("Canceled.");
+			return;
+		}
+
+		if (cf.is_pressed(b_ok))
+		{
+			int pos = cf.get_list_position(list);
+			npc_data n;
+			n.npc_class = (pos == 1) ? NPC_CLASS_ROBOT : ((pos == 2) ? NPC_CLASS_ZOMBIE : NPC_CLASS_ANIMAL);
+			n.id = "novo_npc";
+			n.name = "Novo NPC";
+			npc_edit_form(n, true);
+			return;
+		}
+	}
+}
+
+void npc_select_flow(const string&in title, const string&in action, bool confirm_delete)
+{
+	load_all_npcs();
+	if (npc_registry.length() == 0)
+	{
+		speak("No NPCs found in " + NPC_DIR + ".");
+		return;
+	}
+
+	audio_form lf;
+	lf.create_window(title, false, true, false);
+	int list = lf.create_list("Available NPCs", 0, false, false);
+	lf.focus(list);
+
+	string[] ids;
+	for (uint i = 0; i < npc_registry.length(); i++)
+	{
+		npc_data@ n = npc_registry[i];
+		string label = n.name + " (" + n.id + ", " + n.npc_class + ")";
+		lf.add_list_item(list, label, n.id, -1, false, (i == 0));
+		ids.insert_last(n.id);
+	}
+
+	int b_ok = lf.create_button("&" + action, true);
+	int b_cancel = lf.create_button("&Cancel", false, true);
+	lf.set_default_controls(b_ok, b_cancel);
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		lf.monitor();
+
+		if (key_pressed(KEY_ESCAPE) || lf.is_pressed(b_cancel))
+		{
+			speak("Canceled.");
+			return;
+		}
+
+		if (lf.is_pressed(b_ok))
+		{
+			int pos = lf.get_list_position(list);
+			if (pos < 0 || pos >= int(ids.length())) return;
+			npc_data@ n = find_npc_data(ids[pos]);
+			if (n is null) return;
+
+			if (confirm_delete)
+			{
+				if (menuquestion("Delete " + n.name + " permanently?") != 1) return;
+				string removed_name = n.name;
+				delete_npc_file(n.id);
+				load_all_npcs(true);
+				speak("NPC " + removed_name + " deleted.");
+			}
+			else
+			{
+				npc_edit_form(n, false);
+			}
+			return;
+		}
+	}
+}
+
+void npc_list_flow()
+{
+	load_all_npcs();
+	if (npc_registry.length() == 0)
+	{
+		speak("No NPCs found in " + NPC_DIR + ".");
+		return;
+	}
+	speak("Registered NPCs: " + npc_registry.length() + " total.");
+	for (uint i = 0; i < npc_registry.length(); i++)
+	{
+		npc_data@ n = npc_registry[i];
+		string desc = n.name + ", ID " + n.id + ", class " + n.npc_class;
+		desc += ", damage " + n.min_damage + " to " + n.max_damage;
+		desc += ", attack every " + n.attack_speed + " milliseconds";
+		desc += ", detection " + n.detection_range + " tiles";
+		desc += ", attack range " + n.attack_range + " tiles";
+		desc += ", walk " + n.walk_speed + " milliseconds";
+		desc += ", run " + n.run_speed + " milliseconds";
+		desc += ", health " + n.max_health;
+		desc += ", " + n.xp + " XP";
+		desc += ", footsteps " + (n.use_platform_footsteps ? "from the map platform" : "custom");
+		if (n.drop_items_on_death && n.death_drops != "")
+			desc += ", drops " + n.death_drops;
+		else
+			desc += ", drops nothing";
+		desc += ".";
+		speak(desc);
+	}
+}
+
+void npc_manager_menu()
+{
+	load_all_npcs();
+
+	while (true)
+	{
+		audio_form mf;
+		mf.create_window("NPC Manager", false, true, false);
+		int list = mf.create_list("Select an action", 0, false, true);
+		mf.add_list_item(list, "Create New NPC", "create");
+		mf.add_list_item(list, "Edit Existing NPC", "edit");
+		mf.add_list_item(list, "Delete NPC", "delete");
+		mf.add_list_item(list, "List All NPCs", "list");
+		int b_select = mf.create_button("&Select", true);
+		int b_back = mf.create_button("&Back", false, true);
+		mf.set_default_controls(b_select, b_back);
+		mf.focus(list);
+
+		while (true)
+		{
+			wait(5);
+			update_game_world();
+			mf.monitor();
+
+			if (key_pressed(KEY_ESCAPE) || mf.is_pressed(b_back))
+				return;
+
+			if (mf.is_pressed(b_select))
+			{
+				int pos = mf.get_list_position(list);
+				if (pos == 0) npc_create_flow();
+				else if (pos == 1) npc_select_flow("Edit NPC", "Edit", false);
+				else if (pos == 2) npc_select_flow("Delete NPC", "Delete", true);
+				else if (pos == 3) npc_list_flow();
+				break;
+			}
+		}
+	}
+}

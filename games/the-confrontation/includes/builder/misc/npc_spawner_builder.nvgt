@@ -1,52 +1,54 @@
-// builder/misc/npc_spawner_builder.nvgt - Enemy and ally spawner form.
+// builder/misc/npc_spawner_builder.nvgt - NPC spawner form.
 //
-// No coordinates are requested: the configured enemies and allies are placed on
-// random walkable tiles of the whole map and patrol it freely. The form only
-// asks how many of each to keep alive and how long a dead one waits before it
-// respawns.
-
-void npc_builder_read_current(int &out enemies, int &out friends, int &out respawn_ms)
-{
-	enemies = npc_enemy_target_count;
-	friends = npc_friend_target_count;
-	respawn_ms = npc_respawn_delay;
-	string content = get_map_content_by_name(mapname);
-	if (content == "") return;
-	string[]@ lines = string_split(string_replace(content, "\r", "", true), "\n", false);
-	if (lines is null) return;
-	for (uint i = 0; i < lines.length(); i++)
-	{
-		string line = lines[i].trim_whitespace();
-		if (!string_starts_with(line, "npcspawner:")) continue;
-		string[]@ parts = string_split(line, ":", false);
-		if (parts.length() >= 4)
-		{
-			enemies = int(string_to_number(parts[1]));
-			friends = int(string_to_number(parts[2]));
-			respawn_ms = int(string_to_number(parts[3]));
-		}
-		break;
-	}
-}
+// The map stores one line per NPC type:
+// npcspawner:<npc id>:<count>:<respawn>:<min x>:<min y>:<min z>:<max x>:<max y>:<max z>
+//
+// Any number of NPCs can be checked at once; each one gets its own line and its
+// own population. The area is the volume the NPCs spawn in and are allowed to
+// walk in, on all three axes; they never leave it, even when their target does.
+// A dead NPC is replaced only after the configured respawn time, which is
+// counted in milliseconds from its death. A count of zero removes that NPC from
+// the map.
 
 void build_npc_spawner()
 {
-	int cur_enemies = 0, cur_friends = 0, cur_respawn = 30000;
-	npc_builder_read_current(cur_enemies, cur_friends, cur_respawn);
-	if (cur_respawn < 1000) cur_respawn = 30000;
+	load_all_npcs();
+	if (npc_registry.length() == 0)
+	{
+		speak("No NPCs found. Create one in the NPC manager first.");
+		dlg("No NPCs found in " + NPC_DIR + ". Create one in the NPC manager first.");
+		return;
+	}
 
 	audio_form f;
-	f.create_window("Enemy and Ally Spawner", false, true, false);
-	int i_enemies = f.create_input_box("number of enemies to keep on this map", "" + cur_enemies);
-	int i_friends = f.create_input_box("number of allies to keep on this map", "" + cur_friends);
-	int i_respawn = f.create_input_box("respawn time after death in milliseconds", "" + cur_respawn);
-	f.set_disallowed_chars(i_enemies, "0123456789", true, "Numbers only.");
-	f.set_disallowed_chars(i_friends, "0123456789", true, "Numbers only.");
+	f.create_window("NPC Spawner", false, true, false);
+	int list = f.create_list("NPCs to place on this map (Space to check/uncheck)", 0, true, true);
+	for (uint i = 0; i < npc_registry.length(); i++)
+	{
+		npc_data@ n = npc_registry[i];
+		f.add_list_item(list, n.name + " (" + n.id + ", " + n.npc_class + ")", n.id, -1, false, (i == 0));
+	}
+
+	int i_count = f.create_input_box("How many of each selected NPC should live in this area (0 removes it, maximum " + NPC_MAX_PER_SPAWNER + ")", "1");
+	int i_respawn = f.create_input_box("Respawn time after death in milliseconds", "30000");
+	int i_minx = f.create_input_box("Minimum x of the area the NPCs walk in", "" + int(minx));
+	int i_maxx = f.create_input_box("Maximum x of the area the NPCs walk in", "" + int(maxx));
+	int i_miny = f.create_input_box("Minimum y of the area the NPCs walk in", "" + int(miny));
+	int i_maxy = f.create_input_box("Maximum y of the area the NPCs walk in", "" + int(maxy));
+	int i_minz = f.create_input_box("Minimum z of the area the NPCs walk in", "" + int(round(me.z, 0)));
+	int i_maxz = f.create_input_box("Maximum z of the area the NPCs walk in", "" + int(round(me.z, 0)));
+	f.set_disallowed_chars(i_count, "0123456789", true, "Numbers only.");
 	f.set_disallowed_chars(i_respawn, "0123456789", true, "Numbers only.");
-	int btn_ok = f.create_button("&generate on this map", true);
-	int btn_cancel = f.create_button("&cancel", false, true);
+	f.set_disallowed_chars(i_minx, "0123456789", true, "Numbers only.");
+	f.set_disallowed_chars(i_maxx, "0123456789", true, "Numbers only.");
+	f.set_disallowed_chars(i_miny, "0123456789", true, "Numbers only.");
+	f.set_disallowed_chars(i_maxy, "0123456789", true, "Numbers only.");
+	f.set_disallowed_chars(i_minz, "0123456789", true, "Numbers only.");
+	f.set_disallowed_chars(i_maxz, "0123456789", true, "Numbers only.");
+	int btn_ok = f.create_button("&Save spawner", true);
+	int btn_cancel = f.create_button("&Cancel", false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
-	f.focus_silently(i_enemies);
+	f.focus(list);
 
 	while (true)
 	{
@@ -62,28 +64,39 @@ void build_npc_spawner()
 
 		if (f.is_pressed(btn_ok))
 		{
-			string se = f.get_text(i_enemies).trim_whitespace();
-			string sf = f.get_text(i_friends).trim_whitespace();
-			string sr = f.get_text(i_respawn).trim_whitespace();
-			if (se == "" || sf == "" || sr == "")
+			int[]@ checked = f.get_checked_list_items(list);
+			if (checked is null || checked.length() == 0)
 			{
-				speak("All three values are required.");
+				speak("Select at least one NPC with Space.");
+				f.focus(list);
 				continue;
 			}
-			int enemies = int(string_to_number(se));
-			int friends = int(string_to_number(sf));
-			int respawn_ms = int(string_to_number(sr));
-			if (enemies < 0 || friends < 0)
+
+			int count = int(string_to_number(f.get_text(i_count)));
+			int respawn_ms = int(string_to_number(f.get_text(i_respawn)));
+			int x0 = int(string_to_number(f.get_text(i_minx)));
+			int x1 = int(string_to_number(f.get_text(i_maxx)));
+			int y0 = int(string_to_number(f.get_text(i_miny)));
+			int y1 = int(string_to_number(f.get_text(i_maxy)));
+			int z0 = int(string_to_number(f.get_text(i_minz)));
+			int z1 = int(string_to_number(f.get_text(i_maxz)));
+			if (count < 0) count = 0;
+			if (count > NPC_MAX_PER_SPAWNER)
 			{
-				speak("Counts cannot be negative.");
-				continue;
+				count = NPC_MAX_PER_SPAWNER;
+				speak("A single spawner holds at most " + NPC_MAX_PER_SPAWNER + " NPCs of each type; the count was lowered.");
 			}
-			if (respawn_ms < 1000)
+			if (respawn_ms < 0) respawn_ms = 0;
+
+			for (uint c = 0; c < checked.length(); c++)
 			{
-				speak("The respawn time must be at least 1000 milliseconds.");
-				continue;
+				int pos = checked[c];
+				if (pos < 0 || pos >= int(npc_registry.length())) continue;
+				npc_save_spawner_to_map(npc_registry[uint(pos)].id, count, respawn_ms, x0, y0, z0, x1, y1, z1, false);
 			}
-			npc_save_spawner_to_map(enemies, friends, respawn_ms);
+			speak("map updated");
+			tempreset();
+			draw_map(mapname);
 			return;
 		}
 	}

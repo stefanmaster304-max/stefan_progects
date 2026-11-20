@@ -121,10 +121,8 @@ string translate_sound_path(const string&in path)
 	if (string_starts_with(path, "platforms/")) return "map platforms/" + path.substr(10);
 	if (string_starts_with(path, "builder/construction/platforms/")) return "map platforms/" + path.substr(31);
 	if (string_starts_with(path, "builder/construction/walls/")) return "walls/" + path.substr(27);
-	if (string_starts_with(path, "builder/transitions/doors/")) return "doors/" + path.substr(26);
 	if (string_starts_with(path, "builder/audio/musics/")) return "Musics/" + path.substr(21);
 	if (string_starts_with(path, "builder/audio/sources/")) return "anbients/" + path.substr(22);
-	if (string_starts_with(path, "builder/interaction/signs/")) return "interaction/signs/" + path.substr(26);
 	return path;
 }
 
@@ -136,12 +134,6 @@ string get_pack_sound(const string&in path)
 	string fullpath = "sounds/" + trans;
 	string result = find_sound_in_disk(fullpath);
 	if (result != "") return result;
-	if (string_contains(trans, "/default/", 1) > -1)
-	{
-		string alt = string_replace(trans, "/signs/default/", "/signs/sign/", true);
-		result = find_sound_in_disk("sounds/" + alt);
-		if (result != "") return result;
-	}
 	result = find_sound_in_disk(path);
 	if (result != "") return result;
 	return "";
@@ -219,62 +211,41 @@ string get_player_sound(string pattern)
 	return snd;
 }
 
-string pick_player_death_sound()
+// The player's death is an ensemble, not a single clip: Tristan's dying voice
+// (voice 17) plus the three numbered death effects, started together by
+// start_player_death_sounds(). A file that is missing is skipped, never
+// replaced by a generic clip of another event.
+const string[] PLAYER_DEATH_EFFECT_FILES = {
+	"sounds/player/misc331.ogg",
+	"sounds/player/misc333.ogg",
+	"sounds/player/misc334.ogg"
+};
+
+string[] get_player_death_sounds()
 {
-	string[] list;
-
-	string[]@ p_files = find_files("sounds/player/*");
-	if (p_files !is null)
+	string[] paths;
+	string voice = "sounds/player/tristanvoice17.ogg";
+	if (file_exists(voice)) paths.insert_last(voice);
+	for (uint i = 0; i < PLAYER_DEATH_EFFECT_FILES.length(); i++)
 	{
-		for (uint i = 0; i < p_files.length(); i++)
-		{
-			string fn = string_to_lower_case(p_files[i]);
-			if (string_contains(fn, "death", 1) > -1 && string_ends_with(fn, ".ogg"))
-			{
-				string full_p = "sounds/player/" + p_files[i];
-				if (file_exists(full_p) && list.find(full_p) == -1) list.insert_last(full_p);
-			}
-		}
+		if (!file_exists(PLAYER_DEATH_EFFECT_FILES[i])) continue;
+		paths.insert_last(PLAYER_DEATH_EFFECT_FILES[i]);
 	}
-
-	if (file_exists("sounds/player/death.ogg") && list.find("sounds/player/death.ogg") == -1)
-		list.insert_last("sounds/player/death.ogg");
-	if (file_exists("sounds/player/player health death.ogg") && list.find("sounds/player/player health death.ogg") == -1)
-		list.insert_last("sounds/player/player health death.ogg");
-
-	if (list.length() > 0)
-	{
-		return list[random(0, int(list.length()) - 1)];
-	}
-	return "sounds/player/death.ogg";
+	return paths;
 }
 
+// Pain clips are Tristan's voices 1 to 16: every hit the player takes plays one
+// of them at random.
 string pick_player_pain_sound()
 {
 	string[] list;
-
-	string[]@ p_files = find_files("sounds/player/*");
-	if (p_files !is null)
+	for (int i = 1; i <= 16; i++)
 	{
-		for (uint i = 0; i < p_files.length(); i++)
-		{
-			string fn = string_to_lower_case(p_files[i]);
-			if (string_contains(fn, "pain", 1) > -1 && string_ends_with(fn, ".ogg"))
-			{
-				string full_p = "sounds/player/" + p_files[i];
-				if (file_exists(full_p) && list.find(full_p) == -1) list.insert_last(full_p);
-			}
-		}
+		string path = "sounds/player/tristanvoice" + i + ".ogg";
+		if (file_exists(path)) list.insert_last(path);
 	}
-
-	if (list.length() > 0)
-	{
-		return list[random(0, int(list.length()) - 1)];
-	}
-
-	string fallback_snd = get_player_sound("pain");
-	if (fallback_snd != "") return fallback_snd;
-	return "sounds/player/pain1.ogg";
+	if (list.length() == 0) return "";
+	return list[random(0, int(list.length()) - 1)];
 }
 
 dictionary platform_sound_list_cache;
@@ -519,10 +490,8 @@ string get_sound_path(string path)
 		"sounds/Musics/",
 		"sounds/misc/",
 		"sounds/bullets/",
-		"sounds/doors/",
 		"sounds/walls/",
 		"sounds/interaction/",
-		"sounds/keyboards/",
 		"sounds/shield/",
 		"sounds/menu sounds/",
 		"sounds/welcome/",
@@ -630,7 +599,7 @@ string[] get_all_sound_categories()
 	dictionary seen;
 
 	// Primary categories prioritized
-	string[] primary_roots = {"shield", "items", "weapons", "player", "misc", "doors", "walls", "map platforms", "interaction", "anbients", "Musics", "menu sounds", "keyboards", "welcome"};
+	string[] primary_roots = {"shield", "items", "weapons", "player", "misc", "walls", "map platforms", "interaction", "anbients", "Musics", "menu sounds", "welcome"};
 
 	for (uint i = 0; i < primary_roots.length(); i++)
 	{
