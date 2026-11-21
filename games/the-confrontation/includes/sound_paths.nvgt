@@ -3,13 +3,6 @@
 
 sound builder_preview_sound;
 
-bool sound_pack_active = false;
-
-void init_sound_package()
-{
-	// Direct disk folder loading is enforced.
-}
-
 bool string_starts_with(const string&in s, const string&in prefix)
 {
 	if (prefix.length() > s.length()) return false;

@@ -23,7 +23,6 @@ string ver = "1.0.0";
 #include "includes/player_progress.nvgt"
 #include "includes/documentation.nvgt"
 #include"includes/dlg.nvgt"
-#include"includes/dlgplayer.nvgt"
 #include"includes/menu.nvgt"
 #include "includes/updater.nvgt"
 #include"includes/keybinds.nvgt"
@@ -1338,17 +1337,6 @@ void play_initial_session_welcome_sound()
 			for (uint i = 0; i < files.length(); i++)
 			{
 				welcome_files.insert_last("sounds/welcome/" + files[i]);
-			}
-		}
-	}
-	if (welcome_files.length() == 0 && directory_exists("sounds/boas-vindas"))
-	{
-		string[]@ files = find_files("sounds/boas-vindas/*.ogg");
-		if (files !is null)
-		{
-			for (uint i = 0; i < files.length(); i++)
-			{
-				welcome_files.insert_last("sounds/boas-vindas/" + files[i]);
 			}
 		}
 	}

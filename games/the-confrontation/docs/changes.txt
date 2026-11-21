@@ -5,6 +5,33 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 10:20
+-------------------------------------------------------------------------------
+
+1. WPM-Driven Weapon Configuration:
+   - Verified and enforced that all weapons load stats, ranges, damages, weights, fire rates, and audio exclusively from individual .wpm configuration files without hardcoded values in code.
+   - Fire rates strictly adhere to a single exact firetime interval per weapon with zero min/max oscillation.
+
+2. Reload Sound System & Fallback Removal:
+   - Removed generic reload sound fallbacks across the ammo and weapon engines; weapons with missing reload sound entries reload silently via a dedicated 2000ms safety timer without generic sound substitution.
+   - Audited the sound library and pruned weapons that lacked reload sounds or complete sound profiles (colt1911, magnum revouver, tauros revouver, tar 21 assalt rifle, beneli m4, ithica_m37, ks123), ensuring every remaining firearm is backed by verified audio.
+
+3. Weapon Range and Damage Rebalancing:
+   - Melee: Short ranges (4 to 7 steps) and balanced damage (knife: 180-280, sword: 260-400, axe: 350-500, etc.).
+   - Pistols: Ranges between 9 and 15 steps; damages scaled between 480 and 790.
+   - Revolvers: Ranges between 14 and 20 steps; damages scaled between 400 and 680.
+   - Shotguns: Ranges between 20 and 32 steps; damages scaled between 550 and 1550.
+   - Machine Guns & Submachine Guns: Ranges between 22 and 45 steps; damage rebalanced to high-tier 1000 to 4500, eliminating underpowered 50-150 damage values.
+   - Rifles: Ranges between 35 and 50 steps; damages scaled between 610 and 1500.
+   - Sniper Rifles: Long ranges between 52 and 65 steps; damages scaled between 900 and 3500.
+   - Heavy Artillery & Launchers: Cannon range scaled to 70 steps (5000-6000 damage), crossbow to 30 steps, flamethrower to 10 steps.
+
+4. Source Code and Sound Tree Cleanup:
+   - Pruned orphaned sound directories and unreferenced weapon aliases.
+   - Removed unused stub files (dlgplayer.nvgt), empty legacy stub functions (init_sound_package), dead language directories (sounds/boas-vindas), and unreferenced utilities in hip.nvgt.
+
+
+-------------------------------------------------------------------------------
 New on November 20, 2026 at 20:25
 -------------------------------------------------------------------------------
 
