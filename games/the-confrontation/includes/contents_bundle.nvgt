@@ -11,6 +11,7 @@ bool contents_bundle_loaded = false;
 
 bool is_content_encrypted()
 {
+	if (!SCRIPT_COMPILED) return false;
 	return file_exists(CONTENTS_DAT_PATH);
 }
 
@@ -20,7 +21,7 @@ string get_contents_bundle_path()
 	return "";
 }
 
-// Sections keep the four content types apart, so a name= line from one bundle can
+// Sections keep the content types apart, so a name= line from one bundle can
 // never leak into another registry while parsing.
 string serialize_all_contents_bundle()
 {
@@ -29,6 +30,7 @@ string serialize_all_contents_bundle()
 	s += "[section:weapons]\n" + serialize_all_weapons_bundle() + "\n";
 	s += "[section:stores]\n" + serialize_all_stores_bundle() + "\n";
 	s += "[section:packages]\n" + serialize_all_packages_bundle() + "\n";
+	s += "[section:npcs]\n" + serialize_all_npcs_bundle() + "\n";
 	return s;
 }
 
@@ -38,6 +40,7 @@ void parse_contents_bundle(const string&in content)
 	string weapons_sec = "";
 	string stores_sec = "";
 	string packages_sec = "";
+	string npcs_sec = "";
 	string section = "";
 
 	string[]@ lines = string_split(content, "\n", true);
@@ -55,12 +58,14 @@ void parse_contents_bundle(const string&in content)
 		else if (section == "weapons") weapons_sec += lines[i] + "\n";
 		else if (section == "stores") stores_sec += lines[i] + "\n";
 		else if (section == "packages") packages_sec += lines[i] + "\n";
+		else if (section == "npcs") npcs_sec += lines[i] + "\n";
 	}
 
 	parse_items_bundle(items_sec);
 	parse_weapons_bundle(weapons_sec);
 	parse_stores_bundle(stores_sec);
 	parse_packages_bundle(packages_sec);
+	parse_npcs_bundle(npcs_sec);
 }
 
 bool decrypt_contents_text(const string&in path, string&out text)
@@ -85,7 +90,7 @@ bool validate_contents_file(const string&in path)
 	if (text.find("[section:weapons]") < 0) return false;
 	if (text.find("[section:stores]") < 0) return false;
 	if (text.find("[section:packages]") < 0) return false;
-	return (text.find("[item:") >= 0 || text.find("[weapon:") >= 0 || text.find("[store:") >= 0);
+	return (text.find("[item:") >= 0 || text.find("[weapon:") >= 0 || text.find("[store:") >= 0 || text.find("[npc:") >= 0);
 }
 
 bool load_all_contents(bool force = false)
@@ -101,6 +106,7 @@ bool load_all_contents(bool force = false)
 	weapon_registry.resize(0);
 	store_configs.resize(0);
 	package_registry.resize(0);
+	npc_registry.resize(0);
 
 	parse_contents_bundle(text);
 	remove_legacy_material_items();
@@ -142,48 +148,7 @@ void delete_legacy_content_bundles()
 
 void clean_loose_content_files()
 {
-	for (uint c = 0; c < item_categories.length(); c++)
-	{
-		string folder = ITEM_DIR + "/" + item_categories[c];
-		if (!directory_exists(folder)) continue;
-		string[]@ files = find_files(folder + "/*.config");
-		if (files !is null)
-			for (uint i = 0; i < files.length(); i++) file_delete(folder + "/" + files[i]);
-		string[]@ dats = find_files(folder + "/*.dat");
-		if (dats !is null)
-			for (uint i = 0; i < dats.length(); i++) file_delete(folder + "/" + dats[i]);
-	}
-
-	string[]@ weapon_dirs = find_directories(WEAPON_DIR + "/*");
-	if (weapon_dirs !is null)
-	{
-		for (uint c = 0; c < weapon_dirs.length(); c++)
-		{
-			string folder = WEAPON_DIR + "/" + weapon_dirs[c];
-			if (!directory_exists(folder)) continue;
-			string[]@ files = find_files(folder + "/*.wpm");
-			if (files !is null)
-				for (uint i = 0; i < files.length(); i++) file_delete(folder + "/" + files[i]);
-			string[]@ dats = find_files(folder + "/*.dat");
-			if (dats !is null)
-				for (uint i = 0; i < dats.length(); i++) file_delete(folder + "/" + dats[i]);
-		}
-	}
-
-	if (directory_exists(STORE_DIR))
-	{
-		string[]@ st_files = find_files(STORE_DIR + "/*.st");
-		if (st_files !is null)
-			for (uint i = 0; i < st_files.length(); i++) file_delete(STORE_DIR + "/" + st_files[i]);
-	}
-
-	if (directory_exists(PACKAGE_DIR))
-	{
-		string[]@ pkg_files = find_files(PACKAGE_DIR + "/*.config");
-		if (pkg_files !is null)
-			for (uint i = 0; i < pkg_files.length(); i++) file_delete(PACKAGE_DIR + "/" + pkg_files[i]);
-	}
-
+	// Preserves loose files so the game can be tested and modified freely from source.
 	delete_legacy_content_bundles();
 }
 
@@ -193,8 +158,9 @@ void encrypt_all_contents()
 	if (weapon_registry.length() == 0) load_all_weapons_wpm();
 	if (store_configs.length() == 0) init_stores();
 	if (package_registry.length() == 0) load_all_packages();
+	if (npc_registry.length() == 0) load_all_npcs();
 
-	if (item_registry.length() == 0 && weapon_registry.length() == 0 && store_configs.length() == 0 && package_registry.length() == 0)
+	if (item_registry.length() == 0 && weapon_registry.length() == 0 && store_configs.length() == 0 && package_registry.length() == 0 && npc_registry.length() == 0)
 	{
 		speak("No content found to encrypt.");
 		return;
@@ -207,7 +173,7 @@ void encrypt_all_contents()
 	}
 
 	clean_loose_content_files();
-	speak("All items, weapons, stores and packages compiled into contents.dat.");
+	speak("All items, weapons, stores, packages and NPCs compiled into contents.dat.");
 }
 
 void decrypt_all_contents()

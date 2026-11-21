@@ -376,8 +376,11 @@ void load_all_items_config(bool force = false)
 	if (!force && item_registry.length() > 0) return;
 	ensure_item_directories();
 
-	// 1. Primary: the single encrypted contents.dat bundle
-	if (load_all_contents(force)) return;
+	// 1. In compiled release mode: the single encrypted contents.dat bundle
+	if (SCRIPT_COMPILED)
+	{
+		if (load_all_contents(force)) return;
+	}
 
 	item_registry.resize(0);
 
@@ -462,6 +465,11 @@ void load_all_items_config(bool force = false)
 		}
 	}
 
+	if (item_registry.length() == 0)
+	{
+		load_all_contents(force);
+	}
+
 	// 3. Legacy material items are dropped on load so the old resource system
 	// cannot come back through a settings file that still lists them.
 	remove_legacy_material_items();
@@ -509,6 +517,7 @@ void decrypt_all_items()
 
 bool is_item_encrypted(const string&in id = "")
 {
+	if (!SCRIPT_COMPILED) return false;
 	return is_content_encrypted() || file_exists(ITEMS_DAT_PATH) || file_exists("data/items.dat") || file_exists("items.dat");
 }
 

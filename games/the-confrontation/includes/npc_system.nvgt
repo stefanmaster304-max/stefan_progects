@@ -995,6 +995,7 @@ void npc_die(npc_instance@ npc, const string&in killer, const string&in weapon_n
 	npc.dead = true;
 	npc.death_timer.restart();
 	npc.aware = false;
+	npc_release_voice(npc);
 	if (npc.data !is null)
 	{
 		npc_play_positional(npc, npc.data.sound_death);

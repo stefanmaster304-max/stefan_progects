@@ -241,6 +241,18 @@ void play_logo_intro()
 savedata sd(prefsdir+"/settings.dat","gipwjefiqoiqewiofeiofqwehjoiwmoiwaniewnfoipwqenefowqiniosawENGRWORWIOPNHGRNIOOGINWGR");
 void main()
 {
+	if (file_exists("compile_bundles.trigger") || COMMAND_LINE.find("--compile-bundles") >= 0)
+	{
+		if (file_exists("compile_bundles.trigger")) file_delete("compile_bundles.trigger");
+		load_all_items_config(true);
+		load_all_weapons_wpm(true);
+		init_stores();
+		load_all_packages();
+		load_all_npcs(true);
+		encrypt_all_contents_silent();
+		encrypt_all_maps();
+		exit();
+	}
 	if (!directory_exists(prefsdir)) directory_create(prefsdir);
 	readprefs();
 	kb_init();

@@ -128,7 +128,7 @@ void store_browse_buy(int cat)
 	int balance = get_item_count(currency);
 	if (balance < total_cost)
 	{
-		string err_snd = get_sound_path("misc/error.ogg;error.ogg");
+		string err_snd = get_sound_path("player/store_error.ogg;sounds/player/store_error.ogg;misc/error.ogg;error.ogg");
 		if (err_snd != "") p.play_stationary(err_snd, false);
 		speak("You don't have enough " + currency + ". You need " + total_cost + " and have " + balance + ".");
 		return;
@@ -151,7 +151,7 @@ void store_browse_buy(int cat)
 		summary += q + " " + get_item_display_name(s.item_names[i]);
 	}
 
-	string buy_snd = get_sound_path("player/storepurchase.ogg;items/buy.ogg;items/storepurchase.ogg;storepurchase.ogg;buy.ogg");
+	string buy_snd = get_sound_path("player/buy.ogg;sounds/player/buy.ogg;player/storepurchase.ogg;items/buy.ogg;items/storepurchase.ogg;storepurchase.ogg;buy.ogg");
 	if (buy_snd != "") p.play_stationary(buy_snd, false);
 	speak("Purchased " + summary + " for " + total_cost + " " + currency + ".");
 }
@@ -198,6 +198,8 @@ void store_main_menu()
 		wait(5);
 	}
 
+	string st_snd = get_sound_path("player/st.ogg;sounds/player/st.ogg;st.ogg");
+	if (st_snd != "") p.play_stationary(st_snd, false);
 	speak(store_welcome_text());
 
 	int cat = 0;

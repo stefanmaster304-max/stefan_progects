@@ -126,6 +126,7 @@ void parse_packages_bundle(const string&in content)
 
 bool is_package_encrypted(const string&in id = "")
 {
+	if (!SCRIPT_COMPILED) return false;
 	return is_content_encrypted() || file_exists(PACKAGES_DAT_PATH) || file_exists("data/packages.dat") || file_exists("packages.dat");
 }
 
@@ -159,8 +160,11 @@ void load_all_packages()
 {
 	ensure_package_directories();
 
-	// 1. Primary: the single encrypted contents.dat bundle
-	if (load_all_contents()) return;
+	// 1. In compiled release mode: the single encrypted contents.dat bundle
+	if (SCRIPT_COMPILED)
+	{
+		if (load_all_contents()) return;
+	}
 
 	package_registry.resize(0);
 
@@ -206,6 +210,10 @@ void load_all_packages()
 		}
 	}
 
+	if (package_registry.length() == 0)
+	{
+		load_all_contents();
+	}
 }
 
 bool delete_package_file(const string&in id)

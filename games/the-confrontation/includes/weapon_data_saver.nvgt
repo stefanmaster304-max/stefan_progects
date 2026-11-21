@@ -382,13 +382,16 @@ void load_all_weapons_wpm(bool force = false)
 	if (!force && weapon_registry.length() > 0) return;
 	ensure_weapon_directories();
 
-	// 1. Primary: the single encrypted contents.dat bundle
-	if (load_all_contents(force))
+	// 1. In compiled release mode: the single encrypted contents.dat bundle
+	if (SCRIPT_COMPILED)
 	{
-		sort_weapon_registry();
-		weapon_cache_version++;
-		weapons_loaded_once = true;
-		return;
+		if (load_all_contents(force))
+		{
+			sort_weapon_registry();
+			weapon_cache_version++;
+			weapons_loaded_once = true;
+			return;
+		}
 	}
 
 	weapon_registry.resize(0);
@@ -481,6 +484,16 @@ void load_all_weapons_wpm(bool force = false)
 					}
 				}
 			}
+		}
+	}
+	if (weapon_registry.length() == 0)
+	{
+		if (load_all_contents(force))
+		{
+			sort_weapon_registry();
+			weapon_cache_version++;
+			weapons_loaded_once = true;
+			return;
 		}
 	}
 	sort_weapon_registry();
@@ -603,6 +616,7 @@ bool delete_weapon_wpm(const string&in id)
 
 bool is_weapon_encrypted(const string&in id = "")
 {
+	if (!SCRIPT_COMPILED) return false;
 	return is_content_encrypted() || file_exists(WEAPONS_DAT_PATH) || file_exists("data/weapons.dat") || file_exists("weapons.dat");
 }
 

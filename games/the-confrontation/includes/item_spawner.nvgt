@@ -162,28 +162,18 @@ void ground_item_loop()
 		}
 	}
 
-	// 5. Cluster & Throttled Audio Playback (Max 6 distinct beacon emitters, max 1 per tile)
-	dictionary tile_active;
+	// 5. Audio Playback for All Audible Items (Every ground item plays its configured beacon sound)
 	int active_count = 0;
 
 	for (uint c = 0; c < candidates.length(); c++)
 	{
 		ground_item@ gi = candidates[c].item;
 		if (gi is null) continue;
-		string tile_key = int(round(gi.x, 0)) + ":" + int(round(gi.y, 0)) + ":" + int(round(gi.z, 0));
 
-		if (tile_active.exists(tile_key))
-		{
-			// Another item on this tile is already the active audio beacon
-			continue;
-		}
-
-		if (active_count >= 6)
+		if (active_count >= 24)
 		{
 			break;
 		}
-
-		tile_active.set(tile_key, true);
 		active_count++;
 
 		// Trigger beacon sound when interval elapsed
@@ -237,8 +227,13 @@ void collect_ground_item(int best_idx)
 	{
 		grant_id = currency_key_for_item(data);
 		int qty = (data.quantity > 0) ? data.quantity : data.capacity;
-		if (qty > 0) grant_amount = qty;
+		if (qty > 0) grant_amount = qty * gi.amount;
+		if (grant_amount <= 0) grant_amount = gi.amount;
 	}
 	give(grant_id, grant_amount);
+
+	string item_name = (data !is null && data.name != "") ? data.name : grant_id;
+	speak("You collected " + grant_amount + " " + item_name + ".");
+
 	ground_items.remove_at(uint(best_idx));
 }

@@ -5,6 +5,33 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 11:45
+-------------------------------------------------------------------------------
+
+1. Unified Contents Bundle & Source Mode Preservation:
+   - NPCs added into the single encrypted package (settings/contents.dat) under [section:npcs].
+   - Compiling contents and maps preserves all loose .config, .wpm, .st, .npc, and .map files so developer/builder workflows are never disrupted.
+   - Running from source code (!SCRIPT_COMPILED) prioritizes loose files, allowing full editing and deletion in builders and tool menus without encryption locks.
+   - Removed decompile options from tool menus, retaining compilation tools.
+
+2. Updater Completion Audio & Download Cancellation:
+   - All update routines (game, content, sounds, maps) explicitly wait for the completion sound to finish playing before restarting or exiting.
+   - Added Escape key cancellation confirmation dialog during downloads: players can confirm cancellation (aborting download, terminating transfer, and purging temporary files) or resume, keeping the window fully responsive.
+
+3. Store Audio Polish:
+   - Added store greeting sound (player/st.ogg) alongside the welcome message upon entering store menus.
+   - Added successful purchase audio (player/buy.ogg) and insufficient funds audio (player/store_error.ogg).
+
+4. NPC Death & Drop Mechanics:
+   - NPC active voice clips are cleanly terminated immediately upon death so they do not overlap with the death sound.
+   - NPC editor now supports configuring custom drop quantities for each death item (item_id:quantity).
+
+5. Ground Item Audio & Native Currencies:
+   - Removed single-item tile suppression so multiple ground items (2, 3, 4+) on the same or neighboring tiles all emit their beacon beeps.
+   - Added dedicated configurations for the 4 native currencies (gold, silver, diamond, golden_crystal) featuring the items/bet_money.ogg pickup sound and English loot announcements ("You collected X [Currency]").
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 11:00
 -------------------------------------------------------------------------------
 

@@ -156,6 +156,24 @@ string get_map_content_by_name(const string&in name)
 {
 	if (name == "") return "";
 
+	// In source mode, loose map files take strict priority so developer edits work immediately
+	if (!SCRIPT_COMPILED)
+	{
+		string filename = MAP_DIR + "/" + name + ".map";
+		if (file_exists(filename))
+		{
+			string content = file_get_contents(filename);
+			if (content != "") return content;
+		}
+
+		string legacy_filename = "maps/" + name + ".map";
+		if (file_exists(legacy_filename))
+		{
+			string content = file_get_contents(legacy_filename);
+			if (content != "") return content;
+		}
+	}
+
 	load_maps_bundle();
 
 	if (map_bundle_cache.exists(name))
@@ -313,28 +331,6 @@ void encrypt_all_maps()
 		}
 	}
 	encrypt_all_maps_silent();
-	if (directory_exists(MAP_DIR))
-	{
-		string[]@ files = find_files(MAP_DIR + "/*.map");
-		if (files !is null)
-		{
-			for (uint i = 0; i < files.length(); i++)
-			{
-				file_delete(MAP_DIR + "/" + files[i]);
-			}
-		}
-	}
-	if (directory_exists("maps"))
-	{
-		string[]@ files = find_files("maps/*.map");
-		if (files !is null)
-		{
-			for (uint i = 0; i < files.length(); i++)
-			{
-				file_delete("maps/" + files[i]);
-			}
-		}
-	}
 	map_bundle_loaded = false;
 	load_maps_bundle();
 	speak("Maps encrypted into maps.dat.");
@@ -1074,6 +1070,7 @@ bool remove_map_from_disk_and_memory(const string&in name)
 bool is_map_encrypted(const string&in name)
 {
 	if (SCRIPT_COMPILED) return true;
+	if (name != "" && (file_exists(MAP_DIR + "/" + name + ".map") || file_exists("maps/" + name + ".map"))) return false;
 	if (file_exists(MAPS_DAT_PATH) || file_exists("data/maps.dat") || file_exists("maps.dat")) return true;
 	if (name != "")
 	{

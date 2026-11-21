@@ -267,13 +267,22 @@ void load_all_npcs(bool force = false)
 {
 	if (!force && npc_registry.length() > 0) return;
 
+	if (SCRIPT_COMPILED)
+	{
+		if (load_all_contents(force)) return;
+	}
+
 	// Nothing is ever created here: no folder, no example NPC. Until the
 	// developer writes an .npc file the list is simply empty.
 	npc_registry.resize(0);
-	if (!directory_exists(NPC_DIR)) return;
+	if (!directory_exists(NPC_DIR))
+	{
+		load_all_contents(force);
+		return;
+	}
 
 	string[]@ files = find_files(NPC_DIR + "/*.npc");
-	if (files !is null)
+	if (files !is null && files.length() > 0)
 	{
 		for (uint i = 0; i < files.length(); i++)
 		{
@@ -294,5 +303,83 @@ void load_all_npcs(bool force = false)
 				npc_registry.insert_last(n);
 			}
 		}
+	}
+	else
+	{
+		load_all_contents(force);
+	}
+}
+
+string serialize_all_npcs_bundle()
+{
+	string s = "# The Confront NPCs Bundle v1.0\n\n";
+	for (uint i = 0; i < npc_registry.length(); i++)
+	{
+		npc_data@ n = @npc_registry[i];
+		if (n is null || n.id == "") continue;
+		s += "[npc:" + n.id + "]\n";
+		s += serialize_npc_content(n);
+		s += "\n";
+	}
+	return s;
+}
+
+void parse_npcs_bundle(const string&in content)
+{
+	string[]@ lines = string_split(content, "\n", true);
+	if (lines is null) return;
+	npc_data@ current = null;
+
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string line = lines[i].trim_whitespace();
+		if (line == "" || string_starts_with(line, "#") || string_starts_with(line, ";")) continue;
+
+		if (string_starts_with(line, "[npc:") && string_ends_with(line, "]"))
+		{
+			string id = line.substr(5, line.length() - 6);
+			@current = @find_npc_data(id);
+			if (current is null)
+			{
+				@current = @npc_data();
+				current.id = id;
+				npc_registry.insert_last(current);
+			}
+			continue;
+		}
+
+		if (current is null) continue;
+
+		int eq = string_contains(line, "=", 1);
+		if (eq == -1) continue;
+		string key = string_left(line, eq).trim_whitespace();
+		string val = line.substr(eq + 1).trim_whitespace();
+
+		if (key == "name") current.name = val;
+		else if (key == "class" || key == "npc_class") current.npc_class = val;
+		else if (key == "attack_speed") current.attack_speed = int(string_to_number(val));
+		else if (key == "min_damage") current.min_damage = int(string_to_number(val));
+		else if (key == "max_damage") current.max_damage = int(string_to_number(val));
+		else if (key == "detection_range" || key == "detection") current.detection_range = int(string_to_number(val));
+		else if (key == "attack_range" || key == "attack") current.attack_range = int(string_to_number(val));
+		else if (key == "walk_speed") current.walk_speed = int(string_to_number(val));
+		else if (key == "run_speed") current.run_speed = int(string_to_number(val));
+		else if (key == "max_health" || key == "health") current.max_health = int(string_to_number(val));
+		else if (key == "sound_voice" || key == "voice") current.sound_voice = val;
+		else if (key == "voice_min_delay") current.voice_min_delay = int(string_to_number(val));
+		else if (key == "voice_max_delay") current.voice_max_delay = int(string_to_number(val));
+		else if (key == "sound_attack") current.sound_attack = val;
+		else if (key == "sound_pain") current.sound_pain = val;
+		else if (key == "sound_death") current.sound_death = val;
+		else if (key == "xp") current.xp = int(string_to_number(val));
+		else if (key == "drop_items_on_death" || key == "drop_on_death") current.drop_items_on_death = (val == "true" || val == "1");
+		else if (key == "death_drops" || key == "drop_items") current.death_drops = val;
+		else if (key == "use_platform_footsteps" || key == "platform_footsteps") current.use_platform_footsteps = (val == "true" || val == "1");
+		else if (key == "sound_footsteps" || key == "footsteps") current.sound_footsteps = val;
+	}
+
+	for (uint i = 0; i < npc_registry.length(); i++)
+	{
+		validate_npc_data(npc_registry[i]);
 	}
 }

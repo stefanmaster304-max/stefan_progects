@@ -649,14 +649,7 @@ void encrypt_everything()
 {
 	encrypt_maps();
 	encrypt_all_contents();
-	speak("Maps, items, weapons, stores and packages compiled and encrypted.");
-}
-
-void decrypt_everything()
-{
-	decrypt_maps();
-	decrypt_all_contents();
-	speak("Everything decompiled and decrypted.");
+	speak("Maps, items, weapons, stores, packages and NPCs compiled and encrypted.");
 }
 
 void maptoolmenu()
@@ -667,15 +660,15 @@ void maptoolmenu()
 		return;
 	}
 	string[] tool_names = {
-		"compile maps", "decompile maps",
-		"compile contents", "decompile contents",
-		"compile everything", "decompile everything",
+		"compile maps",
+		"compile contents",
+		"compile everything",
 		"back"
 	};
 	string[] tool_ids = {
-		"cm", "dm",
-		"cc", "dc",
-		"ce", "de",
+		"cm",
+		"cc",
+		"ce",
 		"back"
 	};
 
@@ -702,11 +695,8 @@ void maptoolmenu()
 			{
 				string sel = tool_ids[i];
 				if (sel == "cm") { encrypt_maps(); }
-				else if (sel == "dm") { decrypt_maps(); }
 				else if (sel == "cc") { encrypt_all_contents(); }
-				else if (sel == "dc") { decrypt_all_contents(); }
 				else if (sel == "ce") { encrypt_everything(); }
-				else if (sel == "de") { decrypt_everything(); }
 				maptoolmenu();
 				return;
 			}

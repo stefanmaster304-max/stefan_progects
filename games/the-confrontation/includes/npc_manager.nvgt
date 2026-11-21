@@ -35,6 +35,28 @@ bool npc_drop_list_has(const string&in drops, const string&in item_id)
 	return false;
 }
 
+int npc_drop_list_qty(const string&in drops, const string&in item_id)
+{
+	if (drops == "" || item_id == "") return 1;
+	string[]@ toks = string_split(drops, ";", true);
+	if (toks is null) return 1;
+	for (uint i = 0; i < toks.length(); i++)
+	{
+		string spec = toks[i].trim_whitespace();
+		int col = string_contains(spec, ":", 1);
+		if (col != -1)
+		{
+			string id = string_left(spec, col).trim_whitespace();
+			if (string_to_lower_case(id) == string_to_lower_case(item_id))
+			{
+				int q = int(string_to_number(spec.substr(col + 1).trim_whitespace()));
+				return (q > 0) ? q : 1;
+			}
+		}
+	}
+	return 1;
+}
+
 string npc_pick_death_drops_dialog(const string&in current_drops)
 {
 	load_all_items_config();
@@ -44,8 +66,15 @@ string npc_pick_death_drops_dialog(const string&in current_drops)
 		return current_drops;
 	}
 
+	dictionary drop_qtys;
+	for (uint i = 0; i < item_registry.length(); i++)
+	{
+		string iid = item_registry[i].id;
+		drop_qtys.set(iid, npc_drop_list_qty(current_drops, iid));
+	}
+
 	audio_form pf;
-	pf.create_window("Select Death Drop Items (Space to check/uncheck; Enter to save)", false, true, false);
+	pf.create_window("Select Death Drop Items and Quantities", false, true, false);
 	int list = pf.create_list("Available items (Space to check/uncheck)", 0, true, true);
 
 	for (uint i = 0; i < item_registry.length(); i++)
@@ -53,19 +82,49 @@ string npc_pick_death_drops_dialog(const string&in current_drops)
 		string iid = item_registry[i].id;
 		string iname = (item_registry[i].name != "") ? item_registry[i].name : iid;
 		bool is_sel = npc_drop_list_has(current_drops, iid);
-		pf.add_list_item(list, iname + " (" + iid + ")", iid, -1, false, is_sel);
+		int q = 1;
+		drop_qtys.get(iid, q);
+		pf.add_list_item(list, iname + " (" + iid + ") - Drop Quantity: " + q, iid, -1, false, is_sel);
 	}
 
+	int in_qty = pf.create_input_box("Drop quantity for focused item", "1");
+	pf.set_disallowed_chars(in_qty, "0123456789", true, "Numbers only.");
+	int b_set_qty = pf.create_button("Set &Quantity for selected item", false);
 	int b_save = pf.create_button("&Save Drop Items", true);
 	int b_clear = pf.create_button("&Clear Selection", false);
 	int b_cancel = pf.create_button("&Cancel", false, true);
 	pf.focus(list);
+
+	int last_focused_idx = -1;
 
 	while (true)
 	{
 		wait(5);
 		update_game_world();
 		pf.monitor();
+
+		int cur_pos = pf.get_list_position(list);
+		if (cur_pos >= 0 && cur_pos < int(item_registry.length()) && cur_pos != last_focused_idx)
+		{
+			last_focused_idx = cur_pos;
+			string cur_iid = item_registry[uint(cur_pos)].id;
+			int cur_q = 1;
+			drop_qtys.get(cur_iid, cur_q);
+			pf.set_text(in_qty, "" + cur_q);
+		}
+
+		if (pf.is_pressed(b_set_qty))
+		{
+			if (cur_pos >= 0 && cur_pos < int(item_registry.length()))
+			{
+				string cur_iid = item_registry[uint(cur_pos)].id;
+				int new_q = int(string_to_number(pf.get_text(in_qty)));
+				if (new_q < 1) new_q = 1;
+				drop_qtys.set(cur_iid, new_q);
+				string iname = (item_registry[cur_pos].name != "") ? item_registry[cur_pos].name : cur_iid;
+				speak(iname + " drop quantity set to " + new_q + ".");
+			}
+		}
 
 		if (pf.is_pressed(b_save) || key_pressed(KEY_RETURN))
 		{
@@ -77,15 +136,24 @@ string npc_pick_death_drops_dialog(const string&in current_drops)
 				{
 					int idx = checked[i];
 					if (idx < 0 || idx >= int(item_registry.length())) continue;
+					string iid = item_registry[uint(idx)].id;
+					int q = 1;
+					if (drop_qtys.exists(iid)) drop_qtys.get(iid, q);
+					if (q < 1) q = 1;
 					if (result != "") result += ";";
-					result += item_registry[uint(idx)].id + ":1";
+					result += iid + ":" + q;
 				}
 			}
 			else
 			{
-				int cur_pos = pf.get_list_position(list);
 				if (cur_pos >= 0 && cur_pos < int(item_registry.length()))
-					result = item_registry[uint(cur_pos)].id + ":1";
+				{
+					string iid = item_registry[uint(cur_pos)].id;
+					int q = 1;
+					if (drop_qtys.exists(iid)) drop_qtys.get(iid, q);
+					if (q < 1) q = 1;
+					result = iid + ":" + q;
+				}
 			}
 			return result;
 		}

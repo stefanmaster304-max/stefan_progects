@@ -455,8 +455,11 @@ void init_stores()
 {
 	ensure_store_dir();
 
-	// 1. Primary: the single encrypted contents.dat bundle
-	if (load_all_contents()) return;
+	// 1. In compiled release mode: the single encrypted contents.dat bundle
+	if (SCRIPT_COMPILED)
+	{
+		if (load_all_contents()) return;
+	}
 
 	store_configs.resize(0);
 
@@ -519,7 +522,8 @@ void init_stores()
 
 	if (store_configs.length() == 0)
 	{
-		create_default_stores();
+		if (!load_all_contents())
+			create_default_stores();
 	}
 }
 
@@ -535,6 +539,7 @@ void decrypt_stores()
 
 bool is_store_encrypted(const string&in name = "")
 {
+	if (!SCRIPT_COMPILED) return false;
 	if (name != "")
 	{
 		// A single loose category file is editable even when an encrypted bundle
