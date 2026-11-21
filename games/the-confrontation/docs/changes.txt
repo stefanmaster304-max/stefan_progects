@@ -5,6 +5,37 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 20:55
+-------------------------------------------------------------------------------
+
+1. Audio Source & Ambience Resolution Fix:
+   - Resolved an issue where ambient audio configured for map sound sources (such as "forest" in Vale dos Lobos / `wolfs valey.map`) was inadvertently resolved as music due to greedy wildcard search matches in `sounds/Musics/*`.
+   - Map sources and ambiences now properly prioritize ambient sound files (`sounds/anbients/`, `sounds/ambients/`) first, preserving 3D positioning and proper ambient volume levels.
+   - Builder audio source and ambience tools now save explicit folder prefixes (`musics/` vs `sources/`), guaranteeing unambiguous classification.
+
+2. In-Game Documentation Submenu & Native NVGT Notepad:
+   - Added a dedicated "Documentation" ("Documentação" / "Documentación") submenu to the main menu powered by `audio_form`.
+   - Offers two primary options:
+     - "Read recent changes" ("Ler alterações recentes" / "Leer cambios recientes"): Opens `docs/changes.txt` directly inside a native NVGT multiline text viewer. Screen reader players can navigate line by line, scroll with arrow keys, copy text to clipboard, and return immediately with Escape without opening Windows Notepad or leaving the game.
+     - "Read Readme file" ("Ler arquivo Leia-me" / "Leer archivo Léame"): Reads the game's Readme. If the file is not found, the game clearly announces "Arquivo LEIAME não encontrado" (localized) and smoothly returns to the documentation submenu.
+
+3. Interactive Update Check Dialog:
+   - When checking for updates from the main menu, if no update is found or a network/manifest error occurs, the game now displays a modal dialog with `dlg()` instead of instantly returning.
+   - The player can read and repeat the message with arrow keys or copy it with 'C', and pressing Enter or Escape returns to the menu, resuming main menu music seamlessly.
+
+4. Death and Item Pickup Translations:
+   - Localized NPC player-kill death messages across English, Portuguese, and Spanish:
+     - EN: "You were killed by <NPC>."
+     - PT: "Você foi morto por <NPC>."
+     - ES: "Fuiste asesinado por <NPC>."
+   - Localized NPC kill announcements when the player defeats an enemy.
+   - Localized item pickup speech when collecting items on the ground:
+     - EN: "You collected <amount> <item>."
+     - PT: "Você coletou <amount> <item>."
+     - ES: "Has recogido <amount> <item>."
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 20:25
 -------------------------------------------------------------------------------
 

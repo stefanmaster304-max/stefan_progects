@@ -229,27 +229,68 @@ class source
 		is_neighbor = neighbor;
 
 		string sound_file = "";
-		if (source_resolved_path_cache.exists(file))
+		string cache_key = (is_amb ? "amb:" : "src:") + file;
+		if (source_resolved_path_cache.exists(cache_key))
 		{
-			source_resolved_path_cache.get(file, sound_file);
-			if (source_is_music_cache.exists(file))
-				source_is_music_cache.get(file, is_music);
+			source_resolved_path_cache.get(cache_key, sound_file);
+			if (source_is_music_cache.exists(cache_key))
+				source_is_music_cache.get(cache_key, is_music);
 		}
 		else
 		{
-			sound_file = get_music_sound(file);
-			if (sound_file != "")
+			string lower_file = file.lower();
+			if (file_exists(file))
 			{
+				sound_file = file;
+				is_music = (lower_file.find("musics/") != -1 || lower_file.find("musics\\") != -1);
+			}
+			else if (string_starts_with(lower_file, "musics/") || string_starts_with(lower_file, "musics\\") || string_starts_with(lower_file, "sounds/musics/"))
+			{
+				string stripped = file;
+				int s_idx = file.find_last("/");
+				int b_idx = file.find_last("\\");
+				int max_slash = (s_idx > b_idx ? s_idx : b_idx);
+				if (max_slash != -1) stripped = file.substr(max_slash + 1);
+				sound_file = get_music_sound(stripped);
+				if (sound_file == "") sound_file = get_music_sound(file);
 				is_music = true;
+			}
+			else if (string_starts_with(lower_file, "sources/") || string_starts_with(lower_file, "anbients/") || string_starts_with(lower_file, "ambients/") || string_starts_with(lower_file, "sounds/anbients/") || string_starts_with(lower_file, "sounds/ambients/"))
+			{
+				string stripped = file;
+				int s_idx = file.find_last("/");
+				int b_idx = file.find_last("\\");
+				int max_slash = (s_idx > b_idx ? s_idx : b_idx);
+				if (max_slash != -1) stripped = file.substr(max_slash + 1);
+				sound_file = get_ambience_sound(stripped);
+				if (sound_file == "") sound_file = get_ambience_sound(file);
+				is_music = false;
 			}
 			else
 			{
-				is_music = false;
+				// Sources and ambients prioritize ambient audio files first
 				sound_file = get_ambience_sound(file);
-				if (sound_file == "") sound_file = file;
+				if (sound_file != "")
+				{
+					is_music = false;
+				}
+				else
+				{
+					sound_file = get_music_sound(file);
+					if (sound_file != "")
+					{
+						is_music = true;
+					}
+					else
+					{
+						sound_file = file;
+						is_music = false;
+					}
+				}
 			}
-			source_resolved_path_cache.set(file, sound_file);
-			source_is_music_cache.set(file, is_music);
+			if (sound_file == "") sound_file = file;
+			source_resolved_path_cache.set(cache_key, sound_file);
+			source_is_music_cache.set(cache_key, is_music);
 		}
 
 		int cx = (x1 + x2) / 2;
@@ -880,7 +921,8 @@ void build_sound_source()
 			double bpit = f.get_slider(pit_s);
 
 			builder_preview_sound.close();
-			save_to_map("source:" + bx1 + ":" + bx2 + ":" + by1 + ":" + by2 + ":" + bz1 + ":" + bz2 + ":" + bsub + ":" + bvol + ":" + bpit);
+			string save_snd = (saved_cat_pos == 0) ? ("musics/" + bsub) : ("sources/" + bsub);
+			save_to_map("source:" + bx1 + ":" + bx2 + ":" + by1 + ":" + by2 + ":" + bz1 + ":" + bz2 + ":" + save_snd + ":" + bvol + ":" + bpit);
 			return;
 		}
 	}
@@ -1076,7 +1118,8 @@ void build_sound_ambience()
 			double bpit = f.get_slider(pit_s);
 
 			builder_preview_sound.close();
-			save_to_map("ambience:" + bx1 + ":" + bx2 + ":" + by1 + ":" + by2 + ":" + bz1 + ":" + bz2 + ":" + bsub + ":" + bvol + ":" + bpit);
+			string save_snd = (saved_cat_pos == 0) ? ("musics/" + bsub) : ("sources/" + bsub);
+			save_to_map("ambience:" + bx1 + ":" + bx2 + ":" + by1 + ":" + by2 + ":" + bz1 + ":" + bz2 + ":" + save_snd + ":" + bvol + ":" + bpit);
 			return;
 		}
 	}

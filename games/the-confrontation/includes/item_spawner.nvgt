@@ -233,7 +233,8 @@ void collect_ground_item(int best_idx)
 	give(grant_id, grant_amount);
 
 	string item_name = (data !is null && data.name != "") ? data.name : grant_id;
-	speak("You collected " + grant_amount + " " + item_name + ".");
+	string[] c_args = { "" + grant_amount, item_name };
+	speak(tr("game.item_collected", c_args));
 
 	ground_items.remove_at(uint(best_idx));
 }

@@ -116,6 +116,8 @@ string translate_sound_path(const string&in path)
 	if (string_starts_with(path, "builder/construction/walls/")) return "walls/" + path.substr(27);
 	if (string_starts_with(path, "builder/audio/musics/")) return "Musics/" + path.substr(21);
 	if (string_starts_with(path, "builder/audio/sources/")) return "anbients/" + path.substr(22);
+	if (string_starts_with(path, "musics/")) return "Musics/" + path.substr(7);
+	if (string_starts_with(path, "sources/")) return "anbients/" + path.substr(8);
 	return path;
 }
 

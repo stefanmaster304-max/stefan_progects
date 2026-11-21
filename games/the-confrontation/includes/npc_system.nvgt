@@ -1012,7 +1012,8 @@ void npc_die(npc_instance@ npc, const string&in killer, const string&in weapon_n
 
 		npc_drop_death_items(npc);
 
-		string line = killer + " killed " + npc.data.name + " at " + npc.x + ", " + npc.y + ", " + npc.z + " with " + weapon_name + ".";
+		string[] k_args = { killer, npc.data.name, "" + npc.x, "" + npc.y, "" + npc.z, weapon_name };
+		string line = tr("game.npc_killed", k_args);
 		npc_write_kill_line(line);
 		speak(line);
 	}

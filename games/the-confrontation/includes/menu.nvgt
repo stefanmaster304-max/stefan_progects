@@ -155,6 +155,7 @@ void mainmenu()
 		m.add_item_tts(tr("menu.main.store"), "store");
 		m.add_item_tts(tr("menu.main.test_speakers"), "test_speakers");
 		m.add_item_tts(tr("menu.main.check_updates"), "check_updates");
+		m.add_item_tts(tr("menu.main.documentation"), "documentation");
 		m.add_item_tts(tr("menu.main.options"), "options");
 		m.add_item_tts(tr("menu.main.exit"), "exit");
 		int mres=m.run(tr("menu.main.title"), true);
@@ -316,6 +317,11 @@ void mainmenu()
 			{
 				m.play_music();
 			}
+		}
+		else if (menuitem=="documentation")
+		{
+			documentation_menu();
+			setupmenu(true);
 		}
 		else if (menuitem=="options")
 		{

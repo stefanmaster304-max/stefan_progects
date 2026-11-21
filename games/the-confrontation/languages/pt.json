@@ -7,6 +7,7 @@
       "store": "Loja",
       "test_speakers": "Testar alto-falantes",
       "check_updates": "Verificar atualizações",
+      "documentation": "Documentação",
       "options": "Opções",
       "exit": "Sair"
     }
@@ -186,6 +187,9 @@
   "updater": {
     "checking": "Verificando atualizações...",
     "no_updates": "Nenhuma atualização encontrada.",
+    "no_updates_dialog": "Nenhuma atualização encontrada. Pressione Enter para voltar ao menu.",
+    "error_dialog": "Falha ao verificar atualizações: &1. Pressione Enter para voltar ao menu.",
+    "corrupt_manifest_dialog": "O manifesto de atualização é inválido. Pressione Enter para voltar ao menu.",
     "update_found": "Atualização encontrada!",
     "downloading": "Baixando atualização.",
     "cancel_prompt": "Tem certeza de que deseja cancelar o download? Pressione Y ou Enter para cancelar, ou Escape para continuar.",
@@ -202,10 +206,24 @@
     "sounds_not_found_prompt": "Os sons do jogo não foram encontrados. Deseja fazer o download dos sons do jogo? Pressione Y ou Enter para Sim, ou Escape para continuar sem sons.",
     "continuing_without_sounds": "Continuando sem sons."
   },
+  "documentation": {
+    "title": "Documentação",
+    "options": "Opções de documentação",
+    "read_changes": "Ler alterações recentes",
+    "read_readme": "Ler arquivo Leia-me",
+    "readme_not_found": "Arquivo LEIAME não encontrado.",
+    "changes_not_found": "Arquivo de alterações não encontrado.",
+    "error_opening": "Não foi possível abrir o arquivo de documentação."
+  },
   "game": {
     "health_status": "Vida: &1 de &2",
     "level_status": "Nível &1 de &2 para ressurreição, Ressurreição &3, XP &4, &5 XP necessários para o nível &6",
     "died": "Você morreu!",
+    "killed_by_npc": "Você foi morto por &1.",
+    "killed_by_unknown": "Você foi morto por um inimigo.",
+    "enemy": "um inimigo",
+    "item_collected": "Você coletou &1 &2.",
+    "npc_killed": "&1 matou &2 em &3, &4, &5 com &6.",
     "out_of_ammo": "Sem munição!",
     "reloading": "Recarregando...",
     "reload_cancelled": "Recarga cancelada.",
@@ -214,6 +232,7 @@
   },
   "ui": {
     "copied": "Copiado",
+    "copy": "Copiar texto",
     "save": "Salvar",
     "cancel": "Cancelar",
     "back": "Voltar",

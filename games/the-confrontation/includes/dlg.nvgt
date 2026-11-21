@@ -1,6 +1,10 @@
 void dlg(string message, bool copiable=true)
 {
 speak(message);
+while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
+{
+wait(5);
+}
 while(true)
 {
 wait(5);

@@ -1,33 +1,29 @@
-// documentation.nvgt - In-game documentation viewer (readme, guide, changes).
-// The mission menus that used to live beside these functions were removed.
+// documentation.nvgt - In-game documentation viewer (readme, changes) using native NVGT audio_form notepad.
 
 const string DOC_README_PATH = "docs/readme.txt";
-const string DOC_GUIDE_PATH = "docs/game_guide.txt";
 const string DOC_CHANGES_PATH = "docs/changes.txt";
 
-void open_documentation_file(const string&in title, const string&in file_path)
+void open_documentation_notepad(const string&in title, const string&in file_path)
 {
-	if (!file_exists(file_path))
-	{
-		speak(title + " file not found: " + file_path + ".");
-		dlg(title + " file not found: " + file_path + ".");
-		return;
-	}
 	file f;
 	if (!f.open(file_path, "rb"))
 	{
-		speak("Could not open file: " + title + ".");
-		dlg("Could not open file: " + title + ".");
+		speak(tr("documentation.error_opening"));
 		return;
 	}
 	string content = f.read();
 	f.close();
 
+	while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
+	{
+		wait(5);
+	}
+
 	audio_form df;
 	df.create_window(title, false, true, false);
 	int txt = df.create_input_box(title, content, "", 0, true, true, false);
-	int btn_copy = df.create_button("&Copy Text");
-	int btn_close = df.create_button("&Close", false, true);
+	int btn_copy = df.create_button("&" + tr("ui.copy"));
+	int btn_close = df.create_button("&" + tr("ui.close"), false, true);
 	df.focus(txt);
 	while (true)
 	{
@@ -38,69 +34,106 @@ void open_documentation_file(const string&in title, const string&in file_path)
 		if (df.is_pressed(btn_copy))
 		{
 			clipboard_copy_text(content);
-			speak("Text copied to clipboard.");
+			speak(tr("ui.copied"));
 		}
+	}
+
+	while (key_down(KEY_ESCAPE) || kb_down("menu_back"))
+	{
+		wait(5);
 	}
 }
 
-// Only documents that exist on disk are offered, each one at its own fixed path.
-void game_documentation_menu()
+void open_documentation_file(const string&in title, const string&in file_path)
 {
+	open_documentation_notepad(title, file_path);
+}
+
+void documentation_menu()
+{
+	while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
+	{
+		wait(5);
+	}
+
 	while (true)
 	{
-		string[] labels;
-		string[] paths;
-		if (file_exists(DOC_README_PATH))
-		{
-			labels.insert_last("Read Readme");
-			paths.insert_last(DOC_README_PATH);
-		}
-		if (file_exists(DOC_GUIDE_PATH))
-		{
-			labels.insert_last("View Game Guide");
-			paths.insert_last(DOC_GUIDE_PATH);
-		}
-		if (file_exists(DOC_CHANGES_PATH))
-		{
-			labels.insert_last("View Recent Changes");
-			paths.insert_last(DOC_CHANGES_PATH);
-		}
-		if (labels.length() == 0)
-		{
-			speak("No documentation files found.");
-			dlg("No documentation files found.");
-			return;
-		}
-
 		audio_form doc_form;
-		doc_form.create_window("Game Documentation", false, true, false);
-		int dl = doc_form.create_list("Documentation options", 0, false, true);
-		for (uint i = 0; i < labels.length(); i++)
-			doc_form.add_list_item(dl, labels[i], labels[i]);
-		doc_form.add_list_item(dl, "Back", "back");
-		int select_btn = doc_form.create_button("&Select", true);
-		int back_btn = doc_form.create_button("&Back", false, true);
+		doc_form.create_window(tr("documentation.title"), false, true, false);
+		int dl = doc_form.create_list(tr("documentation.options"), 0, false, true);
+		doc_form.add_list_item(dl, tr("documentation.read_changes"), "changes");
+		doc_form.add_list_item(dl, tr("documentation.read_readme"), "readme");
+		int select_btn = doc_form.create_button("&" + tr("ui.select"), true);
+		int back_btn = doc_form.create_button("&" + tr("ui.back"), false, true);
 		doc_form.focus(dl);
+
 		bool exit_doc = false;
 		while (true)
 		{
 			wait(5);
 			update_game_world();
 			doc_form.monitor();
-			if (key_pressed(KEY_ESCAPE) || doc_form.is_pressed(back_btn)) { exit_doc = true; break; }
-			if (!doc_form.is_pressed(select_btn)) continue;
+			if (key_pressed(KEY_ESCAPE) || doc_form.is_pressed(back_btn))
+			{
+				exit_doc = true;
+				break;
+			}
+			if (doc_form.is_pressed(select_btn))
+			{
+				int pos = doc_form.get_list_position(dl);
+				if (pos == 0)
+				{
+					string changes_file = "";
+					if (file_exists("docs/changes.txt")) changes_file = "docs/changes.txt";
+					else if (file_exists("changes.txt")) changes_file = "changes.txt";
 
-			int pos = doc_form.get_list_position(dl);
-			if (pos < 0) continue;
-			if (pos >= int(paths.length())) { exit_doc = true; break; }
-			open_documentation_file(labels[pos], paths[pos]);
-			break;
+					if (changes_file != "")
+					{
+						open_documentation_notepad(tr("documentation.read_changes"), changes_file);
+					}
+					else
+					{
+						speak(tr("documentation.changes_not_found"));
+					}
+					break;
+				}
+				else if (pos == 1)
+				{
+					string readme_file = "";
+					if (file_exists("docs/readme.txt")) readme_file = "docs/readme.txt";
+					else if (file_exists("readme.txt")) readme_file = "readme.txt";
+					else if (file_exists("docs/LEIAME.txt")) readme_file = "docs/LEIAME.txt";
+					else if (file_exists("LEIAME.txt")) readme_file = "LEIAME.txt";
+					else if (file_exists("docs/leame.txt")) readme_file = "docs/leame.txt";
+					else if (file_exists("leame.txt")) readme_file = "leame.txt";
+
+					if (readme_file != "")
+					{
+						open_documentation_notepad(tr("documentation.read_readme"), readme_file);
+					}
+					else
+					{
+						speak(tr("documentation.readme_not_found"));
+					}
+					break;
+				}
+			}
 		}
 		if (exit_doc) break;
 	}
+
+	while (key_down(KEY_ESCAPE) || kb_down("menu_back"))
+	{
+		wait(5);
+	}
+}
+
+void game_documentation_menu()
+{
+	documentation_menu();
 }
 
 void player_options_menu()
 {
-	game_documentation_menu();
+	documentation_menu();
 }

@@ -7,6 +7,7 @@
       "store": "Store",
       "test_speakers": "Test speakers",
       "check_updates": "Check for updates",
+      "documentation": "Documentation",
       "options": "Options",
       "exit": "Exit"
     }
@@ -186,6 +187,9 @@
   "updater": {
     "checking": "Checking for updates...",
     "no_updates": "No updates found.",
+    "no_updates_dialog": "No updates found. Press Enter to return to the menu.",
+    "error_dialog": "Update check failed: &1. Press Enter to return to the menu.",
+    "corrupt_manifest_dialog": "The update manifest is invalid. Press Enter to return to the menu.",
     "update_found": "Update found!",
     "downloading": "Downloading update.",
     "cancel_prompt": "Are you sure you want to cancel the download? Press Y or Enter to cancel, or Escape to resume.",
@@ -202,10 +206,24 @@
     "sounds_not_found_prompt": "Game sounds were not found. Do you want to download the game sounds? Press Y or Enter for Yes, or Escape to continue without sounds.",
     "continuing_without_sounds": "Continuing without sounds."
   },
+  "documentation": {
+    "title": "Documentation",
+    "options": "Documentation options",
+    "read_changes": "Read recent changes",
+    "read_readme": "Read Readme file",
+    "readme_not_found": "Readme file not found.",
+    "changes_not_found": "Changes file not found.",
+    "error_opening": "Could not open documentation file."
+  },
   "game": {
     "health_status": "Health: &1 of &2",
     "level_status": "Level &1 of &2 for resurrection, Resurrection &3, XP &4, &5 XP required for level &6",
     "died": "You died!",
+    "killed_by_npc": "You were killed by &1.",
+    "killed_by_unknown": "You were killed by an enemy.",
+    "enemy": "an enemy",
+    "item_collected": "You collected &1 &2.",
+    "npc_killed": "&1 killed &2 at &3, &4, &5 with &6.",
     "out_of_ammo": "Out of ammo!",
     "reloading": "Reloading...",
     "reload_cancelled": "Reload cancelled.",
@@ -214,6 +232,7 @@
   },
   "ui": {
     "copied": "Copied",
+    "copy": "Copy Text",
     "save": "Save",
     "cancel": "Cancel",
     "back": "Back",

@@ -7,6 +7,7 @@
       "store": "Tienda",
       "test_speakers": "Probar altavoces",
       "check_updates": "Buscar actualizaciones",
+      "documentation": "Documentación",
       "options": "Opciones",
       "exit": "Salir"
     }
@@ -186,6 +187,9 @@
   "updater": {
     "checking": "Buscando actualizaciones...",
     "no_updates": "No se encontraron actualizaciones.",
+    "no_updates_dialog": "No se encontraron actualizaciones. Presione Enter para volver al menú.",
+    "error_dialog": "Error al buscar actualizaciones: &1. Presione Enter para volver al menú.",
+    "corrupt_manifest_dialog": "El manifiesto de actualización no es válido. Presione Enter para volver al menú.",
     "update_found": "¡Actualización encontrada!",
     "downloading": "Descargando actualización.",
     "cancel_prompt": "¿Estás seguro de que deseas cancelar la descarga? Presiona Y o Enter para cancelar, o Escape para continuar.",
@@ -202,10 +206,24 @@
     "sounds_not_found_prompt": "No se encontraron los sonidos del juego. ¿Deseas descargar los sonidos del juego? Presiona Y o Enter para Sí, o Escape para continuar sin sonidos.",
     "continuing_without_sounds": "Continuando sin sonidos."
   },
+  "documentation": {
+    "title": "Documentación",
+    "options": "Opciones de documentación",
+    "read_changes": "Leer cambios recientes",
+    "read_readme": "Leer archivo Léame",
+    "readme_not_found": "Archivo LEAME no encontrado.",
+    "changes_not_found": "Archivo de cambios no encontrado.",
+    "error_opening": "No se pudo abrir el archivo de documentación."
+  },
   "game": {
     "health_status": "Salud: &1 de &2",
     "level_status": "Nivel &1 de &2 para resurrección, Resurrección &3, XP &4, &5 XP necesarios para el nivel &6",
     "died": "¡Has muerto!",
+    "killed_by_npc": "Fuiste asesinado por &1.",
+    "killed_by_unknown": "Fuiste asesinado por un enemigo.",
+    "enemy": "un enemigo",
+    "item_collected": "Has recogido &1 &2.",
+    "npc_killed": "&1 mató a &2 en &3, &4, &5 con &6.",
     "out_of_ammo": "¡Sin munición!",
     "reloading": "Recargando...",
     "reload_cancelled": "Recarga cancelada.",
@@ -214,6 +232,7 @@
   },
   "ui": {
     "copied": "Copiado",
+    "copy": "Copiar texto",
     "save": "Guardar",
     "cancel": "Cancelar",
     "back": "Volver",

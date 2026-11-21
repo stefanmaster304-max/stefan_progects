@@ -18,5 +18,5 @@ zone:0:200:101:121:0:200:A beautiful stream with flowing water.
 source:0:200:101:121:0:10:stream9:0:100
 platform:0:200:122:190:0:0:clay3
 zone:0:200:122:190:0:20:Clay in the valley of the wolves.
-//npcspawner:wolf:4:10000:0:0:0:200:200:0:1
+npcspawner:wolf:4:10000:0:0:0:200:200:0:1
 source:0:200:0:200:0:20:forest:0:100

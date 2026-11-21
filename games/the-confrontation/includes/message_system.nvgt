@@ -112,18 +112,11 @@ void broadcast_loop()
 // ---------------------------------------------------------------------------
 string format_player_death_message(const string&in killer, double x, double y, double z, const string&in weapon = "")
 {
-	string k = (killer != "" ? killer.trim_whitespace() : "an enemy");
-	string k_lower = string_to_lower_case(k);
-
-	string article = "";
-	if (!string_starts_with(k_lower, "a ") && !string_starts_with(k_lower, "an ") && !string_starts_with(k_lower, "the "))
+	string k = killer.trim_whitespace();
+	if (k == "" || k == "an enemy")
 	{
-		string first_char = string_left(k_lower, 1);
-		if (first_char == "a" || first_char == "e" || first_char == "i" || first_char == "o" || first_char == "u")
-			article = "an ";
-		else
-			article = "a ";
+		return tr("game.killed_by_unknown");
 	}
-
-	return "You were killed by " + article + k_lower + ".";
+	string[] args = { k };
+	return tr("game.killed_by_npc", args);
 }

@@ -816,20 +816,25 @@ bool check_for_updates(bool interactive = true)
 	int fetch_result = fetch_manifest(manifest, manifest_error);
 	if (fetch_result != 0)
 	{
-		if (interactive) speak(manifest_error);
+		if (interactive)
+		{
+			string err_msg = (manifest_error != "") ? manifest_error : "Failed to contact update server.";
+			string[] args = { err_msg };
+			dlg(tr("updater.error_dialog", args));
+		}
 		return false;
 	}
 
 	var@ parsed_var = parse_json(manifest);
 	if (parsed_var is null)
 	{
-		if (interactive) speak("The update manifest is not valid JSON.");
+		if (interactive) dlg(tr("updater.corrupt_manifest_dialog"));
 		return false;
 	}
 	json_object@ root = parsed_var;
 	if (root is null)
 	{
-		if (interactive) speak("The update manifest is not a JSON object.");
+		if (interactive) dlg(tr("updater.corrupt_manifest_dialog"));
 		return false;
 	}
 
@@ -901,7 +906,7 @@ bool check_for_updates(bool interactive = true)
 
 	if (available_update is null)
 	{
-		if (interactive) speak(tr("updater.no_updates"));
+		if (interactive) dlg(tr("updater.no_updates_dialog"));
 		return false;
 	}
 

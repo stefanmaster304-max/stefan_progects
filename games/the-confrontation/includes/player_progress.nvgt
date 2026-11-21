@@ -153,7 +153,7 @@ void health_damage_player(int dmg, const string&in killer_name = "", const strin
 	}
 	else
 	{
-		string kn = (killer_name != "") ? killer_name : "an enemy";
+		string kn = (killer_name != "") ? killer_name : tr("game.enemy");
 		string kill_msg = format_player_death_message(kn, me.x, me.y, me.z, weapon_name);
 		player_die(kill_msg);
 	}
