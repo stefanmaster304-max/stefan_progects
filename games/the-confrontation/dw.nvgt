@@ -16,6 +16,7 @@ string ver = "1.0.0";
 #include"includes/sound_pool.nvgt"
 #include"includes/bodyfall.nvgt"
 #include "speech.nvgt"
+#include "includes/translator.nvgt"
 #include"includes/sd.nvgt"
 #include"includes/map.nvgt"
 #include"includes/staircase.nvgt"
@@ -52,13 +53,14 @@ int footdrag_enabled=1;
 int confirm_exit=1;
 int verbalize_zones=1;
 int enable_player_pain_sounds=1;
+string selected_default_map = "";
 bool has_moved=false;
 bool dmoving=false;
 bool player_walked_since_stop=false;
 
 bool confirm_exit_dialog()
 {
-	speak("Are you sure you want to exit? Press Y or Enter for Yes, or Escape to cancel.");
+	speak(tr("dialog.exit_prompt"));
 	while (true)
 	{
 		wait(5);
@@ -69,12 +71,12 @@ bool confirm_exit_dialog()
 		}
 		if (key_pressed(KEY_ESCAPE) || key_pressed(KEY_N) || kb_pressed("menu_back") || kb_pressed("exit_game"))
 		{
-			speak("Canceled.");
+			speak(tr("ui.cancel"));
 			return false;
 		}
 		if (key_pressed(KEY_UP) || key_pressed(KEY_DOWN) || key_pressed(KEY_LEFT) || key_pressed(KEY_RIGHT) || key_pressed(KEY_SPACE))
 		{
-			speak("Are you sure you want to exit? Press Y or Enter for Yes, or Escape to cancel.");
+			speak(tr("dialog.exit_prompt"));
 		}
 	}
 	return false;
@@ -239,6 +241,7 @@ void main()
 	}
 	if (!directory_exists(prefsdir)) directory_create(prefsdir);
 	readprefs();
+	init_localization();
 	kb_init();
 
 // Content registries are loaded when something actually needs them: init() for
@@ -601,8 +604,8 @@ if (kb_pressed("location") or key_pressed(KEY_Z))
 	if (key_down(KEY_LSHIFT) or key_down(KEY_RSHIFT))
 	{
 		verbalize_zones = (verbalize_zones == 1) ? 0 : 1;
-		if (verbalize_zones == 1) speak("zones will be spoken");
-		else speak("zones will not be spoken");
+		if (verbalize_zones == 1) speak(tr("map.zones_spoken"));
+		else speak(tr("map.zones_not_spoken"));
 		writeprefs();
 	}
 	else
@@ -615,12 +618,12 @@ if (kb_pressed("level_status"))
 {
 	normalize_player_xp(false);
 	int req_levels = get_resurrection_levels_required(resurrections);
-	speak("Level " + level + " of " + req_levels + " for resurrection, Resurrection " + resurrections + ", XP " + xp + ", " + (xprequired-xp) + " XP required for level " + (level+1));
+	speak(tr("game.level_status", {"" + level, "" + req_levels, "" + resurrections, "" + xp, "" + (xprequired-xp), "" + (level+1)}));
 }
 if (altisdown() && key_pressed(KEY_O)) player_options_menu();
 if (kb_pressed("health_status"))
 {
-speak("" + health + " out of " + maxhealth + " health.");
+	speak(tr("game.health_status", {"" + health, "" + maxhealth}));
 }
     if (health<=0)
     {
@@ -628,7 +631,7 @@ speak("" + health + " out of " + maxhealth + " health.");
         // and starts the whole death ensemble at once - Tristan's voice 17, the
         // three numbered death effects and the platform fall sound - waiting for
         // all of them before the main menu.
-        player_die("You died.");
+        player_die(tr("game.died"));
     }
 if (key_pressed(KEY_TAB) and jumping == 0 and falling == false)
 {
@@ -1107,6 +1110,14 @@ if (sd.d.exists("check_updates_on_startup"))
 {
 check_updates_on_startup=int(sd.readn("check_updates_on_startup"));
 }
+if (sd.d.exists("language"))
+{
+current_language=sd.read("language");
+}
+if (sd.d.exists("selected_default_map"))
+{
+selected_default_map=sd.read("selected_default_map");
+}
 }
 void writeprefs()
 {
@@ -1122,6 +1133,8 @@ void writeprefs()
     sd.add("menu_music_choice",menu_music_choice);
     sd.add("enable_player_pain_sounds",enable_player_pain_sounds);
     sd.add("check_updates_on_startup",check_updates_on_startup);
+    sd.add("language",current_language);
+    sd.add("selected_default_map",selected_default_map);
     sd.save();
     save_updater_settings();
 }
@@ -1368,7 +1381,7 @@ void announce_zone_on_load()
 	}
 	else if (zones.length() > 0)
 	{
-		speak("unknown area");
+		speak(tr("map.unknown_area"));
 		currentloc="unknown area";
 	}
 	else
@@ -1388,17 +1401,17 @@ void checkloc(bool force_announce=false)
 	}
 	else
 	{
-		loc_text="unknown area";
+		loc_text=tr("map.unknown_area");
 	}
 	if (force_announce)
 	{
 		if (locate!="")
 		{
-			speak("current location: " + locate);
+			speak(tr("map.current_location", {locate}));
 		}
 		else
 		{
-			speak("current location: unknown area");
+			speak(tr("map.current_location", {tr("map.unknown_area")}));
 		}
 		currentloc=loc_text;
 		return;

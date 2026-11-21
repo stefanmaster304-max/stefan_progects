@@ -39,31 +39,10 @@ string[] get_menu_music_list()
 
 string get_active_menu_music()
 {
+	if (file_exists("sounds/menu sounds/menumus.ogg")) return "sounds/menu sounds/menumus.ogg";
 	string[] tracks = get_menu_music_list();
-	if (tracks.length() == 0) return "";
-
-	if (menu_music_choice == "random" || menu_music_choice == "")
-	{
-		int idx = random(0, tracks.length() - 1);
-		return "sounds/menu sounds/" + tracks[idx];
-	}
-	else
-	{
-		string target = menu_music_choice;
-		if (string_starts_with(target, "sounds/menu sounds/"))
-		{
-			target = target.substr(19);
-		}
-		if (file_exists("sounds/menu sounds/" + target))
-		{
-			return "sounds/menu sounds/" + target;
-		}
-		if (tracks.length() > 0)
-		{
-			return "sounds/menu sounds/" + tracks[0];
-		}
-		return "";
-	}
+	if (tracks.length() > 0) return "sounds/menu sounds/" + tracks[0];
+	return "";
 }
 
 void play_main_menu_music()
@@ -112,12 +91,12 @@ void play_speaker_test_sequence()
 	if (spk_path == "") spk_path = get_sound_path("menu sounds/speakertest1.ogg;menu sounds/speaker.ogg;speakertest1.ogg;speaker.ogg");
 	if (spk_path == "" || !file_exists(spk_path))
 	{
-		speak("Speaker test audio file not found.");
+		speak(tr("speaker_test.error"));
 		return;
 	}
 
 	m.fade_music(15);
-	speak("Testing speakers.");
+	speak(tr("speaker_test.testing"));
 
 	sound spk_snd;
 	if (spk_snd.load(spk_path))
@@ -129,20 +108,20 @@ void play_speaker_test_sequence()
 			if (key_pressed(KEY_ESCAPE))
 			{
 				spk_snd.stop();
-				speak("Canceled.");
+				speak(tr("ui.cancel"));
 				break;
 			}
 			if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || kb_pressed("menu_activate"))
 			{
 				spk_snd.stop();
-				speak("Skipped.");
+				speak(tr("speaker_test.skipped"));
 				break;
 			}
 		}
 	}
 	else
 	{
-		speak("Error loading speaker test audio.");
+		speak(tr("speaker_test.error"));
 	}
 }
 
@@ -171,19 +150,63 @@ void mainmenu()
 	while (true)
 	{
 		setupmenu(true);
-		m.add_item_tts("Play","play");
-		m.add_item_tts("Store","store");
-		m.add_item_tts("Test speakers","test_speakers");
-		m.add_item_tts("Check for updates","check_updates");
-		m.add_item_tts("Options","options");
-		m.add_item_tts("Exit","exit");
-		int mres=m.run("Main Menu",true);
+		m.add_item_tts(tr("menu.main.play"), "play");
+		m.add_item_tts(tr("menu.main.maps_menu"), "maps_menu");
+		m.add_item_tts(tr("menu.main.store"), "store");
+		m.add_item_tts(tr("menu.main.test_speakers"), "test_speakers");
+		m.add_item_tts(tr("menu.main.check_updates"), "check_updates");
+		m.add_item_tts(tr("menu.main.options"), "options");
+		m.add_item_tts(tr("menu.main.exit"), "exit");
+		int mres=m.run(tr("menu.main.title"), true);
 		string menuitem=m.get_item_name(mres);
 		if (mres <= 0 or menuitem=="exit")
 		{
 			m.fade_music(15);
 			exit();
 			return;
+		}
+		if (menuitem=="maps_menu")
+		{
+			string smap;
+			int sx = 0, sy = 0, sz = 0, sface = 0;
+			load_location(smap, sx, sy, sz, sface);
+			string[] unlocked_maps = get_unlocked_maps();
+			if (unlocked_maps.length() == 0)
+			{
+				p.play_stationary(get_sound_path("misc/error.ogg"), false);
+				if (get_available_maps().length() == 0)
+					alert(tr("map.no_maps_found_msg"), tr("map.no_maps_found_title"));
+				else
+					alert(tr("map.no_maps_unlocked_msg"), tr("map.no_maps_found_title"));
+				continue;
+			}
+
+			while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
+			{
+				wait(5);
+			}
+
+			setupmenu(false);
+			for (uint um = 0; um < unlocked_maps.length(); um++)
+			{
+				string m_label = unlocked_maps[um];
+				if (unlocked_maps[um] == selected_default_map)
+				{
+					m_label += " " + tr("map.selected_indicator");
+				}
+				m.add_item_tts(m_label, unlocked_maps[um]);
+			}
+			int map_pick = m.run(tr("map.select_map_title"), true);
+			if (map_pick <= 0) continue;
+			string chosen_map = m.get_item_name(map_pick);
+			if (map_exists_on_disk(chosen_map))
+			{
+				selected_default_map = chosen_map;
+				writeprefs();
+				string[] args = { chosen_map };
+				speak(tr("map.selected_as_default", args));
+			}
+			continue;
 		}
 		if (menuitem=="play")
 		{
@@ -195,28 +218,30 @@ void mainmenu()
 			{
 				p.play_stationary(get_sound_path("misc/error.ogg"), false);
 				if (get_available_maps().length() == 0)
-					alert("No maps were found. Put a map file in settings/maps or decrypt the encrypted maps, then try again.", "No maps found");
+					alert(tr("map.no_maps_found_msg"), tr("map.no_maps_found_title"));
 				else
-					alert("No maps are unlocked yet. Your level or resurrection does not meet the requirements of the maps on disk.", "No maps found");
+					alert(tr("map.no_maps_unlocked_msg"), tr("map.no_maps_found_title"));
 				continue;
 			}
 
-			// The Enter key that activated Play is still held down; release it so
-			// the map menu does not activate the first map immediately.
-			while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
+			string target_map = "";
+			if (selected_default_map != "" && unlocked_maps.find(selected_default_map) >= 0)
 			{
-				wait(5);
+				target_map = selected_default_map;
+			}
+			else if (smap != "" && unlocked_maps.find(smap) >= 0)
+			{
+				target_map = smap;
+				selected_default_map = target_map;
+				writeprefs();
+			}
+			else
+			{
+				target_map = unlocked_maps[0];
+				selected_default_map = target_map;
+				writeprefs();
 			}
 
-			// Map menu: the player picks the map to play from the unlocked ones.
-			setupmenu(false);
-			for (uint um = 0; um < unlocked_maps.length(); um++)
-			{
-				m.add_item_tts(unlocked_maps[um], unlocked_maps[um]);
-			}
-			int map_pick = m.run("Select your map", true);
-			if (map_pick <= 0) continue;
-			string target_map = m.get_item_name(map_pick);
 			if (!map_exists_on_disk(target_map)) continue;
 
 			init();
@@ -302,8 +327,8 @@ void mainmenu()
 int menuquestion(string q)
 {
 setupmenu(false);
-m.add_item_tts("yes");
-m.add_item_tts("no");
+m.add_item_tts(tr("dialog.yes"), "yes");
+m.add_item_tts(tr("dialog.no"), "no");
 int mres=m.run(q,true);
 if (mres==1)
 {
@@ -315,102 +340,35 @@ return 2;
 }
 }
 
-void select_menu_music_dialog()
+void select_language_dialog()
 {
-	string[] tracks = get_menu_music_list();
-
-	string cur = menu_music_choice;
-	if (string_starts_with(cur, "sounds/menu sounds/"))
+	setupmenu(false);
+	m.add_item_tts("English", "en");
+	m.add_item_tts("Português", "pt");
+	m.add_item_tts("Español", "es");
+	int res = m.run(tr("options.select_language_title"), true);
+	if (res <= 0) return;
+	string lang = m.get_item_name(res);
+	if (lang == "en" || lang == "pt" || lang == "es")
 	{
-		cur = cur.substr(19);
-	}
-
-	audio_form mf;
-	mf.create_window("Select Menu Music", false, true, false);
-	int list = mf.create_list("Music tracks", 0, false, false);
-
-	mf.add_list_item(list, "Random music", "random");
-	int cur_pos = 0;
-	for (uint i = 0; i < tracks.length(); i++)
-	{
-		string fn = tracks[i];
-		mf.add_list_item(list, fn, fn);
-		if (cur == fn)
-		{
-			cur_pos = int(i + 1);
-		}
-	}
-	mf.set_list_position(list, cur_pos, false);
-
-	int b_ok = mf.create_button("&Select", true);
-	int b_cancel = mf.create_button("&Cancel", false, true);
-
-	sound preview_sound;
-	int last_focused_idx = -1;
-	mf.focus(list);
-
-	while (true)
-	{
-		wait(5);
-		mf.monitor();
-
-		int cur_idx = mf.get_list_position(list);
-		if (cur_idx >= 0 && cur_idx != last_focused_idx)
-		{
-			last_focused_idx = cur_idx;
-			preview_sound.close();
-			if (cur_idx > 0 && cur_idx <= int(tracks.length()))
-			{
-				string fn = tracks[cur_idx - 1];
-				string full_p = "sounds/menu sounds/" + fn;
-				if (file_exists(full_p))
-				{
-					preview_sound.load(full_p);
-					preview_sound.play_looped();
-				}
-			}
-		}
-
-		if (key_pressed(KEY_ESCAPE) || mf.is_pressed(b_cancel))
-		{
-			preview_sound.close();
-			speak("canceled");
-			return;
-		}
-
-		if (mf.is_pressed(b_ok) || key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER))
-		{
-			int pos = mf.get_list_position(list);
-			if (pos == 0)
-			{
-				menu_music_choice = "random";
-				speak("Menu music set to random.");
-			}
-			else if (pos > 0 && pos <= int(tracks.length()))
-			{
-				menu_music_choice = tracks[pos - 1];
-				speak("Menu music set to " + menu_music_choice + ".");
-			}
-			preview_sound.close();
-			writeprefs();
-			return;
-		}
+		set_game_language(lang);
+		speak(tr("options.language_changed"));
 	}
 }
 
 void optionsmenu()
 {
 audio_form form;
-form.create_window("Options", false);
-int wrap_box = form.create_checkbox("Disable menu wrapping", wrap_disabled == 1);
-int footdrag_box = form.create_checkbox("Foot dragging sound when standing still", footdrag_enabled == 1);
-int confirm_exit_box = form.create_checkbox("Confirm before exiting with Escape", confirm_exit == 1);
-int pain_sounds_box = form.create_checkbox("Play pain sounds when receiving attacks or damage", enable_player_pain_sounds == 1);
-int startup_update_box = form.create_checkbox("Check for updates on startup", check_updates_on_startup == 1);
-int music_btn = form.create_button("Select Menu Music", false);
-int kb_btn = form.create_button("Keybindings", false);
-int save_btn = form.create_button("Save", true);
-int cancel_btn = form.create_button("Cancel", false, true);
+form.create_window(tr("options.title"), false);
+int wrap_box = form.create_checkbox(tr("options.disable_wrap"), wrap_disabled == 1);
+int footdrag_box = form.create_checkbox(tr("options.footdrag"), footdrag_enabled == 1);
+int confirm_exit_box = form.create_checkbox(tr("options.confirm_exit"), confirm_exit == 1);
+int pain_sounds_box = form.create_checkbox(tr("options.pain_sounds"), enable_player_pain_sounds == 1);
+int startup_update_box = form.create_checkbox(tr("options.startup_updates"), check_updates_on_startup == 1);
+int lang_btn = form.create_button(tr("options.select_language"), false);
+int kb_btn = form.create_button(tr("options.keybinds"), false);
+int save_btn = form.create_button(tr("options.save"), true);
+int cancel_btn = form.create_button(tr("options.cancel"), false, true);
 
 form.focus(wrap_box);
 
@@ -468,10 +426,10 @@ writeprefs();
 prefs_dirty = false;
 }
 
-if (form.is_pressed(music_btn))
+if (form.is_pressed(lang_btn))
 {
 form.reset();
-select_menu_music_dialog();
+select_language_dialog();
 optionsmenu();
 break;
 }

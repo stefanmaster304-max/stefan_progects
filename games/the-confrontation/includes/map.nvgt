@@ -417,22 +417,22 @@ bool can_enter_map(string name, bool announce = true)
 
 	if (res_too_low)
 	{
-		if (announce) speak("This map is locked. You cannot enter here.");
+		if (announce) speak(tr("map.map_locked"));
 		return false;
 	}
 	if (res_too_high)
 	{
-		if (announce) speak("You cannot enter here yet; your resurrection exceeds the maximum allowed.");
+		if (announce) speak(tr("map.res_too_high"));
 		return false;
 	}
 	if (lvl_too_low)
 	{
-		if (announce) speak("You cannot enter here yet; your level does not meet the requirements.");
+		if (announce) speak(tr("map.lvl_too_low"));
 		return false;
 	}
 	if (lvl_too_high)
 	{
-		if (announce) speak("You cannot enter here yet; your level exceeds the maximum allowed.");
+		if (announce) speak(tr("map.lvl_too_high"));
 		return false;
 	}return true;
 }

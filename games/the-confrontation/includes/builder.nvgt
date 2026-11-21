@@ -29,7 +29,7 @@ void buildmenu()
 {
 	if (SCRIPT_COMPILED || is_map_encrypted(mapname))
 	{
-		speak("Cannot build on an encrypted map.");
+		speak(tr("builder.cannot_build_encrypted"));
 		return;
 	}
 	string[] entry_names = {
@@ -78,11 +78,16 @@ void buildmenu()
 	};
 
 	audio_form f;
-	f.create_window("build menu", true, true, false);
-	int[] buttons(entry_names.length());
-	for (uint i = 0; i < entry_names.length(); i++)
-		buttons[i] = f.create_button(entry_names[i]);
-	int b_cancel = f.create_button("&cancel", false, true);
+	f.create_window(tr("builder.title"), true, true, false);
+	int[] buttons(entry_ids.length());
+	for (uint i = 0; i < entry_ids.length(); i++)
+	{
+		string btn_text = tr("builder.entry." + entry_ids[i]);
+		if (btn_text == "builder.entry." + entry_ids[i])
+			btn_text = entry_names[i];
+		buttons[i] = f.create_button(btn_text);
+	}
+	int b_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.focus_silently(buttons[0]);
 
 	while (true)
@@ -92,7 +97,7 @@ void buildmenu()
 		f.monitor();
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(b_cancel))
 		{
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			break;
 		}
 		string picked = "";

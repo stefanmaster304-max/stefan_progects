@@ -1,0 +1,158 @@
+#include "speech.nvgt"
+#include "ini.nvgt"
+
+funcdef string translation_resolver(const string& in name, translator@ t);
+
+class translator {
+    private string _path;
+    private string _format;
+    private string _encryption_key;
+    private string _language;
+    private string _fallback;
+    private dictionary _strings;
+    private dictionary _fallback_strings;
+    private dictionary _variables;
+    private translation_resolver@ _resolver;
+    private string _last_error;
+
+    translator() {
+        _format = "json";
+        @_resolver = null;
+    }
+    void set_path(const string& in p) property { _path = p; }
+    string get_path() const property { return _path; }
+    void set_format(const string& in f) property { _format = f; }
+    string get_format() const property { return _format; }
+    string get_language() const property { return _language; }
+    string get_fallback_language() const property { return _fallback; }
+    string get_last_error() const property { return _last_error; }
+    
+    void set_encryption(const string& in key) {
+        if (key.empty()) { _last_error = "encryption key is empty"; return; }
+        _encryption_key = key;
+    }
+    void set_variable(const string& in name, const string& in value) { _variables.set(name, value); }
+    bool has_variable(const string& in name) { return _variables.exists(name); }
+    void remove_variable(const string& in name) { _variables.delete(name); }
+    void clear_variables() { _variables.delete_all(); }
+    void set_resolver(translation_resolver@ r) { @_resolver = @r; }
+    
+    bool load(const string& in lang) {
+        _language = lang;
+        _strings.delete_all();
+        return _load_file(lang, _strings);
+    }
+    bool load_fallback(const string& in lang) {
+        _fallback = lang;
+        _fallback_strings.delete_all();
+        return _load_file(lang, _fallback_strings);
+    }
+    bool reload() {
+        _strings.delete_all();
+        bool ok = _language != "" && _load_file(_language, _strings);
+        if (_fallback != "" && _fallback != _language) {
+            _fallback_strings.delete_all();
+            _load_file(_fallback, _fallback_strings);
+        }
+        return ok;
+    }
+    string get(const string& in key, string[]@ args = null, dictionary@ named_args = null) {
+        string val;
+        if (_strings.get(key, val)) return _resolve(val, args, named_args);
+        if (_fallback != "" && _fallback_strings.get(key, val)) return _resolve(val, args, named_args);
+        return key;
+    }
+    string opIndex(const string& in key) { return get(key); }
+    bool has(const string& in key) { return _strings.exists(key) || (_fallback != "" && _fallback_strings.exists(key)); }
+    string[]@ list_keys() { return _strings.get_keys(); }
+
+    private string _filepath(const string& in lang) {
+        string ext = _format == "ini" ? ".ini" : ".json";
+        return _path != "" ? _path + "/" + lang + ext : lang + ext;
+    }
+    private bool _load_file(const string& in lang, dictionary@ target) {
+        string filepath = _filepath(lang);
+        if (!file_exists(filepath)) { _last_error = "file not found: " + filepath; return false; }
+        file f;
+        if (!f.open(filepath, "rb")) { _last_error = "can not open for reading: " + filepath; return false; }
+        string data = f.read();
+        f.close();
+        if (data.empty()) { _last_error = "invalid or empty data for " + filepath; return false; }
+        if (_encryption_key != "") data = string_aes_decrypt(data, _encryption_key);
+        return _format == "ini" ? _parse_ini(data, target) : _parse_json(data, target);
+    }
+    private bool _parse_json(const string& in data, dictionary@ target) {
+        json_object@ root = parse_json(data);
+        if (@root == null) { _last_error = "invalid JSON format"; return false; }
+        _flatten_json(root, "", target);
+        return true;
+    }
+    private void _flatten_json(json_object@ obj, const string& in prefix, dictionary@ target) {
+        string[]@ keys = obj.get_keys();
+        for (uint i = 0; i < keys.length(); i++) {
+            string fk = prefix != "" ? prefix + "." + keys[i] : keys[i];
+            if (obj.is_object(keys[i])) {
+                json_object@ child = obj.get_object(keys[i]);
+                if (@child != null) _flatten_json(child, fk, target);
+            } else {
+                target.set(fk, string(obj[keys[i]]));
+            }
+        }
+    }
+    private bool _parse_ini(const string& in data, dictionary@ target) {
+        ini cfg;
+        if (!cfg.load_string(data)) { _last_error = "invalid INI format"; return false; }
+        string[]@ sections = cfg.list_sections(true);
+        for (uint s = 0; s < sections.length(); s++) {
+            string sec = sections[s];
+            string[]@ keys = cfg.list_keys(sec);
+            for (uint k = 0; k < keys.length(); k++) {
+                string fk = sec != "" ? sec + "." + keys[k] : keys[k];
+                target.set(fk, cfg.get_string(sec, keys[k]));
+            }
+        }
+        return true;
+    }
+    private string _resolve(const string& in tmpl, string[]@ args, dictionary@ named_args) {
+        string result;
+        uint i = 0;
+        uint len = tmpl.length();
+        while (i < len) {
+            if (tmpl[i] != "&" || i + 1 >= len) { result += tmpl[i]; i++; continue; }
+            i++;
+            if (tmpl[i] == "&") { result += "&"; i++; continue; }
+            string name;
+            while (i < len && (tmpl[i].is_alphanumeric() || tmpl[i] == "_")) { name += tmpl[i]; i++; }
+            if (name == "") { result += "&"; continue; }
+            if (name.is_digits() && @args != null) {
+                uint idx = uint(parse_int(name)) - 1;
+                if (idx < args.length()) { result += args[idx]; continue; }
+            }
+            if (@named_args != null && named_args.exists(name)) { string v; named_args.get(name, v); result += v; continue; }
+            if (_variables.exists(name)) { string v; _variables.get(name, v); result += v; continue; }
+            if (@_resolver != null) { string v = _resolver(name, this); if (v != "") { result += v; continue; } }
+            result += "&" + name;
+        }
+        return result;
+    }
+}
+translator _translator;
+string tr(const string& in key, string[]@ args = null, dictionary@ named_args = null) {
+    return _translator.get(key, args, named_args);
+}
+
+string current_language = "en";
+
+void init_localization() {
+    _translator.path = "languages";
+    _translator.format = "json";
+    _translator.load_fallback("en");
+    if (current_language == "") current_language = "en";
+    _translator.load(current_language);
+}
+
+void set_game_language(const string& in lang) {
+    current_language = lang;
+    _translator.load(current_language);
+    writeprefs();
+}

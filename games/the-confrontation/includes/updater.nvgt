@@ -34,7 +34,7 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-string current_game_version = "0.1.0.2";
+string current_game_version = "1.0.0";
 string current_content_version = "1.0.0";
 string current_sounds_version = "1.0.0";
 string current_maps_version = "1.0.0";
@@ -416,7 +416,7 @@ int run_download_attempt(const string&in url, const string&in dest, int64 expect
 		}
 		if (key_pressed(KEY_ESCAPE))
 		{
-			speak("Are you sure you want to cancel the download? Press Y or Enter to cancel, or Escape to resume.");
+			speak(tr("updater.cancel_prompt"));
 			bool confirmed_cancel = false;
 			while (true)
 			{
@@ -428,7 +428,7 @@ int run_download_attempt(const string&in url, const string&in dest, int64 expect
 				}
 				if (key_pressed(KEY_ESCAPE) || key_pressed(KEY_N))
 				{
-					speak("Resuming download.");
+					speak(tr("updater.resuming"));
 					break;
 				}
 			}
@@ -439,7 +439,7 @@ int run_download_attempt(const string&in url, const string&in dest, int64 expect
 				wait(100);
 				if (file_exists(dest)) file_delete(dest);
 				cleanup_update_temp();
-				speak("Download cancelled.");
+				speak(tr("updater.cancelled"));
 				break;
 			}
 		}
@@ -469,7 +469,7 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 	for (int attempt = 1; attempt <= UPDATE_MAX_ATTEMPTS; attempt++)
 	{
 		if (file_exists(dest)) file_delete(dest);
-		if (attempt == 1) speak("Downloading update.");
+		if (attempt == 1) speak(tr("updater.downloading"));
 		else speak("Download failed. Retrying, attempt " + attempt + " of " + UPDATE_MAX_ATTEMPTS + ".");
 
 		int server_status = 0;
@@ -613,7 +613,7 @@ bool apply_game_update(update_item@ item)
 	save_updater_settings();
 
 	play_update_complete_sound();
-	speak("Game update is complete, the game will now restart.");
+	speak(tr("updater.game_restart"));
 	wait_for_update_complete_sound();
 	run("cmd.exe", "/c apply_game_update.bat", false, true);
 	exit();
@@ -628,7 +628,7 @@ bool apply_content_update(update_item@ item)
 
 	if (!validate_contents_file(temp_contents))
 	{
-		speak("The downloaded contents.dat is corrupt or not a valid content package. The current content was kept.");
+		speak(tr("updater.corrupt_content"));
 		return false;
 	}
 
@@ -641,7 +641,7 @@ bool apply_content_update(update_item@ item)
 	save_updater_settings();
 
 	play_update_complete_sound();
-	speak("Content update is complete, the game will now restart.");
+	speak(tr("updater.content_restart"));
 	wait_for_update_complete_sound();
 	restart_game_client();
 	return true;
@@ -655,7 +655,7 @@ bool apply_sounds_update(update_item@ item)
 
 	if (!validate_sound_archive(temp_zip))
 	{
-		speak("The downloaded sound package is corrupt or not a valid zip archive. The current sounds were kept.");
+		speak(tr("updater.corrupt_sound"));
 		return false;
 	}
 
@@ -694,7 +694,7 @@ bool apply_sounds_update(update_item@ item)
 	save_updater_settings();
 
 	play_update_complete_sound();
-	speak("Sound update is complete, the game will now restart.");
+	speak(tr("updater.sound_restart"));
 	wait_for_update_complete_sound();
 	restart_game_client();
 	return true;
@@ -708,7 +708,7 @@ bool apply_maps_update(update_item@ item)
 
 	if (!validate_maps_file(temp_maps))
 	{
-		speak("The downloaded maps.dat is corrupt or not a valid map package. The current maps were kept.");
+		speak(tr("updater.corrupt_map"));
 		return false;
 	}
 
@@ -722,7 +722,7 @@ bool apply_maps_update(update_item@ item)
 	save_updater_settings();
 
 	play_update_complete_sound();
-	speak("Map update is complete, the game will now restart.");
+	speak(tr("updater.map_restart"));
 	wait_for_update_complete_sound();
 	restart_game_client();
 	return true;
@@ -809,7 +809,7 @@ bool check_for_updates(bool interactive = true)
 {
 	load_updater_settings();
 
-	if (interactive) speak("Checking for updates...");
+	if (interactive) speak(tr("updater.checking"));
 
 	string manifest = "";
 	string manifest_error = "";
@@ -901,7 +901,7 @@ bool check_for_updates(bool interactive = true)
 
 	if (available_update is null)
 	{
-		if (interactive) speak("No updates found.");
+		if (interactive) speak(tr("updater.no_updates"));
 		return false;
 	}
 

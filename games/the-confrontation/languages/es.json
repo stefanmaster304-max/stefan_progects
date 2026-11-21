@@ -1,0 +1,134 @@
+{
+  "menu": {
+    "main": {
+      "title": "Menú Principal",
+      "play": "Jugar",
+      "maps_menu": "Menú de mapas",
+      "store": "Tienda",
+      "test_speakers": "Probar altavoces",
+      "check_updates": "Buscar actualizaciones",
+      "options": "Opciones",
+      "exit": "Salir"
+    }
+  },
+  "map": {
+    "select_map_title": "Selecciona tu mapa",
+    "selected_as_default": "&1 seleccionado como mapa predeterminado.",
+    "selected_indicator": "(seleccionado)",
+    "no_maps_unlocked_msg": "Aún no hay mapas desbloqueados. Tu nivel o resurrección no cumple con los requisitos de los mapas en el disco.",
+    "no_maps_found_msg": "No se encontraron mapas. Coloca un archivo de mapa en settings/maps o descifra los mapas cifrados e inténtalo de nuevo.",
+    "no_maps_found_title": "No se encontraron mapas",
+    "current_location": "ubicación actual: &1",
+    "unknown_area": "área desconocida",
+    "zones_spoken": "las zonas se hablarán",
+    "zones_not_spoken": "las zonas no se hablarán",
+    "map_locked": "Este mapa está bloqueado. No puedes entrar aquí.",
+    "res_too_high": "No puedes entrar aquí todavía; tu resurrección excede el máximo permitido.",
+    "lvl_too_low": "No puedes entrar aquí todavía; tu nivel no cumple con los requisitos.",
+    "lvl_too_high": "No puedes entrar aquí todavía; tu nivel excede el máximo permitido."
+  },
+  "options": {
+    "title": "Opciones",
+    "disable_wrap": "Desactivar rotación del menú",
+    "footdrag": "Sonido de arrastrar los pies al estar quieto",
+    "confirm_exit": "Confirmar antes de salir con Escape",
+    "pain_sounds": "Reproducir sonidos de dolor al recibir daño o ataques",
+    "startup_updates": "Buscar actualizaciones al inicio",
+    "select_language": "Seleccionar Idioma",
+    "select_language_title": "Seleccionar Idioma",
+    "language_changed": "Idioma cambiado a Español.",
+    "keybinds": "Asignación de teclas",
+    "save": "Guardar",
+    "cancel": "Cancelar"
+  },
+  "dialog": {
+    "exit_title": "Salir del Juego",
+    "exit_prompt": "¿Estás seguro de que deseas salir del juego?",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "speaker_test": {
+    "testing": "Probando altavoces. Presiona Escape para cancelar o Enter para saltar.",
+    "skipped": "Prueba de altavoces saltada.",
+    "finished": "Prueba de altavoces finalizada.",
+    "error": "Error al cargar el audio de prueba de altavoces."
+  },
+  "builder": {
+    "title": "menú de construcción",
+    "cannot_build_encrypted": "No se puede construir en un mapa cifrado.",
+    "entry": {
+      "create_map": "crear nuevo mapa - construir un nuevo mapa desde cero",
+      "map_editor": "editor de mapa - editar las líneas del mapa actual en el que te encuentras",
+      "sound_ambience": "ambiente sonoro - añadir audio ambiental de fondo a tu mapa",
+      "sound_source": "fuente de sonido - añadir fuentes de sonido 3D posicionales a tu mapa",
+      "platform": "plataforma - añadir plataformas y superficies transitables a tu mapa",
+      "staircase": "escalera - añadir escaleras para conectar diferentes elevaciones",
+      "wall": "pared - añadir paredes sólidas de bloqueo a tu mapa",
+      "safe_zone": "zona segura - añadir zonas seguras donde el daño de combate está desactivado",
+      "text_zone": "zona de texto - añadir zonas de activación que muestran o hablan texto al entrar",
+      "spawnpoint": "punto de aparición - establecer las coordenadas de aparición predeterminadas del jugador en este mapa",
+      "text_square": "cuadrado de texto - añadir zonas de texto que hablan texto en coordenadas específicas",
+      "items_manager": "administrador de objetos - añadir, editar, eliminar y crear nuevos objetos",
+      "package_manager": "administrador de paquetes - crear, editar, ver y eliminar paquetes",
+      "item_spawner": "generador de objetos - configurar caídas de objetos y generadores de recolección en el mapa",
+      "weapon_manager": "administrador de armas - añadir, editar, eliminar y crear nuevas armas",
+      "store_manager": "categorías de tienda - añadir, editar y eliminar categorías de tienda y elegir sus objetos",
+      "npc_manager": "administrador de NPCs - crear, editar y eliminar NPCs",
+      "npc_spawner": "generador de NPCs - colocar NPCs configurados en este mapa",
+      "map_manager_tools": "administrador de mapas y herramientas - gestionar mapas, propiedades, copias de seguridad y herramientas",
+      "delete_map": "eliminar mapa actual - eliminar permanentemente el archivo de mapa activo"
+    }
+  },
+  "store": {
+    "title": "Menú de la Tienda",
+    "welcome": "Bienvenido a la tienda.",
+    "empty_cart": "Tu carrito está vacío.",
+    "not_enough_money": "No tienes suficiente &1. Necesitas &2 y tienes &3.",
+    "payment_returned": "La compra no pudo ser entregada; tu pago fue devuelto.",
+    "purchase_success": "Compraste &1 por &2 &3.",
+    "no_categories": "La tienda aún no tiene categorías.",
+    "category_no_items": "&1 no tiene objetos.",
+    "not_enough_currency_short": "No tienes suficiente &1.",
+    "nothing_in_cart_for_item": "Nada en el carrito para este objeto.",
+    "items_in_cart_total": "&1 objetos en el carrito, total: &2 &3."
+  },
+  "updater": {
+    "checking": "Buscando actualizaciones...",
+    "no_updates": "No se encontraron actualizaciones.",
+    "update_found": "¡Actualización encontrada!",
+    "downloading": "Descargando actualización.",
+    "cancel_prompt": "¿Estás seguro de que deseas cancelar la descarga? Presiona Y o Enter para cancelar, o Escape para continuar.",
+    "resuming": "Continuando descarga.",
+    "cancelled": "Descarga cancelada.",
+    "game_restart": "La actualización del juego está completa, el juego se reiniciará ahora.",
+    "content_restart": "La actualización de contenido está completa, el juego se reiniciará ahora.",
+    "sound_restart": "La actualización de sonidos está completa, el juego se reiniciará ahora.",
+    "map_restart": "La actualización de mapas está completa, el juego se reiniciará ahora.",
+    "corrupt_exe": "El archivo de juego descargado no es un ejecutable válido. Actualización abortada.",
+    "corrupt_content": "El contents.dat descargado está corrupto o no es un paquete válido. Se mantuvo el contenido actual.",
+    "corrupt_sound": "El paquete de sonidos descargado está corrupto o no es un archivo zip válido. Se mantuvieron los sonidos actuales.",
+    "corrupt_map": "El maps.dat descargado está corrupto o no es un paquete de mapa válido. Se mantuvieron los mapas actuales.",
+    "sounds_not_found_prompt": "No se encontraron los sonidos del juego. ¿Deseas descargar los sonidos del juego? Presiona Y o Enter para Sí, o Escape para continuar sin sonidos.",
+    "continuing_without_sounds": "Continuando sin sonidos."
+  },
+  "game": {
+    "health_status": "Salud: &1 de &2",
+    "level_status": "Nivel &1 de &2 para resurrección, Resurrección &3, XP &4, &5 XP necesarios para el nivel &6",
+    "died": "¡Has muerto!",
+    "out_of_ammo": "¡Sin munición!",
+    "reloading": "Recargando...",
+    "reload_cancelled": "Recarga cancelada.",
+    "no_weapons": "No hay armas en tu inventario.",
+    "selected_weapon": "Seleccionado: &1"
+  },
+  "ui": {
+    "copied": "Copiado",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "back": "Volver",
+    "close": "Cerrar",
+    "error": "Error",
+    "success": "Éxito",
+    "info": "Información"
+  }
+}

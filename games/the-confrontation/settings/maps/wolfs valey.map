@@ -10,3 +10,5 @@ maxlevel: 0
 minresurrection: 1
 maxresurrection: 0
 platform:0:200:0:200:0:0:shortgrass
+zone:0:200:0:200:0:200:valey
+platform:0:200:11:20:0:0:mud4

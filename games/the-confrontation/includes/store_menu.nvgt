@@ -129,14 +129,14 @@ void store_browse_buy(int cat)
 	if (total_items == 0)
 	{
 		play_store_error();
-		speak("Your cart is empty.");
+		speak(tr("store.empty_cart"));
 		return;
 	}
 	int balance = get_item_count(currency);
 	if (balance < total_cost)
 	{
 		play_store_error();
-		speak("You don't have enough " + currency + ". You need " + total_cost + " and have " + balance + ".");
+		speak(tr("store.not_enough_money", {currency, "" + total_cost, "" + balance}));
 		return;
 	}
 
@@ -149,7 +149,7 @@ void store_browse_buy(int cat)
 		if (!store_grant_product(s.item_names[i], q))
 		{
 			give(currency, total_cost);
-			speak("The purchase could not be delivered; your payment was returned.");
+			speak(tr("store.payment_returned"));
 			return;
 		}
 		store_browse_amounts[cat][i] = 0;
@@ -159,7 +159,7 @@ void store_browse_buy(int cat)
 
 	string buy_snd = get_sound_path("player/buy.ogg;sounds/player/buy.ogg;player/storepurchase.ogg;items/buy.ogg;items/storepurchase.ogg;storepurchase.ogg;buy.ogg");
 	if (buy_snd != "") p.play_stationary(buy_snd, false);
-	speak("Purchased " + summary + " for " + total_cost + " " + currency + ".");
+	speak(tr("store.purchase_success", {summary, "" + total_cost, currency}));
 }
 
 // Gives the medical and ammunition shelves a starting stock taken from the item
@@ -185,7 +185,7 @@ void store_fill_default_items()
 
 string store_welcome_text()
 {
-	return "Welcome to the store! What would you like to buy today? Select items in one of the available categories.";
+	return tr("store.welcome");
 }
 
 void store_main_menu()
@@ -195,7 +195,7 @@ void store_main_menu()
 	store_fill_default_items();
 	if (store_configs.length() == 0)
 	{
-		speak("The store has no categories yet.");
+		speak(tr("store.no_categories"));
 		return;
 	}
 
@@ -238,7 +238,7 @@ void store_main_menu()
 			store_cfg@ s = store_configs[cat];
 			if (s.item_names.length() == 0)
 			{
-				speak(s.display_name + " has no items.");
+				speak(tr("store.category_no_items", {s.display_name}));
 			}
 			else
 			{
@@ -284,7 +284,7 @@ void store_main_menu()
 			{
 				has_category = true;
 				store_cfg@ s = store_configs[cat];
-				if (s.item_names.length() == 0) speak(s.display_name + " has no items.");
+				if (s.item_names.length() == 0) speak(tr("store.category_no_items", {s.display_name}));
 				else
 				{
 					in_items = true;
@@ -331,7 +331,7 @@ void store_main_menu()
 			else
 			{
 				play_store_error();
-				speak("You don't have enough " + currency + ".");
+				speak(tr("store.not_enough_currency_short", {currency}));
 			}
 		}
 		if (key_pressed(KEY_LEFT) || kb_pressed("menu_left"))
@@ -345,7 +345,7 @@ void store_main_menu()
 			else
 			{
 				play_store_error();
-				speak("Nothing in the cart for this item.");
+				speak(tr("store.nothing_in_cart_for_item"));
 			}
 		}
 		if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || kb_pressed("menu_activate"))
@@ -362,8 +362,8 @@ void store_main_menu()
 				total_items += store_browse_amounts[cat][ci];
 				total_cost += int(stn(s.item_prices[ci])) * store_browse_amounts[cat][ci];
 			}
-			if (total_items == 0) speak("Your cart is empty.");
-			else speak("" + total_items + " items in the cart, total: " + total_cost + " " + store_charge_currency(s) + ".");
+			if (total_items == 0) speak(tr("store.empty_cart"));
+			else speak(tr("store.items_in_cart_total", {"" + total_items, "" + total_cost, store_charge_currency(s)}));
 		}
 	}
 }

@@ -5,6 +5,28 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 19:30
+-------------------------------------------------------------------------------
+
+1. Main Menu Map Separation:
+   - Separated the main menu into two distinct game entries:
+     - "Play" ("Jogar" / "Jugar"): Directly and immediately loads the player's selected default map without opening any map selection submenu.
+     - "Maps Menu" ("Menu de mapas"): Displays all currently unlocked maps (respecting resurrection and level requirements). Selecting a map saves it as the player's preferred default map for subsequent "Play" actions.
+
+2. Multilingual Localization System:
+   - Implemented a complete translation system powered by `includes/translator.nvgt` using JSON language files:
+     - English (`languages/en.json`)
+     - Portuguese (`languages/pt.json`)
+     - Spanish (`languages/es.json`)
+   - Fully localized Main Menu, Maps Menu, Options Menu, confirmation dialogs, Speaker Test, Builder Menu, Store Menu, Updater routines, and in-game status messages (health, level, XP, zone announcements).
+
+3. Options Menu & Audio Modernization:
+   - Removed the "Select Menu Music" button from the Options Menu; menu music is now fixed and unified (`sounds/menu sounds/menumus.ogg`).
+   - Added the "Select Language" ("Selecionar Idioma" / "Seleccionar Idioma") button to the Options Menu.
+   - Language changes are applied immediately in real-time across menus and interface elements without requiring a restart or manual pre-save.
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 17:35
 -------------------------------------------------------------------------------
 

@@ -1,0 +1,134 @@
+{
+  "menu": {
+    "main": {
+      "title": "Main Menu",
+      "play": "Play",
+      "maps_menu": "Maps menu",
+      "store": "Store",
+      "test_speakers": "Test speakers",
+      "check_updates": "Check for updates",
+      "options": "Options",
+      "exit": "Exit"
+    }
+  },
+  "map": {
+    "select_map_title": "Select your map",
+    "selected_as_default": "&1 selected as default map.",
+    "selected_indicator": "(selected)",
+    "no_maps_unlocked_msg": "No maps are unlocked yet. Your level or resurrection does not meet the requirements of the maps on disk.",
+    "no_maps_found_msg": "No maps were found. Put a map file in settings/maps or decrypt the encrypted maps, then try again.",
+    "no_maps_found_title": "No maps found",
+    "current_location": "current location: &1",
+    "unknown_area": "unknown area",
+    "zones_spoken": "zones will be spoken",
+    "zones_not_spoken": "zones will not be spoken",
+    "map_locked": "This map is locked. You cannot enter here.",
+    "res_too_high": "You cannot enter here yet; your resurrection exceeds the maximum allowed.",
+    "lvl_too_low": "You cannot enter here yet; your level does not meet the requirements.",
+    "lvl_too_high": "You cannot enter here yet; your level exceeds the maximum allowed."
+  },
+  "options": {
+    "title": "Options",
+    "disable_wrap": "Disable menu wrapping",
+    "footdrag": "Foot dragging sound when standing still",
+    "confirm_exit": "Confirm before exiting with Escape",
+    "pain_sounds": "Play pain sounds when receiving attacks or damage",
+    "startup_updates": "Check for updates on startup",
+    "select_language": "Select Language",
+    "select_language_title": "Select Language",
+    "language_changed": "Language changed to English.",
+    "keybinds": "Keybindings",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "exit_title": "Exit Game",
+    "exit_prompt": "Are you sure you want to exit the game?",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "speaker_test": {
+    "testing": "Testing speakers. Press Escape to cancel, or Enter to skip.",
+    "skipped": "Speaker test skipped.",
+    "finished": "Speaker test finished.",
+    "error": "Error loading speaker test audio."
+  },
+  "builder": {
+    "title": "build menu",
+    "cannot_build_encrypted": "Cannot build on an encrypted map.",
+    "entry": {
+      "create_map": "create new map - build a new map from scratch",
+      "map_editor": "map editor - edit the lines of the current map you are in",
+      "sound_ambience": "sound ambience - add ambient environmental background audio to your map",
+      "sound_source": "sound source - add positional 3D sound sources to your map",
+      "platform": "platform - add platforms and walkable surfaces to your map",
+      "staircase": "staircase - add staircases to connect different elevations",
+      "wall": "wall - add solid blocking walls to your map",
+      "safe_zone": "safe zone - add safe zones where combat damage is disabled",
+      "text_zone": "text zone - add trigger zones that display or speak text when entered",
+      "spawnpoint": "spawnpoint - set the default player spawn coordinates on this map",
+      "text_square": "text square - add text zones that speak text on specific coordinates",
+      "items_manager": "items manager - add, edit, remove and create new items",
+      "package_manager": "package manager - create, edit, view and delete packages",
+      "item_spawner": "item spawner - configure item drops and map pickup spawners",
+      "weapon_manager": "weapon manager - add, edit, remove and create new weapons",
+      "store_manager": "store categories - add, edit and remove store categories and choose their items",
+      "npc_manager": "npc manager - create, edit and delete NPCs",
+      "npc_spawner": "npc spawner - place configured NPCs on this map",
+      "map_manager_tools": "map manager and tools - manage maps, properties, backup and tools",
+      "delete_map": "delete current map - permanently delete the active map file"
+    }
+  },
+  "store": {
+    "title": "Store Menu",
+    "welcome": "Welcome to the store.",
+    "empty_cart": "Your cart is empty.",
+    "not_enough_money": "You don't have enough &1. You need &2 and have &3.",
+    "payment_returned": "The purchase could not be delivered; your payment was returned.",
+    "purchase_success": "Purchased &1 for &2 &3.",
+    "no_categories": "The store has no categories yet.",
+    "category_no_items": "&1 has no items.",
+    "not_enough_currency_short": "You don't have enough &1.",
+    "nothing_in_cart_for_item": "Nothing in the cart for this item.",
+    "items_in_cart_total": "&1 items in the cart, total: &2 &3."
+  },
+  "updater": {
+    "checking": "Checking for updates...",
+    "no_updates": "No updates found.",
+    "update_found": "Update found!",
+    "downloading": "Downloading update.",
+    "cancel_prompt": "Are you sure you want to cancel the download? Press Y or Enter to cancel, or Escape to resume.",
+    "resuming": "Resuming download.",
+    "cancelled": "Download cancelled.",
+    "game_restart": "Game update is complete, the game will now restart.",
+    "content_restart": "Content update is complete, the game will now restart.",
+    "sound_restart": "Sound update is complete, the game will now restart.",
+    "map_restart": "Map update is complete, the game will now restart.",
+    "corrupt_exe": "The downloaded game file is not a valid executable. Update aborted.",
+    "corrupt_content": "The downloaded contents.dat is corrupt or not a valid content package. The current content was kept.",
+    "corrupt_sound": "The downloaded sound package is corrupt or not a valid zip archive. The current sounds were kept.",
+    "corrupt_map": "The downloaded maps.dat is corrupt or not a valid map package. The current maps were kept.",
+    "sounds_not_found_prompt": "Game sounds were not found. Do you want to download the game sounds? Press Y or Enter for Yes, or Escape to continue without sounds.",
+    "continuing_without_sounds": "Continuing without sounds."
+  },
+  "game": {
+    "health_status": "Health: &1 of &2",
+    "level_status": "Level &1 of &2 for resurrection, Resurrection &3, XP &4, &5 XP required for level &6",
+    "died": "You died!",
+    "out_of_ammo": "Out of ammo!",
+    "reloading": "Reloading...",
+    "reload_cancelled": "Reload cancelled.",
+    "no_weapons": "No weapons in your inventory.",
+    "selected_weapon": "Selected: &1"
+  },
+  "ui": {
+    "copied": "Copied",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "close": "Close",
+    "error": "Error",
+    "success": "Success",
+    "info": "Information"
+  }
+}
