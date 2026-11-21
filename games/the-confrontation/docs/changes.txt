@@ -5,6 +5,22 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 17:15
+-------------------------------------------------------------------------------
+
+1. Map Resurrection & Level Unlock Logic:
+   - Fixed unlocked maps disappearing from the "Play" menu upon completely restarting the game:
+     - Player save data (level, resurrections, stats) is now explicitly loaded upon cold game startup prior to entering the main menu, and refreshed when selecting "Play".
+     - Fixed can_enter_map() requirement evaluation: maps with equal minimum and maximum resurrection thresholds (e.g. minres 4, maxres 4) or zero/lower maximum now unlock at that resurrection and remain accessible for all superior resurrections (resurrections >= check_min_res).
+     - Applied the same non-blocking minimum logic to player level thresholds.
+
+2. NPC Manager Cleanups:
+   - Streamlined death drop item quantity configuration in the NPC manager dialog:
+     - Removed redundant "Set Quantity for selected item" button; quantities entered in the input box are now seamlessly applied on item navigation and dialog save.
+     - Confirmed dedicated sound selection buttons without redundant manual text edit boxes for impact and combat audio.
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 13:10
 -------------------------------------------------------------------------------
 

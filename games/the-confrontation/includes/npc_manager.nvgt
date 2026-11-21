@@ -89,7 +89,6 @@ string npc_pick_death_drops_dialog(const string&in current_drops)
 
 	int in_qty = pf.create_input_box("Drop quantity for focused item", "1");
 	pf.set_disallowed_chars(in_qty, "0123456789", true, "Numbers only.");
-	int b_set_qty = pf.create_button("Set &Quantity for selected item", false);
 	int b_save = pf.create_button("&Save Drop Items", true);
 	int b_clear = pf.create_button("&Clear Selection", false);
 	int b_cancel = pf.create_button("&Cancel", false, true);
@@ -106,6 +105,13 @@ string npc_pick_death_drops_dialog(const string&in current_drops)
 		int cur_pos = pf.get_list_position(list);
 		if (cur_pos >= 0 && cur_pos < int(item_registry.length()) && cur_pos != last_focused_idx)
 		{
+			if (last_focused_idx >= 0 && last_focused_idx < int(item_registry.length()))
+			{
+				string prev_iid = item_registry[uint(last_focused_idx)].id;
+				int prev_q = int(string_to_number(pf.get_text(in_qty)));
+				if (prev_q < 1) prev_q = 1;
+				drop_qtys.set(prev_iid, prev_q);
+			}
 			last_focused_idx = cur_pos;
 			string cur_iid = item_registry[uint(cur_pos)].id;
 			int cur_q = 1;
@@ -113,21 +119,15 @@ string npc_pick_death_drops_dialog(const string&in current_drops)
 			pf.set_text(in_qty, "" + cur_q);
 		}
 
-		if (pf.is_pressed(b_set_qty))
+		if (pf.is_pressed(b_save) || key_pressed(KEY_RETURN))
 		{
 			if (cur_pos >= 0 && cur_pos < int(item_registry.length()))
 			{
 				string cur_iid = item_registry[uint(cur_pos)].id;
-				int new_q = int(string_to_number(pf.get_text(in_qty)));
-				if (new_q < 1) new_q = 1;
-				drop_qtys.set(cur_iid, new_q);
-				string iname = (item_registry[cur_pos].name != "") ? item_registry[cur_pos].name : cur_iid;
-				speak(iname + " drop quantity set to " + new_q + ".");
+				int cur_q = int(string_to_number(pf.get_text(in_qty)));
+				if (cur_q < 1) cur_q = 1;
+				drop_qtys.set(cur_iid, cur_q);
 			}
-		}
-
-		if (pf.is_pressed(b_save) || key_pressed(KEY_RETURN))
-		{
 			int[]@ checked = pf.get_checked_list_items(list);
 			string result = "";
 			if (checked !is null && checked.length() > 0)

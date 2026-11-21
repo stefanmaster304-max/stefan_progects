@@ -411,9 +411,9 @@ bool can_enter_map(string name, bool announce = true)
 	}
 
 	bool res_too_low = (resurrections < check_min_res);
-	bool res_too_high = (check_max_res > 0 && resurrections > check_max_res);
+	bool res_too_high = (check_max_res > check_min_res && resurrections > check_max_res);
 	bool lvl_too_low = (level < check_min_lvl);
-	bool lvl_too_high = (check_max_lvl > 0 && level > check_max_lvl);
+	bool lvl_too_high = (check_max_lvl > check_min_lvl && level > check_max_lvl);
 
 	if (res_too_low)
 	{

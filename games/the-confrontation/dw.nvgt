@@ -298,6 +298,9 @@ if (check_updates_on_startup == 1)
 {
 	check_for_updates(false);
 }
+string startup_smap;
+int startup_sx = 0, startup_sy = 0, startup_sz = 0, startup_sface = 0;
+load_location(startup_smap, startup_sx, startup_sy, startup_sz, startup_sface);
 mainmenu();
 }
 void game()
