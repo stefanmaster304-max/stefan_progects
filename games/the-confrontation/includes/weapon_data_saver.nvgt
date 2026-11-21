@@ -486,6 +486,33 @@ void load_all_weapons_wpm(bool force = false)
 			}
 		}
 	}
+
+	// 3. Scan any plain .wpm files directly in root WEAPON_DIR
+	string[]@ root_files = find_files(WEAPON_DIR + "/*.wpm");
+	if (root_files !is null)
+	{
+		for (uint i = 0; i < root_files.length(); i++)
+		{
+			string fn = root_files[i];
+			string id = fn;
+			if (string_ends_with(id, ".wpm")) id = string_left(id, id.length() - 4);
+
+			if (find_weapon_data(id) !is null) continue;
+
+			file f;
+			if (f.open(WEAPON_DIR + "/" + fn, "rb"))
+			{
+				string content = f.read();
+				f.close();
+
+				weapon_data w;
+				w.id = id;
+				w.wclass = "weapons";
+				parse_weapon_wpm(w, content);
+				weapon_registry.insert_last(w);
+			}
+		}
+	}
 	if (weapon_registry.length() == 0)
 	{
 		if (load_all_contents(force))
@@ -507,7 +534,9 @@ void sort_weapon_registry()
 	{
 		for (uint j = i + 1; j < weapon_registry.length(); j++)
 		{
-			if (string_to_lower_case(weapon_registry[j].id) < string_to_lower_case(weapon_registry[i].id))
+			string name_i = (weapon_registry[i].name != "") ? weapon_registry[i].name : weapon_registry[i].id;
+			string name_j = (weapon_registry[j].name != "") ? weapon_registry[j].name : weapon_registry[j].id;
+			if (string_to_lower_case(name_j) < string_to_lower_case(name_i))
 			{
 				weapon_data@ tmp = weapon_registry[i];
 				@weapon_registry[i] = weapon_registry[j];

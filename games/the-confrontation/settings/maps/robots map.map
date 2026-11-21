@@ -1,0 +1,12 @@
+map: robots map
+minx: 0
+maxx: 100
+miny: 0
+maxy: 100
+minz: 0
+maxz: 100
+minlevel: 1
+maxlevel: 1
+minresurrection: 2
+maxresurrection: 2
+platform:0:100:0:100:0:0:concrete11

@@ -56,7 +56,15 @@ void weapon_chooser()
 			if (wform.is_pressed(b_select))
 			{
 				int pos = wform.get_list_position(list);
-				if (pos == 0) add_weapon_flow();
+				string act = wform.get_list_item_id(list, pos);
+				if (act == "add") add_weapon_flow();
+				else if (act == "edit") weapon_list_flow(false);
+				else if (act == "view") weapon_list_flow(true);
+				else if (act == "remove") remove_weapon_flow();
+				else if (act == "create_subclass") create_subclass_flow();
+				else if (act == "remove_subclass") remove_subclass_flow();
+				else if (act == "give") give_weapon_flow();
+				else if (pos == 0) add_weapon_flow();
 				else if (pos == 1) weapon_list_flow(false);
 				else if (pos == 2) weapon_list_flow(true);
 				else if (pos == 3) remove_weapon_flow();
@@ -168,7 +176,7 @@ void remove_subclass_flow()
 
 void weapon_list_flow(bool view_only)
 {
-	load_all_weapons_wpm();
+	load_all_weapons_wpm(true);
 	if (weapon_registry.length() == 0)
 	{
 		dlg("No weapons found. Please create a new weapon.");
@@ -181,7 +189,7 @@ void weapon_list_flow(bool view_only)
 
 	for (uint i = 0; i < weapon_registry.length(); i++)
 	{
-		string display = weapon_registry[i].name + " (" + weapon_registry[i].wclass + ")";
+		string display = (weapon_registry[i].name != "") ? weapon_registry[i].name : weapon_registry[i].id;
 		lf.add_list_item(list, display, weapon_registry[i].id, -1, false, (i == 0));
 	}
 	int b_ok = lf.create_button(view_only ? "&view" : "&edit", true);
@@ -205,12 +213,14 @@ void weapon_list_flow(bool view_only)
 			int pos = lf.get_list_position(list);
 			if (pos >= 0 && pos < int(weapon_registry.length()))
 			{
-				if (!view_only && is_weapon_encrypted(weapon_registry[pos].id))
+				string wid = lf.get_list_item_id(list, pos);
+				if (wid == "") wid = weapon_registry[pos].id;
+				if (!view_only && is_weapon_encrypted(wid))
 				{
 					dlg("This weapon is encrypted and cannot be edited.");
 					continue;
 				}
-				weapon_edit_form(weapon_registry[pos].id, false, view_only);
+				weapon_edit_form(wid, false, view_only);
 				return;
 			}
 		}
@@ -225,7 +235,7 @@ void remove_weapon_flow()
 		dlg("Weapons are encrypted and protected. You must decrypt weapons first.");
 		return;
 	}
-	load_all_weapons_wpm();
+	load_all_weapons_wpm(true);
 	if (weapon_registry.length() == 0)
 	{
 		dlg("No weapons found.");
@@ -238,7 +248,7 @@ void remove_weapon_flow()
 
 	for (uint i = 0; i < weapon_registry.length(); i++)
 	{
-		string display = weapon_registry[i].name + " (" + weapon_registry[i].wclass + ")";
+		string display = (weapon_registry[i].name != "") ? weapon_registry[i].name : weapon_registry[i].id;
 		rf.add_list_item(list, display, weapon_registry[i].id, -1, false, (i == 0));
 	}
 	int b_remove = rf.create_button("&remove", true);
@@ -262,12 +272,13 @@ void remove_weapon_flow()
 			int pos = rf.get_list_position(list);
 			if (pos >= 0 && pos < int(weapon_registry.length()))
 			{
-				string wid = weapon_registry[pos].id;
+				string wid = rf.get_list_item_id(list, pos);
+				if (wid == "") wid = weapon_registry[pos].id;
 				weapon_data@ w = get_weapon_data(wid);
 				if (w !is null && menuquestion("Are you sure you want to remove " + w.name + "?") == 1)
 				{
 					delete_weapon_wpm(w.id);
-					load_all_weapons_wpm();
+					load_all_weapons_wpm(true);
 					speak("Weapon removed.");
 				}
 				return;
@@ -748,7 +759,7 @@ void add_weapon_flow()
 
 void give_weapon_flow()
 {
-	load_all_weapons_wpm();
+	load_all_weapons_wpm(true);
 	if (weapon_registry.length() == 0)
 	{
 		dlg("No weapons available to give.");
@@ -761,7 +772,7 @@ void give_weapon_flow()
 
 	for (uint i = 0; i < weapon_registry.length(); i++)
 	{
-		string display = weapon_registry[i].name + " (" + weapon_registry[i].wclass + ")";
+		string display = (weapon_registry[i].name != "") ? weapon_registry[i].name : weapon_registry[i].id;
 		gf.add_list_item(list, display, weapon_registry[i].id, -1, false, (i == 0));
 	}
 	int b_give = gf.create_button("&give selected to inventory", true);
@@ -792,9 +803,18 @@ void give_weapon_flow()
 					int idx = checked[c];
 					if (idx >= 0 && idx < int(weapon_registry.length()))
 					{
-						string wid = weapon_registry[idx].id;
+						string wid = gf.get_list_item_id(list, idx);
+						if (wid == "") wid = weapon_registry[idx].id;
 						weapon_data@ w = get_weapon_data(wid);
 						give(wid, 1);
+						if (w !is null && w.capacity > 0)
+						{
+							init_weapon_ammo(wid, w.capacity);
+						}
+						if (w !is null && w.reserve_item != "" && w.starting_reserve > 0)
+						{
+							give(w.reserve_item, w.starting_reserve);
+						}
 						last_name = (w !is null && w.name != "") ? w.name : wid;
 						given_count++;
 					}
@@ -815,9 +835,18 @@ void give_weapon_flow()
 				int pos = gf.get_list_position(list);
 				if (pos >= 0 && pos < int(weapon_registry.length()))
 				{
-					string wid = weapon_registry[pos].id;
+					string wid = gf.get_list_item_id(list, pos);
+					if (wid == "") wid = weapon_registry[pos].id;
 					weapon_data@ w = get_weapon_data(wid);
 					give(wid, 1);
+					if (w !is null && w.capacity > 0)
+					{
+						init_weapon_ammo(wid, w.capacity);
+					}
+					if (w !is null && w.reserve_item != "" && w.starting_reserve > 0)
+					{
+						give(w.reserve_item, w.starting_reserve);
+					}
 					string iname = (w !is null && w.name != "") ? w.name : wid;
 					speak("Given 1 " + iname + " to your inventory.");
 					return;

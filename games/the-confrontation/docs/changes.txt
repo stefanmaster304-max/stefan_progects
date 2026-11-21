@@ -5,6 +5,20 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 13:10
+-------------------------------------------------------------------------------
+
+1. Unified Weapon Manager & Inventory Granting Flow:
+   - Fixed weapon listing in the "Give Weapon To Player Inventory" dialog and throughout the weapon manager:
+     - All weapons across all folders and classes are now presented in a clean, single unified flat list sorted alphabetically A-Z by name.
+     - Removed confusing category directory folder labels from item displays.
+     - Routed action selection by string ID in the weapon manager menu to prevent position-based routing errors.
+     - Safely resolved weapon IDs via get_list_item_id() for both single selection and batch checkbox selection.
+     - Initialized loaded ammo capacity and granted starting reserve magazines/ammo upon receiving weapons into inventory.
+     - Added support in the weapon loader to scan root settings/weapons/*.wpm files alongside subfolders.
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 12:40
 -------------------------------------------------------------------------------
 
