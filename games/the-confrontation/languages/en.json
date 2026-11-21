@@ -43,7 +43,7 @@
   },
   "dialog": {
     "exit_title": "Exit Game",
-    "exit_prompt": "Are you sure you want to exit the game?",
+    "exit_prompt": "Are you sure you want to exit? Press Y or Enter for Yes, or Escape to cancel.",
     "yes": "Yes",
     "no": "No"
   },
@@ -56,6 +56,17 @@
   "builder": {
     "title": "build menu",
     "cannot_build_encrypted": "Cannot build on an encrypted map.",
+    "new_map_title": "Create New Map",
+    "map_name": "Map Name",
+    "platform_title": "Add Platform",
+    "wall_title": "Add Wall",
+    "safe_zone_title": "Add Safe Zone",
+    "text_zone_title": "Add Text Zone",
+    "text_square_title": "Add Text Square",
+    "staircase_title": "Add Staircase",
+    "zone_name_prompt": "Zone Name / Announcement Text",
+    "sound_ambience_title": "sound ambience",
+    "sound_source_title": "sound source",
     "entry": {
       "create_map": "create new map - build a new map from scratch",
       "map_editor": "map editor - edit the lines of the current map you are in",
@@ -79,9 +90,89 @@
       "delete_map": "delete current map - permanently delete the active map file"
     }
   },
+  "form": {
+    "min_x": "Minimum X",
+    "max_x": "Maximum X",
+    "min_y": "Minimum Y",
+    "max_y": "Maximum Y",
+    "min_z": "Minimum Z",
+    "max_z": "Maximum Z",
+    "min_lvl": "Minimum level to enter",
+    "max_lvl": "Maximum level to enter (0 for unlimited)",
+    "min_res": "Resurrection at which this map unlocks",
+    "max_res": "Maximum resurrection to enter (0 for unlimited)"
+  },
+  "spawner": {
+    "title": "configure item spawner",
+    "spawn_interval": "spawn interval (ms)",
+    "min_decay": "minimum decay time (ms)",
+    "max_decay": "maximum decay time (ms)",
+    "beacon_sound": "ground beacon loop sound",
+    "browse_beacon_sound": "&browse beacon sound",
+    "beacon_interval": "beacon loop interval (ms)",
+    "save": "&save spawner",
+    "select_items_title": "select items to spawn (Space to check/uncheck)",
+    "available_items": "available items to spawn",
+    "no_items_selected": "No items selected. Please select at least one item using Space.",
+    "none_registered": "No items are registered to spawn."
+  },
+  "npc_manager": {
+    "title": "NPC Manager",
+    "create_title": "Create New NPC",
+    "edit_title": "Edit NPC",
+    "delete_title": "Delete NPC",
+    "internal_id": "Internal ID (filename without .npc)",
+    "display_name": "Display name",
+    "attack_speed": "Attack speed (ms)",
+    "min_damage": "Minimum damage",
+    "max_damage": "Maximum damage",
+    "detection_range": "Detection range (tiles)",
+    "attack_range": "Attack range (tiles)",
+    "walk_speed": "Walking speed (ms)",
+    "run_speed": "Running speed (ms)",
+    "max_health": "Maximum health",
+    "xp_reward": "Experience given on death",
+    "select_impact_sound": "Select impact sound",
+    "select_death_drop": "Select Death Drop Items and Quantities",
+    "drop_quantity": "Drop quantity for item"
+  },
+  "weapon_manager": {
+    "title": "weapon manager",
+    "create_title": "Create New Weapon",
+    "edit_title": "edit weapon",
+    "view_title": "view weapon",
+    "remove_title": "remove weapon",
+    "internal_id": "weapon id (filename without .wpm)",
+    "display_name": "display name",
+    "description": "description",
+    "weapon_class": "weapon class",
+    "fire_interval": "fire interval (ms)",
+    "walk_interval": "walk interval (ms)",
+    "bullet_speed": "bullet flight speed interval (ms)",
+    "range": "effective range (tiles)",
+    "min_damage": "minimum damage",
+    "max_damage": "maximum damage",
+    "spread": "spread accuracy penalty",
+    "capacity": "magazine capacity",
+    "select_class": "select weapon class",
+    "give_weapons": "select weapons to give to inventory"
+  },
+  "weapon": {
+    "none_equipped": "No weapon equipped.",
+    "unequipped": "Weapon unequipped.",
+    "equipped": "&1 equipped.",
+    "equipped_melee": "&1 equipped (Melee)."
+  },
+  "inventory": {
+    "empty": "Your inventory is empty."
+  },
+  "equipment": {
+    "none_equipped": "You have no equipment equipped.",
+    "already_equipped": "You already have a shield equipped. You cannot equip another."
+  },
   "store": {
     "title": "Store Menu",
-    "welcome": "Welcome to the store.",
+    "welcome": "Welcome to the store! What would you like to buy today? Select items in one of the available categories.",
     "empty_cart": "Your cart is empty.",
     "not_enough_money": "You don't have enough &1. You need &2 and have &3.",
     "payment_returned": "The purchase could not be delivered; your payment was returned.",
@@ -127,6 +218,8 @@
     "cancel": "Cancel",
     "back": "Back",
     "close": "Close",
+    "select": "Select",
+    "next": "Next",
     "error": "Error",
     "success": "Success",
     "info": "Information"

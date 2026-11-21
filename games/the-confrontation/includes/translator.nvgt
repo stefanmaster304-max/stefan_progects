@@ -140,6 +140,10 @@ translator _translator;
 string tr(const string& in key, string[]@ args = null, dictionary@ named_args = null) {
     return _translator.get(key, args, named_args);
 }
+string tr(const string& in key, const string& in default_val) {
+    if (_translator.has(key)) return _translator.get(key);
+    return default_val;
+}
 
 string current_language = "en";
 

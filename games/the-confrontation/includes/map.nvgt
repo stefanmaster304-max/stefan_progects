@@ -1141,13 +1141,13 @@ void build_platform()
 	string[] platform_dirs = platform_surface_options();
 
 	audio_form f;
-	f.create_window("Add Platform", false, true, false);
-	int i_minx = f.create_input_box("Minimum X", "" + minx);
-	int i_maxx = f.create_input_box("Maximum X", "" + maxx);
-	int i_miny = f.create_input_box("Minimum Y", "" + miny);
-	int i_maxy = f.create_input_box("Maximum Y", "" + maxy);
-	int i_minz = f.create_input_box("Z Level", "" + minz);
-	int i_maxz = f.create_input_box("Max Z Level", "" + maxz);
+	f.create_window(tr("builder.platform_title"), false, true, false);
+	int i_minx = f.create_input_box(tr("form.min_x"), "" + minx);
+	int i_maxx = f.create_input_box(tr("form.max_x"), "" + maxx);
+	int i_miny = f.create_input_box(tr("form.min_y"), "" + miny);
+	int i_maxy = f.create_input_box(tr("form.max_y"), "" + maxy);
+	int i_minz = f.create_input_box(tr("form.min_z"), "" + minz);
+	int i_maxz = f.create_input_box(tr("form.max_z"), "" + maxz);
 	f.set_disallowed_chars(i_minx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_miny, "0123456789-", true, "Numbers only.");
@@ -1262,13 +1262,13 @@ void build_wall()
 	string[] wall_dirs = get_map_sound_folders("builder/construction/walls/*");
 
 	audio_form f;
-	f.create_window("Add Wall", false, true, false);
-	int i_minx = f.create_input_box("Minimum X", "" + minx);
-	int i_maxx = f.create_input_box("Maximum X", "" + maxx);
-	int i_miny = f.create_input_box("Minimum Y", "" + miny);
-	int i_maxy = f.create_input_box("Maximum Y", "" + maxy);
-	int i_minz = f.create_input_box("Minimum Z", "" + minz);
-	int i_maxz = f.create_input_box("Maximum Z", "" + maxz);
+	f.create_window(tr("builder.wall_title"), false, true, false);
+	int i_minx = f.create_input_box(tr("form.min_x"), "" + minx);
+	int i_maxx = f.create_input_box(tr("form.max_x"), "" + maxx);
+	int i_miny = f.create_input_box(tr("form.min_y"), "" + miny);
+	int i_maxy = f.create_input_box(tr("form.max_y"), "" + maxy);
+	int i_minz = f.create_input_box(tr("form.min_z"), "" + minz);
+	int i_maxz = f.create_input_box(tr("form.max_z"), "" + maxz);
 	f.set_disallowed_chars(i_minx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_miny, "0123456789-", true, "Numbers only.");
@@ -1345,13 +1345,13 @@ void build_safe_zone()
 	string disallowed_nums = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ `!@#$%^&*()[]{};:'\"\\|,<>?_/.+=~";
 
 	audio_form f;
-	f.create_window("Add Safe Zone", false, true, false);
-	int i_minx = f.create_input_box("Minimum X", "" + minx);
-	int i_maxx = f.create_input_box("Maximum X", "" + maxx);
-	int i_miny = f.create_input_box("Minimum Y", "" + miny);
-	int i_maxy = f.create_input_box("Maximum Y", "" + maxy);
-	int i_minz = f.create_input_box("Minimum Z", "" + minz);
-	int i_maxz = f.create_input_box("Maximum Z", "" + maxz);
+	f.create_window(tr("builder.safe_zone_title"), false, true, false);
+	int i_minx = f.create_input_box(tr("form.min_x"), "" + minx);
+	int i_maxx = f.create_input_box(tr("form.max_x"), "" + maxx);
+	int i_miny = f.create_input_box(tr("form.min_y"), "" + miny);
+	int i_maxy = f.create_input_box(tr("form.max_y"), "" + maxy);
+	int i_minz = f.create_input_box(tr("form.min_z"), "" + minz);
+	int i_maxz = f.create_input_box(tr("form.max_z"), "" + maxz);
 	f.set_disallowed_chars(i_minx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_miny, "0123456789-", true, "Numbers only.");
@@ -1397,14 +1397,14 @@ void build_text_zone()
 	string disallowed_nums = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ `!@#$%^&*()[]{};:'\"\\|,<>?_/.+=~";
 
 	audio_form f;
-	f.create_window("Add Text Zone", false, true, false);
-	int i_minx = f.create_input_box("Minimum X", "" + minx);
-	int i_maxx = f.create_input_box("Maximum X", "" + maxx);
-	int i_miny = f.create_input_box("Minimum Y", "" + miny);
-	int i_maxy = f.create_input_box("Maximum Y", "" + maxy);
-	int i_minz = f.create_input_box("Minimum Z", "" + minz);
-	int i_maxz = f.create_input_box("Maximum Z", "" + maxz);
-	int i_text = f.create_input_box("Zone Name / Announcement", "Town Square");
+	f.create_window(tr("builder.text_zone_title"), false, true, false);
+	int i_minx = f.create_input_box(tr("form.min_x"), "" + minx);
+	int i_maxx = f.create_input_box(tr("form.max_x"), "" + maxx);
+	int i_miny = f.create_input_box(tr("form.min_y"), "" + miny);
+	int i_maxy = f.create_input_box(tr("form.max_y"), "" + maxy);
+	int i_minz = f.create_input_box(tr("form.min_z"), "" + minz);
+	int i_maxz = f.create_input_box(tr("form.max_z"), "" + maxz);
+	int i_text = f.create_input_box(tr("builder.zone_name_prompt"), "Town Square");
 	f.set_disallowed_chars(i_minx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_miny, "0123456789-", true, "Numbers only.");

@@ -149,13 +149,13 @@ void build_item_spawner()
 	load_all_items_config();
 	if (item_registry.length() == 0)
 	{
-		speak("No items are registered to spawn.");
+		speak(tr("spawner.none_registered"));
 		return;
 	}
 
 	audio_form pf;
-	pf.create_window("select items to spawn (Space to check/uncheck)", false, true, false);
-	int list = pf.create_list("available items to spawn", 0, true, true);
+	pf.create_window(tr("spawner.select_items_title"), false, true, false);
+	int list = pf.create_list(tr("spawner.available_items"), 0, true, true);
 
 	for (uint i = 0; i < item_registry.length(); i++)
 	{
@@ -163,8 +163,8 @@ void build_item_spawner()
 		pf.add_list_item(list, display, item_registry[i].id, -1, (i == 0), false);
 	}
 
-	int b_ok = pf.create_button("&next", true);
-	int b_cancel = pf.create_button("&cancel", false, true);
+	int b_ok = pf.create_button("&" + tr("ui.next", "next"), true);
+	int b_cancel = pf.create_button("&" + tr("ui.cancel"), false, true);
 	pf.focus(list);
 
 	string[] selected_ids;
@@ -177,7 +177,7 @@ void build_item_spawner()
 
 		if (key_pressed(KEY_ESCAPE) || pf.is_pressed(b_cancel))
 		{
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			return;
 		}
 
@@ -186,7 +186,7 @@ void build_item_spawner()
 			int[]@ checked = pf.get_checked_list_items(list);
 			if (checked is null || checked.length() == 0)
 			{
-				speak("No items selected. Please select at least one item using Space.");
+				speak(tr("spawner.no_items_selected"));
 				continue;
 			}
 			for (uint c = 0; c < checked.length(); c++)
@@ -209,21 +209,21 @@ void build_item_spawner()
 
 	// Form for spawner properties
 	audio_form sf;
-	sf.create_window("configure item spawner", false);
+	sf.create_window(tr("spawner.title"), false);
 
-	int mx = sf.create_input_box("minimum x", "" + int(minx));
-	int mx2 = sf.create_input_box("maximum x", "" + int(maxx));
-	int my = sf.create_input_box("minimum y", "" + int(miny));
-	int my2 = sf.create_input_box("maximum y", "" + int(maxy));
-	int mnz = sf.create_input_box("minimum z", "" + int(minz));
-	int mxz = sf.create_input_box("maximum z", "" + int(maxz));
+	int mx = sf.create_input_box(tr("form.min_x"), "" + int(minx));
+	int mx2 = sf.create_input_box(tr("form.max_x"), "" + int(maxx));
+	int my = sf.create_input_box(tr("form.min_y"), "" + int(miny));
+	int my2 = sf.create_input_box(tr("form.max_y"), "" + int(maxy));
+	int mnz = sf.create_input_box(tr("form.min_z"), "" + int(minz));
+	int mxz = sf.create_input_box(tr("form.max_z"), "" + int(maxz));
 
-	int in_sp_time = sf.create_input_box("spawn interval (ms)", "30000");
-	int in_dmin_time = sf.create_input_box("minimum decay time (ms)", "180000");
-	int in_dmax_time = sf.create_input_box("maximum decay time (ms)", "480000");
-	int in_beacon_snd = sf.create_input_box("ground beacon loop sound", "items/item.ogg");
-	int btn_browse_snd = sf.create_button("&browse beacon sound");
-	int in_beacon_int = sf.create_input_box("beacon loop interval (ms)", "1000");
+	int in_sp_time = sf.create_input_box(tr("spawner.spawn_interval"), "30000");
+	int in_dmin_time = sf.create_input_box(tr("spawner.min_decay"), "180000");
+	int in_dmax_time = sf.create_input_box(tr("spawner.max_decay"), "480000");
+	int in_beacon_snd = sf.create_input_box(tr("spawner.beacon_sound"), "items/item.ogg");
+	int btn_browse_snd = sf.create_button(tr("spawner.browse_beacon_sound"));
+	int in_beacon_int = sf.create_input_box(tr("spawner.beacon_interval"), "1000");
 
 	sf.set_disallowed_chars(mx, "0123456789-", true, "Numbers only.");
 	sf.set_disallowed_chars(mx2, "0123456789-", true, "Numbers only.");
@@ -236,8 +236,8 @@ void build_item_spawner()
 	sf.set_disallowed_chars(in_dmax_time, "0123456789", true, "Numbers only.");
 	sf.set_disallowed_chars(in_beacon_int, "0123456789", true, "Numbers only.");
 
-	int b_save = sf.create_button("&save spawner", true);
-	int b_can = sf.create_button("&cancel", false, true);
+	int b_save = sf.create_button(tr("spawner.save"), true);
+	int b_can = sf.create_button("&" + tr("ui.cancel"), false, true);
 
 	sf.focus(mx);
 

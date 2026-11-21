@@ -5,6 +5,42 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 20:25
+-------------------------------------------------------------------------------
+
+1. Speech & Prompt Text Restoration:
+   - Restored the complete full-length announcement for the Exit Confirmation Dialog across all languages:
+     - EN: "Are you sure you want to exit? Press Y or Enter for Yes, or Escape to cancel."
+     - PT: "Tem certeza de que deseja sair? Pressione Y ou Enter para Sim, ou Escape para cancelar."
+     - ES: "¿Estás seguro de que deseas salir? Presiona Y o Enter para Sí, o Escape para cancelar."
+   - Restored the complete welcoming message in the Store Menu:
+     - EN: "Welcome to the store! What would you like to buy today? Select items in one of the available categories."
+     - PT: "Bem-vindo à loja! O que você gostaria de comprar hoje? Selecione itens em uma das categorias disponíveis."
+     - ES: "¡Bienvenido a la tienda! ¿Qué te gustaría comprar hoy? Selecciona artículos en una de las categorías disponibles."
+
+2. In-Game Inventory & Weapon Translation:
+   - Localized weapon and inventory status speech:
+     - "No weapon equipped." ("Nenhuma arma equipada." / "Ninguna arma equipada.")
+     - "Your inventory is empty." ("Seu inventário está vazio." / "Tu inventario está vacío.")
+     - Weapon equipped/unequipped and melee weapon status announcements.
+     - Equipment and worn shield status announcements.
+
+3. Builder, Map & Coordinate Form Localization:
+   - Localized all coordinate input boxes across the engine: Minimum X, Maximum X, Minimum Y, Maximum Y, Minimum Z, Maximum Z, minimum/maximum levels, and resurrection requirements.
+   - Localized builder forms for Item Spawner, Create New Map, Add Platform, Add Wall, Add Safe Zone, Add Text Zone, Add Staircase, Sound Ambience, and Sound Sources.
+   - Localized NPC Manager and Weapon Manager main menus and edit forms.
+
+4. 16 New Weapon Configurations (.wpm) for 70 Weapon Sound Folders:
+   - Created complete .wpm configuration files for all remaining weapon sound folders, achieving 100% coverage across all 70 directories in `sounds/Weapons`:
+     - Shotguns: `aa12_drum_shotgun.wpm`, `winchester_1300_defender_shotgun.wpm`
+     - Sniper Rifles: `ai_aw_suppressed_sniper_rifle.wpm`, `fn_scar_20_marksman_rifle.wpm`, `heavy_sniper.wpm`, `winchester_model70_hunting_rifle.wpm`
+     - Rifles: `ak12_assault_rifle.wpm`, `ak5c_assault_rifle.wpm`, `an94_abakan_assault_rifle.wpm`, `fn_scar_h_battle_rifle.wpm`, `haenel_mk556_modular_rifle.wpm`, `zastava_m70_assault_rifle.wpm`
+     - Pistols: `colt1911.wpm`, `fn_five_seven_pistol.wpm`, `heckler_koch_usp_pistol.wpm`
+     - Launchers: `grenade_launcher.wpm`
+   - Recompiled unified contents bundle (`settings/contents.dat`).
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 19:30
 -------------------------------------------------------------------------------
 

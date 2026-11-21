@@ -266,7 +266,7 @@ void quick_inventory_announce()
 	if (keys.length() == 0)
 	{
 		quick_inv_focused = false;
-		speak("Your inventory is empty.");
+		speak(tr("inventory.empty"));
 		return;
 	}
 	if (quick_inv_index < 0) quick_inv_index = int(keys.length()) - 1;
@@ -282,7 +282,7 @@ void quick_inventory_cycle(int step)
 	if (keys.length() == 0)
 	{
 		quick_inv_focused = false;
-		speak("Your inventory is empty.");
+		speak(tr("inventory.empty"));
 		return;
 	}
 
@@ -311,7 +311,7 @@ bool quick_inventory_handle_enter()
 	if (keys.length() == 0)
 	{
 		quick_inv_focused = false;
-		speak("Your inventory is empty.");
+		speak(tr("inventory.empty"));
 		return true;
 	}
 	if (quick_inv_index < 0 || quick_inv_index >= int(keys.length())) quick_inv_index = 0;

@@ -340,7 +340,7 @@ if (fire_k_active and !key_down(KEY_SPACE) and !key_pressed(KEY_SPACE) and jumpi
 	}
 	else if ((key_pressed(KEY_LCONTROL) || kb_pressed("fire")) && current_weapon_id == "")
 	{
-		speak("No weapon equipped.");
+		speak(tr("weapon.none_equipped"));
 	}
 }
 if (kb_pressed("ammo_status") or key_pressed(KEY_A))

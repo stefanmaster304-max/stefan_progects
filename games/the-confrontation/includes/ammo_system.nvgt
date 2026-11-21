@@ -468,14 +468,14 @@ void handle_reload_key()
 
 	if (wid == "" || find_weapon_data(wid) is null)
 	{
-		speak("No weapon equipped.");
+		speak(tr("weapon.none_equipped"));
 		return;
 	}
 
 	weapon_data@ w = get_weapon_data(wid);
 	if (w is null)
 	{
-		speak("No weapon equipped.");
+		speak(tr("weapon.none_equipped"));
 		return;
 	}
 
@@ -510,14 +510,14 @@ void speak_ammo_status()
 
 	if (wid == "" || find_weapon_data(wid) is null)
 	{
-		speak("No weapon equipped.");
+		speak(tr("weapon.none_equipped"));
 		return;
 	}
 
 	weapon_data@ w = get_weapon_data(wid);
 	if (w is null)
 	{
-		speak("No weapon equipped.");
+		speak(tr("weapon.none_equipped"));
 		return;
 	}
 

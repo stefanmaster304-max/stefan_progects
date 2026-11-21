@@ -43,7 +43,7 @@
   },
   "dialog": {
     "exit_title": "Sair do Jogo",
-    "exit_prompt": "Tem certeza de que deseja sair do jogo?",
+    "exit_prompt": "Tem certeza de que deseja sair? Pressione Y ou Enter para Sim, ou Escape para cancelar.",
     "yes": "Sim",
     "no": "Não"
   },
@@ -56,6 +56,17 @@
   "builder": {
     "title": "menu de construção",
     "cannot_build_encrypted": "Não é possível construir em um mapa criptografado.",
+    "new_map_title": "Criar Novo Mapa",
+    "map_name": "Nome do Mapa",
+    "platform_title": "Adicionar Plataforma",
+    "wall_title": "Adicionar Parede",
+    "safe_zone_title": "Adicionar Zona Segura",
+    "text_zone_title": "Adicionar Zona de Texto",
+    "text_square_title": "Adicionar Quadrado de Texto",
+    "staircase_title": "Adicionar Escada",
+    "zone_name_prompt": "Nome da Zona / Texto de Anúncio",
+    "sound_ambience_title": "ambiente sonoro",
+    "sound_source_title": "fonte sonora",
     "entry": {
       "create_map": "criar novo mapa - construir um novo mapa do zero",
       "map_editor": "editor de mapa - editar as linhas do mapa atual em que você está",
@@ -79,9 +90,89 @@
       "delete_map": "excluir mapa atual - excluir permanentemente o arquivo de mapa ativo"
     }
   },
+  "form": {
+    "min_x": "Mínimo X",
+    "max_x": "Máximo X",
+    "min_y": "Mínimo Y",
+    "max_y": "Máximo Y",
+    "min_z": "Mínimo Z",
+    "max_z": "Máximo Z",
+    "min_lvl": "Nível mínimo para entrar",
+    "max_lvl": "Nível máximo para entrar (0 para ilimitado)",
+    "min_res": "Ressurreição na qual este mapa é desbloqueado",
+    "max_res": "Ressurreição máxima para entrar (0 para ilimitado)"
+  },
+  "spawner": {
+    "title": "configurar gerador de itens",
+    "spawn_interval": "intervalo de surgimento (ms)",
+    "min_decay": "tempo mínimo de decomposição (ms)",
+    "max_decay": "tempo máximo de decomposição (ms)",
+    "beacon_sound": "som do sinalizador no chão",
+    "browse_beacon_sound": "&procurar som de sinalizador",
+    "beacon_interval": "intervalo do som de sinalizador (ms)",
+    "save": "&salvar gerador",
+    "select_items_title": "selecionar itens para gerar (Espaço para marcar/desmarcar)",
+    "available_items": "itens disponíveis para gerar",
+    "no_items_selected": "Nenhum item selecionado. Por favor selecione pelo menos um item usando Espaço.",
+    "none_registered": "Nenhum item registrado para gerar."
+  },
+  "npc_manager": {
+    "title": "Gerenciador de NPCs",
+    "create_title": "Criar Novo NPC",
+    "edit_title": "Editar NPC",
+    "delete_title": "Excluir NPC",
+    "internal_id": "ID Interno (nome do arquivo sem .npc)",
+    "display_name": "Nome de exibição",
+    "attack_speed": "Velocidade de ataque (ms)",
+    "min_damage": "Dano mínimo",
+    "max_damage": "Dano máximo",
+    "detection_range": "Alcance de detecção (quadrados)",
+    "attack_range": "Alcance de ataque (quadrados)",
+    "walk_speed": "Velocidade de caminhada (ms)",
+    "run_speed": "Velocidade de corrida (ms)",
+    "max_health": "Vida máxima",
+    "xp_reward": "Experiência concedida ao morrer",
+    "select_impact_sound": "Selecionar som de impacto",
+    "select_death_drop": "Selecionar Itens de Drop ao Morrer e Quantidades",
+    "drop_quantity": "Quantidade de drop para o item"
+  },
+  "weapon_manager": {
+    "title": "gerenciador de armas",
+    "create_title": "Criar Nova Arma",
+    "edit_title": "editar arma",
+    "view_title": "visualizar arma",
+    "remove_title": "remover arma",
+    "internal_id": "id da arma (nome do arquivo sem .wpm)",
+    "display_name": "nome de exibição",
+    "description": "descrição",
+    "weapon_class": "classe da arma",
+    "fire_interval": "intervalo de disparo (ms)",
+    "walk_interval": "intervalo de passos (ms)",
+    "bullet_speed": "velocidade do projétil (ms)",
+    "range": "alcance efetivo (quadrados)",
+    "min_damage": "dano mínimo",
+    "max_damage": "dano máximo",
+    "spread": "penalidade de precisão (espalhamento)",
+    "capacity": "capacidade do carregador",
+    "select_class": "selecionar classe da arma",
+    "give_weapons": "selecionar armas para dar ao inventário"
+  },
+  "weapon": {
+    "none_equipped": "Nenhuma arma equipada.",
+    "unequipped": "Arma desequipada.",
+    "equipped": "&1 equipada.",
+    "equipped_melee": "&1 equipada (Corpo a corpo)."
+  },
+  "inventory": {
+    "empty": "Seu inventário está vazio."
+  },
+  "equipment": {
+    "none_equipped": "Você não tem nenhum equipamento equipado.",
+    "already_equipped": "Você já tem um escudo equipado. Não é possível equipar outro."
+  },
   "store": {
     "title": "Menu da Loja",
-    "welcome": "Bem-vindo à loja.",
+    "welcome": "Bem-vindo à loja! O que você gostaria de comprar hoje? Selecione itens em uma das categorias disponíveis.",
     "empty_cart": "Seu carrinho está vazio.",
     "not_enough_money": "Você não tem &1 suficiente. Você precisa de &2 e possui &3.",
     "payment_returned": "A compra não pôde ser entregue; seu pagamento foi devolvido.",
@@ -127,6 +218,8 @@
     "cancel": "Cancelar",
     "back": "Voltar",
     "close": "Fechar",
+    "select": "Selecionar",
+    "next": "Avançar",
     "error": "Erro",
     "success": "Sucesso",
     "info": "Informação"

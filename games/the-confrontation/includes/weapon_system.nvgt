@@ -22,7 +22,7 @@ void unequip_weapon(bool silent = false)
 	if (is_reloading) cancel_reload();
 	current_weapon_id = "";
 	walktime = 160;
-	if (!silent) speak("Weapon unequipped.");
+	if (!silent) speak(tr("weapon.unequipped"));
 }
 
 void equip_weapon(const string&in wid, bool silent = false)
@@ -50,11 +50,11 @@ void equip_weapon(const string&in wid, bool silent = false)
 	{
 		if (w.melee)
 		{
-			speak(w.name + " equipped (Melee).");
+			speak(tr("weapon.equipped_melee", {w.name}));
 		}
 		else
 		{
-			speak(w.name + " equipped.");
+			speak(tr("weapon.equipped", {w.name}));
 		}
 	}
 }

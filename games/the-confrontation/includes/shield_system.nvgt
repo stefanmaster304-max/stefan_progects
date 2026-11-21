@@ -97,7 +97,7 @@ void equip_equipment(const string&in item_id)
 
 	if (has_shield_equipped())
 	{
-		speak("You already have a shield equipped. You can only equip another once it is broken.");
+		speak(tr("equipment.already_equipped"));
 		return;
 	}
 
@@ -123,7 +123,7 @@ void speak_equipped_equipment()
 {
 	if (!has_shield_equipped())
 	{
-		speak("You have no equipment equipped.");
+		speak(tr("equipment.none_equipped"));
 		return;
 	}
 

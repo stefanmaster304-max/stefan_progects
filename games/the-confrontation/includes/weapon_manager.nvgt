@@ -29,17 +29,17 @@ void weapon_chooser()
 	{
 		wait(5);
 		audio_form wform;
-		wform.create_window("weapon manager", false, true, false);
+		wform.create_window(tr("weapon_manager.title"), false, true, false);
 		int list = wform.create_list("select an action", 0, false, true);
-		wform.add_list_item(list, "Create New Weapon", "add");
-		wform.add_list_item(list, "Edit Existing Weapon", "edit");
-		wform.add_list_item(list, "View Weapon Properties", "view");
-		wform.add_list_item(list, "Remove Weapon", "remove");
+		wform.add_list_item(list, tr("weapon_manager.create_title"), "add");
+		wform.add_list_item(list, tr("weapon_manager.edit_title"), "edit");
+		wform.add_list_item(list, tr("weapon_manager.view_title"), "view");
+		wform.add_list_item(list, tr("weapon_manager.remove_title"), "remove");
 		wform.add_list_item(list, "Create New Weapon Subclass / Class", "create_subclass");
 		wform.add_list_item(list, "Remove Weapon Subclass", "remove_subclass");
 		wform.add_list_item(list, "Give Weapon To Player Inventory", "give");
-		int b_select = wform.create_button("&select", true);
-		int b_back = wform.create_button("&back", false, true);
+		int b_select = wform.create_button("&" + tr("ui.select", "select"), true);
+		int b_back = wform.create_button("&" + tr("ui.back"), false, true);
 		wform.focus(list);
 
 		while (true)
@@ -460,19 +460,19 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 	int in_id = -1;
 	if (is_new)
 	{
-		in_id = form.create_input_box("weapon id (filename)", w.id);
+		in_id = form.create_input_box(tr("weapon_manager.internal_id"), w.id);
 	}
-	int in_name = form.create_input_box("display name", w.name, "", 0, false, false, view_only);
-	int in_desc = form.create_input_box("description", w.description, "", 0, false, false, view_only);
-	int in_class = form.create_input_box("weapon class", w.wclass, "", 0, false, false, view_only);
+	int in_name = form.create_input_box(tr("weapon_manager.display_name"), w.name, "", 0, false, false, view_only);
+	int in_desc = form.create_input_box(tr("weapon_manager.description"), w.description, "", 0, false, false, view_only);
+	int in_class = form.create_input_box(tr("weapon_manager.weapon_class"), w.wclass, "", 0, false, false, view_only);
 	int in_melee = form.create_checkbox("melee weapon (no ammo required)", w.melee, view_only);
-	int in_firetime = form.create_input_box("fire interval (ms)", string(w.firetime), "", 0, false, false, view_only);
-	int in_walktime = form.create_input_box("walk interval while holding (ms)", string(w.walktime > 0 ? w.walktime : 200), "", 0, false, false, view_only);
-	int in_speedtime = form.create_input_box("bullet speed (ms per tile)", string(w.speedtime > 0 ? w.speedtime : 5), "", 0, false, false, view_only);
-	int in_range = form.create_input_box("effective range (tiles)", string(w.range), "", 0, false, false, view_only);
-	int in_min_dmg = form.create_input_box("minimum damage", string(w.min_damage), "", 0, false, false, view_only);
-	int in_max_dmg = form.create_input_box("maximum damage", string(w.max_damage), "", 0, false, false, view_only);
-	int in_spread = form.create_input_box("spread accuracy (0 for perfect)", string(w.spread), "", 0, false, false, view_only);
+	int in_firetime = form.create_input_box(tr("weapon_manager.fire_interval"), string(w.firetime), "", 0, false, false, view_only);
+	int in_walktime = form.create_input_box(tr("weapon_manager.walk_interval"), string(w.walktime > 0 ? w.walktime : 200), "", 0, false, false, view_only);
+	int in_speedtime = form.create_input_box(tr("weapon_manager.bullet_speed"), string(w.speedtime > 0 ? w.speedtime : 5), "", 0, false, false, view_only);
+	int in_range = form.create_input_box(tr("weapon_manager.range"), string(w.range), "", 0, false, false, view_only);
+	int in_min_dmg = form.create_input_box(tr("weapon_manager.min_damage"), string(w.min_damage), "", 0, false, false, view_only);
+	int in_max_dmg = form.create_input_box(tr("weapon_manager.max_damage"), string(w.max_damage), "", 0, false, false, view_only);
+	int in_spread = form.create_input_box(tr("weapon_manager.spread"), string(w.spread), "", 0, false, false, view_only);
 	int in_projectile = form.create_list("projectile launched (use arrow keys to navigate, the focused one is saved)", 0, false, true);
 	int projectile_pos = 0;
 	for (uint pi = 0; pi < available_projectile_keys.length(); pi++)
@@ -481,7 +481,7 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 		if (normalize_projectile_name(w.projectile) == available_projectile_keys[pi]) projectile_pos = int(pi);
 	}
 	if (!view_only) form.set_list_position(in_projectile, projectile_pos, false);
-	int in_capacity = form.create_input_box("magazine/chamber capacity", string(w.capacity), "", 0, false, false, view_only);
+	int in_capacity = form.create_input_box(tr("weapon_manager.capacity"), string(w.capacity), "", 0, false, false, view_only);
 	form.set_disallowed_chars(in_firetime, "0123456789", true, "Numbers only.");
 	form.set_disallowed_chars(in_walktime, "0123456789", true, "Numbers only.");
 	form.set_disallowed_chars(in_speedtime, "0123456789", true, "Numbers only.");

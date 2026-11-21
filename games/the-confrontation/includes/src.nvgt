@@ -735,13 +735,13 @@ void build_sound_source()
 				saved_pit = f.get_slider(pit_s);
 			}
 			f.reset();
-			f.create_window("sound source", false, true, last_cat_pos != -1);
-			mx = f.create_input_box("minimum x", saved_x);
-			mx2 = f.create_input_box("maximum x", saved_x2);
-			my = f.create_input_box("minimum y", saved_y);
-			my2 = f.create_input_box("maximum y", saved_y2);
-			mnz = f.create_input_box("minimum z", saved_z);
-			mxz = f.create_input_box("maximum z", saved_z2);
+			f.create_window(tr("builder.sound_source_title"), false, true, last_cat_pos != -1);
+			mx = f.create_input_box(tr("form.min_x"), saved_x);
+			mx2 = f.create_input_box(tr("form.max_x"), saved_x2);
+			my = f.create_input_box(tr("form.min_y"), saved_y);
+			my2 = f.create_input_box(tr("form.max_y"), saved_y2);
+			mnz = f.create_input_box(tr("form.min_z"), saved_z);
+			mxz = f.create_input_box(tr("form.max_z"), saved_z2);
 			f.set_disallowed_chars(mx, "0123456789-", true, "Numbers only.");
 			f.set_disallowed_chars(mx2, "0123456789-", true, "Numbers only.");
 			f.set_disallowed_chars(my, "0123456789-", true, "Numbers only.");
@@ -931,13 +931,13 @@ void build_sound_ambience()
 				saved_pit = f.get_slider(pit_s);
 			}
 			f.reset();
-			f.create_window("sound ambience", false, true, last_cat_pos != -1);
-			mx = f.create_input_box("minimum x", saved_x);
-			mx2 = f.create_input_box("maximum x", saved_x2);
-			my = f.create_input_box("minimum y", saved_y);
-			my2 = f.create_input_box("maximum y", saved_y2);
-			mnz = f.create_input_box("minimum z", saved_z);
-			mxz = f.create_input_box("maximum z", saved_z2);
+			f.create_window(tr("builder.sound_ambience_title"), false, true, last_cat_pos != -1);
+			mx = f.create_input_box(tr("form.min_x"), saved_x);
+			mx2 = f.create_input_box(tr("form.max_x"), saved_x2);
+			my = f.create_input_box(tr("form.min_y"), saved_y);
+			my2 = f.create_input_box(tr("form.max_y"), saved_y2);
+			mnz = f.create_input_box(tr("form.min_z"), saved_z);
+			mxz = f.create_input_box(tr("form.max_z"), saved_z2);
 			f.set_disallowed_chars(mx, disallowed_nums, false, "Numbers only.");
 			f.set_disallowed_chars(mx2, disallowed_nums, false, "Numbers only.");
 			f.set_disallowed_chars(my, disallowed_nums, false, "Numbers only.");

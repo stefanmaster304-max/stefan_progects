@@ -43,7 +43,7 @@
   },
   "dialog": {
     "exit_title": "Salir del Juego",
-    "exit_prompt": "¿Estás seguro de que deseas salir del juego?",
+    "exit_prompt": "¿Estás seguro de que deseas salir? Presiona Y o Enter para Sí, o Escape para cancelar.",
     "yes": "Sí",
     "no": "No"
   },
@@ -56,6 +56,17 @@
   "builder": {
     "title": "menú de construcción",
     "cannot_build_encrypted": "No se puede construir en un mapa cifrado.",
+    "new_map_title": "Crear Nuevo Mapa",
+    "map_name": "Nombre del Mapa",
+    "platform_title": "Añadir Plataforma",
+    "wall_title": "Añadir Pared",
+    "safe_zone_title": "Añadir Zona Segura",
+    "text_zone_title": "Añadir Zona de Texto",
+    "text_square_title": "Añadir Cuadrado de Texto",
+    "staircase_title": "Añadir Escalera",
+    "zone_name_prompt": "Nombre de la Zona / Texto de Anuncio",
+    "sound_ambience_title": "ambiente sonoro",
+    "sound_source_title": "fuente de sonido",
     "entry": {
       "create_map": "crear nuevo mapa - construir un nuevo mapa desde cero",
       "map_editor": "editor de mapa - editar las líneas del mapa actual en el que te encuentras",
@@ -79,9 +90,89 @@
       "delete_map": "eliminar mapa actual - eliminar permanentemente el archivo de mapa activo"
     }
   },
+  "form": {
+    "min_x": "Mínimo X",
+    "max_x": "Máximo X",
+    "min_y": "Mínimo Y",
+    "max_y": "Máximo Y",
+    "min_z": "Mínimo Z",
+    "max_z": "Máximo Z",
+    "min_lvl": "Nivel mínimo para entrar",
+    "max_lvl": "Nivel máximo para entrar (0 para ilimitado)",
+    "min_res": "Resurrección en la que se desbloquea este mapa",
+    "max_res": "Resurrección máxima para entrar (0 para ilimitado)"
+  },
+  "spawner": {
+    "title": "configurar generador de objetos",
+    "spawn_interval": "intervalo de aparición (ms)",
+    "min_decay": "tiempo mínimo de desaparición (ms)",
+    "max_decay": "tiempo máximo de desaparición (ms)",
+    "beacon_sound": "sonido de baliza en el suelo",
+    "browse_beacon_sound": "&buscar sonido de baliza",
+    "beacon_interval": "intervalo de la baliza (ms)",
+    "save": "&guardar generador",
+    "select_items_title": "seleccionar objetos para generar (Espacio para marcar/desmarcar)",
+    "available_items": "objetos disponibles para generar",
+    "no_items_selected": "Ningún objeto seleccionado. Por favor selecciona al menos un objeto usando Espacio.",
+    "none_registered": "No hay objetos registrados para generar."
+  },
+  "npc_manager": {
+    "title": "Administrador de NPCs",
+    "create_title": "Crear Nuevo NPC",
+    "edit_title": "Editar NPC",
+    "delete_title": "Eliminar NPC",
+    "internal_id": "ID Interno (nombre de archivo sin .npc)",
+    "display_name": "Nombre para mostrar",
+    "attack_speed": "Velocidad de ataque (ms)",
+    "min_damage": "Daño mínimo",
+    "max_damage": "Daño máximo",
+    "detection_range": "Alcance de detección (cuadros)",
+    "attack_range": "Alcance de ataque (cuadros)",
+    "walk_speed": "Velocidad de caminata (ms)",
+    "run_speed": "Velocidad de carrera (ms)",
+    "max_health": "Salud máxima",
+    "xp_reward": "Experiencia otorgada al morir",
+    "select_impact_sound": "Seleccionar sonido de impacto",
+    "select_death_drop": "Seleccionar Objetos Caídos al Morir y Cantidades",
+    "drop_quantity": "Cantidad de caída para el objeto"
+  },
+  "weapon_manager": {
+    "title": "administrador de armas",
+    "create_title": "Crear Nueva Arma",
+    "edit_title": "editar arma",
+    "view_title": "ver arma",
+    "remove_title": "eliminar arma",
+    "internal_id": "id del arma (nombre de archivo sin .wpm)",
+    "display_name": "nombre para mostrar",
+    "description": "descripción",
+    "weapon_class": "clase de arma",
+    "fire_interval": "intervalo de disparo (ms)",
+    "walk_interval": "intervalo de pasos (ms)",
+    "bullet_speed": "velocidad del proyectil (ms)",
+    "range": "alcance efectivo (cuadros)",
+    "min_damage": "daño mínimo",
+    "max_damage": "daño máximo",
+    "spread": "penalización de precisión (dispersión)",
+    "capacity": "capacidad del cargador",
+    "select_class": "seleccionar clase de arma",
+    "give_weapons": "seleccionar armas para dar al inventario"
+  },
+  "weapon": {
+    "none_equipped": "Ninguna arma equipada.",
+    "unequipped": "Arma desequipada.",
+    "equipped": "&1 equipada.",
+    "equipped_melee": "&1 equipada (Cuerpo a cuerpo)."
+  },
+  "inventory": {
+    "empty": "Tu inventario está vacío."
+  },
+  "equipment": {
+    "none_equipped": "No tienes ningún equipamiento equipado.",
+    "already_equipped": "Ya tienes un escudo equipado. No puedes equipar otro."
+  },
   "store": {
     "title": "Menú de la Tienda",
-    "welcome": "Bienvenido a la tienda.",
+    "welcome": "¡Bienvenido a la tienda! ¿Qué te gustaría comprar hoy? Selecciona artículos en una de las categorías disponibles.",
     "empty_cart": "Tu carrito está vacío.",
     "not_enough_money": "No tienes suficiente &1. Necesitas &2 y tienes &3.",
     "payment_returned": "La compra no pudo ser entregada; tu pago fue devuelto.",
@@ -127,6 +218,8 @@
     "cancel": "Cancelar",
     "back": "Volver",
     "close": "Cerrar",
+    "select": "Seleccionar",
+    "next": "Siguiente",
     "error": "Error",
     "success": "Éxito",
     "info": "Información"

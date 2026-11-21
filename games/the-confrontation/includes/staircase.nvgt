@@ -111,13 +111,13 @@ void build_staircase()
 	string[] platform_dirs = get_map_sound_folders("builder/construction/platforms/*");
 
 	audio_form f;
-	f.create_window("Add Staircase", false, true, false);
-	int i_minx = f.create_input_box("Minimum X", "" + minx);
-	int i_maxx = f.create_input_box("Maximum X", "" + maxx);
-	int i_miny = f.create_input_box("Minimum Y", "" + miny);
-	int i_maxy = f.create_input_box("Maximum Y", "" + maxy);
-	int i_minz = f.create_input_box("Minimum Z", "" + minz);
-	int i_maxz = f.create_input_box("Maximum Z", "" + maxz);
+	f.create_window(tr("builder.staircase_title"), false, true, false);
+	int i_minx = f.create_input_box(tr("form.min_x"), "" + minx);
+	int i_maxx = f.create_input_box(tr("form.max_x"), "" + maxx);
+	int i_miny = f.create_input_box(tr("form.min_y"), "" + miny);
+	int i_maxy = f.create_input_box(tr("form.max_y"), "" + maxy);
+	int i_minz = f.create_input_box(tr("form.min_z"), "" + minz);
+	int i_maxz = f.create_input_box(tr("form.max_z"), "" + maxz);
 	f.set_disallowed_chars(i_minx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxx, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_miny, "0123456789-", true, "Numbers only.");

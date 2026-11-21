@@ -182,10 +182,10 @@ void npc_edit_form(npc_data@ n, bool is_new)
 	if (n is null) return;
 
 	audio_form form;
-	form.create_window(is_new ? ("Create New NPC - " + n.npc_class) : ("Edit NPC: " + n.name), true, true, false);
+	form.create_window(is_new ? (tr("npc_manager.create_title") + " - " + n.npc_class) : (tr("npc_manager.edit_title") + ": " + n.name), true, true, false);
 
-	int in_id = form.create_input_box("Internal ID (file name, e.g. urso)", n.id, "", 0, !is_new);
-	int in_name = form.create_input_box("Display name", n.name);
+	int in_id = form.create_input_box(tr("npc_manager.internal_id"), n.id, "", 0, !is_new);
+	int in_name = form.create_input_box(tr("npc_manager.display_name"), n.name);
 
 	// The class is chosen once, in the create flow. The form only carries the
 	// class list when an existing NPC is being edited, so creating never asks
@@ -203,16 +203,16 @@ void npc_edit_form(npc_data@ n, bool is_new)
 		form.set_list_position(in_class, def_class, false);
 	}
 
-	int in_attack_speed = form.create_input_box("Attack speed, milliseconds between attacks", "" + n.attack_speed);
-	int in_min_dmg = form.create_input_box("Minimum damage", "" + n.min_damage);
-	int in_max_dmg = form.create_input_box("Maximum damage", "" + n.max_damage);
-	int in_detection = form.create_input_box("Detection range, whole tiles (vision to find the player)", "" + n.detection_range);
-	int in_attack_range = form.create_input_box("Attack range, whole tiles (distance at which it attacks)", "" + n.attack_range);
-	int in_walk = form.create_input_box("Walking speed, milliseconds per tile", "" + n.walk_speed);
-	int in_run = form.create_input_box("Running speed, milliseconds per tile (when furious)", "" + n.run_speed);
-	int in_health = form.create_input_box("Maximum health", "" + n.max_health);
+	int in_attack_speed = form.create_input_box(tr("npc_manager.attack_speed"), "" + n.attack_speed);
+	int in_min_dmg = form.create_input_box(tr("npc_manager.min_damage"), "" + n.min_damage);
+	int in_max_dmg = form.create_input_box(tr("npc_manager.max_damage"), "" + n.max_damage);
+	int in_detection = form.create_input_box(tr("npc_manager.detection_range"), "" + n.detection_range);
+	int in_attack_range = form.create_input_box(tr("npc_manager.attack_range"), "" + n.attack_range);
+	int in_walk = form.create_input_box(tr("npc_manager.walk_speed"), "" + n.walk_speed);
+	int in_run = form.create_input_box(tr("npc_manager.run_speed"), "" + n.run_speed);
+	int in_health = form.create_input_box(tr("npc_manager.max_health"), "" + n.max_health);
 
-	int in_xp = form.create_input_box("Experience given to the player when it dies", "" + n.xp);
+	int in_xp = form.create_input_box(tr("npc_manager.xp_reward"), "" + n.xp);
 
 	int cb_drop = form.create_checkbox("Drop items on the ground when it dies", n.drop_items_on_death);
 	int btn_drops = form.create_button("Select dropped items" + npc_sound_count_label(n.death_drops));
@@ -225,7 +225,7 @@ void npc_edit_form(npc_data@ n, bool is_new)
 
 	int btn_voice = form.create_button("Select voice clips" + npc_sound_count_label(n.sound_voice));
 	int btn_attack = form.create_button("Select attack sound" + npc_sound_count_label(n.sound_attack));
-	int btn_hit = form.create_button("Select impact sound" + npc_sound_count_label(n.sound_hit));
+	int btn_hit = form.create_button(tr("npc_manager.select_impact_sound") + npc_sound_count_label(n.sound_hit));
 	int btn_pain = form.create_button("Select pain sound" + npc_sound_count_label(n.sound_pain));
 	int btn_death = form.create_button("Select death sound" + npc_sound_count_label(n.sound_death));
 
@@ -241,8 +241,8 @@ void npc_edit_form(npc_data@ n, bool is_new)
 	form.set_disallowed_chars(in_voice_min, "0123456789", true, "Numbers only.");
 	form.set_disallowed_chars(in_voice_max, "0123456789", true, "Numbers only.");
 
-	int btn_save = form.create_button("&Save NPC", true);
-	int btn_cancel = form.create_button("&Cancel", false, true);
+	int btn_save = form.create_button("&" + tr("ui.save"), true);
+	int btn_cancel = form.create_button("&" + tr("ui.cancel"), false, true);
 	form.set_default_controls(btn_save, btn_cancel);
 	form.focus(is_new ? in_id : in_name);
 
@@ -499,14 +499,14 @@ void npc_manager_menu()
 	while (true)
 	{
 		audio_form mf;
-		mf.create_window("NPC Manager", false, true, false);
+		mf.create_window(tr("npc_manager.title"), false, true, false);
 		int list = mf.create_list("Select an action", 0, false, true);
-		mf.add_list_item(list, "Create New NPC", "create");
-		mf.add_list_item(list, "Edit Existing NPC", "edit");
-		mf.add_list_item(list, "Delete NPC", "delete");
+		mf.add_list_item(list, tr("npc_manager.create_title"), "create");
+		mf.add_list_item(list, tr("npc_manager.edit_title"), "edit");
+		mf.add_list_item(list, tr("npc_manager.delete_title"), "delete");
 		mf.add_list_item(list, "List All NPCs", "list");
 		int b_select = mf.create_button("&Select", true);
-		int b_back = mf.create_button("&Back", false, true);
+		int b_back = mf.create_button("&" + tr("ui.back"), false, true);
 		mf.set_default_controls(b_select, b_back);
 		mf.focus(list);
 
