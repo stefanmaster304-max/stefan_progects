@@ -5,6 +5,23 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 11:00
+-------------------------------------------------------------------------------
+
+1. Audio-Backed Weapon Updates:
+   - Sword: Configured new dedicated audio (draw, 3 fire swings, 3 impacts) with effective range of 7 steps.
+   - Axe: Updated audio set (draw, 3 swings, 3 impacts) with effective range of 5 steps.
+   - Knife: Added new dedicated melee knife configuration (draw, 3 swings, 3 impacts) with range of 3 steps.
+   - Rifle: Added new rifle weapon configuration (draw, empty, 3 fire sounds, 3 impacts, reload) with range of 20 steps.
+   - Machete: Permanently removed obsolete machete configuration and audio.
+
+2. Release Package & On-Demand Sound Delivery:
+   - Implemented automated missing sounds detection at startup: if the game directory lacks sounds, an accessible prompt offers to download and extract the sounds package (Y/Enter) or proceed without sounds (Escape).
+   - Downloads run via the native updater engine with tone progress beeps and automatic zip extraction.
+   - Standalone lightweight release bundle prepared for GitHub distribution without the ~2 GB audio payload.
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 10:20
 -------------------------------------------------------------------------------
 

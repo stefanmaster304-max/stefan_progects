@@ -249,6 +249,7 @@ void main()
 // a game, the store menu, the builders. The window must not wait for them.
 show_window("The Confront "+ver);
 wait(100);
+check_and_prompt_missing_sounds();
 if (!verify_files()) exit();
 play_logo_intro();
 if (directory_exists(DIRECTORY_TEMP+"/cheat engine") and SCRIPT_COMPILED)

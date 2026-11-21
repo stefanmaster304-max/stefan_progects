@@ -150,6 +150,7 @@ string format_byte_size(int64 bytes)
 }
 
 sound updater_audio;
+bool bypass_missing_sounds_check = false;
 
 void play_update_found_sound()
 {
@@ -178,6 +179,89 @@ void play_update_complete_sound()
 	{
 		updater_beep(1400, 120);
 	}
+}
+
+bool check_and_prompt_missing_sounds()
+{
+	if (file_exists("sounds.dw") || file_exists("settings/sounds.dw")) return true;
+	if (directory_exists("sounds"))
+	{
+		string[]@ s_files = find_files("sounds/*");
+		string[]@ s_dirs = find_directories("sounds/*");
+		int count = 0;
+		if (s_files !is null) count += s_files.length();
+		if (s_dirs !is null) count += s_dirs.length();
+		if (count > 0) return true;
+	}
+
+	speak("Game sounds were not found. Do you want to download the game sounds? Press Y or Enter for Yes, or Escape to continue without sounds.");
+
+	timer debounce_timer;
+	while (true)
+	{
+		wait(5);
+		if (key_pressed(KEY_Y) || key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || key_pressed(KEY_NUMPADENTER))
+		{
+			break;
+		}
+		if (key_pressed(KEY_ESCAPE) || key_pressed(KEY_N))
+		{
+			bypass_missing_sounds_check = true;
+			speak("Continuing without sounds.");
+			return false;
+		}
+		if (debounce_timer.elapsed >= 8000)
+		{
+			debounce_timer.restart();
+			speak("Game sounds were not found. Press Y or Enter to download sounds, or Escape to continue without sounds.");
+		}
+	}
+
+	speak("Checking for sound package download address...");
+	load_updater_settings();
+
+	string sound_url = "";
+	int64 sound_size = 0;
+
+	string manifest = "";
+	string manifest_error = "";
+	int fetch_res = fetch_manifest(manifest, manifest_error);
+	if (fetch_res == 0 && manifest != "")
+	{
+		var@ parsed_var = parse_json(manifest);
+		if (parsed_var !is null)
+		{
+			json_object@ root = parsed_var;
+			if (root !is null && root.is_object("sounds"))
+			{
+				json_object@ s = root.get_object("sounds");
+				sound_url = s["url"];
+				string sz = s["size"];
+				if (sz != "") sound_size = int64(string_to_number(sz));
+			}
+		}
+	}
+
+	if (sound_url == "")
+	{
+		sound_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v1.0.0/sounds.zip";
+	}
+
+	update_item item;
+	item.type = UPDATE_SOUNDS;
+	item.url = sound_url;
+	item.size = sound_size;
+	item.new_version = "1.0.0";
+
+	speak("Starting sound package download. Please wait...");
+	bool applied = apply_sounds_update(item);
+	if (!applied)
+	{
+		bypass_missing_sounds_check = true;
+		speak("Sound download could not be completed. Continuing without sounds.");
+		return false;
+	}
+	return true;
 }
 
 // Native NVGT tone generator, used for every updater sound.
