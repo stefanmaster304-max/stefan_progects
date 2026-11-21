@@ -30,6 +30,11 @@ New on November 21, 2026 at 10:20
    - Pruned orphaned sound directories and unreferenced weapon aliases.
    - Removed unused stub files (dlgplayer.nvgt), empty legacy stub functions (init_sound_package), dead language directories (sounds/boas-vindas), and unreferenced utilities in hip.nvgt.
 
+5. Update System Audio:
+   - Configured the new update discovery audio (updatFound.ogg) played when a new version is detected.
+   - Preserved silent background download with native NVGT tone generator percentage progress beeps without background music playback.
+   - Configured update completion audio playback (updatecomplete.ogg) upon successful package installation.
+
 
 -------------------------------------------------------------------------------
 New on November 20, 2026 at 20:25

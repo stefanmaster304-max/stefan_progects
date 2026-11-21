@@ -149,6 +149,37 @@ string format_byte_size(int64 bytes)
 	return bytes + " bytes";
 }
 
+sound updater_audio;
+
+void play_update_found_sound()
+{
+	string snd = "sounds/updater/updatFound.ogg";
+	if (!file_exists(snd)) snd = "sounds/updater/updatefound.ogg";
+	if (!file_exists(snd)) snd = get_sound_path("updater/updatFound.ogg;updater/updatefound.ogg;sounds/updater/updatFound.ogg");
+	if (snd != "" && updater_audio.load(snd))
+	{
+		updater_audio.play();
+	}
+	else
+	{
+		updater_beep(950, 120);
+	}
+}
+
+void play_update_complete_sound()
+{
+	string snd = "sounds/updater/updatecomplete.ogg";
+	if (!file_exists(snd)) snd = get_sound_path("updater/updatecomplete.ogg;sounds/updater/updatecomplete.ogg");
+	if (snd != "" && updater_audio.load(snd))
+	{
+		updater_audio.play();
+	}
+	else
+	{
+		updater_beep(1400, 120);
+	}
+}
+
 // Native NVGT tone generator, used for every updater sound.
 void updater_beep(int frequency, int duration)
 {
@@ -463,7 +494,7 @@ bool apply_game_update(update_item@ item)
 	current_game_version = item.new_version;
 	save_updater_settings();
 
-	updater_beep(1400, 120);
+	play_update_complete_sound();
 	speak("Game update is complete, the game will now restart.");
 	wait(1200);
 	run("cmd.exe", "/c apply_game_update.bat", false, true);
@@ -491,7 +522,7 @@ bool apply_content_update(update_item@ item)
 	current_content_version = item.new_version;
 	save_updater_settings();
 
-	updater_beep(1400, 120);
+	play_update_complete_sound();
 	speak("Content update is complete, the game will now restart.");
 	wait(1200);
 	restart_game_client();
@@ -544,7 +575,7 @@ bool apply_sounds_update(update_item@ item)
 	current_sounds_version = item.new_version;
 	save_updater_settings();
 
-	updater_beep(1400, 120);
+	play_update_complete_sound();
 	speak("Sound update is complete, the game will now restart.");
 	wait(1200);
 	restart_game_client();
@@ -572,7 +603,7 @@ bool apply_maps_update(update_item@ item)
 	current_maps_version = item.new_version;
 	save_updater_settings();
 
-	updater_beep(1400, 120);
+	play_update_complete_sound();
 	speak("Map update is complete, the game will now restart.");
 	wait(1200);
 	restart_game_client();
@@ -757,7 +788,7 @@ bool check_for_updates(bool interactive = true)
 	}
 
 	stop_main_menu_music();
-	updater_beep(950, 120);
+	play_update_found_sound();
 
 	string prompt_msg = "";
 	if (available_update.type == UPDATE_GAME)
