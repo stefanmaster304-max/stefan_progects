@@ -107,6 +107,12 @@ void store_browse_announce_item(int cat, int item)
 	speak(iname + ", " + s.item_prices[item] + " " + store_charge_currency(s) + ", in the cart: " + store_browse_amounts[cat][item] + ".");
 }
 
+void play_store_error()
+{
+	string err_snd = get_sound_path("player/store_error.ogg;sounds/player/store_error.ogg;misc/error.ogg;error.ogg");
+	if (err_snd != "") p.play_stationary(err_snd, false);
+}
+
 void store_browse_buy(int cat)
 {
 	store_cfg@ s = store_configs[cat];
@@ -122,14 +128,14 @@ void store_browse_buy(int cat)
 	}
 	if (total_items == 0)
 	{
+		play_store_error();
 		speak("Your cart is empty.");
 		return;
 	}
 	int balance = get_item_count(currency);
 	if (balance < total_cost)
 	{
-		string err_snd = get_sound_path("player/store_error.ogg;sounds/player/store_error.ogg;misc/error.ogg;error.ogg");
-		if (err_snd != "") p.play_stationary(err_snd, false);
+		play_store_error();
 		speak("You don't have enough " + currency + ". You need " + total_cost + " and have " + balance + ".");
 		return;
 	}
@@ -324,8 +330,8 @@ void store_main_menu()
 			}
 			else
 			{
+				play_store_error();
 				speak("You don't have enough " + currency + ".");
-				p.play_stationary(get_sound_path("misc/error.ogg"), false);
 			}
 		}
 		if (key_pressed(KEY_LEFT) || kb_pressed("menu_left"))
@@ -338,8 +344,8 @@ void store_main_menu()
 			}
 			else
 			{
+				play_store_error();
 				speak("Nothing in the cart for this item.");
-				p.play_stationary(get_sound_path("misc/error.ogg"), false);
 			}
 		}
 		if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || kb_pressed("menu_activate"))

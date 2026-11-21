@@ -216,27 +216,11 @@ timer movetimer, jumptimer, hittimer, healtimer;
 timer idle_scuff_timer;
 bool idle_scuff_primed=false;
 bool idle_scuff_played=false;
-int play_logo=1;
+int play_logo=0;
 void play_logo_intro()
 {
-	if (play_logo != 1) return;
-	string lpath = get_misc_sound("logo");
-	if (lpath == "") lpath = get_sound_path("logo.ogg");
-	if (!file_exists(lpath)) return;
-	sound logosnd;
-	if (logosnd.load(lpath))
-	{
-		logosnd.play();
-		while(logosnd.playing)
-		{
-			wait(5);
-			if (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER) or key_pressed(KEY_SPACE) or key_pressed(KEY_ESCAPE))
-			{
-				logosnd.stop();
-				break;
-			}
-		}
-	}
+	// Logo playback disabled as the game does not currently have a valid logo.
+	return;
 }
 savedata sd(prefsdir+"/settings.dat","gipwjefiqoiqewiofeiofqwehjoiwmoiwaniewnfoipwqenefowqiniosawENGRWORWIOPNHGRNIOOGINWGR");
 void main()
@@ -263,7 +247,6 @@ show_window("The Confront "+ver);
 wait(100);
 check_and_prompt_missing_sounds();
 if (!verify_files()) exit();
-play_logo_intro();
 if (directory_exists(DIRECTORY_TEMP+"/cheat engine") and SCRIPT_COMPILED)
 {
 sound cheater;
@@ -324,9 +307,10 @@ while(true)
 {
 weapon_system_loop();
 // Fire is hold-to-fire for automatic weapons and one press per shot for
-// semi-automatic ones. Only the left Control key (or the configured fire
-// key) fires; the right Control key, Spacebar and jumping never fire.
-if ((kb_down("fire") or key_down(KEY_LCONTROL)) and !key_down(KEY_SPACE) and !key_pressed(KEY_SPACE) and jumping == 0 and falling == false)
+// semi-automatic ones. Both Left Control and Right Control (or configured fire key) fire;
+// Spacebar and jumping never fire.
+bool fire_k_active = (kb_down("fire") or kb_pressed("fire") or key_down(KEY_LCONTROL) or key_down(KEY_RCONTROL) or key_pressed(KEY_LCONTROL) or key_pressed(KEY_RCONTROL));
+if (fire_k_active and !key_down(KEY_SPACE) and !key_pressed(KEY_SPACE) and jumping == 0 and falling == false)
 {
 	string active_w = current_weapon_id;
 	if (active_w == "" || find_weapon_data(active_w) is null)
@@ -343,12 +327,12 @@ if ((kb_down("fire") or key_down(KEY_LCONTROL)) and !key_down(KEY_SPACE) and !ke
 		{
 			fire_current_weapon();
 		}
-		else if (key_pressed(KEY_LCONTROL) || kb_pressed("fire"))
+		else if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) || kb_pressed("fire"))
 		{
 			speak("You cannot fire in a safe zone.");
 		}
 	}
-	else if ((key_pressed(KEY_LCONTROL) || kb_pressed("fire")) && current_weapon_id == "")
+	else if ((key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) || kb_pressed("fire")) && current_weapon_id == "")
 	{
 		speak("No weapon equipped.");
 	}

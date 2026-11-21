@@ -60,6 +60,9 @@ void equip_weapon(const string&in wid, bool silent = false)
 }
 
 
+bool fire_buffer_queued = false;
+timer fire_buffer_timer;
+
 void fire_current_weapon()
 {
 	// A safe zone on the map blocks every shot, including any caller that does
@@ -92,16 +95,46 @@ void fire_current_weapon()
 	// Ensure ammo is initialized for this weapon if not already done
 	init_weapon_ammo(w.id, w.capacity);
 
-	// Weapon firing key is the left Control key (or the configured "fire" key).
-	// The right Control key, Spacebar and jumping never fire.
-	bool trigger_pressed = (key_pressed(KEY_LCONTROL) || kb_pressed("fire")) && !key_down(KEY_SPACE) && !key_pressed(KEY_SPACE);
-	bool trigger_held = (key_down(KEY_LCONTROL) || kb_down("fire")) && !key_down(KEY_SPACE) && !key_pressed(KEY_SPACE);
+	// Weapon firing key accepts Left Control, Right Control, or the configured "fire" key.
+	// Spacebar and jumping never fire.
+	bool ctrl_pressed = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) || kb_pressed("fire");
+	bool ctrl_held = key_down(KEY_LCONTROL) || key_down(KEY_RCONTROL) || kb_down("fire");
+	bool space_active = key_down(KEY_SPACE) || key_pressed(KEY_SPACE);
 
-	if (!trigger_pressed && !trigger_held) return;
+	bool trigger_pressed = ctrl_pressed && !space_active;
+	bool trigger_held = ctrl_held && !space_active;
 
-	if (weapon_fire_timer.elapsed < weapon_next_fire_interval) return;
+	if (trigger_pressed)
+	{
+		fire_buffer_queued = true;
+		fire_buffer_timer.restart();
+	}
+	else if (fire_buffer_queued && fire_buffer_timer.elapsed > 120)
+	{
+		fire_buffer_queued = false;
+	}
+
+	int fmode = get_fire_mode(current_weapon_id);
+	bool wants_to_fire = false;
+	if (w.melee)
+	{
+		wants_to_fire = trigger_pressed || fire_buffer_queued;
+	}
+	else if (fmode == FIREMODE_AUTO)
+	{
+		wants_to_fire = trigger_held || trigger_pressed || fire_buffer_queued;
+	}
+	else
+	{
+		wants_to_fire = trigger_pressed || fire_buffer_queued;
+	}
+
+	if (!wants_to_fire) return;
+
+	if (weapon_fire_timer.elapsed < w.firetime) return;
 	weapon_fire_timer.restart();
 	weapon_next_fire_interval = w.firetime;
+	fire_buffer_queued = false;
 
 	double res_mult = 1.0;
 	for (int ri = 0; ri < resurrections && res_mult < 1000000.0; ri++) res_mult *= 2.0;
@@ -111,8 +144,6 @@ void fire_current_weapon()
 
 	if (w.melee)
 	{
-		// Melee strikes happen on a fresh trigger press.
-		if (!trigger_pressed) return;
 		if (w.sound_fire != "")
 		{
 			string fsnd = get_sound_path(w.sound_fire);
@@ -131,19 +162,6 @@ void fire_current_weapon()
 			spawn_projectile(me.x, me.y, me.z, fire_dir, w.id, "melee", dmg, w.speedtime, w.range, 0);
 		}
 		return;
-	}
-
-	int fmode = get_fire_mode(current_weapon_id);
-
-	// Automatic weapons keep firing while the trigger is held; every other
-	// weapon needs one press per shot.
-	if (fmode == FIREMODE_AUTO)
-	{
-		if (!trigger_held) return;
-	}
-	else
-	{
-		if (!trigger_pressed) return;
 	}
 
 	// Ranged weapon: ammo check. An empty weapon NEVER auto-reloads on the

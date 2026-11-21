@@ -1,0 +1,3 @@
+name:ammunition
+display_name:Ammunition
+payment_method:gold

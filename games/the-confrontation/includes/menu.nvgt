@@ -105,34 +105,45 @@ void setupmenu(bool music=false)
 	m.wrap_sound="sounds/menu sounds/wrap.ogg";
 }
 
-void play_story_sequence()
+void play_speaker_test_sequence()
 {
-	string story_path = find_sound_in_disk("sounds/misc/story.ogg");
-	if (story_path == "") story_path = get_sound_path("misc/story.ogg;story.ogg");
-	if (story_path == "" || !file_exists(story_path))
+	string spk_path = find_sound_in_disk("sounds/menu sounds/speakertest1.ogg");
+	if (spk_path == "") spk_path = find_sound_in_disk("sounds/menu sounds/speaker.ogg");
+	if (spk_path == "") spk_path = get_sound_path("menu sounds/speakertest1.ogg;menu sounds/speaker.ogg;speakertest1.ogg;speaker.ogg");
+	if (spk_path == "" || !file_exists(spk_path))
 	{
-		speak("Story audio file not found.");
+		speak("Speaker test audio file not found.");
 		return;
 	}
 
-	m.stop_music();
-	speak("Playing story. You cannot skip while the story is playing.");
+	m.fade_music(15);
+	speak("Testing speakers.");
 
-	sound story_snd;
-	if (story_snd.load(story_path))
+	sound spk_snd;
+	if (spk_snd.load(spk_path))
 	{
-		story_snd.play();
-		while (story_snd.playing)
+		spk_snd.play();
+		while (spk_snd.playing)
 		{
 			wait(10);
+			if (key_pressed(KEY_ESCAPE))
+			{
+				spk_snd.stop();
+				speak("Canceled.");
+				break;
+			}
+			if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || kb_pressed("menu_activate"))
+			{
+				spk_snd.stop();
+				speak("Skipped.");
+				break;
+			}
 		}
 	}
 	else
 	{
-		speak("Error loading story audio.");
+		speak("Error loading speaker test audio.");
 	}
-
-	speak("Story finished.");
 }
 
 // Every map the player may enter right now: it exists on disk and its level and
@@ -162,7 +173,7 @@ void mainmenu()
 		setupmenu(true);
 		m.add_item_tts("Play","play");
 		m.add_item_tts("Store","store");
-		m.add_item_tts("Listen to story","story");
+		m.add_item_tts("Test speakers","test_speakers");
 		m.add_item_tts("Check for updates","check_updates");
 		m.add_item_tts("Options","options");
 		m.add_item_tts("Exit","exit");
@@ -252,9 +263,10 @@ void mainmenu()
 			store_main_menu();
 			setupmenu(true);
 		}
-		else if (menuitem=="story")
+		else if (menuitem=="test_speakers")
 		{
-			play_story_sequence();
+			play_speaker_test_sequence();
+			setupmenu(true);
 		}
 		else if (menuitem=="check_updates")
 		{

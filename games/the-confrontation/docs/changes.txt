@@ -5,6 +5,27 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 12:15
+-------------------------------------------------------------------------------
+
+1. Weapon Firing Key & Timing Precision:
+   - Added support for both Left Control and Right Control (KEY_LCONTROL and KEY_RCONTROL) for weapon firing across all keybind checks.
+   - Resolved a critical firing loop timing bug: previously, holding down the trigger on semi-automatic weapons prematurely restarted the fire timer on every frame without firing, causing subsequent key taps to be dropped and creating the illusion of oscillating fire rates or key failures.
+   - Restructured firing logic so the fire timer is only reset upon an actual confirmed shot.
+   - Added responsive input buffering (~120ms window) for semi-automatic and melee weapons so rapid trigger taps fire immediately upon the weapon's fire interval elapsing.
+
+2. Store Cart Audio Corrections:
+   - Connected player/store_error.ogg to all store cart operations: attempting to add an item to the cart without sufficient funds (Right Arrow), attempting to remove an item when quantity is 0 (Left Arrow), or attempting checkout with an empty cart or insufficient funds now reliably plays store_error.ogg.
+
+3. Main Menu Polish:
+   - Removed the unused "Listen to story" option from the main menu.
+   - Added "Test speakers" option to the main menu: fades menu music, announces "Testing speakers", and plays the speaker test audio (sounds/menu sounds/speakertest1.ogg / speaker.ogg). Pressing Escape cancels the test and returns to the menu; pressing Enter skips the test.
+
+4. Startup Streamlining:
+   - Removed startup logo audio playback since the game currently does not have an active logo.
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 11:45
 -------------------------------------------------------------------------------
 
@@ -20,7 +41,7 @@ New on November 21, 2026 at 11:45
 
 3. Store Audio Polish:
    - Added store greeting sound (player/st.ogg) alongside the welcome message upon entering store menus.
-   - Added successful purchase audio (player/buy.ogg) and insufficient funds audio (player/store_error.ogg).
+   - Added successful purchase audio (player/buy.ogg).
 
 4. NPC Death & Drop Mechanics:
    - NPC active voice clips are cleanly terminated immediately upon death so they do not overlap with the death sound.
@@ -61,13 +82,13 @@ New on November 21, 2026 at 10:20
    - Audited the sound library and pruned weapons that lacked reload sounds or complete sound profiles (colt1911, magnum revouver, tauros revouver, tar 21 assalt rifle, beneli m4, ithica_m37, ks123), ensuring every remaining firearm is backed by verified audio.
 
 3. Weapon Range and Damage Rebalancing:
-   - Melee: Short ranges (4 to 7 steps) and balanced damage (knife: 180-280, sword: 260-400, axe: 350-500, etc.).
+   - Melee: Short ranges (3 to 7 steps) and balanced damage (knife: 180-280, sword: 260-400, axe: 350-500).
    - Pistols: Ranges between 9 and 15 steps; damages scaled between 480 and 790.
    - Revolvers: Ranges between 14 and 20 steps; damages scaled between 400 and 680.
    - Shotguns: Ranges between 20 and 32 steps; damages scaled between 550 and 1550.
    - Machine Guns & Submachine Guns: Ranges between 22 and 45 steps; damage rebalanced to high-tier 1000 to 4500, eliminating underpowered 50-150 damage values.
-   - Rifles: Ranges between 35 and 50 steps; damages scaled between 610 and 1500.
-   - Sniper Rifles: Long ranges between 52 and 65 steps; damages scaled between 900 and 3500.
+   - Rifles: Ranges between 20 and 50 steps; damages scaled between 610 and 1500.
+   - Sniper Rifles: Long ranges between 50 and 65 steps; damages scaled between 900 and 3500.
    - Heavy Artillery & Launchers: Cannon range scaled to 70 steps (5000-6000 damage), crossbow to 30 steps, flamethrower to 10 steps.
 
 4. Source Code and Sound Tree Cleanup:
@@ -78,41 +99,6 @@ New on November 21, 2026 at 10:20
    - Configured the new update discovery audio (updatFound.ogg) played when a new version is detected.
    - Preserved silent background download with native NVGT tone generator percentage progress beeps without background music playback.
    - Configured update completion audio playback (updatecomplete.ogg) upon successful package installation.
-
-
--------------------------------------------------------------------------------
-New on November 20, 2026 at 20:25
--------------------------------------------------------------------------------
-
-1. Long-Distance 4-Cardinal Weapon Hits:
-   - Fixed long-range weapon hit detection so firearms (rifles, sniper rifles, pistols, revolvers, shotguns) hit aligned targets at any distance within weapon range in all 4 cardinal directions (straight ahead, straight behind, straight left, and straight right).
-   - Removed sampled raycast bottlenecks that prematurely dropped long-range shots. Solid walls remain the only obstacles capable of blocking direct fire.
-   - Expanded effective weapon ranges: rifles now reach 80 to 150 tiles, pistols 35 to 50 tiles, revolvers 45 to 60 tiles, and shotguns 25 to 35 tiles.
-   - Expanded NPC positional sound distance to 250 tiles so 3D audio hit impacts, pain sounds, and death announcements are clearly heard across the map.
-
-
--------------------------------------------------------------------------------
-New on November 20, 2026 at 19:45
--------------------------------------------------------------------------------
-
-1. Weapon Targeting Across 4 Cardinal Directions:
-   - Fixed weapon hit detection so targets aligned in all four cardinal lines (straight ahead, straight behind, straight left, and straight right) are valid and hit within range and line of sight.
-   - Weapons automatically target the closest valid enemy among the 4 directions rather than ignoring targets to the left, right, or rear.
-   - Non-cardinal (diagonal) targets remain strictly invalid and unhit.
-
-2. Weapon Damage Rebalancing:
-   - Pistols: Rebalanced damages with rich variations across all pistols, ranging between 480 and 790 damage.
-   - Revolvers: Rebalanced damages ranging between 400 and 700 damage.
-   - Rifles: Rebalanced damages ranging between 610 and 1500 damage.
-   - Shotguns: Rebalanced damages ranging between 550 and 1550 damage.
-   - Sniper Rifles: Rebalanced damages ranging between 900 and 3500 damage.
-
-3. Player Maximum Health:
-   - Raised player base maximum health from 1000 to 5000 to harmonize combat pacing and weapon power.
-
-4. Language Consistency:
-   - Standardized all in-game text and speech to English with zero language mixing.
-   - Cleaned store welcome speech and NPC spawner dialogs into concise English.
 
 
 -------------------------------------------------------------------------------
@@ -132,7 +118,8 @@ New on November 20, 2026 at 19:15
    - Initial map entry delay: NPCs wait for the full configured millisecond timer before spawning randomly.
    - "Only respawn after death" configuration: dead NPCs only respawn if enabled, waiting the exact configured cooldown.
 
-3. Player Death Announcement:
+3. Player Health and Death Announcement:
+   - Standardized player maximum base health to 5000.
    - Removed spatial coordinates and map names from death broadcasts, announcing strictly who killed the player.
 
 
@@ -149,7 +136,7 @@ New on November 18, 2026 at 09:30
    - Constant 0 dB footstep mixing with natural pitch variations.
 
 3. Weapons, Ammunition, and Store:
-   - Curated firearm catalog of 69 verified weapons with complete audio.
+   - Curated firearm catalog of 60 verified weapons with complete audio.
    - Main menu store organized into distinct category shelves charging native currencies (gold, golden crystal, diamond, silver).
 
 
