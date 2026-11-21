@@ -69,31 +69,6 @@ void init_weapon_ammo(string wname, int cap)
 		loaded_ammo.set(wname, cap);
 }
 
-string get_fallback_reload_sound(weapon_data@ w)
-{
-	if (w is null) return "";
-	if (w.wclass == "shotguns")
-	{
-		string s = get_sound_path("weapons/remington_870_pump_action_shotgun/remington_870_pump_action_shotgun_reload.ogg");
-		if (s != "") return s;
-	}
-	else if (w.wclass == "revolvers")
-	{
-		string s = get_sound_path("weapons/ruger_redhawk/ruger_redhawkreload.ogg");
-		if (s != "") return s;
-	}
-	else if (w.wclass == "pistols")
-	{
-		string s = get_sound_path("weapons/beretta92fs_pistol/beretta_m9reload.ogg");
-		if (s != "") return s;
-	}
-	else if (w.wclass == "rifles" || w.wclass == "machine_guns")
-	{
-		string s = get_sound_path("weapons/m4/m4reload.ogg");
-		if (s != "") return s;
-	}
-	return get_sound_path("weapons/m4/m4reload.ogg;weapons/beretta92fs_pistol/beretta_m9reload.ogg");
-}
 
 string find_reserve_ammo_item(weapon_data@ w)
 {
@@ -379,7 +354,6 @@ void start_reload(weapon_data@ w)
 
 	string rsnd = "";
 	if (w.sound_reload != "") rsnd = get_sound_path(w.sound_reload);
-	if (rsnd == "") rsnd = get_fallback_reload_sound(w);
 	if (rsnd != "")
 	{
 		// Persistent slot: stays dedicated to this reload until it finishes,

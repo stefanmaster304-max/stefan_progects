@@ -1,11 +1,11 @@
-name=Desert Eagle
+﻿name=Desert Eagle
 description=Desert Eagle (pistols)
 class=pistols
 melee=false
 firetime=280
 walktime=160
 speedtime=5
-range=45
+range=14
 min_damage=660
 max_damage=790
 spread=0

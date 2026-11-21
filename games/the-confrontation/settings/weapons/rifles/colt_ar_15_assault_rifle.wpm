@@ -1,11 +1,11 @@
-name=Colt Ar 15 Assault Rifle
+﻿name=Colt Ar 15 Assault Rifle
 description=Colt Ar 15 Assault Rifle (rifles)
 class=rifles
 melee=false
 firetime=440
 walktime=193
 speedtime=5
-range=130
+range=47
 min_damage=760
 max_damage=1050
 spread=0

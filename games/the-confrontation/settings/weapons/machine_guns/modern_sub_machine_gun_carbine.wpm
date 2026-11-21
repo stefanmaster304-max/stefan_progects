@@ -1,13 +1,13 @@
-name=Modern Sub Machine Gun Carbine
+﻿name=Modern Sub Machine Gun Carbine
 description=Modern Sub Machine Gun Carbine (machine guns)
 class=machine_guns
 melee=false
 firetime=130
 walktime=189
 speedtime=5
-range=32
-min_damage=135
-max_damage=165
+range=35
+min_damage=1100
+max_damage=1600
 spread=0
 ammo_type=5.56x45mm NATO
 feed_device=magazine

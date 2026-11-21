@@ -1,11 +1,11 @@
-name=Fn F2000
+﻿name=Fn F2000
 description=Fn F2000 (rifles)
 class=rifles
 melee=false
 firetime=480
 walktime=197
 speedtime=5
-range=140
+range=49
 min_damage=900
 max_damage=1280
 spread=0

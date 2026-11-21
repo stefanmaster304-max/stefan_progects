@@ -1,11 +1,11 @@
-name=Fn Fal Battle Rifle
+﻿name=Fn Fal Battle Rifle
 description=Fn Fal Battle Rifle (rifles)
 class=rifles
 melee=false
 firetime=400
 walktime=199
 speedtime=5
-range=100
+range=40
 min_damage=1050
 max_damage=1500
 spread=0

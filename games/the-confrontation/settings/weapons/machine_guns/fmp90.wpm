@@ -1,4 +1,4 @@
-name=Fmp90
+﻿name=Fmp90
 description=Fmp90 (machine guns)
 class=machine_guns
 melee=false
@@ -6,8 +6,8 @@ firetime=120
 walktime=181
 speedtime=5
 range=32
-min_damage=135
-max_damage=165
+min_damage=1000
+max_damage=1500
 spread=0
 ammo_type=5.7x28mm
 feed_device=magazine

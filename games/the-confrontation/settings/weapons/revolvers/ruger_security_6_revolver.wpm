@@ -1,11 +1,11 @@
-name=Ruger Security 6 Revolver
+﻿name=Ruger Security 6 Revolver
 description=Ruger Security 6 Revolver (revolvers)
 class=revolvers
 melee=false
 firetime=560
 walktime=174
 speedtime=5
-range=60
+range=14
 min_damage=400
 max_damage=520
 spread=0

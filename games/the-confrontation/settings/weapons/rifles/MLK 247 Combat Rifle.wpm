@@ -1,11 +1,11 @@
-name=Mlk 247 Combat Rifle
+﻿name=Mlk 247 Combat Rifle
 description=Mlk 247 Combat Rifle (rifles)
 class=rifles
 melee=false
 firetime=420
 walktime=185
 speedtime=5
-range=100
+range=41
 min_damage=980
 max_damage=1420
 spread=0

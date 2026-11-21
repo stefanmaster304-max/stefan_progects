@@ -1,13 +1,13 @@
-name=Fn Pistol
+﻿name=Fn Pistol
 description=Fn Pistol (pistols)
 class=pistols
 melee=false
 firetime=240
 walktime=160
 speedtime=5
-range=45
+range=12
 min_damage=540
-max_damage=690
+max_damage=680
 spread=0
 ammo_type=5.7x28mm
 feed_device=magazine

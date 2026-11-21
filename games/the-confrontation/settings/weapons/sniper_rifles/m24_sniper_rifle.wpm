@@ -1,11 +1,11 @@
-name=M24 Sniper Rifle
+﻿name=M24 Sniper Rifle
 description=M24 Sniper Rifle (sniper rifles)
 class=sniper_rifles
 melee=false
 firetime=1600
 walktime=222
 speedtime=5
-range=300
+range=60
 min_damage=1600
 max_damage=2600
 spread=0

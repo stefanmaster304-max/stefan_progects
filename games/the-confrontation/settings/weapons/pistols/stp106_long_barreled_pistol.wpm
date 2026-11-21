@@ -1,11 +1,11 @@
-name=Stp106 Long Barreled Pistol
+﻿name=Stp106 Long Barreled Pistol
 description=Stp106 Long Barreled Pistol (pistols)
 class=pistols
 melee=false
 firetime=290
 walktime=166
 speedtime=5
-range=50
+range=15
 min_damage=630
 max_damage=770
 spread=0

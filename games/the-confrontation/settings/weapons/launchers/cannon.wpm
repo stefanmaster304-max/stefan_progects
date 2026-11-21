@@ -1,11 +1,11 @@
-name=Cannon
+﻿name=Cannon
 description=Cannon (launchers)
 class=launchers
 melee=false
 firetime=3200
 walktime=260
 speedtime=5
-range=40
+range=70
 min_damage=5000
 max_damage=6000
 spread=0

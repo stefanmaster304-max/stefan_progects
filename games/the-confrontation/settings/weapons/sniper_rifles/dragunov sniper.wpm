@@ -1,11 +1,11 @@
-name=Dragunov Sniper
+﻿name=Dragunov Sniper
 description=Dragunov Sniper (sniper rifles)
 class=sniper_rifles
 melee=false
 firetime=1100
 walktime=219
 speedtime=5
-range=500
+range=55
 min_damage=1100
 max_damage=1850
 spread=0

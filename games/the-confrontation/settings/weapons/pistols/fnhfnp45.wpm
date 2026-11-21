@@ -1,13 +1,13 @@
-name=Fnhfnp45
+﻿name=Fnhfnp45
 description=Fnhfnp45 (pistols)
 class=pistols
 melee=false
 firetime=190
 walktime=160
 speedtime=5
-range=38
-min_damage=610
-max_damage=750
+range=11
+min_damage=590
+max_damage=730
 spread=0
 ammo_type=.45 ACP
 feed_device=magazine

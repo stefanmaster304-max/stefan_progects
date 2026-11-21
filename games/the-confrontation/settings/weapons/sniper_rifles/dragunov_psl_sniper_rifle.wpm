@@ -1,11 +1,11 @@
-name=Dragunov Psl Sniper Rifle
+﻿name=Dragunov Psl Sniper Rifle
 description=Dragunov Psl Sniper Rifle (sniper rifles)
 class=sniper_rifles
 melee=false
 firetime=1300
 walktime=221
 speedtime=5
-range=500
+range=54
 min_damage=950
 max_damage=1600
 spread=0

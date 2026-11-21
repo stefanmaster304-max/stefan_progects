@@ -1,13 +1,13 @@
-name=Flameburst Mini Flame Thrower
+﻿name=Flameburst Mini Flame Thrower
 description=Flameburst Mini Flame Thrower (launchers)
 class=launchers
 melee=false
 firetime=102
 walktime=235
 speedtime=5
-range=7
-min_damage=54
-max_damage=66
+range=10
+min_damage=1200
+max_damage=1800
 spread=0
 ammo_type=Incendiary Gel Canister
 feed_device=canister

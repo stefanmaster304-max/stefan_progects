@@ -1,11 +1,11 @@
-name=Mkek Jng90
+﻿name=Mkek Jng90
 description=Mkek Jng90 (sniper rifles)
 class=sniper_rifles
 melee=false
 firetime=1800
 walktime=223
 speedtime=5
-range=300
+range=62
 min_damage=1850
 max_damage=2950
 spread=0

@@ -1,13 +1,13 @@
-name=Axe
+﻿name=Axe
 description=Axe (melee)
 class=melee
 melee=true
 firetime=225
 walktime=165
 speedtime=5
-range=3
-min_damage=54
-max_damage=66
+range=7
+min_damage=350
+max_damage=500
 spread=0
 ammo_type=None
 feed_device=none

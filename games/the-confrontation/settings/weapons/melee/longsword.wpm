@@ -1,13 +1,13 @@
-name=Longsword
+﻿name=Longsword
 description=Longsword (melee)
 class=melee
 melee=true
 firetime=245
 walktime=162
 speedtime=5
-range=5
-min_damage=90
-max_damage=110
+range=6
+min_damage=280
+max_damage=420
 spread=0
 ammo_type=None
 feed_device=none

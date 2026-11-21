@@ -1,13 +1,13 @@
-name=Mkek Yavuz16
+﻿name=Mkek Yavuz16
 description=Mkek Yavuz16 (pistols)
 class=pistols
 melee=false
 firetime=260
 walktime=160
 speedtime=5
-range=40
+range=11
 min_damage=520
-max_damage=670
+max_damage=660
 spread=0
 ammo_type=9x19mm Parabellum
 feed_device=magazine

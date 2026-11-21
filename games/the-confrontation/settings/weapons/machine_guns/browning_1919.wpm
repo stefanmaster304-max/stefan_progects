@@ -1,13 +1,13 @@
-name=Browning 1919
+﻿name=Browning 1919
 description=Browning 1919 (machine guns)
 class=machine_guns
 melee=false
 firetime=135
 walktime=177
 speedtime=5
-range=35
+range=41
 min_damage=1800
-max_damage=2200
+max_damage=2800
 spread=0
 ammo_type=.30-06 Springfield
 feed_device=belt

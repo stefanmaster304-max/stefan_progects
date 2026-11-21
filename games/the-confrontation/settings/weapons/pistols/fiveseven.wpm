@@ -1,13 +1,13 @@
-name=Fiveseven
+﻿name=Fiveseven
 description=Fiveseven (pistols)
 class=pistols
 melee=false
 firetime=210
 walktime=162
 speedtime=5
-range=35
-min_damage=530
-max_damage=680
+range=10
+min_damage=510
+max_damage=650
 spread=0
 ammo_type=5.7x28mm
 feed_device=magazine

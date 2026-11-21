@@ -1,13 +1,13 @@
-name=Crossbow
+﻿name=Crossbow
 description=Crossbow (launchers)
 class=launchers
 melee=false
 firetime=310
 walktime=220
 speedtime=5
-range=40
-min_damage=22
-max_damage=28
+range=30
+min_damage=900
+max_damage=1400
 spread=0
 ammo_type=Crossbow Bolts Rack
 feed_device=quiver

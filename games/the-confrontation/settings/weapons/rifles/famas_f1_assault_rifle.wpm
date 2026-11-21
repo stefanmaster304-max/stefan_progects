@@ -1,11 +1,11 @@
-name=Famas F1 Assault Rifle
+﻿name=Famas F1 Assault Rifle
 description=Famas F1 Assault Rifle (rifles)
 class=rifles
 melee=false
 firetime=460
 walktime=195
 speedtime=5
-range=130
+range=44
 min_damage=680
 max_damage=920
 spread=0

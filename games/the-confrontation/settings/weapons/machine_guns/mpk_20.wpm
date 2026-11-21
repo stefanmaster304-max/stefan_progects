@@ -1,13 +1,13 @@
-name=Mpk 20
+﻿name=Mpk 20
 description=Mpk 20 (machine guns)
 class=machine_guns
 melee=false
 firetime=145
 walktime=195
 speedtime=5
-range=35
+range=38
 min_damage=1800
-max_damage=2200
+max_damage=2600
 spread=0
 ammo_type=9x19mm Parabellum
 feed_device=magazine

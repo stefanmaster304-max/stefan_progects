@@ -1,11 +1,11 @@
-name=Gsg5
+﻿name=Gsg5
 description=Gsg5 (rifles)
 class=rifles
 melee=false
 firetime=380
 walktime=203
 speedtime=5
-range=80
+range=35
 min_damage=610
 max_damage=780
 spread=0

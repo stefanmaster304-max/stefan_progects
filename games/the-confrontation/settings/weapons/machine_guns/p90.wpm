@@ -1,13 +1,13 @@
-name=P90
+﻿name=P90
 description=P90 (machine guns)
 class=machine_guns
 melee=false
 firetime=115
 walktime=197
 speedtime=5
-range=32
-min_damage=135
-max_damage=165
+range=33
+min_damage=1100
+max_damage=1550
 spread=0
 ammo_type=5.7x28mm
 feed_device=magazine

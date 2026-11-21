@@ -1,13 +1,13 @@
-name=Fnhfnp40
+﻿name=Fnhfnp40
 description=Fnhfnp40 (pistols)
 class=pistols
 melee=false
 firetime=180
 walktime=166
 speedtime=5
-range=38
-min_damage=580
-max_damage=730
+range=11
+min_damage=560
+max_damage=700
 spread=0
 ammo_type=.40 S&W
 feed_device=magazine

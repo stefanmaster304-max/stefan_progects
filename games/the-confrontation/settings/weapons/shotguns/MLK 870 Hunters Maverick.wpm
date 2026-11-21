@@ -1,11 +1,11 @@
-name=Mlk 870 Hunters Maverick
+﻿name=Mlk 870 Hunters Maverick
 description=Mlk 870 Hunters Maverick (shotguns)
 class=shotguns
 melee=false
 firetime=850
 walktime=190
 speedtime=5
-range=30
+range=28
 min_damage=700
 max_damage=1100
 spread=0

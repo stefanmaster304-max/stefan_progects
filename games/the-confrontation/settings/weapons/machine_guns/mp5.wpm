@@ -1,13 +1,13 @@
-name=Mp5
+﻿name=Mp5
 description=Mp5 (machine guns)
 class=machine_guns
 melee=false
 firetime=105
 walktime=191
 speedtime=5
-range=25
-min_damage=126
-max_damage=154
+range=27
+min_damage=1000
+max_damage=1400
 spread=0
 ammo_type=9x19mm Parabellum
 feed_device=magazine

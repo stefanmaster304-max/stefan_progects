@@ -1,11 +1,11 @@
-name=Mkek Mpt76k
+﻿name=Mkek Mpt76k
 description=Mkek Mpt76k (rifles)
 class=rifles
 melee=false
 firetime=500
 walktime=207
 speedtime=5
-range=140
+range=50
 min_damage=820
 max_damage=1150
 spread=0

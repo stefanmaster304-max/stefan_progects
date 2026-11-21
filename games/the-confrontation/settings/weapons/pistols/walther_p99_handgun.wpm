@@ -1,13 +1,13 @@
-name=Walther P99 Handgun
+﻿name=Walther P99 Handgun
 description=Walther P99 Handgun (pistols)
 class=pistols
 melee=false
 firetime=220
 walktime=160
 speedtime=5
-range=35
+range=10
 min_damage=560
-max_damage=710
+max_damage=700
 spread=0
 ammo_type=9x19mm Parabellum
 feed_device=magazine

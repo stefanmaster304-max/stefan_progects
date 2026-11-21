@@ -1,11 +1,11 @@
-name=Mpt76
+﻿name=Mpt76
 description=Mpt76 (rifles)
 class=rifles
 melee=false
 firetime=360
 walktime=209
 speedtime=5
-range=120
+range=44
 min_damage=860
 max_damage=1220
 spread=0

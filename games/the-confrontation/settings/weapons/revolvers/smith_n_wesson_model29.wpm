@@ -1,11 +1,11 @@
-name=Smith N Wesson Model29
+﻿name=Smith N Wesson Model29
 description=Smith N Wesson Model29 (revolvers)
 class=revolvers
 melee=false
 firetime=700
 walktime=178
 speedtime=5
-range=55
+range=20
 min_damage=530
 max_damage=670
 spread=0

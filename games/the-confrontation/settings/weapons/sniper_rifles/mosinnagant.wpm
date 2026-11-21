@@ -1,11 +1,11 @@
-name=Mosinnagant
+﻿name=Mosinnagant
 description=Mosinnagant (sniper rifles)
 class=sniper_rifles
 melee=false
 firetime=1400
 walktime=224
 speedtime=5
-range=500
+range=57
 min_damage=1350
 max_damage=2200
 spread=0

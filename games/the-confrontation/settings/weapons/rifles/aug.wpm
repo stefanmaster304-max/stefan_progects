@@ -1,11 +1,11 @@
-name=Aug
+﻿name=Aug
 description=Aug (rifles)
 class=rifles
 melee=false
 firetime=340
 walktime=189
 speedtime=5
-range=120
+range=42
 min_damage=720
 max_damage=980
 spread=0

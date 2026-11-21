@@ -1,13 +1,13 @@
-name=Crt17 Combat Knife
+﻿name=Crt17 Combat Knife
 description=Crt17 Combat Knife (melee)
 class=melee
 melee=true
 firetime=205
 walktime=160
 speedtime=5
-range=3
-min_damage=108
-max_damage=132
+range=4
+min_damage=180
+max_damage=280
 spread=0
 ammo_type=None
 feed_device=none

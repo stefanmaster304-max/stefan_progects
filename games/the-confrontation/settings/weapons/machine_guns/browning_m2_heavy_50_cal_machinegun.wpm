@@ -1,13 +1,13 @@
-name=Browning M2 Heavy 50 Cal Machinegun
+﻿name=Browning M2 Heavy 50 Cal Machinegun
 description=Browning M2 Heavy 50 Cal Machinegun (machine guns)
 class=machine_guns
 melee=false
 firetime=140
 walktime=179
 speedtime=5
-range=500
-min_damage=18000
-max_damage=22000
+range=45
+min_damage=3500
+max_damage=4500
 spread=0
 ammo_type=.50 BMG (12.7x99mm)
 feed_device=belt

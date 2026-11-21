@@ -1,11 +1,11 @@
-name=Barret M150
+﻿name=Barret M150
 description=Barret M150 (sniper rifles)
 class=sniper_rifles
 melee=false
 firetime=2500
 walktime=217
 speedtime=5
-range=500
+range=65
 min_damage=2200
 max_damage=3500
 spread=0

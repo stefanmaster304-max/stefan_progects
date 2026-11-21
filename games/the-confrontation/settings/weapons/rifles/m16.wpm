@@ -1,11 +1,11 @@
-name=M16
+﻿name=M16
 description=M16 (rifles)
 class=rifles
 melee=false
 firetime=540
 walktime=205
 speedtime=5
-range=110
+range=46
 min_damage=740
 max_damage=1020
 spread=0

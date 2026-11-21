@@ -1,13 +1,13 @@
-name=Mp7
+﻿name=Mp7
 description=Mp7 (machine guns)
 class=machine_guns
 melee=false
 firetime=110
 walktime=193
 speedtime=5
-range=25
-min_damage=126
-max_damage=154
+range=29
+min_damage=1050
+max_damage=1500
 spread=0
 ammo_type=4.6x30mm
 feed_device=magazine

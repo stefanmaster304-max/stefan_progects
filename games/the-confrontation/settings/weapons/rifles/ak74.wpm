@@ -1,11 +1,11 @@
-name=Ak74
+﻿name=Ak74
 description=Ak74 (rifles)
 class=rifles
 melee=false
 firetime=320
 walktime=187
 speedtime=5
-range=120
+range=45
 min_damage=780
 max_damage=1100
 spread=0

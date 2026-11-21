@@ -1,11 +1,11 @@
-name=Remington 870 Pump Action Shotgun
+﻿name=Remington 870 Pump Action Shotgun
 description=Remington 870 Pump Action Shotgun (shotguns)
 class=shotguns
 melee=false
 firetime=760
 walktime=214
 speedtime=5
-range=28
+range=26
 min_damage=780
 max_damage=1250
 spread=0

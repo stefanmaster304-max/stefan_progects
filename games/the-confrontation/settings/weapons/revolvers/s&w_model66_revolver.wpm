@@ -1,11 +1,11 @@
-name=S&w Model66 Revolver
+﻿name=S&w Model66 Revolver
 description=S&w Model66 Revolver (revolvers)
 class=revolvers
 melee=false
 firetime=590
 walktime=176
 speedtime=5
-range=50
+range=16
 min_damage=430
 max_damage=560
 spread=0

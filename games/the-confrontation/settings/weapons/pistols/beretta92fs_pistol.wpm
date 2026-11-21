@@ -1,13 +1,13 @@
-name=Beretta92fs Pistol
+﻿name=Beretta92fs Pistol
 description=Beretta92fs Pistol (pistols)
 class=pistols
 melee=false
 firetime=230
 walktime=164
 speedtime=5
-range=48
-min_damage=510
-max_damage=660
+range=12
+min_damage=480
+max_damage=620
 spread=2
 ammo_type=9x19mm Parabellum
 feed_device=magazine

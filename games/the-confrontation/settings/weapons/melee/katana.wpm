@@ -1,13 +1,13 @@
-name=Katana
+﻿name=Katana
 description=Katana (melee)
 class=melee
 melee=true
 firetime=235
 walktime=160
 speedtime=5
-range=5
-min_damage=90
-max_damage=110
+range=6
+min_damage=300
+max_damage=450
 spread=0
 ammo_type=None
 feed_device=none

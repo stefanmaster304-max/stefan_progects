@@ -1,11 +1,11 @@
-name=Glock9mm
+﻿name=Glock9mm
 description=Glock9mm (pistols)
 class=pistols
 melee=false
 firetime=200
 walktime=162
 speedtime=5
-range=42
+range=12
 min_damage=490
 max_damage=630
 spread=0

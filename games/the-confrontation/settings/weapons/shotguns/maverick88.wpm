@@ -1,11 +1,11 @@
-name=Maverick88
+﻿name=Maverick88
 description=Maverick88 (shotguns)
 class=shotguns
 melee=false
 firetime=800
 walktime=210
 speedtime=5
-range=30
+range=22
 min_damage=550
 max_damage=850
 spread=0

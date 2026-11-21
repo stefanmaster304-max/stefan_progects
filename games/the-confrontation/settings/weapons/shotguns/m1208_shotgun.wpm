@@ -1,11 +1,11 @@
-name=M1208 Shotgun
+﻿name=M1208 Shotgun
 description=M1208 Shotgun (shotguns)
 class=shotguns
 melee=false
 firetime=950
 walktime=206
 speedtime=5
-range=28
+range=27
 min_damage=940
 max_damage=1450
 spread=0

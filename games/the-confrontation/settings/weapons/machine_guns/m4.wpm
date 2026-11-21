@@ -1,4 +1,4 @@
-name=M4
+﻿name=M4
 description=M4 (machine guns)
 class=machine_guns
 melee=false
@@ -6,8 +6,8 @@ firetime=150
 walktime=185
 speedtime=5
 range=40
-min_damage=540
-max_damage=660
+min_damage=1200
+max_damage=1800
 spread=0
 ammo_type=5.56x45mm NATO
 feed_device=magazine

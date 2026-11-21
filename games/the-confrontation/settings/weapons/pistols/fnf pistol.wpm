@@ -1,11 +1,11 @@
-name=Fnf Pistol
+﻿name=Fnf Pistol
 description=Fnf Pistol (pistols)
 class=pistols
 melee=false
 firetime=250
 walktime=164
 speedtime=5
-range=45
+range=13
 min_damage=550
 max_damage=700
 spread=0

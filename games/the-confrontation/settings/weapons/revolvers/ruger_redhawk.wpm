@@ -1,11 +1,11 @@
-name=Ruger Redhawk
+﻿name=Ruger Redhawk
 description=Ruger Redhawk (revolvers)
 class=revolvers
 melee=false
 firetime=620
 walktime=172
 speedtime=5
-range=45
+range=18
 min_damage=500
 max_damage=640
 spread=0

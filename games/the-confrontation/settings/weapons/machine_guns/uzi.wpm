@@ -1,13 +1,13 @@
-name=Uzi
+﻿name=Uzi
 description=Uzi (machine guns)
 class=machine_guns
 melee=false
 firetime=100
 walktime=199
 speedtime=5
-range=20
-min_damage=27
-max_damage=33
+range=22
+min_damage=1000
+max_damage=1350
 spread=0
 ammo_type=9x19mm Parabellum
 feed_device=magazine
