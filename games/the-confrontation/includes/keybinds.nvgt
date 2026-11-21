@@ -57,9 +57,12 @@ bool kb_pressed(string action)
 {
     int k = kb_get(action);
     if (k == 0) return false;
-    // Fire accepts both Left Control and Right Control
-    if (action == "fire" and (k == KEY_LCONTROL or k == KEY_RCONTROL))
-        return key_pressed(KEY_LCONTROL) or key_pressed(KEY_RCONTROL);
+    // Fire is Left Control only; Right Control never fires.
+    if (action == "fire")
+    {
+        if (key_down(KEY_RCONTROL) or key_pressed(KEY_RCONTROL)) return false;
+        if (k == KEY_LCONTROL or k == KEY_RCONTROL) return key_pressed(KEY_LCONTROL);
+    }
     // When the shift modifier is bound to a shift key, both shift keys work.
     if (action == "mod_shift" and (k == KEY_LSHIFT or k == KEY_RSHIFT))
         return key_pressed(KEY_LSHIFT) or key_pressed(KEY_RSHIFT);
@@ -70,9 +73,12 @@ bool kb_down(string action)
 {
     int k = kb_get(action);
     if (k == 0) return false;
-    // Fire accepts both Left Control and Right Control
-    if (action == "fire" and (k == KEY_LCONTROL or k == KEY_RCONTROL))
-        return key_down(KEY_LCONTROL) or key_down(KEY_RCONTROL);
+    // Fire is Left Control only; Right Control never fires.
+    if (action == "fire")
+    {
+        if (key_down(KEY_RCONTROL) or key_pressed(KEY_RCONTROL)) return false;
+        if (k == KEY_LCONTROL or k == KEY_RCONTROL) return key_down(KEY_LCONTROL);
+    }
     // When the shift modifier is bound to a shift key, both shift keys work.
     if (action == "mod_shift" and (k == KEY_LSHIFT or k == KEY_RSHIFT))
         return key_down(KEY_LSHIFT) or key_down(KEY_RSHIFT);

@@ -1,3 +1,3 @@
 name:ammunition
-display_name:Ammunition
+display_name:ammo
 payment_method:gold

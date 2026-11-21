@@ -60,9 +60,6 @@ void equip_weapon(const string&in wid, bool silent = false)
 }
 
 
-bool fire_buffer_queued = false;
-timer fire_buffer_timer;
-
 void fire_current_weapon()
 {
 	// A safe zone on the map blocks every shot, including any caller that does
@@ -95,46 +92,38 @@ void fire_current_weapon()
 	// Ensure ammo is initialized for this weapon if not already done
 	init_weapon_ammo(w.id, w.capacity);
 
-	// Weapon firing key accepts Left Control, Right Control, or the configured "fire" key.
-	// Spacebar and jumping never fire.
-	bool ctrl_pressed = key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) || kb_pressed("fire");
-	bool ctrl_held = key_down(KEY_LCONTROL) || key_down(KEY_RCONTROL) || kb_down("fire");
+	// Weapon firing key is ONLY Left Control (or configured "fire" key).
+	// Right Control, Spacebar and jumping never fire.
+	if (key_down(KEY_RCONTROL) || key_pressed(KEY_RCONTROL)) return;
+
+	bool ctrl_pressed = key_pressed(KEY_LCONTROL) || kb_pressed("fire");
+	bool ctrl_held = key_down(KEY_LCONTROL) || kb_down("fire");
 	bool space_active = key_down(KEY_SPACE) || key_pressed(KEY_SPACE);
 
 	bool trigger_pressed = ctrl_pressed && !space_active;
 	bool trigger_held = ctrl_held && !space_active;
 
-	if (trigger_pressed)
-	{
-		fire_buffer_queued = true;
-		fire_buffer_timer.restart();
-	}
-	else if (fire_buffer_queued && fire_buffer_timer.elapsed > 120)
-	{
-		fire_buffer_queued = false;
-	}
-
 	int fmode = get_fire_mode(current_weapon_id);
 	bool wants_to_fire = false;
 	if (w.melee)
 	{
-		wants_to_fire = trigger_pressed || fire_buffer_queued;
+		wants_to_fire = trigger_pressed;
 	}
 	else if (fmode == FIREMODE_AUTO)
 	{
-		wants_to_fire = trigger_held || trigger_pressed || fire_buffer_queued;
+		wants_to_fire = trigger_held;
 	}
 	else
 	{
-		wants_to_fire = trigger_pressed || fire_buffer_queued;
+		wants_to_fire = trigger_pressed;
 	}
 
 	if (!wants_to_fire) return;
 
+	// Strictly respect the weapon's configured firetime: never fire earlier than firetime
 	if (weapon_fire_timer.elapsed < w.firetime) return;
 	weapon_fire_timer.restart();
 	weapon_next_fire_interval = w.firetime;
-	fire_buffer_queued = false;
 
 	double res_mult = 1.0;
 	for (int ri = 0; ri < resurrections && res_mult < 1000000.0; ri++) res_mult *= 2.0;

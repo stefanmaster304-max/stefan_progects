@@ -307,9 +307,9 @@ while(true)
 {
 weapon_system_loop();
 // Fire is hold-to-fire for automatic weapons and one press per shot for
-// semi-automatic ones. Both Left Control and Right Control (or configured fire key) fire;
-// Spacebar and jumping never fire.
-bool fire_k_active = (kb_down("fire") or kb_pressed("fire") or key_down(KEY_LCONTROL) or key_down(KEY_RCONTROL) or key_pressed(KEY_LCONTROL) or key_pressed(KEY_RCONTROL));
+// semi-automatic ones. Only Left Control (or configured fire key) fires;
+// Right Control, Spacebar and jumping never fire.
+bool fire_k_active = (kb_down("fire") or kb_pressed("fire") or key_down(KEY_LCONTROL) or key_pressed(KEY_LCONTROL)) and !key_down(KEY_RCONTROL) and !key_pressed(KEY_RCONTROL);
 if (fire_k_active and !key_down(KEY_SPACE) and !key_pressed(KEY_SPACE) and jumping == 0 and falling == false)
 {
 	string active_w = current_weapon_id;
@@ -327,12 +327,12 @@ if (fire_k_active and !key_down(KEY_SPACE) and !key_pressed(KEY_SPACE) and jumpi
 		{
 			fire_current_weapon();
 		}
-		else if (key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) || kb_pressed("fire"))
+		else if (key_pressed(KEY_LCONTROL) || kb_pressed("fire"))
 		{
 			speak("You cannot fire in a safe zone.");
 		}
 	}
-	else if ((key_pressed(KEY_LCONTROL) || key_pressed(KEY_RCONTROL) || kb_pressed("fire")) && current_weapon_id == "")
+	else if ((key_pressed(KEY_LCONTROL) || kb_pressed("fire")) && current_weapon_id == "")
 	{
 		speak("No weapon equipped.");
 	}

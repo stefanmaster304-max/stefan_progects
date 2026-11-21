@@ -9,10 +9,9 @@ New on November 21, 2026 at 12:15
 -------------------------------------------------------------------------------
 
 1. Weapon Firing Key & Timing Precision:
-   - Added support for both Left Control and Right Control (KEY_LCONTROL and KEY_RCONTROL) for weapon firing across all keybind checks.
+   - Enforced Left Control (KEY_LCONTROL) as the sole weapon firing key (Right Control never fires).
    - Resolved a critical firing loop timing bug: previously, holding down the trigger on semi-automatic weapons prematurely restarted the fire timer on every frame without firing, causing subsequent key taps to be dropped and creating the illusion of oscillating fire rates or key failures.
-   - Restructured firing logic so the fire timer is only reset upon an actual confirmed shot.
-   - Added responsive input buffering (~120ms window) for semi-automatic and melee weapons so rapid trigger taps fire immediately upon the weapon's fire interval elapsing.
+   - Enforced strict adherence to each weapon's configured firetime: firing only occurs when weapon_fire_timer.elapsed >= firetime, with zero firing outside the configured interval and the timer restarting strictly upon an actual confirmed shot.
 
 2. Store Cart Audio Corrections:
    - Connected player/store_error.ogg to all store cart operations: attempting to add an item to the cart without sufficient funds (Right Arrow), attempting to remove an item when quantity is 0 (Left Arrow), or attempting checkout with an empty cart or insufficient funds now reliably plays store_error.ogg.
