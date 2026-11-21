@@ -7,6 +7,6 @@ minz: 0
 maxz: 150
 minlevel: 1
 maxlevel: 0
-minresurrection: 3
+minresurrection: 0
 maxresurrection: 0
 platform:0:150:0:150:0:0:grass3

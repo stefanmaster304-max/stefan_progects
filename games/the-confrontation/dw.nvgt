@@ -1017,12 +1017,9 @@ heartbeat.stop();
 	killbodyfalls();
 itempool.update_listener_3d(0, 0, 0, 0);
 killsrcs();
-destroy_all_staircases();
+clear_map_data();
 destroy_all_builder_objects();
 npc_destroy_all();
-map.resize(0);
-zones.resize(0);
-safezones.resize(0);
 	remove_all_equipment();
 	is_sitting = false;
 health = maxhealth;
@@ -1283,7 +1280,7 @@ void tempreset_internal(bool save_state, const string&in target_map = "")
 {
     if (save_state) save_current_map_state();
     else clear_saved_map_state(mapname);
-    g_active_map.reset_data();
+    clear_map_data();
     destroy_all_projectiles();
     killbodyfalls();
     itempool.destroy_all();
@@ -1291,12 +1288,8 @@ void tempreset_internal(bool save_state, const string&in target_map = "")
     dp.destroy_all();
     dp.update_listener_3d(me.x, me.y, me.z, double(facing));
     seamless_switch_map_sources(mapname, target_map);
-    destroy_all_staircases();
     destroy_all_builder_objects();
     npc_destroy_all();
-    map.resize(0);
-    zones.resize(0);
-safezones.resize(0);
     apply_ambient_volume();
     apply_music_volume();
     dmoving = false;
@@ -1378,6 +1371,10 @@ void announce_zone_on_load()
 		speak("unknown area");
 		currentloc="unknown area";
 	}
+	else
+	{
+		currentloc="";
+	}
 }
 
 void checkloc(bool force_announce=false)
@@ -1422,6 +1419,7 @@ void init()
 	is_in_game = false;
 	has_moved=false;
 	player_walked_since_stop=false;
+	clear_map_data();
 	init_stores();
 	load_all_items_config();
 	load_all_packages();

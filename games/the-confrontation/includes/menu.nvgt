@@ -225,34 +225,47 @@ void mainmenu()
 			int lx = 0, ly = 0, lz = 0, lfacing = 0;
 			load_location(saved_map, lx, ly, lz, lfacing);
 
+			draw_map(target_map);
+
 			// Continue where the player left off only in the map that was saved;
 			// any other map starts at its spawn point.
 			if (saved_map != target_map)
 			{
 				mapname = target_map;
-				lx = 1;
-				ly = 0;
-				lz = 0;
+				if (has_map_spawnpoint)
+				{
+					lx = map_spawn_x;
+					ly = map_spawn_y;
+					lz = map_spawn_z;
+				}
+				else
+				{
+					lx = 1;
+					ly = 0;
+					lz = 0;
+				}
 				lfacing = 0;
-				me.x = 1;
-				me.y = 0;
-				me.z = 0;
-				facing = 0;
+				me.x = lx;
+				me.y = ly;
+				me.z = lz;
+				facing = lfacing;
 				save_location();
+			}
+			else
+			{
+				me.x = lx;
+				me.y = ly;
+				me.z = lz;
+				facing = lfacing;
 			}
 
 			m.fade_music(15);
 			play("spawn");
-			me.x = lx;
-			me.y = ly;
-			me.z = lz;
-			facing = lfacing;
 			p.update_listener_3d(me.x, me.y, me.z, double(facing));
 			sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 			itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
 			dp.update_listener_3d(me.x, me.y, me.z, double(facing));
 			initial_session_welcome_played = false;
-			draw_map(target_map);
 			announce_zone_on_load();
 			game();
 			p.update_listener_3d(0, 0, 0, 0);

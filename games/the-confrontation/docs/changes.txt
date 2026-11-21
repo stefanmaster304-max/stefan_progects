@@ -5,6 +5,18 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 17:35
+-------------------------------------------------------------------------------
+
+1. Map Isolation & Transition Data Cleansing:
+   - Fixed map data leakage across transitions (e.g. zones, platforms, walls from a previous map persisting when loading another map such as wolfs valey):
+     - Implemented clear_map_data() to completely reset the native map instance (g_active_map.reset_data()), clear map platforms/walls, zones, safezones, text squares, and staircases.
+     - Enforced clear_map_data() at the start of draw_map(), on player reset/death, and in map init routines.
+     - Added strict guard in get_zone_at() and is_safe() to immediately return empty when a map defines no zones or safezones, preventing residual zone announcements on zoneless maps.
+     - Re-ordered draw_map() and player positioning in the map selection menu to spawn players cleanly at defined map spawn points.
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 17:15
 -------------------------------------------------------------------------------
 

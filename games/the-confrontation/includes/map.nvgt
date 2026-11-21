@@ -469,8 +469,29 @@ string[] get_maps_unlocked_at_resurrection(int res)
 	return result;
 }
 
+void clear_map_data()
+{
+	g_active_map.reset_data();
+	map.resize(0);
+	zones.resize(0);
+	safezones.resize(0);
+	text_squares.resize(0);
+	destroy_all_staircases();
+	has_map_spawnpoint = false;
+	map_spawn_x = 0;
+	map_spawn_y = 0;
+	map_spawn_z = 0;
+	currentloc = "";
+	is_underwater = false;
+	map_min_level = 1;
+	map_max_level = 0;
+	map_min_resurrection = 0;
+	map_max_resurrection = 0;
+}
+
 void draw_map(string name, bool force_reload_sources = false)
 {
+clear_map_data();
 bool map_already_saved = has_saved_map_state(name);
 restore_map_state(name);
 if (force_reload_sources)
@@ -740,11 +761,11 @@ zones.insert_last(minx+":"+maxx+":"+miny+":"+maxy+":"+minz+":"+maxz+":"+text);
 }
 string get_zone_at(int x, int y, int z)
 {
+if (zones.length()==0)
+return "";
 string gz = g_active_map.get_zone(x, y, z);
 if (gz != "") return gz;
 string final;
-if (zones.length()==0)
-return "";
 for(int i=int(zones.length())-1; i>=0; i--)
 {
 string[] parsed=string_split(zones[i], ":", false);
@@ -772,6 +793,7 @@ safezones.insert_last(minx+":"+maxx+":"+miny+":"+maxy+":"+minz+":"+maxz);
 }
 bool is_safe(int x, int y, int z)
 {
+if (safezones.length() == 0) return false;
 if (g_active_map.is_safezone(x, y, z)) return true;
 bool final=false;
 for(uint i=0; i<safezones.length(); i++)
