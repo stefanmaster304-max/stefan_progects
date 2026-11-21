@@ -66,7 +66,10 @@ string store_cart_balances_text()
 // so a cart that names a missing item is refunded instead of half-delivered.
 bool store_grant_product(const string&in product, int quantity)
 {
-	if (find_item_data(product) is null) return false;
+	load_all_items_config();
+	load_all_weapons_wpm();
+	load_all_packages();
+	if (find_item_data(product) is null && find_weapon_data(product) is null && find_package_data(product) is null) return false;
 	give(product, quantity);
 	return true;
 }

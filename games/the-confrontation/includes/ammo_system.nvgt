@@ -69,6 +69,224 @@ void init_weapon_ammo(string wname, int cap)
 		loaded_ammo.set(wname, cap);
 }
 
+string get_fallback_reload_sound(weapon_data@ w)
+{
+	if (w is null) return "";
+	if (w.wclass == "shotguns")
+	{
+		string s = get_sound_path("weapons/remington_870_pump_action_shotgun/remington_870_pump_action_shotgun_reload.ogg");
+		if (s != "") return s;
+	}
+	else if (w.wclass == "revolvers")
+	{
+		string s = get_sound_path("weapons/ruger_redhawk/ruger_redhawkreload.ogg");
+		if (s != "") return s;
+	}
+	else if (w.wclass == "pistols")
+	{
+		string s = get_sound_path("weapons/beretta92fs_pistol/beretta_m9reload.ogg");
+		if (s != "") return s;
+	}
+	else if (w.wclass == "rifles" || w.wclass == "machine_guns")
+	{
+		string s = get_sound_path("weapons/m4/m4reload.ogg");
+		if (s != "") return s;
+	}
+	return get_sound_path("weapons/m4/m4reload.ogg;weapons/beretta92fs_pistol/beretta_m9reload.ogg");
+}
+
+string find_reserve_ammo_item(weapon_data@ w)
+{
+	if (w is null) return "";
+
+	// 1. Explicit configured reserve_item on this weapon
+	if (w.reserve_item != "" && get_item_count(w.reserve_item) > 0)
+	{
+		return w.reserve_item;
+	}
+
+	// 2. Normalized alias match (handling underscores / spaces)
+	if (w.reserve_item != "")
+	{
+		string norm_target = string_replace(w.reserve_item, "_", "", true);
+		string[] carried = get_all_inv_keys();
+		for (uint i = 0; i < carried.length(); i++)
+		{
+			if (get_item_count(carried[i]) <= 0) continue;
+			string norm_c = string_replace(carried[i], "_", "", true);
+			if (norm_c == norm_target) return carried[i];
+		}
+	}
+
+	// 3. Scan carried items for compatible ammunition by caliber / weapon family
+	string at = string_to_lower_case(w.ammo_type);
+	string wid = string_to_lower_case(w.id);
+	string[] carried = get_all_inv_keys();
+
+	for (uint i = 0; i < carried.length(); i++)
+	{
+		string item_id = carried[i];
+		if (get_item_count(item_id) <= 0) continue;
+		string lower_id = string_to_lower_case(item_id);
+
+		// 9mm / 9x19mm
+		if (string_contains(at, "9x19", 1) > -1 || string_contains(at, "9mm", 1) > -1 || string_contains(wid, "9mm", 1) > -1)
+		{
+			if (string_contains(lower_id, "9x19", 1) > -1 || string_contains(lower_id, "9mm", 1) > -1 || lower_id == "ammo_9mm")
+				return item_id;
+		}
+
+		// 5.56x45mm / .223 Remington
+		if (string_contains(at, "5.56", 1) > -1 || string_contains(at, "223", 1) > -1)
+		{
+			if (string_contains(lower_id, "5.56", 1) > -1 || string_contains(lower_id, "223", 1) > -1)
+				return item_id;
+		}
+
+		// 7.62x51mm / .308 Winchester
+		if (string_contains(at, "7.62x51", 1) > -1 || string_contains(at, "308", 1) > -1)
+		{
+			if (string_contains(lower_id, "7.62x51", 1) > -1 || string_contains(lower_id, "308", 1) > -1)
+				return item_id;
+		}
+
+		// 7.62x54mmR
+		if (string_contains(at, "7.62x54", 1) > -1)
+		{
+			if (string_contains(lower_id, "7.62x54", 1) > -1)
+				return item_id;
+		}
+
+		// 5.45x39mm
+		if (string_contains(at, "5.45x39", 1) > -1)
+		{
+			if (string_contains(lower_id, "5.45x39", 1) > -1)
+				return item_id;
+		}
+
+		// 7.62x39mm
+		if (string_contains(at, "7.62x39", 1) > -1)
+		{
+			if (string_contains(lower_id, "7.62x39", 1) > -1)
+				return item_id;
+		}
+
+		// 12 Gauge
+		if (string_contains(at, "12 gauge", 1) > -1 || string_contains(at, "12_gauge", 1) > -1 || w.wclass == "shotguns")
+		{
+			if (string_contains(lower_id, "12_gauge", 1) > -1 || string_contains(lower_id, "12gauge", 1) > -1)
+				return item_id;
+		}
+
+		// 23x75mmR Heavy Shotgun
+		if (string_contains(at, "23x75", 1) > -1)
+		{
+			if (string_contains(lower_id, "23x75", 1) > -1)
+				return item_id;
+		}
+
+		// .45 ACP
+		if (string_contains(at, "45 acp", 1) > -1 || string_contains(at, "45_acp", 1) > -1)
+		{
+			if (string_contains(lower_id, "45_acp", 1) > -1 || string_contains(lower_id, "45acp", 1) > -1)
+				return item_id;
+		}
+
+		// .44 Magnum
+		if (string_contains(at, "44 magnum", 1) > -1 || string_contains(at, "44_magnum", 1) > -1)
+		{
+			if (string_contains(lower_id, "44_magnum", 1) > -1 || string_contains(lower_id, "44magnum", 1) > -1)
+				return item_id;
+		}
+
+		// .357 Magnum
+		if (string_contains(at, "357 magnum", 1) > -1 || string_contains(at, "357_magnum", 1) > -1)
+		{
+			if (string_contains(lower_id, "357_magnum", 1) > -1 || string_contains(lower_id, "357magnum", 1) > -1)
+				return item_id;
+		}
+
+		// .50 Action Express
+		if (string_contains(at, "50 action express", 1) > -1 || string_contains(at, "50 ae", 1) > -1 || string_contains(at, "50_ae", 1) > -1)
+		{
+			if (string_contains(lower_id, "50_ae", 1) > -1 || string_contains(lower_id, "50ae", 1) > -1)
+				return item_id;
+		}
+
+		// 5.7x28mm
+		if (string_contains(at, "5.7x28", 1) > -1)
+		{
+			if (string_contains(lower_id, "5.7x28", 1) > -1)
+				return item_id;
+		}
+
+		// .380 ACP
+		if (string_contains(at, "380 acp", 1) > -1 || string_contains(at, "380_acp", 1) > -1)
+		{
+			if (string_contains(lower_id, "380_acp", 1) > -1 || string_contains(lower_id, "380acp", 1) > -1)
+				return item_id;
+		}
+
+		// .40 S&W
+		if (string_contains(at, "40 s&w", 1) > -1 || string_contains(at, "40_sw", 1) > -1)
+		{
+			if (string_contains(lower_id, "40_sw", 1) > -1 || string_contains(lower_id, "40sw", 1) > -1)
+				return item_id;
+		}
+
+		// .22 LR
+		if (string_contains(at, "22 lr", 1) > -1 || string_contains(at, "22_lr", 1) > -1)
+		{
+			if (string_contains(lower_id, "22_lr", 1) > -1 || string_contains(lower_id, "22lr", 1) > -1)
+				return item_id;
+		}
+
+		// .50 BMG / 12.7x99mm
+		if (string_contains(at, "12.7x99", 1) > -1 || string_contains(at, "50 bmg", 1) > -1 || string_contains(at, "50_cal", 1) > -1)
+		{
+			if (string_contains(lower_id, "12.7x99", 1) > -1 || string_contains(lower_id, "heavy_50_cal", 1) > -1)
+				return item_id;
+		}
+
+		// .30-06 Springfield
+		if (string_contains(at, "30-06", 1) > -1 || string_contains(at, "30_06", 1) > -1)
+		{
+			if (string_contains(lower_id, "30_06", 1) > -1)
+				return item_id;
+		}
+
+		// 4.6x30mm
+		if (string_contains(at, "4.6x30", 1) > -1)
+		{
+			if (string_contains(lower_id, "4.6x30", 1) > -1)
+				return item_id;
+		}
+
+		// Crossbow
+		if (string_contains(at, "crossbow", 1) > -1 || string_contains(wid, "crossbow", 1) > -1)
+		{
+			if (string_contains(lower_id, "crossbow_bolt", 1) > -1 || string_contains(lower_id, "bolt", 1) > -1)
+				return item_id;
+		}
+
+		// Flamethrower
+		if (string_contains(at, "gel", 1) > -1 || string_contains(wid, "flame", 1) > -1)
+		{
+			if (string_contains(lower_id, "gel_canister", 1) > -1 || string_contains(lower_id, "flamethrower_fuel", 1) > -1 || string_contains(lower_id, "canister", 1) > -1)
+				return item_id;
+		}
+
+		// Cannon / Mortar
+		if (string_contains(at, "120mm", 1) > -1 || string_contains(wid, "cannon", 1) > -1)
+		{
+			if (string_contains(lower_id, "120mm", 1) > -1 || string_contains(lower_id, "mortar", 1) > -1)
+				return item_id;
+		}
+	}
+
+	return "";
+}
+
 int get_reserve_ammo(const string&in item_id)
 {
 	if (item_id == "") return 0;
@@ -80,6 +298,36 @@ int get_reserve_ammo(const string&in item_id)
 		if (legacy > 0) return legacy;
 	}
 	return 0;
+}
+
+int get_reserve_ammo_for_weapon(weapon_data@ w)
+{
+	if (w is null) return 0;
+	string item_id = find_reserve_ammo_item(w);
+	if (item_id != "") return get_item_count(item_id);
+	return 0;
+}
+
+bool is_container_ammo_item(const string&in item_id, weapon_data@ w)
+{
+	if (w !is null && w.is_magazine) return true;
+	string lid = string_to_lower_case(item_id);
+	if (string_contains(lid, "box", 1) > -1 ||
+	    string_contains(lid, "magazine", 1) > -1 ||
+	    string_contains(lid, "mag", 1) > -1 ||
+	    string_contains(lid, "drum", 1) > -1 ||
+	    string_contains(lid, "clip", 1) > -1 ||
+	    string_contains(lid, "rack", 1) > -1 ||
+	    string_contains(lid, "canister", 1) > -1 ||
+	    string_contains(lid, "loader", 1) > -1 ||
+	    string_contains(lid, "speedloader", 1) > -1 ||
+	    string_contains(lid, "cell", 1) > -1 ||
+	    string_contains(lid, "battery", 1) > -1 ||
+	    string_contains(lid, "shell", 1) > -1)
+	{
+		return true;
+	}
+	return false;
 }
 
 bool consume_loaded_round(string wname)
@@ -96,8 +344,8 @@ bool can_reload(weapon_data@ w)
 	if (is_reloading) return false;
 	int loaded = get_loaded_ammo(w.id);
 	if (loaded >= w.capacity) return false;
-	int reserve = get_reserve_ammo(w.reserve_item);
-	return reserve > 0;
+	string res_item = find_reserve_ammo_item(w);
+	return (res_item != "" && get_item_count(res_item) > 0);
 }
 
 void start_reload(weapon_data@ w)
@@ -112,7 +360,8 @@ void start_reload(weapon_data@ w)
 		return;
 	}
 
-	int reserve = get_reserve_ammo(w.reserve_item);
+	string res_item = find_reserve_ammo_item(w);
+	int reserve = (res_item != "") ? get_item_count(res_item) : 0;
 	if (reserve <= 0)
 	{
 		// Pressing R with an empty reserve announces the required ammo type
@@ -128,16 +377,14 @@ void start_reload(weapon_data@ w)
 	current_reload_slot = -1;
 	reload_timer.restart();
 
-	if (w.sound_reload != "")
+	string rsnd = "";
+	if (w.sound_reload != "") rsnd = get_sound_path(w.sound_reload);
+	if (rsnd == "") rsnd = get_fallback_reload_sound(w);
+	if (rsnd != "")
 	{
-		string rsnd = get_sound_path(w.sound_reload);
-		if (rsnd != "")
-		{
-			// Persistent slot: it stays dedicated to this reload until it
-			// finishes, so no other sound from the pool can steal it while the
-			// reload sound is still playing.
-			current_reload_slot = p.play_stationary(rsnd, false, true);
-		}
+		// Persistent slot: stays dedicated to this reload until it finishes,
+		// so no other sound from the pool steals it while the reload sound is playing.
+		current_reload_slot = p.play_stationary(rsnd, false, true);
 	}
 }
 
@@ -189,18 +436,14 @@ void ammo_system_loop()
 	is_reloading = false;
 	reloading_weapon = "";
 
-	int reserve = get_reserve_ammo(w.reserve_item);
+	string active_item = find_reserve_ammo_item(w);
+	if (active_item == "") active_item = w.reserve_item;
+	int reserve = get_item_count(active_item);
 	if (reserve <= 0) return;
 
-	string active_item = w.reserve_item;
-	if (get_item_count(active_item) <= 0 && (string_contains(active_item, "9mm", 1) > -1 || string_contains(active_item, "9x19", 1) > -1))
+	if (w.is_magazine || is_container_ammo_item(active_item, w))
 	{
-		if (get_item_count("ammo_9mm") > 0) active_item = "ammo_9mm";
-	}
-
-	if (w.is_magazine)
-	{
-		// Magazine swap: consume 1 magazine from inventory, set loaded to full capacity
+		// Magazine / box / canister / rack swap: consume 1 unit from inventory, set loaded to full capacity
 		give(active_item, -1);
 		set_loaded_ammo(w.id, w.capacity);
 	}
@@ -214,15 +457,48 @@ void ammo_system_loop()
 	}
 }
 
-void speak_ammo_status()
+void handle_reload_key()
 {
-	if (current_weapon_id == "")
+	string wid = current_weapon_id;
+	if (wid == "" || find_weapon_data(wid) is null)
+	{
+		// If quick inventory is focused on a weapon, equip it
+		if (quick_inv_focused)
+		{
+			string[] keys = get_all_inv_keys();
+			if (quick_inv_index >= 0 && quick_inv_index < int(keys.length()))
+			{
+				string candidate = keys[quick_inv_index];
+				if (find_weapon_data(candidate) !is null)
+				{
+					equip_weapon(candidate, true);
+					wid = candidate;
+				}
+			}
+		}
+		// If still empty, check carried inventory for any carried weapon
+		if (wid == "" || find_weapon_data(wid) is null)
+		{
+			string[] carried = get_all_inv_keys();
+			for (uint i = 0; i < carried.length(); i++)
+			{
+				if (find_weapon_data(carried[i]) !is null)
+				{
+					equip_weapon(carried[i], true);
+					wid = carried[i];
+					break;
+				}
+			}
+		}
+	}
+
+	if (wid == "" || find_weapon_data(wid) is null)
 	{
 		speak("No weapon equipped.");
 		return;
 	}
 
-	weapon_data@ w = get_weapon_data(current_weapon_id);
+	weapon_data@ w = get_weapon_data(wid);
 	if (w is null)
 	{
 		speak("No weapon equipped.");
@@ -235,8 +511,57 @@ void speak_ammo_status()
 		return;
 	}
 
+	start_reload(w);
+}
+
+void speak_ammo_status()
+{
+	string wid = current_weapon_id;
+	if (wid == "" || find_weapon_data(wid) is null)
+	{
+		if (quick_inv_focused)
+		{
+			string[] keys = get_all_inv_keys();
+			if (quick_inv_index >= 0 && quick_inv_index < int(keys.length()))
+			{
+				string candidate = keys[quick_inv_index];
+				if (find_weapon_data(candidate) !is null)
+				{
+					equip_weapon(candidate, true);
+					wid = candidate;
+				}
+			}
+		}
+	}
+
+	if (wid == "" || find_weapon_data(wid) is null)
+	{
+		speak("No weapon equipped.");
+		return;
+	}
+
+	weapon_data@ w = get_weapon_data(wid);
+	if (w is null)
+	{
+		speak("No weapon equipped.");
+		return;
+	}
+
+	if (w.melee)
+	{
+		speak(w.name + " is a melee weapon.");
+		return;
+	}
+
+	if (is_reloading && reloading_weapon == w.id)
+	{
+		speak("Reloading " + w.name + ".");
+		return;
+	}
+
 	int loaded = get_loaded_ammo(w.id);
-	int reserve = get_reserve_ammo(w.reserve_item);
+	string res_item = find_reserve_ammo_item(w);
+	int reserve = (res_item != "") ? get_item_count(res_item) : 0;
 	string atype = (w.ammo_type != "") ? w.ammo_type : "ammunition";
 	string disp = (w.ammo_display != "") ? w.ammo_display : "rounds";
 	string res_label = (w.reserve_label != "") ? w.reserve_label : "magazine";

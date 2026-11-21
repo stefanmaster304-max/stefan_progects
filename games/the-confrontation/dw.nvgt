@@ -345,6 +345,10 @@ if (kb_pressed("ammo_status") or key_pressed(KEY_A))
 {
 	speak_ammo_status();
 }
+if (!altisdown() && (kb_pressed("reload") or key_pressed(KEY_R)))
+{
+	handle_reload_key();
+}
 staircasecheckloop();
 szloop();
 checkloc();
@@ -1223,6 +1227,14 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         if (loc.d.exists("inventory_data"))
         {
             deserialize_inventory(loc.read("inventory_data"));
+        }
+        if (loc.d.exists("current_weapon"))
+        {
+            string saved_w = loc.read("current_weapon");
+            if (saved_w != "" && find_weapon_data(saved_w) !is null && get_item_count(saved_w) > 0)
+            {
+                equip_weapon(saved_w, true);
+            }
         }
         if (loc.d.exists("equipped_shield_id"))
         {

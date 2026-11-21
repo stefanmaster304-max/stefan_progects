@@ -23,5 +23,5 @@ sound_distant_fire=weapons/magnum revouver/magnum_revolverdist.ogg
 sound_ricochet=weapons/magnum revouver/magnum_revolverrico.ogg
 sound_empty_mag=weapons/magnum revouver/magnum_revolverempty.ogg
 sound_draw=weapons/magnum revouver/magnum_revolverdraw.ogg
-sound_reload=
+sound_reload=weapons/ruger_redhawk/ruger_redhawkreload.ogg
 sound_hit=weapons/magnum revouver/magnum_revolverhit1.ogg;weapons/magnum revouver/magnum_revolverhit2.ogg;weapons/magnum revouver/magnum_revolverhit3.ogg
