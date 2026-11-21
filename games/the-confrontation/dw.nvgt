@@ -996,6 +996,8 @@ void fade_pool(sound_pool@ pool, double final_volume=-50, double delay=10)
 void reset()
 {
 is_in_game = false;
+mapname = "";
+currentloc = "";
 cancel_reload();
 fade_pool(@sp, -50, 10);
 fade_pool(@p, -50, 10);
@@ -1172,7 +1174,10 @@ void reset_location_on_death()
 {
     savedata loc(get_game_save_path(), GAME_SAVE_KEY);
     loc.load();
-    loc.add("mapname", "main");
+    string default_spawn_map = "florest";
+    string[] available = get_available_maps();
+    if (available.length() > 0) default_spawn_map = available[0];
+    loc.add("mapname", default_spawn_map);
     loc.add("pos_x", 1);
     loc.add("pos_y", 0);
     loc.add("pos_z", 0);
@@ -1365,7 +1370,7 @@ void announce_zone_on_load()
 		speak(locate);
 		currentloc=locate;
 	}
-	else
+	else if (zones.length() > 0)
 	{
 		speak("unknown area");
 		currentloc="unknown area";
@@ -1374,6 +1379,7 @@ void announce_zone_on_load()
 
 void checkloc(bool force_announce=false)
 {
+	if (!is_in_game || mapname == "" || map.length() == 0 || zones.length() == 0) return;
 	string locate=get_zone_at(int(round(me.x,0)),int(round(me.y,0)),int(round(me.z,0)));
 	string loc_text="";
 	if (locate!="")
@@ -1410,7 +1416,7 @@ void checkloc(bool force_announce=false)
 
 void init()
 {
-	is_in_game = true;
+	is_in_game = false;
 	has_moved=false;
 	player_walked_since_stop=false;
 	init_stores();

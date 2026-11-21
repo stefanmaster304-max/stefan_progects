@@ -40,6 +40,7 @@ class npc_data
 	int voice_max_delay;
 
 	string sound_attack;
+	string sound_hit;
 	string sound_pain;
 	string sound_death;
 
@@ -73,6 +74,7 @@ class npc_data
 		voice_min_delay = 1500;
 		voice_max_delay = 3500;
 		sound_attack = "";
+		sound_hit = "";
 		sound_pain = "";
 		sound_death = "";
 		xp = 50;
@@ -196,6 +198,7 @@ void parse_npc_content(npc_data@ n, const string&in content)
 		else if (key == "voice_min_delay") n.voice_min_delay = int(string_to_number(val));
 		else if (key == "voice_max_delay") n.voice_max_delay = int(string_to_number(val));
 		else if (key == "sound_attack") n.sound_attack = val;
+		else if (key == "sound_hit" || key == "sound_impact" || key == "hit_sound") n.sound_hit = val;
 		else if (key == "sound_pain") n.sound_pain = val;
 		else if (key == "sound_death") n.sound_death = val;
 		else if (key == "xp") n.xp = int(string_to_number(val));
@@ -229,6 +232,7 @@ string serialize_npc_content(npc_data@ n)
 	s += "voice_max_delay=" + n.voice_max_delay + "\n";
 	if (n.sound_voice != "") s += "sound_voice=" + n.sound_voice + "\n";
 	if (n.sound_attack != "") s += "sound_attack=" + n.sound_attack + "\n";
+	if (n.sound_hit != "") s += "sound_hit=" + n.sound_hit + "\n";
 	if (n.sound_pain != "") s += "sound_pain=" + n.sound_pain + "\n";
 	if (n.sound_death != "") s += "sound_death=" + n.sound_death + "\n";
 	return s;
@@ -369,6 +373,7 @@ void parse_npcs_bundle(const string&in content)
 		else if (key == "voice_min_delay") current.voice_min_delay = int(string_to_number(val));
 		else if (key == "voice_max_delay") current.voice_max_delay = int(string_to_number(val));
 		else if (key == "sound_attack") current.sound_attack = val;
+		else if (key == "sound_hit" || key == "sound_impact" || key == "hit_sound") current.sound_hit = val;
 		else if (key == "sound_pain") current.sound_pain = val;
 		else if (key == "sound_death") current.sound_death = val;
 		else if (key == "xp") current.xp = int(string_to_number(val));

@@ -6,7 +6,7 @@ bool is_in_game = false;
 
 void update_game_world()
 {
-	if (!is_in_game || mapname == "") return;
+	if (!is_in_game || mapname == "" || map.length() == 0) return;
 	staircasecheckloop();
 	szloop();
 	checkloc();

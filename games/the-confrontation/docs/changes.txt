@@ -5,6 +5,23 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 21, 2026 at 12:40
+-------------------------------------------------------------------------------
+
+1. NPC Impact Sound Configuration:
+   - Added the impact sound field (sound_hit) to NPC data structures and persistence (.npc files and encrypted contents.dat bundle).
+   - Added the "Select impact sound" button in the NPC editor form (npc_manager.nvgt), allowing developers to choose dedicated impact audio played when the NPC strikes the target.
+   - Connected sound_hit playback in the combat engine (npc_system.nvgt) when NPC attacks land on the player.
+
+2. Map Selection & Zone Speech Fix:
+   - Fixed the issue where entering the "Select your map" menu after dying caused the engine to speak "unknown area":
+     - Deferred init() until after a map is selected from the menu instead of invoking it prematurely.
+     - Ensured is_in_game remains false until game() begins execution.
+     - Properly reset mapname and currentloc to empty on reset(), and guarded update_game_world() and checkloc() against running when map.length() == 0 or zones.length() == 0.
+     - Updated reset_location_on_death() to restore the active default map rather than a legacy "main" identifier.
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 12:15
 -------------------------------------------------------------------------------
 

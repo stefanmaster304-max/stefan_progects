@@ -13,3 +13,4 @@ platform:0:250:0:250:0:0:grass3
 source:0:250:0:250:0:250:musical30:0:90
 zone:0:250:0:250:0:250:florest
 source:0:250:0:250:0:250:forest1:0:100
+npcspawner:wolf:1:3000:0:0:0:0:0:0:1

@@ -1211,6 +1211,11 @@ void npc_attack_player(npc_instance@ npc)
 	if (npc is null || npc.data is null || npc.dead) return;
 	npc_play_positional(npc, npc.data.sound_attack);
 	int dmg = random(npc.data.min_damage, npc.data.max_damage);
+	if (npc.data.sound_hit != "")
+	{
+		string hit_snd = get_sound_path(npc.data.sound_hit);
+		if (hit_snd != "") p.play_stationary(hit_snd, false);
+	}
 	int through = shield_process_damage(dmg, "melee");
 	if (through > 0) health_damage_player(through, npc.data.name, "attack");
 }

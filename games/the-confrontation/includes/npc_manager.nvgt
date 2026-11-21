@@ -225,6 +225,7 @@ void npc_edit_form(npc_data@ n, bool is_new)
 
 	int btn_voice = form.create_button("Select voice clips" + npc_sound_count_label(n.sound_voice));
 	int btn_attack = form.create_button("Select attack sound" + npc_sound_count_label(n.sound_attack));
+	int btn_hit = form.create_button("Select impact sound" + npc_sound_count_label(n.sound_hit));
 	int btn_pain = form.create_button("Select pain sound" + npc_sound_count_label(n.sound_pain));
 	int btn_death = form.create_button("Select death sound" + npc_sound_count_label(n.sound_death));
 
@@ -267,6 +268,12 @@ void npc_edit_form(npc_data@ n, bool is_new)
 			n.sound_attack = npc_manager_pick_sound("Attack sound", n.sound_attack);
 			form.set_text(btn_attack, "Select attack sound" + npc_sound_count_label(n.sound_attack));
 			speak("Attack sound updated.");
+		}
+		if (form.is_pressed(btn_hit))
+		{
+			n.sound_hit = npc_manager_pick_sound("Impact sound", n.sound_hit);
+			form.set_text(btn_hit, "Select impact sound" + npc_sound_count_label(n.sound_hit));
+			speak("Impact sound updated.");
 		}
 		if (form.is_pressed(btn_pain))
 		{

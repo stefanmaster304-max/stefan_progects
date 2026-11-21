@@ -198,8 +198,6 @@ void mainmenu()
 				continue;
 			}
 
-			init();
-
 			// The Enter key that activated Play is still held down; release it so
 			// the map menu does not activate the first map immediately.
 			while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
@@ -217,6 +215,8 @@ void mainmenu()
 			if (map_pick <= 0) continue;
 			string target_map = m.get_item_name(map_pick);
 			if (!map_exists_on_disk(target_map)) continue;
+
+			init();
 
 			string saved_map;
 			int lx = 0, ly = 0, lz = 0, lfacing = 0;
