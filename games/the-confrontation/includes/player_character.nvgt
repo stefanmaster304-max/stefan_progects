@@ -31,8 +31,8 @@ int get_player_modified_walktime(int base_walk)
 	}
 	else if (current_player_character == "stefan")
 	{
-		// Stefan runs slower than standard (step interval increased by 15%)
-		int wt = int(round(double(base_walk) * 1.15, 0));
+		// Stefan runs slower than standard (step interval increased by 28%)
+		int wt = int(round(double(base_walk) * 1.28, 0));
 		return wt;
 	}
 	return base_walk;
