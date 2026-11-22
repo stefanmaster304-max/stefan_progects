@@ -27,9 +27,9 @@
   <main id="conteudo" class="container page-main game-page">
     <header class="page-heading">
       <div class="badge-row">
-        <span class="badge badge-accent">Beta Pública 0.1</span>
+        <span class="badge badge-accent">Beta Pública 0.2</span>
         <span class="badge">NVGT + King Audio 3D</span>
-        <span class="badge">Auxílio de Inteligência Artificial</span>
+        <span class="badge">Downloader Nativo nvgt_curl</span>
         <span class="badge">FPS 3D em Primeira Pessoa</span>
       </div>
       <h1>Página oficial do jogo The Confront</h1>
@@ -52,42 +52,42 @@
     <section class="download-section" id="downloads" aria-labelledby="downloads-title">
       <div class="section-header">
         <p class="eyebrow">Baixe e Jogue</p>
-        <h2 id="downloads-title">Downloads Disponíveis (Versão v0.1)</h2>
+        <h2 id="downloads-title">Downloads Disponíveis (Versão v0.2)</h2>
         <p class="section-desc">Clique no botão desejado para iniciar o download direto no seu navegador, sem sair desta página.</p>
       </div>
 
       <div class="download-cards">
-        <!-- Opção 1: Jogo Completo -->
+        <!-- Opção 1: Cliente Leve v0.2 (Com Auto-Downloader de Sons) -->
         <article class="download-card featured">
-          <div class="card-tag">Recomendado</div>
-          <h3>Jogo Completo</h3>
-          <p class="card-desc">Contém o executável do jogo, todas as bibliotecas necessárias e o pacote de sons completo já integrado. Baixe, extraia e comece a jogar imediatamente!</p>
+          <div class="card-tag">Recomendado · Versão v0.2</div>
+          <h3>Cliente Leve (Com Auto-Downloader)</h3>
+          <p class="card-desc">Versão mais recente v0.2 com o novo downloader nativo de áudio (nvgt_curl). Ao iniciar pela primeira vez sem os sons, o jogo baixa e instala o pacote de sons automaticamente com indicador sonoro e teclas de atalho!</p>
           <ul class="specs-list">
-            <li><strong>Tamanho:</strong> ~1.9 GB</li>
+            <li><strong>Tamanho:</strong> ~35.4 MB</li>
+            <li><strong>Formato:</strong> Arquivo ZIP compacto</li>
+            <li><strong>Inclui:</strong> dw.exe v0.2, bibliotecas completas e dados criptografados</li>
+          </ul>
+          <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.2/the_confront_v0.2.zip"
+             class="btn btn-primary js-download"
+             data-file="the_confront_v0.2.zip">
+            <span class="icon">⬇</span> Baixar Cliente v0.2 (Sem Sons)
+          </a>
+        </article>
+
+        <!-- Opção 2: Jogo Completo -->
+        <article class="download-card">
+          <div class="card-tag">Pacote Pronto</div>
+          <h3>Jogo Completo (Com Sons Embutidos)</h3>
+          <p class="card-desc">Contém o executável do jogo, todas as bibliotecas necessárias e o pacote de sons completo já integrado. Baixe, extraia e comece a jogar imediatamente sem downloads adicionais.</p>
+          <ul class="specs-list">
+            <li><strong>Tamanho:</strong> ~1.95 GB</li>
             <li><strong>Formato:</strong> Arquivo ZIP pronto para jogar</li>
             <li><strong>Inclui:</strong> Cliente dw.exe + Todos os sons</li>
           </ul>
           <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/the_confront_v0.1_complete.zip"
-             class="btn btn-primary js-download"
-             data-file="the_confront_v0.1_complete.zip">
-            <span class="icon">⬇</span> Baixar Jogo Completo
-          </a>
-        </article>
-
-        <!-- Opção 2: Cliente Leve (Sem sons) -->
-        <article class="download-card">
-          <div class="card-tag">Download Rápido</div>
-          <h3>Cliente Leve (Sem Sons)</h3>
-          <p class="card-desc">Ideal para downloads rápidos ou para quem já tem a pasta de sons. O jogo verifica atualizações e permite baixar os áudios diretamente.</p>
-          <ul class="specs-list">
-            <li><strong>Tamanho:</strong> ~35.4 MB</li>
-            <li><strong>Formato:</strong> Arquivo ZIP compacto</li>
-            <li><strong>Inclui:</strong> dw.exe, libs e dados criptografados</li>
-          </ul>
-          <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/the_confront_v0.1.zip"
              class="btn btn-secondary js-download"
-             data-file="the_confront_v0.1.zip">
-            <span class="icon">⬇</span> Baixar Jogo (Sem Sons)
+             data-file="the_confront_v0.1_complete.zip">
+            <span class="icon">⬇</span> Baixar Jogo Completo (~1.95 GB)
           </a>
         </article>
 
@@ -104,7 +104,7 @@
           <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/sounds.zip"
              class="btn btn-outline js-download"
              data-file="sounds.zip">
-            <span class="icon">⬇</span> Baixar Pacote de Sons
+            <span class="icon">⬇</span> Baixar Pacote de Sons Avulso
           </a>
         </article>
       </div>
@@ -208,9 +208,9 @@
 
     <!-- Beta e Contato / Feedback -->
     <section class="contact-panel" aria-labelledby="feedback-title">
-      <h2 id="feedback-title">Beta Pública 0.1 e Relato de Bugs</h2>
+      <h2 id="feedback-title">Beta Pública 0.2 e Relato de Bugs</h2>
       <p>
-        The Confront está atualmente em sua versão <strong>Beta Pública 0.1</strong>. Como todo projeto em evolução ativa, bugs e inconsistências podem surgir.
+        The Confront está atualmente em sua versão <strong>Beta Pública 0.2</strong>. Esta versão traz o novo atualizador de sons e download integrado baseado no motor nativo <code>nvgt_curl</code> (com indicadores sonoros de progresso, atalhos de teclado e extração automática).
       </p>
       <p>
         Caso encontre qualquer problema ou tenha sugestões para o jogo, por favor relate diretamente para o Stefan pelo Telegram:

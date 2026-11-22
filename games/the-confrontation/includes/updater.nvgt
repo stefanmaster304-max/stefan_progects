@@ -34,10 +34,10 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-string current_game_version = "0.1";
-string current_content_version = "0.1";
-string current_sounds_version = "0.1";
-string current_maps_version = "0.1";
+string current_game_version = "0.2";
+string current_content_version = "0.2";
+string current_sounds_version = "0.2";
+string current_maps_version = "0.2";
 int check_updates_on_startup = 1;
 string update_manifest_url = UPDATE_MANIFEST_URL_DEFAULT;
 
@@ -190,87 +190,168 @@ void wait_for_update_complete_sound()
 	wait(200);
 }
 
+upcoming::sound@ progress_sound;
+
+void beep_percentage(double val, double volume = -10)
+{
+	val = round(val, 0);
+	if (val < 0) val = 0;
+	if (val > 100) val = 100;
+	double freq = 110.0 * (2.0 ** (val / 25.0));
+	tone_synth sy;
+	sy.waveform_type = 2;
+	sy.volume = volume;
+	sy.set_edge_fades(1, 1);
+	sy.freq_ms(freq, 40);
+	@progress_sound = sy.write_wave_sound();
+	sy.reset();
+	if (progress_sound !is null) progress_sound.play();
+}
+
+bool directory_empty(const string&in dir)
+{
+	if (!directory_exists(dir)) return false;
+	string[]@ files = find_files(dir + "/*");
+	string[]@ folders = find_directories(dir + "/*");
+	int f_count = (files !is null) ? files.length() : 0;
+	int d_count = (folders !is null) ? folders.length() : 0;
+	return (f_count == 0 && d_count == 0);
+}
+
+string dl_file(string url, string disk_file, bool quiet = false, string msg = "Downloading. Press Space for percentage, 1 2 and 3 keys for detailed progress, or escape to cancel. Press m to mute or unmute progress beeps. Press h to read this help message again.")
+{
+	internet_request r(url, disk_file);
+	if (!quiet) speak(msg);
+	double last_percentage = 0;
+	int progbeeps = 1;
+	string status = "";
+	while (r.complete != true)
+	{
+		wait(5);
+		if (r.download_percent == r.download_percent && r.download_percent >= 0 && (r.download_percent - last_percentage) >= 1)
+		{
+			if (progbeeps == 1 && r.download_percent > 0) beep_percentage(r.download_percent);
+			last_percentage = r.download_percent;
+		}
+		if (key_pressed(KEY_ESCAPE))
+		{
+			status = "canceled";
+			speak(status);
+			return status;
+		}
+		if (key_pressed(KEY_1))
+		{
+			string size = round(r.download_size / 1024 / 1024, 0) + " MB";
+			speak("File size: " + size);
+		}
+		if (key_pressed(KEY_2))
+		{
+			string size = round(r.bytes_downloaded / 1024 / 1024, 0) + " MB";
+			speak("Total downloaded: " + size);
+		}
+		if (key_pressed(KEY_3))
+		{
+			string size = (round(r.download_size / 1024 / 1024, 0) - round(r.bytes_downloaded / 1024 / 1024, 0)) + " MB";
+			speak("Total remaining: " + size);
+		}
+		if (key_pressed(KEY_H))
+		{
+			speak(msg);
+		}
+		if (key_pressed(KEY_M))
+		{
+			if (progbeeps == 1)
+			{
+				progbeeps = 0;
+				speak("Progress beeps muted.");
+			}
+			else if (progbeeps == 0)
+			{
+				progbeeps = 1;
+				speak("Progress beeps unmuted.");
+			}
+		}
+		if (key_pressed(KEY_SPACE))
+		{
+			if (r.download_percent == r.download_percent && r.download_percent >= 0)
+			{
+				speak(round(r.download_percent, 0) + " percent downloaded");
+			}
+			else
+			{
+				speak("Download progress unavailable.");
+			}
+		}
+		if (r.complete == true)
+		{
+			status = "finished";
+		}
+	}
+	return status;
+}
+
 bool check_and_prompt_missing_sounds()
 {
 	if (file_exists("sounds.dw") || file_exists("settings/sounds.dw")) return true;
-	if (directory_exists("sounds"))
-	{
-		string[]@ s_files = find_files("sounds/*");
-		string[]@ s_dirs = find_directories("sounds/*");
-		int count = 0;
-		if (s_files !is null) count += s_files.length();
-		if (s_dirs !is null) count += s_dirs.length();
-		if (count > 0) return true;
-	}
+	if (directory_exists("sounds") && !directory_empty("sounds")) return true;
 
-	speak("Game sounds were not found. Do you want to download the game sounds? Press Y or Enter for Yes, or Escape to continue without sounds.");
-
-	timer debounce_timer;
-	while (true)
-	{
-		wait(5);
-		if (key_pressed(KEY_Y) || key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || key_pressed(KEY_NUMPADENTER))
-		{
-			break;
-		}
-		if (key_pressed(KEY_ESCAPE) || key_pressed(KEY_N))
-		{
-			bypass_missing_sounds_check = true;
-			speak("Continuing without sounds.");
-			return false;
-		}
-		if (debounce_timer.elapsed >= 8000)
-		{
-			debounce_timer.restart();
-			speak("Game sounds were not found. Press Y or Enter to download sounds, or Escape to continue without sounds.");
-		}
-	}
-
-	speak("Checking for sound package download address...");
-	load_updater_settings();
-
-	string sound_url = "";
-	int64 sound_size = 0;
-
-	string manifest = "";
-	string manifest_error = "";
-	int fetch_res = fetch_manifest(manifest, manifest_error);
-	if (fetch_res == 0 && manifest != "")
-	{
-		var@ parsed_var = parse_json(manifest);
-		if (parsed_var !is null)
-		{
-			json_object@ root = parsed_var;
-			if (root !is null && root.is_object("sounds"))
-			{
-				json_object@ s = root.get_object("sounds");
-				sound_url = s["url"];
-				string sz = s["size"];
-				if (sz != "") sound_size = int64(string_to_number(sz));
-			}
-		}
-	}
-
-	if (sound_url == "")
-	{
-		sound_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/sounds.zip";
-	}
-
-	update_item item;
-	item.type = UPDATE_SOUNDS;
-	item.url = sound_url;
-	item.size = sound_size;
-	item.new_version = "0.1";
-
-	speak("Starting sound package download. Please wait...");
-	bool applied = apply_sounds_update(item);
-	if (!applied)
+	int quest = question("The Confront", "There are no sounds detected in the game! Would you like to download them now?");
+	if (quest != 1)
 	{
 		bypass_missing_sounds_check = true;
-		speak("Sound download could not be completed. Continuing without sounds.");
+		speak("Continuing without sounds.");
 		return false;
 	}
-	return true;
+
+	string sound_file = "sounds.zip";
+	if (file_exists(sound_file) && file_get_size(sound_file) > 1048576)
+	{
+		alert("Notice", "Sound package already downloaded. The installer will now proceed to extraction.");
+	}
+	else
+	{
+		string sound_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.2/sounds.zip";
+		string result = dl_file(sound_url, sound_file);
+		if (result != "finished" || !file_exists(sound_file) || file_get_size(sound_file) < 1048576)
+		{
+			if (result != "canceled")
+			{
+				string fallback_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/sounds.zip";
+				result = dl_file(fallback_url, sound_file);
+			}
+		}
+
+		if (result != "finished" || !file_exists(sound_file) || file_get_size(sound_file) < 1048576)
+		{
+			alert("Error", "Download failed or was canceled.");
+			if (file_exists(sound_file)) file_delete(sound_file);
+			bypass_missing_sounds_check = true;
+			return false;
+		}
+		alert("Download Complete", "Download completed successfully.");
+	}
+
+	alert("Extracting", "Extracting files. Please wait, this may take a moment...");
+	if (!directory_exists("sounds")) directory_create("sounds");
+
+	bool extr = run("tar.exe", "-xf " + sound_file, true, false);
+	if (!extr || directory_empty("sounds"))
+	{
+		extr = run("powershell.exe", "-NoProfile -Command \"Expand-Archive -Force -Path '" + sound_file + "' -DestinationPath '.'\"", true, false);
+	}
+
+	if (directory_exists("sounds") && !directory_empty("sounds"))
+	{
+		alert("Extraction Complete", "Extraction finished successfully.");
+		if (file_exists(sound_file)) file_delete(sound_file);
+		alert("Restarting", "The game will now restart to apply changes.");
+		restart_game_client();
+		return true;
+	}
+
+	alert("Error", "Failed to extract the sound package.");
+	bypass_missing_sounds_check = true;
+	return false;
 }
 
 // Native NVGT tone generator, used for every updater sound.
@@ -469,14 +550,8 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 	for (int attempt = 1; attempt <= UPDATE_MAX_ATTEMPTS; attempt++)
 	{
 		if (file_exists(dest)) file_delete(dest);
-		if (attempt == 1) speak(tr("updater.downloading"));
-		else speak("Download failed. Retrying, attempt " + attempt + " of " + UPDATE_MAX_ATTEMPTS + ".");
-
-		int server_status = 0;
-		string curl_error = "";
-		int exit_code = run_download_attempt(url, dest, expected_size, server_status, curl_error);
-
-		if (exit_code == -2)
+		string result = dl_file(url, dest);
+		if (result == "canceled")
 		{
 			if (file_exists(dest)) file_delete(dest);
 			error_message = "Update cancelled.";
@@ -484,29 +559,20 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 		}
 
 		int64 size = file_exists(dest) ? file_get_size(dest) : 0;
-		if (exit_code == 0 && size > 0 && (expected_size <= 0 || size == expected_size) && (server_status == 200 || server_status == 0))
+		if (result == "finished" && size > 0 && (expected_size <= 0 || size == expected_size))
 		{
 			updater_beep(1250, 90);
 			return true;
 		}
 
-		if (server_status != 0 && server_status != 200)
+		if (attempt < UPDATE_MAX_ATTEMPTS)
 		{
-			// A missing file or a server error will not fix itself; report it now.
-			if (file_exists(dest)) file_delete(dest);
-			error_message = "The update server returned HTTP error " + server_status + " for " + url + ".";
-			updater_beep(220, 300);
-			return false;
+			speak("Download failed. Retrying, attempt " + (attempt + 1) + " of " + UPDATE_MAX_ATTEMPTS + ".");
+			wait(500);
 		}
-
-		if (exit_code != 0)
-			error_message = describe_curl_failure(exit_code, server_status, curl_error);
-		else if (size <= 0)
-			error_message = "The downloaded file is empty.";
-		else
-			error_message = "The downloaded file is corrupt or incomplete. Expected " + format_byte_size(expected_size) + " but received " + format_byte_size(size) + ".";
 	}
 
+	error_message = "Download failed after multiple attempts.";
 	updater_beep(220, 300);
 	return false;
 }
@@ -551,7 +617,7 @@ void restart_game_client()
 {
 	wait(200);
 	if (SCRIPT_COMPILED) run("dw.exe", "", false, false);
-	else run("nvgt", "dw.nvgt", false, false);
+	else run("nvgt", "tcf.nvgt", false, false);
 	exit();
 }
 
