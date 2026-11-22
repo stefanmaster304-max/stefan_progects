@@ -117,6 +117,12 @@ bool load_all_contents(bool force = false)
 
 bool encrypt_all_contents_silent()
 {
+	if (item_registry.length() == 0) load_all_items_config(false);
+	if (weapon_registry.length() == 0) load_all_weapons_wpm(false);
+	if (store_configs.length() == 0) init_stores();
+	if (package_registry.length() == 0) load_all_packages();
+	if (npc_registry.length() == 0) load_all_npcs(false);
+
 	if (!directory_exists("settings")) directory_create("settings");
 	string enc = string_encrypt(serialize_all_contents_bundle(), CONTENT_ENC_KEY);
 	file f;

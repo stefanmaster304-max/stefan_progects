@@ -298,7 +298,6 @@ void load_all_npcs(bool force = false)
 				npc_registry.insert_last(n);
 			}
 		}
-		if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 		return;
 	}
 

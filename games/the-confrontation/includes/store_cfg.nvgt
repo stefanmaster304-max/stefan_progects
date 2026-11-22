@@ -436,6 +436,12 @@ void init_stores()
 {
 	ensure_store_dir();
 
+	// 1. In compiled release mode: the single encrypted contents.dat bundle
+	if (SCRIPT_COMPILED)
+	{
+		if (load_all_contents()) return;
+	}
+
 	string[]@ loose_stores = list_store_files();
 	if (loose_stores !is null && loose_stores.length() > 0)
 	{
@@ -444,14 +450,7 @@ void init_stores()
 		{
 			load_store_config(loose_stores[i]);
 		}
-		if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 		return;
-	}
-
-	// 1. In compiled release mode: the single encrypted contents.dat bundle
-	if (SCRIPT_COMPILED)
-	{
-		if (load_all_contents()) return;
 	}
 
 	store_configs.resize(0);

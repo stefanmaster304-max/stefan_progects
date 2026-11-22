@@ -5,6 +5,21 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 22, 2026 at 19:35
+-------------------------------------------------------------------------------
+
+1. Store Categories Resolution in Compiled Executable (dw.exe):
+   - Fixed category loading in compiled mode by prioritizing encrypted content decryption (load_all_contents()) at the start of init_stores(), ensuring contents.dat supplies all categories (ammo, medical items, weapons).
+   - Removed unintentional encrypt_all_contents_silent() triggers from read/init functions (init_stores() and load_all_npcs()) which could overwrite contents.dat with uninitialized registries.
+   - Guarded encrypt_all_contents_silent() to populate all empty registries (items, weapons, stores, packages, npcs) before serializing to contents.dat.
+
+2. Sounds Package & Release Assets:
+   - Packaged and compressed the full game sounds directory into sounds.zip (1,921 MB), safely beneath the 2 GB GitHub Releases file size limit and fully compatible with the in-game auto-updater.
+   - Built standalone game distribution package the_confront_v0.1.zip (35.5 MB) containing dw.exe, lib/, and encrypted settings/.
+   - Reverted NVGT to the stable release environment compatible with King Audio Engine.
+
+
+-------------------------------------------------------------------------------
 New on November 22, 2026 at 19:10
 -------------------------------------------------------------------------------
 
