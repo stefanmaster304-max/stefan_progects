@@ -1,7 +1,8 @@
-name=Knife
+﻿name=Knife
 description=Knife (melee)
 class=melee
 melee=true
+projectile=ballistic
 firetime=200
 walktime=160
 speedtime=5

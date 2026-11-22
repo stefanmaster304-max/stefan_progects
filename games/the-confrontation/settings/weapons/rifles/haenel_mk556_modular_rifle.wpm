@@ -1,7 +1,8 @@
-name=Haenel MK556 Modular Rifle
+﻿name=Haenel MK556 Modular Rifle
 description=Haenel MK556 Modular Rifle (rifles)
 class=rifles
 melee=false
+projectile=ballistic
 firetime=275
 walktime=180
 speedtime=5

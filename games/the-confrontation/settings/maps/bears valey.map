@@ -12,5 +12,4 @@ maxresurrection: 0
 platform:0:150:0:150:0:0:grass3
 zone:0:150:0:150:0:150:bears valey
 npcspawner:bear:4:5600:0:0:0:150:150:0:1
-source:0:150:0:150:0:150:sources/amazonia3:0:100
-source:0:150:0:150:0:150:sources/forest1:0:100
+source:0:150:0:150:0:150:sources/birds17:0:100

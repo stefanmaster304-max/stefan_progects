@@ -1,7 +1,8 @@
-name=FN SCAR-H Battle Rifle
+﻿name=FN SCAR-H Battle Rifle
 description=FN SCAR-H Battle Rifle (rifles)
 class=rifles
 melee=false
+projectile=ballistic
 firetime=310
 walktime=185
 speedtime=5

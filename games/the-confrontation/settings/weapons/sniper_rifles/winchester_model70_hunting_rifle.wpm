@@ -1,7 +1,8 @@
-name=Winchester Model 70 Hunting Rifle
+﻿name=Winchester Model 70 Hunting Rifle
 description=Winchester Model 70 Hunting Rifle (sniper rifles)
 class=sniper_rifles
 melee=false
+projectile=ballistic
 firetime=1400
 walktime=200
 speedtime=5

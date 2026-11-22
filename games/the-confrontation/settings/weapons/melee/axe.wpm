@@ -2,6 +2,7 @@
 description=Axe (melee)
 class=melee
 melee=true
+projectile=ballistic
 firetime=225
 walktime=165
 speedtime=5

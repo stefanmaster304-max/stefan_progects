@@ -1,7 +1,8 @@
-name=AK5C Assault Rifle
+﻿name=AK5C Assault Rifle
 description=AK5C Assault Rifle (rifles)
 class=rifles
 melee=false
+projectile=ballistic
 firetime=290
 walktime=180
 speedtime=5

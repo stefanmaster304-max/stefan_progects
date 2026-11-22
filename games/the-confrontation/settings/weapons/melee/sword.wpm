@@ -2,6 +2,7 @@
 description=Sword (melee)
 class=melee
 melee=true
+projectile=ballistic
 firetime=255
 walktime=160
 speedtime=5

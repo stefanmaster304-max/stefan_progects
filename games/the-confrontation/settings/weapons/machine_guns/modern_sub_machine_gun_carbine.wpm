@@ -2,6 +2,7 @@
 description=Modern Sub Machine Gun Carbine (machine guns)
 class=machine_guns
 melee=false
+projectile=ballistic
 firetime=130
 walktime=189
 speedtime=5

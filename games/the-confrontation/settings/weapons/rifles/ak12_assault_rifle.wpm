@@ -1,7 +1,8 @@
-name=AK-12 Assault Rifle
+﻿name=AK-12 Assault Rifle
 description=AK-12 Assault Rifle (rifles)
 class=rifles
 melee=false
+projectile=ballistic
 firetime=280
 walktime=180
 speedtime=5

@@ -2,6 +2,7 @@
 description=Glock9mm (pistols)
 class=pistols
 melee=false
+projectile=ballistic
 firetime=200
 walktime=162
 speedtime=5

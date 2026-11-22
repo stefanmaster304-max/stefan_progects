@@ -2,6 +2,7 @@
 description=Dragunov Psl Sniper Rifle (sniper rifles)
 class=sniper_rifles
 melee=false
+projectile=ballistic
 firetime=1300
 walktime=221
 speedtime=5

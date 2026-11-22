@@ -1,7 +1,8 @@
-name=AI AW Suppressed Sniper Rifle
+﻿name=AI AW Suppressed Sniper Rifle
 description=AI AW Suppressed Sniper Rifle (sniper rifles)
 class=sniper_rifles
 melee=false
+projectile=ballistic
 firetime=1800
 walktime=210
 speedtime=5

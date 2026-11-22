@@ -1,7 +1,8 @@
-name=Grenade Launcher
+﻿name=Grenade Launcher
 description=Grenade Launcher (launchers)
 class=launchers
 melee=false
+projectile=grenade
 firetime=800
 walktime=210
 speedtime=5

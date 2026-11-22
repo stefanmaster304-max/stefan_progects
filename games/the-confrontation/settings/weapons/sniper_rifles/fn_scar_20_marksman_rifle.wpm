@@ -1,7 +1,8 @@
-name=FN SCAR 20 Marksman Rifle
+﻿name=FN SCAR 20 Marksman Rifle
 description=FN SCAR 20 Marksman Rifle (sniper rifles)
 class=sniper_rifles
 melee=false
+projectile=ballistic
 firetime=600
 walktime=195
 speedtime=5

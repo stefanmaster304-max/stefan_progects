@@ -1,7 +1,8 @@
-name=Zastava M70 Assault Rifle
+﻿name=Zastava M70 Assault Rifle
 description=Zastava M70 Assault Rifle (rifles)
 class=rifles
 melee=false
+projectile=ballistic
 firetime=300
 walktime=185
 speedtime=5

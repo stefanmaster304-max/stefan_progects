@@ -1,7 +1,8 @@
-name=AN-94 Abakan Assault Rifle
+﻿name=AN-94 Abakan Assault Rifle
 description=AN-94 Abakan Assault Rifle (rifles)
 class=rifles
 melee=false
+projectile=ballistic
 firetime=270
 walktime=185
 speedtime=5

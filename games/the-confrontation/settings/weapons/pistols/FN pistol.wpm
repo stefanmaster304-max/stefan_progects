@@ -2,6 +2,7 @@
 description=Fn Pistol (pistols)
 class=pistols
 melee=false
+projectile=ballistic
 firetime=240
 walktime=160
 speedtime=5

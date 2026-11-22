@@ -2,6 +2,7 @@
 description=S&w Model66 Revolver (revolvers)
 class=revolvers
 melee=false
+projectile=ballistic
 firetime=590
 walktime=176
 speedtime=5

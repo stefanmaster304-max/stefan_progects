@@ -1,7 +1,8 @@
-name=FN Five-Seven Pistol
+﻿name=FN Five-Seven Pistol
 description=FN Five-Seven Pistol (pistols)
 class=pistols
 melee=false
+projectile=ballistic
 firetime=220
 walktime=160
 speedtime=5

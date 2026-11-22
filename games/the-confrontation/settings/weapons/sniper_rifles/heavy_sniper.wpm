@@ -1,7 +1,8 @@
-name=Heavy Sniper
+﻿name=Heavy Sniper
 description=Heavy Sniper (sniper rifles)
 class=sniper_rifles
 melee=false
+projectile=ballistic
 firetime=2100
 walktime=215
 speedtime=5

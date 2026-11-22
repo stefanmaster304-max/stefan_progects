@@ -2,6 +2,7 @@
 description=Fnf Pistol (pistols)
 class=pistols
 melee=false
+projectile=ballistic
 firetime=250
 walktime=164
 speedtime=5
@@ -24,4 +25,4 @@ sound_ricochet=bullets/bulletwhiz1.ogg;bullets/bulletwhiz2.ogg;bullets/bulletwhi
 sound_empty_mag=weapons/fnf pistol/FN_509_tacticalempty.ogg
 sound_draw=weapons/fnf pistol/FN_509_tacticaldraw.ogg
 sound_reload=weapons/fnf pistol/FN_509_tacticalreload.ogg
-sound_hit=bullets/bullet_impact_body1.ogg;bullets/bullet_impact_body2.ogg;bullets/bullet_impact_body3.ogg;bullets/bullet_impact_body4.ogg;bullets/bullet_impact_body5.ogg;bullets/bullet_impact_body6.ogg;bullets/bullet_impact_body7.ogg;bullets/bullet_impact_body8.ogg;bullets/bullet_impact_body9.ogg;bullets/bullet_impact_body10.ogg;bullets/bullet_impact_body11.ogg;bullets/bullet_impact_body12.ogg;bullets/bullet_impact_body13.ogg;bullets/bullet_impact_body14.ogg;bullets/bullet_impact_body15.ogg;bullets/bullet_impact_body16.ogg
+sound_hit=bullets/bullet_impact_body1.ogg;bullets/bullet_impact_body2.ogg;bullets/bullet_impact_body3.ogg;bullets/bullet_impact_body4.ogg;bullets/bullet_impact_body5.ogg;bullets/bullet_impact_body6.ogg

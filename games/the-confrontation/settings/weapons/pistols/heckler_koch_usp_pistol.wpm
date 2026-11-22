@@ -1,7 +1,8 @@
-name=Heckler & Koch USP Pistol
+﻿name=Heckler & Koch USP Pistol
 description=Heckler & Koch USP Pistol (pistols)
 class=pistols
 melee=false
+projectile=ballistic
 firetime=230
 walktime=160
 speedtime=5
