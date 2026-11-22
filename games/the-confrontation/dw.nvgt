@@ -179,6 +179,22 @@ virtualizer v;
 sound bleading;
 sound heartbeat;
 
+void load_player_vital_sounds()
+{
+	string char_sub = (current_player_character == "ilana") ? "ylana" : "stefan";
+	string bpath = find_sound_in_disk("sounds/players/" + char_sub + "/bleeding.ogg");
+	if (bpath == "") bpath = get_player_sound("bleeding");
+	if (bpath == "") bpath = find_sound_in_disk("sounds/players/stefan/bleeding.ogg");
+	if (bpath == "") bpath = get_sound_path("bleeding.ogg");
+	if (bpath != "") bleading.load(bpath);
+
+	string hpath = find_sound_in_disk("sounds/players/" + char_sub + "/player health heartbeat.ogg");
+	if (hpath == "") hpath = get_player_sound("heartbeat");
+	if (hpath == "") hpath = find_sound_in_disk("sounds/players/stefan/player health heartbeat.ogg");
+	if (hpath == "") hpath = get_sound_path("player health heartbeat.ogg");
+	if (hpath != "") heartbeat.load(hpath);
+}
+
 void dive_underwater()
 {
 	if (is_underwater) return;
@@ -1492,11 +1508,5 @@ void init()
 	inv.delete_all();
 	health=maxhealth;
 	currentloc="";
-	string bpath = get_player_sound("blead");
-	if (bpath == "") bpath = find_sound_in_disk("sounds/player/bleeding.ogg");
-	if (bpath == "") bpath = get_sound_path("bleading.ogg");
-	bleading.load(bpath);
-	string hpath = find_sound_in_disk("sounds/player/player health heartbeat.ogg");
-	if (hpath == "") hpath = get_sound_path("player health heartbeat.ogg");
-	heartbeat.load(hpath);
+	load_player_vital_sounds();
 }

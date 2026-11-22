@@ -5,6 +5,28 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 22, 2026 at 18:30
+-------------------------------------------------------------------------------
+
+1. Weapon Fire Audio Restoration:
+   - Restored shotgun fire audio configurations (AA-12, Fabarm FP6, Remington 870, Winchester 1300) to exclusively play their proper firing sounds (*_fire1.ogg, *_fire2.ogg, *_fire3.ogg).
+   - Removed auxiliary sounds (impact/hit, reload, distance, and draw audio) from the sound_fire field so weapons fire cleanly with their actual gunshots.
+   - Cleaned global audio search paths in sound_paths.nvgt to prevent character-specific folders from shadowing general weapon and game sounds.
+
+2. Bleeding Sound & Vital Loop Synchronization:
+   - Fixed player vital sound loading via load_player_vital_sounds(): both characters (Stefan and Ilana) now dynamically load their designated bleeding.ogg and heartbeat sounds from their respective audio folders.
+   - When player health is low (health <= 1,000 HP), the bleeding sound plays in a continuous loop alongside the heartbeat until the player recovers or health reaches zero.
+
+3. NPC Death Drop Configurations Restored:
+   - Restored item dropping behavior and drop configurations across animal NPCs:
+     - Bear (bear.npc): drop_items_on_death enabled, drops golden_crystal:1.
+     - Coyote (coiote.npc): drop_items_on_death enabled, drops golden_crystal:1.
+     - Wolf (wolf.npc): drop_items_on_death enabled, drops anti_death_card:1.
+     - Rabbit (rabbith.npc): drop_items_on_death enabled, drops golden_crystal:230.
+   - Defeated NPCs now consistently spawn and drop their configured loot directly onto the ground upon death.
+
+
+-------------------------------------------------------------------------------
 New on November 22, 2026 at 17:45
 -------------------------------------------------------------------------------
 

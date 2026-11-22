@@ -514,8 +514,6 @@ string get_sound_path(string path)
 	string[] folders = {
 		"sounds/items/",
 		"sounds/player/",
-		"sounds/players/stefan/",
-		"sounds/players/ylana/",
 		"sounds/weapons/",
 		"sounds/map platforms/",
 		"sounds/anbients/",
