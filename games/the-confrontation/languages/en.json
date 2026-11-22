@@ -7,7 +7,7 @@
       "store": "Store",
       "test_speakers": "Test speakers",
       "check_updates": "Check for updates",
-      "documentation": "Documentation",
+      "documentation": "Help",
       "options": "Options",
       "exit": "Exit"
     }
@@ -357,10 +357,12 @@
     "continuing_without_sounds": "Continuing without sounds."
   },
   "documentation": {
-    "title": "Documentation",
-    "options": "Documentation options",
-    "read_changes": "Read recent changes",
-    "read_readme": "Read Readme file",
+    "title": "Help",
+    "options": "Help options",
+    "file_changes": "Recent changes",
+    "file_readme": "Readme",
+    "read_changes": "Recent changes",
+    "read_readme": "Readme",
     "readme_not_found": "Readme file not found.",
     "changes_not_found": "Changes file not found.",
     "error_opening": "Could not open documentation file."

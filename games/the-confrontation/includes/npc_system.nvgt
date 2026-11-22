@@ -250,11 +250,13 @@ class npc_instance
 
 	// Bearing used to walk a circle around the player inside a safe zone.
 	double patrol_angle;
+	int last_sound_x, last_sound_y, last_sound_z;
 
 	npc_instance()
 	{
 		@data = null;
 		x = 0; y = 0; z = 0;
+		last_sound_x = -999999; last_sound_y = -999999; last_sound_z = -999999;
 		facing = north;
 		hp = 1;
 		maxhp = 1;
@@ -328,13 +330,19 @@ void npc_tag_sound(npc_instance@ npc, int slot)
 }
 
 // Moves every sound this NPC still has playing to its current tile, using the
-// pool's own owner lookup.
+// pool's own owner lookup only when the coordinates actually changed.
 void npc_follow_sounds(npc_instance@ npc)
 {
 	if (npc is null || !npc_pool_ready || npc.sound_owner == "") return;
 	if (npc.voice_handle !is null && npc.voice_handle.playing)
 	{
-		npcp.update_sounds_3d(npc.sound_owner, npc.x, npc.y, npc.z);
+		if (npc.x != npc.last_sound_x || npc.y != npc.last_sound_y || npc.z != npc.last_sound_z)
+		{
+			npc.last_sound_x = npc.x;
+			npc.last_sound_y = npc.y;
+			npc.last_sound_z = npc.z;
+			npcp.update_sounds_3d(npc.sound_owner, npc.x, npc.y, npc.z);
+		}
 	}
 }
 
@@ -343,6 +351,7 @@ void npc_follow_sounds(npc_instance@ npc)
 void npc_play_positional(npc_instance@ npc, const string&in snd)
 {
 	if (npc is null || snd == "") return;
+	if (get_3d_distance(me.x, me.y, me.z, double(npc.x), double(npc.y), double(npc.z)) > NPC_LOCAL_SOUND_DISTANCE) return;
 	string path = get_sound_path(snd);
 	if (path == "") return;
 	npc_init_pool();
@@ -434,7 +443,8 @@ bool npc_wall_between(int x0, int y0, int x1, int y1, int z)
 	int err = dx - dy;
 	int cx = x0;
 	int cy = y0;
-	while (cx != x1 || cy != y1)
+	int safety = (dx + dy) * 2 + 10;
+	while ((cx != x1 || cy != y1) && --safety > 0)
 	{
 		int e2 = 2 * err;
 		if (e2 > -dy) { err -= dy; cx += sx; }
@@ -448,7 +458,7 @@ bool npc_wall_between(int x0, int y0, int x1, int y1, int z)
 // ---------------------------------------------------------------------------
 // Pathfinding
 // ---------------------------------------------------------------------------
-const int NPC_PATH_MAX_EXPANSIONS = 800;
+const int NPC_PATH_MAX_EXPANSIONS = 300;
 const int NPC_PATH_RECALC_MS = 300;
 const int NPC_PATH_BUFFER_SIZE = 3600;
 
@@ -459,6 +469,7 @@ int[] npc_path_closed_seq;
 int[] npc_path_walk_cache;
 int[] npc_path_cache_seq;
 int npc_path_seq = 0;
+int npc_path_searches_this_frame = 0;
 
 void npc_ensure_path_buffers()
 {
@@ -758,31 +769,36 @@ void npc_walk_to(npc_instance@ npc, int tx, int ty, bool stop_next_to = false)
 		}
 	}
 
-	if (npc.path_timer.elapsed >= NPC_PATH_RECALC_MS || npc.path.length() == 0)
+	bool can_search = (npc.path_timer.elapsed >= NPC_PATH_RECALC_MS);
+	if (can_search && (npc.path.length() == 0 || goal_gap > 3))
 	{
-		npc.path = npc_find_path(npc, tx, ty, stop_next_to);
-		npc.path_index = 0;
-		npc.path_goal_x = tx;
-		npc.path_goal_y = ty;
-		npc.path_stop_next_to = stop_next_to;
-		npc.path_timer.restart();
-
-		while (npc.path_index < int(npc.path.length()))
+		if (npc_path_searches_this_frame < 3)
 		{
-			int key = npc.path[npc.path_index];
-			if (npc_path_x(npc, key) == npc.x && npc_path_y(npc, key) == npc.y) npc.path_index++;
-			else break;
-		}
+			npc_path_searches_this_frame++;
+			npc.path_timer.restart();
+			npc.path = npc_find_path(npc, tx, ty, stop_next_to);
+			npc.path_index = 0;
+			npc.path_goal_x = tx;
+			npc.path_goal_y = ty;
+			npc.path_stop_next_to = stop_next_to;
 
-		if (npc.path_index < int(npc.path.length()))
-		{
-			int key = npc.path[npc.path_index];
-			int px = npc_path_x(npc, key);
-			int py = npc_path_y(npc, key);
-			if (npc_step_to(npc, px, py))
+			while (npc.path_index < int(npc.path.length()))
 			{
-				npc.path_index++;
-				return;
+				int key = npc.path[npc.path_index];
+				if (npc_path_x(npc, key) == npc.x && npc_path_y(npc, key) == npc.y) npc.path_index++;
+				else break;
+			}
+
+			if (npc.path_index < int(npc.path.length()))
+			{
+				int key = npc.path[npc.path_index];
+				int px = npc_path_x(npc, key);
+				int py = npc_path_y(npc, key);
+				if (npc_step_to(npc, px, py))
+				{
+					npc.path_index++;
+					return;
+				}
 			}
 		}
 	}
@@ -1556,6 +1572,7 @@ void npc_start_for_map()
 void npc_loop()
 {
 	if (npc_instances.length() == 0 && npc_spawner_states.length() == 0) return;
+	npc_path_searches_this_frame = 0;
 	if (npc_pool_ready) npcp.update_listener_3d(me.x, me.y, me.z, double(facing));
 
 	for (uint s = 0; s < npc_spawner_states.length(); s++)
@@ -1595,6 +1612,10 @@ void npc_loop()
 					if (npc_spawn_instance(sl.npc_id, int(s), int(k), sp.rx0, sp.ry0, sp.rz0, sp.rx1, sp.ry1, sp.rz1) !is null)
 					{
 						sl.waiting_respawn = false;
+					}
+					else
+					{
+						sl.death_timer.restart();
 					}
 				}
 			}

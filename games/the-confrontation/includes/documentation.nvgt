@@ -14,6 +14,8 @@ void open_documentation_notepad(const string&in title, const string&in file_path
 	string content = f.read();
 	f.close();
 
+	pause_main_menu_music();
+
 	while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
 	{
 		wait(5);
@@ -42,6 +44,8 @@ void open_documentation_notepad(const string&in title, const string&in file_path
 	{
 		wait(5);
 	}
+
+	resume_main_menu_music();
 }
 
 void open_documentation_file(const string&in title, const string&in file_path)
@@ -61,8 +65,8 @@ void documentation_menu()
 		audio_form doc_form;
 		doc_form.create_window(tr("documentation.title"), false, true, false);
 		int dl = doc_form.create_list(tr("documentation.options"), 0, false, true);
-		doc_form.add_list_item(dl, tr("documentation.read_changes"), "changes");
-		doc_form.add_list_item(dl, tr("documentation.read_readme"), "readme");
+		doc_form.add_list_item(dl, tr("documentation.file_changes"), "changes");
+		doc_form.add_list_item(dl, tr("documentation.file_readme"), "readme");
 		int select_btn = doc_form.create_button("&" + tr("ui.select"), true);
 		int back_btn = doc_form.create_button("&" + tr("ui.back"), false, true);
 		doc_form.focus(dl);
@@ -89,7 +93,7 @@ void documentation_menu()
 
 					if (changes_file != "")
 					{
-						open_documentation_notepad(tr("documentation.read_changes"), changes_file);
+						open_documentation_notepad(tr("documentation.file_changes"), changes_file);
 					}
 					else
 					{
@@ -109,7 +113,7 @@ void documentation_menu()
 
 					if (readme_file != "")
 					{
-						open_documentation_notepad(tr("documentation.read_readme"), readme_file);
+						open_documentation_notepad(tr("documentation.file_readme"), readme_file);
 					}
 					else
 					{

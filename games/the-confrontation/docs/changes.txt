@@ -298,7 +298,7 @@ New on November 18, 2026 at 09:30
 -------------------------------------------------------------------------------
 
 1. Identity and Versioning:
-   - Game officially renamed to "The Confront" (Version 1.0.0).
+   - Game officially renamed to "The Confront" (Version 0.1).
 
 2. Sound Engine (King Audio & FMOD):
    - Restored stable baseline for King Audio, FMOD, and sound pool architecture.
@@ -306,15 +306,5 @@ New on November 18, 2026 at 09:30
    - Constant 0 dB footstep mixing with natural pitch variations.
 
 3. Weapons, Ammunition, and Store:
-   - Curated firearm catalog of 60 verified weapons with complete audio.
+   - Curated firearm catalog with complete audio and explicit projectile physics.
    - Main menu store organized into distinct category shelves charging native currencies (gold, golden crystal, diamond, silver).
-
-
--------------------------------------------------------------------------------
-New on August 15, 2026 at 12:22
--------------------------------------------------------------------------------
-
-1. Core Engine Foundation:
-   - Spatial 3D coordinate system (X, Y, Z).
-   - Screen reader output (NVDA, SAPI, JAWS) and speech synthesis.
-   - HRTF 3D positioning and distance attenuation.

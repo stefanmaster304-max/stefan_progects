@@ -62,6 +62,16 @@ void stop_main_menu_music()
 	m.stop_music();
 }
 
+void pause_main_menu_music()
+{
+	if (m.music.active && m.music.playing) m.music.pause();
+}
+
+void resume_main_menu_music()
+{
+	if (m.music.active && !m.music.playing) m.music.play();
+}
+
 dynamic_menu_pro m;
 void setupmenu(bool music=false)
 {

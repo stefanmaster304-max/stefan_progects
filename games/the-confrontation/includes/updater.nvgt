@@ -34,10 +34,10 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-string current_game_version = "1.0.0";
-string current_content_version = "1.0.0";
-string current_sounds_version = "1.0.0";
-string current_maps_version = "1.0.0";
+string current_game_version = "0.1";
+string current_content_version = "0.1";
+string current_sounds_version = "0.1";
+string current_maps_version = "0.1";
 int check_updates_on_startup = 1;
 string update_manifest_url = UPDATE_MANIFEST_URL_DEFAULT;
 
@@ -253,14 +253,14 @@ bool check_and_prompt_missing_sounds()
 
 	if (sound_url == "")
 	{
-		sound_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v1.0.0/sounds.zip";
+		sound_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/sounds.zip";
 	}
 
 	update_item item;
 	item.type = UPDATE_SOUNDS;
 	item.url = sound_url;
 	item.size = sound_size;
-	item.new_version = "1.0.0";
+	item.new_version = "0.1";
 
 	speak("Starting sound package download. Please wait...");
 	bool applied = apply_sounds_update(item);

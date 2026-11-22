@@ -7,7 +7,7 @@
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
-string ver = "1.0.0";
+string ver = "0.1";
 
 #include "bgt_compat.nvgt"
 #include "includes/sound_paths.nvgt"

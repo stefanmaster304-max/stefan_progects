@@ -7,7 +7,7 @@
       "store": "Tienda",
       "test_speakers": "Probar altavoces",
       "check_updates": "Buscar actualizaciones",
-      "documentation": "Documentación",
+      "documentation": "Ayuda",
       "options": "Opciones",
       "exit": "Salir"
     }
@@ -357,11 +357,13 @@
     "continuing_without_sounds": "Continuando sin sonidos."
   },
   "documentation": {
-    "title": "Documentación",
-    "options": "Opciones de documentación",
-    "read_changes": "Leer cambios recientes",
-    "read_readme": "Leer archivo Léame",
-    "readme_not_found": "Archivo LEAME no encontrado.",
+    "title": "Ayuda",
+    "options": "Opciones de ayuda",
+    "file_changes": "Cambios recientes",
+    "file_readme": "Léame",
+    "read_changes": "Cambios recientes",
+    "read_readme": "Léame",
+    "readme_not_found": "Archivo Léame no encontrado.",
     "changes_not_found": "Archivo de cambios no encontrado.",
     "error_opening": "No se pudo abrir el archivo de documentación."
   },

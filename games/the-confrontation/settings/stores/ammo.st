@@ -1,3 +1,3 @@
 name:ammo
-display_name:ammo
-payment_method:gold
+payment_method:golden_crystal
+inventory:ammo pack=50000
