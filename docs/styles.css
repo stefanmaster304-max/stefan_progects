@@ -85,7 +85,124 @@ h2 { margin: 0 0 0.8rem; font-size: clamp(1.35rem, 3vw, 1.8rem); letter-spacing:
 }
 
 @media (forced-colors: active) {
-  .welcome, .contact-panel, .empty-state { border: 1px solid CanvasText; }
+  .welcome, .contact-panel, .empty-state, .download-card, .character-card, .alert-box { border: 1px solid CanvasText; }
   .welcome { border-left-width: 0.45rem; }
   .nav-list a[aria-current="page"] { outline: 1px solid CanvasText; }
 }
+
+/* --- Estilos para The Confront --- */
+.game-page { max-width: 64rem; }
+.badge-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.badge { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; background: var(--line); color: var(--ink); }
+.badge-accent { background: var(--accent); color: var(--paper); }
+
+.game-hero { margin-bottom: 2.5rem; }
+
+/* Botões */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  border: 1px solid transparent;
+}
+.btn:hover { text-decoration: none; transform: translateY(-1px); }
+.btn-primary { background: var(--accent); color: #ffffff !important; }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-secondary { background: var(--soft-blue); color: var(--accent-dark) !important; border-color: var(--line); }
+.btn-secondary:hover { background: #d0e4f2; }
+.btn-outline { background: var(--paper); color: var(--ink) !important; border-color: var(--line); }
+.btn-outline:hover { background: var(--page); border-color: var(--muted); }
+.btn-link-ext { background: var(--ink); color: #ffffff !important; font-size: 0.95rem; }
+.btn-link-ext:hover { background: #0b1a28; }
+
+/* Seção de Downloads */
+.download-section { margin-block: 3rem; }
+.download-section .section-header { margin-bottom: 1.5rem; }
+.download-section .section-desc { color: var(--muted); margin-top: -0.4rem; }
+.download-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+
+.download-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  box-shadow: 0 0.4rem 1.2rem rgb(20 45 66 / 5%);
+  position: relative;
+}
+.download-card.featured {
+  border-color: var(--accent);
+  box-shadow: 0 0.6rem 2rem rgb(7 89 133 / 12%);
+  border-width: 2px;
+}
+.card-tag {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.3rem;
+  margin-bottom: 0.75rem;
+  background: var(--soft-blue);
+  color: var(--accent-dark);
+}
+.download-card.featured .card-tag {
+  background: var(--accent);
+  color: #ffffff;
+}
+.download-card h3 { margin: 0 0 0.5rem; font-size: 1.35rem; }
+.card-desc { font-size: 0.95rem; color: var(--muted); margin-bottom: 1rem; flex-grow: 1; }
+.specs-list { list-style: none; padding: 0; margin: 0 0 1.5rem; border-top: 1px solid var(--line); padding-top: 0.75rem; font-size: 0.9rem; color: var(--muted); }
+.specs-list li { margin-bottom: 0.35rem; }
+.specs-list strong { color: var(--ink); }
+
+.source-code-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--soft-blue);
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+}
+.source-code-bar h3 { margin: 0 0 0.25rem; font-size: 1.15rem; }
+.source-code-bar p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+/* Blocos de Alerta / Citação */
+.alert-box {
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+  border-left: 0.35rem solid #e69500;
+  background: #fff8eb;
+  border-radius: 0.4rem;
+  color: #7a4600;
+  font-size: 0.95rem;
+}
+
+/* Personagens */
+.character-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+.character-card {
+  padding: 1.5rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+}
+.character-card .char-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+.character-card h3 { margin: 0; font-size: 1.25rem; }
+.char-desc { color: var(--muted); font-size: 0.95rem; margin-bottom: 1rem; }
+.char-stats { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 0.75rem; }
+.char-stats li { margin-bottom: 0.4rem; }
+.char-stats strong { color: var(--ink); }
+

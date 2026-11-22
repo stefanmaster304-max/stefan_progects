@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Página oficial do jogo The Confront, desenvolvido por Stefan de Freedom Technology. Jogo de tiro FPS 3D com acessibilidade, sistema de ressurreições, personagens e muito mais.">
+  <meta name="theme-color" content="#102a43">
+  <title>The Confront — Página Oficial | stefan_progects</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo principal</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <p class="site-name">stefan_progects</p>
+      <nav aria-label="Navegação principal">
+        <ul class="nav-list">
+          <li><a href="index.html">Início</a></li>
+          <li><a href="about.html">Sobre</a></li>
+          <li><a href="projects.html">Meus Projetos</a></li>
+          <li><a aria-current="page" href="the-confront.html">The Confront</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="conteudo" class="container page-main game-page">
+    <header class="page-heading">
+      <div class="badge-row">
+        <span class="badge badge-accent">Beta Pública 0.1</span>
+        <span class="badge">NVGT Engine + IA</span>
+        <span class="badge">FPS 3D em Primeira Pessoa</span>
+      </div>
+      <h1>Página oficial do jogo The Confront</h1>
+      <p class="lead">Desenvolvido por Stefan de <strong>Freedom Technology</strong>. Bem-vindos à página oficial!</p>
+    </header>
+
+    <!-- Resumo / Hero -->
+    <section class="welcome game-hero" aria-labelledby="intro-title">
+      <p class="eyebrow">Sobre o Jogo</p>
+      <h2 id="intro-title">O que é The Confront?</h2>
+      <p class="welcome-copy">
+        <strong>The Confront</strong> é um jogo de tiro FPS em 3D, em primeira pessoa, onde seu principal objetivo é sobreviver às ameaças de cada mapa específico.
+      </p>
+      <p class="welcome-copy">
+        Enfrente hordas de animais selvagens, robôs táticos, zumbis famintos e, futuramente, espíritos e outros tipos de criaturas que surgirão à medida que você explora este universo em constante expansão.
+      </p>
+    </section>
+
+    <!-- Painel de Downloads -->
+    <section class="download-section" id="downloads" aria-labelledby="downloads-title">
+      <div class="section-header">
+        <p class="eyebrow">Baixe e Jogue</p>
+        <h2 id="downloads-title">Downloads Disponíveis (Versão v0.1)</h2>
+        <p class="section-desc">Clique no botão desejado para iniciar o download direto no seu navegador, sem sair desta página.</p>
+      </div>
+
+      <div class="download-cards">
+        <!-- Opção 1: Jogo Completo -->
+        <article class="download-card featured">
+          <div class="card-tag">Recomendado</div>
+          <h3>Jogo Completo</h3>
+          <p class="card-desc">Contém o executável do jogo, todas as bibliotecas necessárias e o pacote de sons completo já integrado. Baixe, extraia e comece a jogar imediatamente!</p>
+          <ul class="specs-list">
+            <li><strong>Tamanho:</strong> ~1.9 GB</li>
+            <li><strong>Formato:</strong> Arquivo ZIP pronto para jogar</li>
+            <li><strong>Inclui:</strong> Cliente dw.exe + Todos os sons</li>
+          </ul>
+          <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/the_confront_v0.1_complete.zip"
+             class="btn btn-primary js-download"
+             data-file="the_confront_v0.1_complete.zip">
+            <span class="icon">⬇</span> Baixar Jogo Completo
+          </a>
+        </article>
+
+        <!-- Opção 2: Cliente Leve (Sem sons) -->
+        <article class="download-card">
+          <div class="card-tag">Download Rápido</div>
+          <h3>Cliente Leve (Sem Sons)</h3>
+          <p class="card-desc">Ideal para downloads rápidos ou para quem já tem a pasta de sons. O jogo verifica atualizações e permite baixar os áudios diretamente.</p>
+          <ul class="specs-list">
+            <li><strong>Tamanho:</strong> ~35.4 MB</li>
+            <li><strong>Formato:</strong> Arquivo ZIP compacto</li>
+            <li><strong>Inclui:</strong> dw.exe, libs e dados criptografados</li>
+          </ul>
+          <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/the_confront_v0.1.zip"
+             class="btn btn-secondary js-download"
+             data-file="the_confront_v0.1.zip">
+            <span class="icon">⬇</span> Baixar Jogo (Sem Sons)
+          </a>
+        </article>
+
+        <!-- Opção 3: Pacote de Sons Avulso -->
+        <article class="download-card">
+          <div class="card-tag">Pacote de Áudio</div>
+          <h3>Pacote de Sons Avulso</h3>
+          <p class="card-desc">Pacote contendo toda a biblioteca sonoplástica do jogo (ambientes, armas, criaturas e vozes). Basta descompactar a pasta <code>sounds</code> na raiz do jogo.</p>
+          <ul class="specs-list">
+            <li><strong>Tamanho:</strong> ~1.87 GB</li>
+            <li><strong>Formato:</strong> Arquivo ZIP de sons</li>
+            <li><strong>Uso:</strong> Extrair dentro da pasta do jogo</li>
+          </ul>
+          <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/sounds.zip"
+             class="btn btn-outline js-download"
+             data-file="sounds.zip">
+            <span class="icon">⬇</span> Baixar Pacote de Sons
+          </a>
+        </article>
+      </div>
+
+      <!-- Link para o Código-Fonte -->
+      <div class="source-code-bar">
+        <div>
+          <h3>Código-Fonte Aberto</h3>
+          <p>O desenvolvimento do The Confront é transparente. Você pode acompanhar as novidades e conferir o código no repositório.</p>
+        </div>
+        <a href="https://github.com/stefanmaster304-max/stefan_progects"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="btn btn-link-ext">
+          Visitar Código-Fonte no GitHub ↗
+        </a>
+      </div>
+    </section>
+
+    <!-- Sistema de Ressurreições -->
+    <section class="content-section feature-block" aria-labelledby="resurrection-title">
+      <h2 id="resurrection-title">Sistema de Ressurreições</h2>
+      <p>
+        O jogo conta com um desafiador <strong>sistema de ressurreição</strong> que exige <strong>1.500 níveis</strong> acumulados para que você possa alcançar uma nova ressurreição.
+      </p>
+      <p>
+        Ao conquistar uma nova ressurreição, você <strong>desbloqueia um novo mapa</strong>, podendo visitá-lo pelo menu de mapas e enfrentar as criaturas exclusivas desse novo território.
+      </p>
+      <div class="alert-box">
+        <strong>Atenção Guerreiro:</strong> Cada mapa possui suas criaturas específicas e elas se tornam consideravelmente mais fortes a cada novo mapa. Prepare-se bem, aprimore seus equipamentos e explore o mundo com cautela, pois nenhuma das criaturas está para brincadeira!
+      </div>
+    </section>
+
+    <!-- Sistema de Personagens -->
+    <section class="content-section" aria-labelledby="chars-title">
+      <h2 id="chars-title">Sistema de Personagens Individuais</h2>
+      <p>
+        The Confront traz um sistema de personagens com histórico, saves e progressão totalmente individuais. Cada herói possui seus próprios atributos de vida, velocidade, armas exclusivas e dublagem própria:
+      </p>
+
+      <div class="character-cards">
+        <article class="character-card">
+          <div class="char-header">
+            <h3>Stefan (Masculino)</h3>
+            <span class="badge">Atleta Guerreiro</span>
+          </div>
+          <p class="char-desc">Jovem rebelde de espírito atlético, cabelos loiros e barba longa imponente. Equipado com metralhadora de cano duplo de alto impacto.</p>
+          <ul class="char-stats">
+            <li><strong>Vida Base:</strong> 5.000 HP</li>
+            <li><strong>Arma Característica:</strong> Metralhadora de cano duplo</li>
+            <li><strong>Vozes Exclusivas:</strong> Dublagem de Tristan (17 variações)</li>
+            <li><strong>Save Individual:</strong> Níveis e inventário próprios</li>
+          </ul>
+        </article>
+
+        <article class="character-card">
+          <div class="char-header">
+            <h3>Ilana (Feminino)</h3>
+            <span class="badge">Velocista Ágil</span>
+          </div>
+          <p class="char-desc">Garota atlética e destemida, com longos cabelos loiros e agilidade impressionante. Empunha um rifle de cano duplo dourado com brilho radiante.</p>
+          <ul class="char-stats">
+            <li><strong>Vida Base:</strong> 10.000 HP</li>
+            <li><strong>Arma Característica:</strong> Rifle dourado de cano duplo brilhante</li>
+            <li><strong>Vozes Exclusivas:</strong> Dublagem de Aria (17 variações)</li>
+            <li><strong>Save Individual:</strong> Níveis e inventário próprios</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- Tecnologia, NVGT e Inteligência Artificial -->
+    <section class="content-section" aria-labelledby="tech-title">
+      <h2 id="tech-title">Tecnologia, NVGT e Inteligência Artificial</h2>
+      <p>
+        The Confront é desenvolvido utilizando a engine <strong>NVGT (NonVisual Gaming Toolkit)</strong>, uma poderosa plataforma voltada à criação de jogos com áudio 3D imersivo e de alta fidelidade.
+      </p>
+      <p>
+        Além disso, o jogo é construído com o auxílio avançado de <strong>Inteligência Artificial</strong> para programação de rotinas complexas, ajustes finos de balanço sonoro, inteligência de NPCs e novas dinâmicas de mapas.
+      </p>
+    </section>
+
+    <!-- Atualizações Contínuas -->
+    <section class="content-section" aria-labelledby="updates-title">
+      <h2 id="updates-title">Sistema de Atualizações Contínuas</h2>
+      <p>
+        O jogo recebe frequentemente atualizações de conteúdo, correções e novidades.
+      </p>
+      <p>
+        O cliente possui um <strong>sistema integrado de atualização</strong>. Recomendamos checar periodicamente por novas atualizações através do menu do jogo ou, se preferir praticidade, habilitar nas configurações a <strong>checagem automática de atualizações ao iniciar</strong>.
+      </p>
+    </section>
+
+    <!-- Beta e Contato / Feedback -->
+    <section class="contact-panel" aria-labelledby="feedback-title">
+      <h2 id="feedback-title">Beta Pública 0.1 e Relato de Bugs</h2>
+      <p>
+        The Confront está atualmente em sua versão <strong>Beta Pública 0.1</strong>. Como todo projeto em evolução ativa, bugs e inconsistências podem surgir.
+      </p>
+      <p>
+        Caso encontre qualquer problema ou tenha sugestões para o jogo, por favor relate diretamente para o Stefan pelo Telegram:
+      </p>
+      <p>
+        <a class="text-link btn btn-secondary" href="https://t.me/damomgamer" target="_blank" rel="noopener noreferrer">
+          Entrar em contato com Stefan via Telegram (@damomgamer)
+        </a>
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© 2026–2028 Freedom Technology / Stefan® — Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- Script para download em segundo plano sem navegação/redirecionamento de aba -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const downloadButtons = document.querySelectorAll('.js-download');
+      downloadButtons.forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          const targetUrl = this.getAttribute('href');
+          const fileName = this.getAttribute('data-file') || '';
+
+          // Cria elemento temporário invisível para iniciar o download em segundo plano
+          const tempAnchor = document.createElement('a');
+          tempAnchor.href = targetUrl;
+          if (fileName) {
+            tempAnchor.setAttribute('download', fileName);
+          }
+          tempAnchor.style.display = 'none';
+          document.body.appendChild(tempAnchor);
+          tempAnchor.click();
+          document.body.removeChild(tempAnchor);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
