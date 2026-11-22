@@ -20,7 +20,7 @@ void build_npc_spawner()
 	}
 
 	audio_form f;
-	f.create_window("NPC Spawner", false, true, false);
+	f.create_window(tr("builder.npc_spawner_title"), false, true, false);
 	int list = f.create_list("NPCs to place on this map (Space to check/uncheck)", 0, true, true);
 	for (uint i = 0; i < npc_registry.length(); i++)
 	{
@@ -31,22 +31,22 @@ void build_npc_spawner()
 	int i_count = f.create_input_box("How many of each selected NPC should live in this area (0 removes it, maximum " + NPC_MAX_PER_SPAWNER + ")", "1");
 	int i_respawn = f.create_input_box("Respawn time after death in milliseconds", "30000");
 	int cb_respawn_after_death = f.create_checkbox("Only respawn after death", true);
-	int i_minx = f.create_input_box("Minimum x of the area the NPCs walk in", "" + int(minx));
-	int i_maxx = f.create_input_box("Maximum x of the area the NPCs walk in", "" + int(maxx));
-	int i_miny = f.create_input_box("Minimum y of the area the NPCs walk in", "" + int(miny));
-	int i_maxy = f.create_input_box("Maximum y of the area the NPCs walk in", "" + int(maxy));
-	int i_minz = f.create_input_box("Minimum z of the area the NPCs walk in", "" + int(round(me.z, 0)));
-	int i_maxz = f.create_input_box("Maximum z of the area the NPCs walk in", "" + int(round(me.z, 0)));
+	int i_minx = f.create_input_box(tr("form.min_x"), "" + int(minx));
+	int i_maxx = f.create_input_box(tr("form.max_x"), "" + int(maxx));
+	int i_miny = f.create_input_box(tr("form.min_y"), "" + int(miny));
+	int i_maxy = f.create_input_box(tr("form.max_y"), "" + int(maxy));
+	int i_minz = f.create_input_box(tr("form.min_z"), "" + int(round(me.z, 0)));
+	int i_maxz = f.create_input_box(tr("form.max_z"), "" + int(round(me.z, 0)));
 	f.set_disallowed_chars(i_count, "0123456789", true, "Numbers only.");
 	f.set_disallowed_chars(i_respawn, "0123456789", true, "Numbers only.");
-	f.set_disallowed_chars(i_minx, "0123456789", true, "Numbers only.");
-	f.set_disallowed_chars(i_maxx, "0123456789", true, "Numbers only.");
-	f.set_disallowed_chars(i_miny, "0123456789", true, "Numbers only.");
-	f.set_disallowed_chars(i_maxy, "0123456789", true, "Numbers only.");
-	f.set_disallowed_chars(i_minz, "0123456789", true, "Numbers only.");
-	f.set_disallowed_chars(i_maxz, "0123456789", true, "Numbers only.");
-	int btn_ok = f.create_button("&Save spawner", true);
-	int btn_cancel = f.create_button("&Cancel", false, true);
+	f.set_disallowed_chars(i_minx, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_maxx, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_miny, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_maxy, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_minz, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_maxz, "0123456789-", true, "Numbers only.");
+	int btn_ok = f.create_button("&" + tr("builder.save_spawner"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus(list);
 
@@ -58,7 +58,7 @@ void build_npc_spawner()
 
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
 		{
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			return;
 		}
 

@@ -125,12 +125,12 @@ void build_staircase()
 	f.set_disallowed_chars(i_minz, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxz, "0123456789-", true, "Numbers only.");
 
-	int tile_ctrl = f.create_list("Stair Surface Texture");
+	int tile_ctrl = f.create_list(tr("builder.stair_preview"));
 	for (uint i = 0; i < platform_dirs.length(); i++)
 		f.add_list_item(tile_ctrl, platform_dirs[i]);
 
-	int btn_ok = f.create_button("Add Staircase", true);
-	int btn_cancel = f.create_button("Cancel", false, true);
+	int btn_ok = f.create_button("&" + tr("builder.add_staircase"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus_silently(i_minx);
 
@@ -142,7 +142,7 @@ void build_staircase()
 		f.monitor();
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
 		{
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			return;
 		}
 		if (f.is_pressed(btn_ok))
@@ -155,7 +155,7 @@ void build_staircase()
 			string tz2 = f.get_text(i_maxz);
 			if (tx1 == "" || tx2 == "" || ty1 == "" || ty2 == "" || tz1 == "" || tz2 == "")
 			{
-				speak("Coordinates cannot be empty.");
+				speak(tr("builder.coords_empty"));
 				continue;
 			}
 			int x1 = int(string_to_number(tx1));

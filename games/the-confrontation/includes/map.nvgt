@@ -1155,7 +1155,7 @@ void build_platform()
 	f.set_disallowed_chars(i_minz, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxz, "0123456789-", true, "Numbers only.");
 
-	int tile_ctrl = f.create_list("Floor Platform (Space to preview)");
+	int tile_ctrl = f.create_list(tr("builder.floor_preview"));
 	for (uint i = 0; i < platform_dirs.length(); i++)
 	{
 		string p_name = platform_dirs[i];
@@ -1171,8 +1171,8 @@ void build_platform()
 	int vol_s = f.create_slider("volume", 0, -100, 0, "", 5);
 	int pit_s = f.create_slider("pitch", 100, 5, 500, "", 5);
 
-	int btn_ok = f.create_button("Add Platform", true);
-	int btn_cancel = f.create_button("Cancel", false, true);
+	int btn_ok = f.create_button("&" + tr("builder.add_platform"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus_silently(i_minx);
 
@@ -1222,7 +1222,7 @@ void build_platform()
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
 		{
 			builder_preview_sound.close();
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			return;
 		}
 
@@ -1236,7 +1236,7 @@ void build_platform()
 			string tz2 = f.get_text(i_maxz);
 			if (tx1 == "" || tx2 == "" || ty1 == "" || ty2 == "" || tz1 == "" || tz2 == "")
 			{
-				speak("Coordinates cannot be empty.");
+				speak(tr("builder.coords_empty"));
 				continue;
 			}
 			int x1 = int(string_to_number(tx1));
@@ -1276,12 +1276,12 @@ void build_wall()
 	f.set_disallowed_chars(i_minz, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxz, "0123456789-", true, "Numbers only.");
 
-	int wall_ctrl = f.create_list("Wall Texture (Space to preview)");
+	int wall_ctrl = f.create_list(tr("builder.wall_preview"));
 	for (uint i = 0; i < wall_dirs.length(); i++)
 		f.add_list_item(wall_ctrl, wall_dirs[i]);
 
-	int btn_ok = f.create_button("Add Wall", true);
-	int btn_cancel = f.create_button("Cancel", false, true);
+	int btn_ok = f.create_button("&" + tr("builder.add_wall"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus_silently(i_minx);
 
@@ -1307,7 +1307,7 @@ void build_wall()
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
 		{
 			builder_preview_sound.stop();
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			return;
 		}
 
@@ -1321,7 +1321,7 @@ void build_wall()
 			string tz2 = f.get_text(i_maxz);
 			if (tx1 == "" || tx2 == "" || ty1 == "" || ty2 == "" || tz1 == "" || tz2 == "")
 			{
-				speak("Coordinates cannot be empty.");
+				speak(tr("builder.coords_empty"));
 				continue;
 			}
 			int x1 = int(string_to_number(tx1));
@@ -1358,8 +1358,8 @@ void build_safe_zone()
 	f.set_disallowed_chars(i_maxy, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_minz, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxz, "0123456789-", true, "Numbers only.");
-	int btn_ok = f.create_button("Add Safe Zone", true);
-	int btn_cancel = f.create_button("Cancel", false, true);
+	int btn_ok = f.create_button("&" + tr("builder.add_safe_zone"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus_silently(i_minx);
 
@@ -1370,7 +1370,7 @@ void build_safe_zone()
 		f.monitor();
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
 		{
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			return;
 		}
 		if (f.is_pressed(btn_ok))
@@ -1383,7 +1383,7 @@ void build_safe_zone()
 			string tz2 = f.get_text(i_maxz);
 			if (tx1 == "" || tx2 == "" || ty1 == "" || ty2 == "" || tz1 == "" || tz2 == "")
 			{
-				speak("Coordinates cannot be empty.");
+				speak(tr("builder.coords_empty"));
 				continue;
 			}
 			save_to_map("safezone:" + tx1 + ":" + tx2 + ":" + ty1 + ":" + ty2 + ":" + tz1 + ":" + tz2);
@@ -1411,8 +1411,8 @@ void build_text_zone()
 	f.set_disallowed_chars(i_maxy, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_minz, "0123456789-", true, "Numbers only.");
 	f.set_disallowed_chars(i_maxz, "0123456789-", true, "Numbers only.");
-	int btn_ok = f.create_button("Add Zone", true);
-	int btn_cancel = f.create_button("Cancel", false, true);
+	int btn_ok = f.create_button("&" + tr("builder.add_text_zone"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus_silently(i_text);
 
@@ -1423,7 +1423,7 @@ void build_text_zone()
 		f.monitor();
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
 		{
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			return;
 		}
 		if (f.is_pressed(btn_ok))
@@ -1442,7 +1442,7 @@ void build_text_zone()
 			string tz2 = f.get_text(i_maxz);
 			if (tx1 == "" || tx2 == "" || ty1 == "" || ty2 == "" || tz1 == "" || tz2 == "")
 			{
-				speak("Coordinates cannot be empty.");
+				speak(tr("builder.coords_empty"));
 				continue;
 			}
 			save_to_map("zone:" + tx1 + ":" + tx2 + ":" + ty1 + ":" + ty2 + ":" + tz1 + ":" + tz2 + ":" + ztxt);

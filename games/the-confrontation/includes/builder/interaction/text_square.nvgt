@@ -44,16 +44,16 @@ void text_square_check()
 void build_text_square()
 {
 	audio_form f;
-	f.create_window("Add Text Square Area", false, true, false);
-	int i_minx = f.create_input_box("Minimum X", "" + minx);
-	int i_maxx = f.create_input_box("Maximum X", "" + maxx);
-	int i_miny = f.create_input_box("Minimum Y", "" + miny);
-	int i_maxy = f.create_input_box("Maximum Y", "" + maxy);
-	int i_minz = f.create_input_box("Minimum Z", "" + minz);
-	int i_maxz = f.create_input_box("Maximum Z", "" + maxz);
-	int i_text = f.create_input_box("Area Announcement Text", "Entering combat district.");
-	int btn_ok = f.create_button("Add Text Square", true);
-	int btn_cancel = f.create_button("Cancel", false, true);
+	f.create_window(tr("builder.text_square_title"), false, true, false);
+	int i_minx = f.create_input_box(tr("form.min_x"), "" + minx);
+	int i_maxx = f.create_input_box(tr("form.max_x"), "" + maxx);
+	int i_miny = f.create_input_box(tr("form.min_y"), "" + miny);
+	int i_maxy = f.create_input_box(tr("form.max_y"), "" + maxy);
+	int i_minz = f.create_input_box(tr("form.min_z"), "" + minz);
+	int i_maxz = f.create_input_box(tr("form.max_z"), "" + maxz);
+	int i_text = f.create_input_box(tr("builder.zone_name_prompt"), "Entering combat district.");
+	int btn_ok = f.create_button("&" + tr("builder.add_text_square"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus_silently(i_text);
 

@@ -139,33 +139,13 @@ string serialize_store_st(store_cfg@ s)
 	return cfg;
 }
 
-string[] DEFAULT_SHOP_NAMES = {
-	"Corner Shop", "Supply Outpost", "Quick Mart", "Trader's Depot", "Frontier General Store", "Wanderer's Goods"
-};
-
-string[] DEFAULT_MALL_NAMES = {
-	"Central Mall", "Grand Plaza Mall", "Metro Shopping Mall", "Commercial Center Mall", "Megamart Mall"
-};
-
 void normalize_store_naming(store_cfg@ sc)
 {
 	if (sc is null) return;
 	if (sc.name == "")
-	{
-		bool is_mall = (sc.item_names.length() > 8);
-		if (is_mall)
-			sc.name = "mall_" + random(100, 999);
-		else
-			sc.name = "shop_" + random(100, 999);
-	}
-	if (sc.display_name == "" || sc.display_name == sc.name)
-	{
-		bool is_mall = (sc.item_names.length() > 8 || string_contains(string_to_lower_case(sc.name), "mall", 1) > -1);
-		if (is_mall)
-			sc.display_name = DEFAULT_MALL_NAMES[random(0, DEFAULT_MALL_NAMES.length() - 1)];
-		else
-			sc.display_name = DEFAULT_SHOP_NAMES[random(0, DEFAULT_SHOP_NAMES.length() - 1)];
-	}
+		sc.name = "store_" + random(100, 999);
+	if (sc.display_name == "")
+		sc.display_name = sc.name;
 }
 
 string serialize_all_stores_bundle()
@@ -535,8 +515,7 @@ void init_stores()
 
 	if (store_configs.length() == 0)
 	{
-		if (!load_all_contents())
-			create_default_stores();
+		load_all_contents();
 	}
 }
 
@@ -611,31 +590,4 @@ const string STORE_DEFAULTS_MARKER = "settings/stores/.defaults_created";
 
 void create_default_stores()
 {
-	ensure_store_dir();
-	if (file_exists(STORE_DEFAULTS_MARKER)) return;
-	// An installation that already has categories is not a new one: remember
-	// that, so deleting every category later still sticks.
-	string[]@ existing = list_store_files();
-	if (existing !is null && existing.length() > 0)
-	{
-		file_put_contents(STORE_DEFAULTS_MARKER, "1");
-		return;
-	}
-
-	string[] defaults = {"medical", "weapons", "ammunition"};
-	string[] default_names = {"Medical Items", "Weapons", "Ammunition"};
-	for (uint i = 0; i < defaults.length(); i++)
-	{
-		string st = STORE_DIR+"/"+defaults[i]+".st";
-		if (find_store(defaults[i]) !is null) continue;
-		store_cfg@ s;
-		@s = @store_cfg();
-		s.name = defaults[i];
-		s.display_name = default_names[i];
-		s.currency = "gold";
-		store_configs.insert_last(s);
-		string cfg = serialize_store_st(s);
-		put_store_content(st, cfg);
-	}
-	file_put_contents(STORE_DEFAULTS_MARKER, "1");
 }

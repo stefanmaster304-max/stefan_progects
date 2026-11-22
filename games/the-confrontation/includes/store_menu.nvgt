@@ -162,25 +162,8 @@ void store_browse_buy(int cat)
 	speak(tr("store.purchase_success", {summary, "" + total_cost, currency}));
 }
 
-// Gives the medical and ammunition shelves a starting stock taken from the item
-// registry, so the store is usable before the builder edits it. Categories that
-// already have items are left untouched.
 void store_fill_default_items()
 {
-	load_all_items_config();
-	for (uint i = 0; i < store_configs.length(); i++)
-	{
-		store_cfg@ s = store_configs[i];
-		if (s.item_names.length() > 0) continue;
-		string want = (s.name == "medical") ? "medical items" : ((s.name == "ammunition") ? "ammo" : "");
-		if (want == "") continue;
-		for (uint r = 0; r < item_registry.length(); r++)
-		{
-			if (item_registry[r].category != want) continue;
-			s.item_names.insert_last(item_registry[r].id);
-			s.item_prices.insert_last((want == "ammo") ? "5" : "100");
-		}
-	}
 }
 
 string store_welcome_text()
@@ -192,7 +175,6 @@ void store_main_menu()
 {
 	init_stores();
 	load_all_items_config();
-	store_fill_default_items();
 	if (store_configs.length() == 0)
 	{
 		speak(tr("store.no_categories"));

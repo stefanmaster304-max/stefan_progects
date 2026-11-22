@@ -44,7 +44,7 @@ void edit_store_item(audio_form@ f, int list_items, string[]@ items, string[]@ p
 
 	audio_form edit;
 	edit.create_window(tr("store_manager.edit_price"), false, true, false);
-	int i_item = edit.create_input_box("Item ID / Name", old_item, "", 0, false, true, false);
+	int i_item = edit.create_input_box(tr("store_manager.item_id_name"), old_item, "", 0, false, true, false);
 	int i_price = edit.create_input_box(tr("store_manager.item_price"), old_price);
 	int btn_save = edit.create_button("&" + tr("ui.save"), true);
 	int btn_cancel = edit.create_button("&" + tr("ui.cancel"), false, true);
@@ -66,7 +66,7 @@ void edit_store_item(audio_form@ f, int list_items, string[]@ items, string[]@ p
 			prices[pos] = "" + price;
 			f.delete_list_item(list_items, pos, true);
 			f.add_list_item(list_items, itm + " - " + price, itm, pos);
-			speak("Updated " + itm + " price to " + price);
+			speak(tr("store_manager.price_updated", {itm, "" + price}));
 			break;
 		}
 	}
@@ -76,12 +76,12 @@ void pick_store_items_dialog(string[]@ items, string[]@ prices, audio_form@ f, i
 {
 	load_all_items_config();
 	load_all_weapons_wpm();
+	load_all_packages();
 
 	string[] all_ids;
 	string[] all_labels;
-	int[] default_prices;
 
-	// 1. Items from settings/items/ (consumables, ammo, packages, equipment).
+	// 1. Items from settings/items/ (consumables, ammo, equipment).
 	// Currency items are the payment for buying goods, so they can never be put
 	// up for sale themselves.
 	for (uint i = 0; i < item_registry.length(); i++)
@@ -89,8 +89,6 @@ void pick_store_items_dialog(string[]@ items, string[]@ prices, audio_form@ f, i
 		if (item_registry[i].category == "currency") continue;
 		all_ids.insert_last(item_registry[i].id);
 		all_labels.insert_last("[Item - " + item_registry[i].category + "] " + item_registry[i].name + " (" + item_registry[i].id + ")");
-		int def_p = (item_registry[i].category == "equipment") ? 500 : ((item_registry[i].category == "packages") ? 300 : 100);
-		default_prices.insert_last(def_p);
 	}
 
 	// 2. Weapons from settings/weapons/
@@ -98,19 +96,25 @@ void pick_store_items_dialog(string[]@ items, string[]@ prices, audio_form@ f, i
 	{
 		all_ids.insert_last(weapon_registry[w].id);
 		all_labels.insert_last("[Weapon - " + weapon_registry[w].wclass + "] " + weapon_registry[w].name + " (" + weapon_registry[w].id + ")");
-		default_prices.insert_last(1000);
+	}
+
+	// 3. Packages from settings/packages/
+	for (uint p = 0; p < package_registry.length(); p++)
+	{
+		all_ids.insert_last(package_registry[p].id);
+		all_labels.insert_last("[Package] " + package_registry[p].name + " (" + package_registry[p].id + ")");
 	}
 
 	if (all_ids.length() == 0)
 	{
-		speak("No items or weapons found to add to store.");
-		dlg("No items or weapons found in settings/items or settings/weapons.");
+		speak(tr("store_manager.no_items_found"));
+		dlg(tr("store_manager.no_items_found"));
 		return;
 	}
 
 	audio_form pf;
-	pf.create_window("Select Items and Weapons for Store", false, true, false);
-	int list = pf.create_list("Available items and weapons (Space to check/uncheck)", 0, true, true);
+	pf.create_window(tr("store_manager.select_items_title"), false, true, false);
+	int list = pf.create_list(tr("store_manager.select_items_hint"), 0, true, true);
 
 	for (uint k = 0; k < all_ids.length(); k++)
 	{
@@ -118,8 +122,8 @@ void pick_store_items_dialog(string[]@ items, string[]@ prices, audio_form@ f, i
 		pf.add_list_item(list, all_labels[k], all_ids[k], -1, already, false);
 	}
 
-	int btn_save = pf.create_button("&add selected", true);
-	int btn_cancel = pf.create_button("&cancel", false, true);
+	int btn_save = pf.create_button("&" + tr("ui.add_selected"), true);
+	int btn_cancel = pf.create_button("&" + tr("ui.cancel"), false, true);
 	pf.focus(list);
 
 	while (true)
@@ -130,7 +134,7 @@ void pick_store_items_dialog(string[]@ items, string[]@ prices, audio_form@ f, i
 
 		if (key_pressed(KEY_ESCAPE) || pf.is_pressed(btn_cancel))
 		{
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			return;
 		}
 
@@ -139,7 +143,7 @@ void pick_store_items_dialog(string[]@ items, string[]@ prices, audio_form@ f, i
 			int[]@ checked = pf.get_checked_list_items(list);
 			if (checked is null || checked.length() == 0)
 			{
-				speak("No items selected.");
+				speak(tr("store_manager.no_items_selected"));
 				return;
 			}
 
@@ -152,7 +156,7 @@ void pick_store_items_dialog(string[]@ items, string[]@ prices, audio_form@ f, i
 					string id = all_ids[idx];
 					if (items.find(id) == -1)
 					{
-						int prc = default_prices[idx];
+						int prc = 500;
 						items.insert_last(id);
 						prices.insert_last("" + prc);
 						f.add_list_item(list_items, id + " - " + prc, id);
@@ -160,7 +164,7 @@ void pick_store_items_dialog(string[]@ items, string[]@ prices, audio_form@ f, i
 					}
 				}
 			}
-			speak(added_count + " items/weapons added to store.");
+			speak(added_count + " " + tr("store_manager.items_added"));
 			return;
 		}
 	}
@@ -294,7 +298,7 @@ void store_create_form()
 				f.delete_list_item(list_items, pos, true);
 				items.remove_at(pos);
 				prices.remove_at(pos);
-				speak("Item removed from store.");
+				speak(tr("store_manager.item_removed"));
 			}
 		}
 	}
@@ -464,7 +468,7 @@ void store_edit_form()
 				f2.delete_list_item(list_items, pos, true);
 				items.remove_at(pos);
 				prices.remove_at(pos);
-				speak("Item removed from store.");
+				speak(tr("store_manager.item_removed"));
 			}
 		}
 	}

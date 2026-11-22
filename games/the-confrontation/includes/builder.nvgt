@@ -253,11 +253,11 @@ bool new_map_form()
 	f.set_disallowed_chars(nm_max_lvl, "0123456789", true, "Numbers only.");
 	f.set_disallowed_chars(nm_min_res, "0123456789", true, "Numbers only.");
 	f.set_disallowed_chars(nm_max_res, "0123456789", true, "Numbers only.");
-	int tile_list = f.create_list("Default Floor Platform Sound");
+	int tile_list = f.create_list(tr("builder.floor_preview"));
 	for (uint i = 0; i < platform_dirs.length(); i++)
 		f.add_list_item(tile_list, platform_dirs[i]);
-	int nm_ok = f.create_button("&Create Map", true);
-	int nm_cn = f.create_button("&Cancel", false, true);
+	int nm_ok = f.create_button("&" + tr("builder.create_map_button"), true);
+	int nm_cn = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(nm_ok, nm_cn);
 	f.focus_silently(nm_name);
 
@@ -268,7 +268,7 @@ bool new_map_form()
 		f.monitor();
 		if (key_pressed(KEY_ESCAPE) || f.is_pressed(nm_cn))
 		{
-			speak("canceled");
+			speak(tr("ui.cancel"));
 			return false;
 		}
 		if (f.is_pressed(nm_ok))
@@ -276,7 +276,7 @@ bool new_map_form()
 			string name = f.get_text(nm_name).trim_whitespace();
 			if (name == "")
 			{
-				speak("Name is required.");
+				speak(tr("builder.name_required"));
 				f.focus(nm_name);
 				continue;
 			}
@@ -310,7 +310,7 @@ bool new_map_form()
 			string path = MAP_DIR + "/" + name + ".map";
 			if (file_exists(path) || file_exists(MAP_DIR + "/" + name + ".map.dat") || file_exists("maps/" + name + ".map"))
 			{
-				dlg("A map with this name already exists.");
+				dlg(tr("builder.map_exists"));
 				f.focus(nm_name);
 				continue;
 			}
@@ -340,12 +340,12 @@ bool new_map_form()
 					mapname = name;
 					tempreset();
 					draw_map(name);
-					speak("Moved to " + name + ".");
+					speak(tr("builder.moved_to_map", {name}));
 				}
 			}
 			else
 			{
-				speak("Map " + name + " created.");
+				speak(tr("builder.map_created", {name}));
 			}
 			return true;
 		}
@@ -355,7 +355,7 @@ bool new_map_form()
 
 bool ask_go_to_new_map_dialog(const string&in name)
 {
-	string msg = "Map " + name + " was created successfully. Do you want to go to it now? Press Enter or Y to confirm, or Escape to cancel.";
+	string msg = tr("builder.map_created_go", {name});
 	speak(msg);
 	while(true)
 	{

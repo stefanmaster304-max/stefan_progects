@@ -753,15 +753,15 @@ void package_manager_menu()
 	{
 		wait(5);
 		audio_form pkg_form;
-		pkg_form.create_window("package manager", false, true, false);
-		int list = pkg_form.create_list("select an action", 0, false, true);
-		pkg_form.add_list_item(list, "Create New Package", "create");
-		pkg_form.add_list_item(list, "Edit Existing Package", "edit");
-		pkg_form.add_list_item(list, "View Package Properties", "view");
-		pkg_form.add_list_item(list, "Remove Package", "delete");
-		pkg_form.add_list_item(list, "Give Package To Player Inventory", "give");
-		int b_select = pkg_form.create_button("&select", true);
-		int b_back = pkg_form.create_button("&back", false, true);
+		pkg_form.create_window(tr("package_manager.title"), false, true, false);
+		int list = pkg_form.create_list(tr("package_manager.select_action"), 0, false, true);
+		pkg_form.add_list_item(list, tr("package_manager.create_title"), "create");
+		pkg_form.add_list_item(list, tr("package_manager.edit_title"), "edit");
+		pkg_form.add_list_item(list, tr("package_manager.view_title"), "view");
+		pkg_form.add_list_item(list, tr("package_manager.delete_title"), "delete");
+		pkg_form.add_list_item(list, tr("ui.give_to_inventory"), "give");
+		int b_select = pkg_form.create_button("&" + tr("ui.select"), true);
+		int b_back = pkg_form.create_button("&" + tr("ui.back"), false, true);
 		pkg_form.focus(list);
 
 		while (true)
