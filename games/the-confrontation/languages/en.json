@@ -30,6 +30,11 @@
   },
   "options": {
     "title": "Options",
+    "select_character": "Select your character",
+    "character_stefan": "Stefan, male",
+    "character_ilana": "Ilana, female",
+    "character_stefan_desc": "The rebellious boy with an athletic, toned body, blond hair, long beard, holding a double-barreled machine gun in his hands. Features his own voice with Tristan's pain sounds (1 to 16), 5,000 maximum health, and moves 5% slower than the standard speed.",
+    "character_ilana_desc": "An athletic, toned, and very attractive girl with long blond hair, holding a double-barreled rifle in her hand of golden color that glows in the dark. Features her own female voice with Aria's pain sounds (1 to 16), 10,000 maximum health, and moves 5% faster than the standard speed.",
     "disable_wrap": "Disable menu wrapping",
     "footdrag": "Foot dragging sound when standing still",
     "confirm_exit": "Confirm before exiting with Escape",
@@ -40,6 +45,7 @@
     "language_changed": "Language changed to English.",
     "keybinds": "Keybindings",
     "save": "Save",
+    "saved": "Settings saved.",
     "cancel": "Cancel"
   },
   "dialog": {

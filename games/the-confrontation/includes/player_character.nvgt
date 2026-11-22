@@ -1,0 +1,68 @@
+// player_character.nvgt - Multi-Character Player System for The Confront
+// Manages character identity, stats (HP, movement speed), audio profiles and descriptions.
+
+const string CHAR_STEFAN = "stefan";
+const string CHAR_ILANA = "ilana";
+
+string current_player_character = CHAR_STEFAN;
+
+int get_character_base_max_health(const string&in char_id)
+{
+	string c = string_to_lower_case(char_id.trim_whitespace());
+	if (c == "ilana" || c == "ylana") return 10000;
+	return 5000;
+}
+
+int calculate_player_max_health(const string&in char_id, int res_count)
+{
+	if (res_count < 0) res_count = 0;
+	return get_character_base_max_health(char_id) + (200 * res_count);
+}
+
+int get_player_modified_walktime(int base_walk)
+{
+	if (base_walk <= 0) base_walk = 160;
+	if (current_player_character == "ilana")
+	{
+		// Ilana runs 5% faster than standard (step interval is reduced by 5%)
+		int wt = int(round(double(base_walk) * 0.95, 0));
+		return (wt > 10) ? wt : 10;
+	}
+	else
+	{
+		// Stefan runs 5% slower than standard (step interval is increased by 5%)
+		int wt = int(round(double(base_walk) * 1.05, 0));
+		return wt;
+	}
+}
+
+string get_character_name(const string&in char_id)
+{
+	string c = string_to_lower_case(char_id.trim_whitespace());
+	if (c == "ilana" || c == "ylana") return tr("options.character_ilana");
+	return tr("options.character_stefan");
+}
+
+string get_character_description(const string&in char_id)
+{
+	string c = string_to_lower_case(char_id.trim_whitespace());
+	if (c == "ilana" || c == "ylana") return tr("options.character_ilana_desc");
+	return tr("options.character_stefan_desc");
+}
+
+void set_player_character(const string&in char_id, bool update_vitals = true)
+{
+	string c = string_to_lower_case(char_id.trim_whitespace());
+	if (c != "ilana" && c != "ylana") c = "stefan";
+	else c = "ilana";
+
+	current_player_character = c;
+	int old_max = maxhealth;
+	maxhealth = calculate_player_max_health(c, resurrections);
+	if (update_vitals)
+	{
+		if (health >= old_max || health <= 0) health = maxhealth;
+		else if (health > maxhealth) health = maxhealth;
+	}
+	walktime = get_current_walktime();
+}

@@ -10,6 +10,7 @@ timer sitting_speech_debounce;
 string ver = "0.1";
 
 #include "bgt_compat.nvgt"
+#include "includes/player_character.nvgt"
 #include "includes/sound_paths.nvgt"
 #include"includes/rotation.nvgt"
 #include"includes/hip.nvgt"
@@ -1118,6 +1119,10 @@ if (sd.d.exists("selected_default_map"))
 {
 selected_default_map=sd.read("selected_default_map");
 }
+if (sd.d.exists("player_character"))
+{
+set_player_character(sd.read("player_character"), false);
+}
 }
 void writeprefs()
 {
@@ -1135,6 +1140,7 @@ void writeprefs()
     sd.add("check_updates_on_startup",check_updates_on_startup);
     sd.add("language",current_language);
     sd.add("selected_default_map",selected_default_map);
+    sd.add("player_character",current_player_character);
     sd.save();
     save_updater_settings();
 }
@@ -1167,6 +1173,7 @@ void save_location()
     loc.add("resurrections", resurrections);
     loc.add("health", health);
     loc.add("maxhealth", maxhealth);
+    loc.add("player_character", current_player_character);
     loc.add("current_weapon", current_weapon_id);
     loc.add("equipped_shield_id", (current_shield !is null ? current_shield.id : ""));
     loc.add("equipped_shield_durability", (current_shield !is null ? current_shield.durability : 0));
@@ -1200,6 +1207,7 @@ void reset_location_on_death()
     loc.add("resurrections", resurrections);
     loc.add("maxhealth", maxhealth);
     loc.add("health", maxhealth);
+    loc.add("player_character", current_player_character);
     loc.add("current_weapon", "");
     loc.add("equipped_shield_id", "");
     loc.add("equipped_shield_durability", 0);
@@ -1229,14 +1237,23 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         xprequired = get_xp_required(level);
         xp = loc.readn("xp");
         resurrections = loc.readn("resurrections");
-        maxhealth = 5000 + (200 * resurrections);
+        if (loc.d.exists("player_character"))
+        {
+            set_player_character(loc.read("player_character"), false);
+        }
+        else if (sd.d.exists("player_character"))
+        {
+            set_player_character(sd.read("player_character"), false);
+        }
+        maxhealth = calculate_player_max_health(current_player_character, resurrections);
         if (loc.d.exists("maxhealth")) maxhealth = loc.readn("maxhealth");
-        if (maxhealth < 5000) maxhealth = 5000;
+        int base_hp = get_character_base_max_health(current_player_character);
+        if (maxhealth < base_hp) maxhealth = base_hp;
         if (loc.d.exists("health")) health = loc.readn("health");
         else health = maxhealth;
 		normalize_player_xp(false);
         current_weapon_id = "";
-        walktime = 160;
+        walktime = get_current_walktime();
         remove_all_equipment();
         if (loc.d.exists("inventory_data"))
         {
@@ -1281,11 +1298,15 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         level = 1;
         xp = 0;
         resurrections = 0;
-        maxhealth = 5000;
+        if (sd.d.exists("player_character"))
+        {
+            set_player_character(sd.read("player_character"), false);
+        }
+        maxhealth = calculate_player_max_health(current_player_character, 0);
         health = maxhealth;
         xprequired = get_xp_required(level);
         current_weapon_id = "";
-        walktime = 160;
+        walktime = get_current_walktime();
         remove_all_equipment();
     }
 }

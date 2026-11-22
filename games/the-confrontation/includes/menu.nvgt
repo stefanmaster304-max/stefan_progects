@@ -376,6 +376,12 @@ void optionsmenu()
 {
 audio_form form;
 form.create_window(tr("options.title"), false);
+int char_list = form.create_list(tr("options.select_character"), 0, false, false);
+form.add_list_item(char_list, tr("options.character_stefan"), "stefan");
+form.add_list_item(char_list, tr("options.character_ilana"), "ilana");
+if (current_player_character == "ilana") form.set_list_position(char_list, 1, false);
+else form.set_list_position(char_list, 0, false);
+
 int wrap_box = form.create_checkbox(tr("options.disable_wrap"), wrap_disabled == 1);
 int footdrag_box = form.create_checkbox(tr("options.footdrag"), footdrag_enabled == 1);
 int confirm_exit_box = form.create_checkbox(tr("options.confirm_exit"), confirm_exit == 1);
@@ -386,8 +392,9 @@ int kb_btn = form.create_button(tr("options.keybinds"), false);
 int save_btn = form.create_button(tr("options.save"), true);
 int cancel_btn = form.create_button(tr("options.cancel"), false, true);
 
-form.focus(wrap_box);
+form.focus(char_list);
 
+int last_char_pos = (current_player_character == "ilana") ? 1 : 0;
 int last_wrap_box = form.is_checked(wrap_box) ? 1 : 0;
 int last_footdrag_box = form.is_checked(footdrag_box) ? 1 : 0;
 int last_confirm_exit_box = form.is_checked(confirm_exit_box) ? 1 : 0;
@@ -399,6 +406,22 @@ while (true)
 {
 wait(5);
 form.monitor();
+
+int cur_char_pos = form.get_list_position(char_list);
+if (cur_char_pos != last_char_pos)
+{
+last_char_pos = cur_char_pos;
+string chosen = (cur_char_pos == 1) ? "ilana" : "stefan";
+set_player_character(chosen, true);
+prefs_dirty = true;
+}
+
+if (key_pressed(KEY_SPACE) && form.get_current_focus() == char_list)
+{
+int cpos = form.get_list_position(char_list);
+if (cpos == 1) speak(tr("options.character_ilana_desc"));
+else speak(tr("options.character_stefan_desc"));
+}
 
 int cur_wrap = form.is_checked(wrap_box) ? 1 : 0;
 if (cur_wrap != last_wrap_box)
@@ -466,7 +489,11 @@ return;
 
 if (form.is_pressed(save_btn))
 {
+int c_pos = form.get_list_position(char_list);
+string chosen = (c_pos == 1) ? "ilana" : "stefan";
+set_player_character(chosen, true);
 writeprefs();
+speak(tr("options.saved"));
 form.reset();
 return;
 }

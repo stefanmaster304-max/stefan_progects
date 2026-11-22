@@ -199,45 +199,80 @@ string get_player_sound(string pattern)
 {
 	if (pattern == "") return "";
 	if (pattern.find("*") == -1 && pattern.find(".") == -1) pattern += "*.ogg";
-	string snd = find_sound_in_disk("sounds/player/" + pattern);
+
+	string char_folder = (current_player_character == "ilana") ? "sounds/players/ylana/" : "sounds/players/stefan/";
+	string snd = find_sound_in_disk(char_folder + pattern);
+	if (snd == "") snd = find_sound_in_disk(char_folder + "*" + pattern);
+	if (snd == "") snd = find_sound_in_disk(char_folder + pattern + ".ogg");
+	if (snd == "") snd = find_sound_in_disk(char_folder + "*" + pattern + ".ogg");
+
+	if (snd == "") snd = find_sound_in_disk("sounds/players/stefan/" + pattern);
+	if (snd == "") snd = find_sound_in_disk("sounds/player/" + pattern);
 	if (snd == "") snd = find_sound_in_disk("sounds/player/*" + pattern);
 	if (snd == "") snd = find_sound_in_disk("sounds/player/" + pattern + ".ogg");
 	if (snd == "") snd = find_sound_in_disk("sounds/player/*" + pattern + ".ogg");
 	return snd;
 }
 
-// The player's death is an ensemble, not a single clip: Tristan's dying voice
-// (voice 17) plus the three numbered death effects, started together by
-// start_player_death_sounds(). A file that is missing is skipped, never
-// replaced by a generic clip of another event.
+// The player's death is an ensemble, not a single clip: dying voice (voice 17)
+// plus the three numbered death effects, started together by start_player_death_sounds().
 const string[] PLAYER_DEATH_EFFECT_FILES = {
-	"sounds/player/misc331.ogg",
-	"sounds/player/misc333.ogg",
-	"sounds/player/misc334.ogg"
+	"sounds/players/stefan/misc331.ogg",
+	"sounds/players/stefan/misc333.ogg",
+	"sounds/players/stefan/misc334.ogg"
 };
 
 string[] get_player_death_sounds()
 {
 	string[] paths;
-	string voice = "sounds/player/tristanvoice17.ogg";
-	if (file_exists(voice)) paths.insert_last(voice);
+	string voice = "";
+	if (current_player_character == "ilana")
+	{
+		voice = "sounds/players/ylana/ariavoice17.ogg";
+		if (!file_exists(voice)) voice = "sounds/players/stefan/tristanvoice17.ogg";
+	}
+	else
+	{
+		voice = "sounds/players/stefan/tristanvoice17.ogg";
+		if (!file_exists(voice)) voice = "sounds/player/tristanvoice17.ogg";
+	}
+	if (voice != "" && file_exists(voice)) paths.insert_last(voice);
+
 	for (uint i = 0; i < PLAYER_DEATH_EFFECT_FILES.length(); i++)
 	{
-		if (!file_exists(PLAYER_DEATH_EFFECT_FILES[i])) continue;
-		paths.insert_last(PLAYER_DEATH_EFFECT_FILES[i]);
+		if (file_exists(PLAYER_DEATH_EFFECT_FILES[i]))
+		{
+			paths.insert_last(PLAYER_DEATH_EFFECT_FILES[i]);
+		}
+		else
+		{
+			string alt = "sounds/player/misc" + (331 + (i == 0 ? 0 : (i == 1 ? 2 : 3))) + ".ogg";
+			if (file_exists(alt)) paths.insert_last(alt);
+		}
 	}
 	return paths;
 }
 
-// Pain clips are Tristan's voices 1 to 16: every hit the player takes plays one
-// of them at random.
+// Pain clips: Stefan uses Tristan's voices 1 to 16, Ilana uses Aria's voices 1 to 16.
 string pick_player_pain_sound()
 {
 	string[] list;
-	for (int i = 1; i <= 16; i++)
+	if (current_player_character == "ilana")
 	{
-		string path = "sounds/player/tristanvoice" + i + ".ogg";
-		if (file_exists(path)) list.insert_last(path);
+		for (int i = 1; i <= 16; i++)
+		{
+			string path = "sounds/players/ylana/ariavoice" + i + ".ogg";
+			if (file_exists(path)) list.insert_last(path);
+		}
+	}
+	else
+	{
+		for (int i = 1; i <= 16; i++)
+		{
+			string path = "sounds/players/stefan/tristanvoice" + i + ".ogg";
+			if (file_exists(path)) list.insert_last(path);
+			else if (file_exists("sounds/player/tristanvoice" + i + ".ogg")) list.insert_last("sounds/player/tristanvoice" + i + ".ogg");
+		}
 	}
 	if (list.length() == 0) return "";
 	return list[random(0, int(list.length()) - 1)];
@@ -479,6 +514,8 @@ string get_sound_path(string path)
 	string[] folders = {
 		"sounds/items/",
 		"sounds/player/",
+		"sounds/players/stefan/",
+		"sounds/players/ylana/",
 		"sounds/weapons/",
 		"sounds/map platforms/",
 		"sounds/anbients/",

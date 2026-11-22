@@ -9,19 +9,20 @@ bool is_firing_weapon = false;
 
 int get_current_walktime()
 {
+	int base_walk = 160;
 	if (current_weapon_id != "")
 	{
 		weapon_data@ w = find_weapon_data(current_weapon_id);
-		if (w !is null && w.walktime > 0) return w.walktime;
+		if (w !is null && w.walktime > 0) base_walk = w.walktime;
 	}
-	return 160;
+	return get_player_modified_walktime(base_walk);
 }
 
 void unequip_weapon(bool silent = false)
 {
 	if (is_reloading) cancel_reload();
 	current_weapon_id = "";
-	walktime = 160;
+	walktime = get_current_walktime();
 	if (!silent) speak(tr("weapon.unequipped"));
 }
 
@@ -37,8 +38,7 @@ void equip_weapon(const string&in wid, bool silent = false)
 	weapon_next_fire_interval = w.firetime;
 	init_weapon_ammo(wid, w.capacity);
 	register_weapon_fire_mode(w);
-	if (w.walktime > 0) walktime = w.walktime;
-	else walktime = 160;
+	walktime = get_current_walktime();
 
 	if (!silent && w.sound_draw != "")
 	{
