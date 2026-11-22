@@ -407,16 +407,12 @@ int last_footdrag_box = form.is_checked(footdrag_box) ? 1 : 0;
 int last_confirm_exit_box = form.is_checked(confirm_exit_box) ? 1 : 0;
 int last_pain_box = form.is_checked(pain_sounds_box) ? 1 : 0;
 int last_startup_box = form.is_checked(startup_update_box) ? 1 : 0;
-bool space_down_prev = false;
+bool space_handled = false;
 bool prefs_dirty = false;
 
 while (true)
 {
 wait(5);
-bool space_is_down = key_down(KEY_SPACE);
-bool space_hit = key_pressed(KEY_SPACE) || (space_is_down && !space_down_prev);
-space_down_prev = space_is_down;
-
 form.monitor();
 
 int cur_char_pos = form.get_list_position(char_list);
@@ -428,11 +424,17 @@ set_player_character(chosen, true);
 prefs_dirty = true;
 }
 
-if (space_hit && form.get_current_focus() == char_list)
+bool space_down = key_down(KEY_SPACE);
+if (form.get_current_focus() == char_list && space_down && !space_handled)
 {
+space_handled = true;
 int cpos = form.get_list_position(char_list);
 if (cpos == 1) speak(tr("options.character_ilana_desc"), true);
 else speak(tr("options.character_stefan_desc"), true);
+}
+if (!space_down)
+{
+space_handled = false;
 }
 
 int cur_wrap = form.is_checked(wrap_box) ? 1 : 0;
