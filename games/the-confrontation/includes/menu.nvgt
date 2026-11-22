@@ -162,6 +162,13 @@ void mainmenu()
 		string menuitem=m.get_item_name(mres);
 		if (mres <= 0 or menuitem=="exit")
 		{
+			if (confirm_exit == 1)
+			{
+				if (menuquestion(tr("dialog.exit_confirm")) != 1)
+				{
+					continue;
+				}
+			}
 			m.fade_music(15);
 			exit();
 			return;

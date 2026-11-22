@@ -43,11 +43,11 @@ void edit_store_item(audio_form@ f, int list_items, string[]@ items, string[]@ p
 	string old_price = prices[pos];
 
 	audio_form edit;
-	edit.create_window("Edit Store Item", false, true, false);
-	int i_item = edit.create_input_box("Item ID / Name", old_item, "", 0, false, false, true);
-	int i_price = edit.create_input_box("Price", old_price);
-	int btn_save = edit.create_button("&save", true);
-	int btn_cancel = edit.create_button("&cancel", false, true);
+	edit.create_window(tr("store_manager.edit_price"), false, true, false);
+	int i_item = edit.create_input_box("Item ID / Name", old_item, "", 0, false, true, false);
+	int i_price = edit.create_input_box(tr("store_manager.item_price"), old_price);
+	int btn_save = edit.create_button("&" + tr("ui.save"), true);
+	int btn_cancel = edit.create_button("&" + tr("ui.cancel"), false, true);
 	edit.set_default_controls(btn_save, btn_cancel);
 	edit.focus(i_price);
 
@@ -172,14 +172,14 @@ void store_manager_menu()
 	while (true)
 	{
 		audio_form f;
-		f.create_window("Store Categories", false, true, false);
-		int list = f.create_list("Store category options", 0, false, false);
-		f.add_list_item(list, "Create category", "store_create");
-		f.add_list_item(list, "Edit category and its items", "store_edit");
-		f.add_list_item(list, "Delete category", "store_delete");
-		f.add_list_item(list, "Back", "back");
-		int btn_ok = f.create_button("&select", true);
-		int btn_cancel = f.create_button("&back", false, true);
+		f.create_window(tr("store_manager.title"), false, true, false);
+		int list = f.create_list(tr("store_manager.options"), 0, false, false);
+		f.add_list_item(list, tr("store_manager.create_category"), "store_create");
+		f.add_list_item(list, tr("store_manager.edit_category"), "store_edit");
+		f.add_list_item(list, tr("store_manager.delete_category"), "store_delete");
+		f.add_list_item(list, tr("ui.back"), "back");
+		int btn_ok = f.create_button("&" + tr("ui.select"), true);
+		int btn_cancel = f.create_button("&" + tr("ui.back"), false, true);
 		f.set_default_controls(btn_ok, btn_cancel);
 		f.focus_silently(list);
 
@@ -209,28 +209,28 @@ void store_create_form()
 {
 	if (is_store_encrypted())
 	{
-		speak("Stores are encrypted and cannot be edited. Please decrypt stores first.");
-		dlg("Stores are encrypted and cannot be edited. Please decrypt stores first.");
+		speak(tr("store_manager.encrypted"));
+		dlg(tr("store_manager.encrypted"));
 		return;
 	}
 	audio_form f;
-	f.create_window("Create Store Category", false, true, false);
-	int i_name = f.create_input_box("Category id (no spaces)", "");
-	int i_display = f.create_input_box("Category name", "");
-	int l_currency = f.create_list("Store currency", 0, false, false);
+	f.create_window(tr("store_manager.create_title"), false, true, false);
+	int i_name = f.create_input_box(tr("store_manager.category_id"), "");
+	int i_display = f.create_input_box(tr("store_manager.category_name"), "");
+	int l_currency = f.create_list(tr("store_manager.store_currency"), 0, false, false);
 	for (uint c = 0; c < store_currencies.length(); c++)
 	{
 		f.add_list_item(l_currency, store_currencies[c], store_currencies[c]);
 	}
 	f.set_list_position(l_currency, 0, false);
-	int l_payments = f.create_list("Payment methods accepted by the store (Space to check/uncheck)", 0, true, true);
+	int l_payments = f.create_list(tr("store_manager.accepted_payments"), 0, true, true);
 	store_populate_payment_list(f, l_payments, null);
-	int list_items = f.create_list("Store Items", 0, false, false);
-	int btn_add = f.create_button("&select items to sell", false);
-	int btn_edit = f.create_button("&edit price", false);
-	int btn_remove = f.create_button("&remove", false);
-	int btn_save = f.create_button("&save store", true);
-	int btn_cancel = f.create_button("&cancel", false, true);
+	int list_items = f.create_list(tr("store_manager.store_items"), 0, false, false);
+	int btn_add = f.create_button("&" + tr("store_manager.select_items_to_sell"), false);
+	int btn_edit = f.create_button("&" + tr("store_manager.edit_price"), false);
+	int btn_remove = f.create_button("&" + tr("ui.remove"), false);
+	int btn_save = f.create_button("&" + tr("ui.save"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_save, btn_cancel);
 	f.focus_silently(i_name);
 
@@ -248,7 +248,12 @@ void store_create_form()
 			string name = f.get_text(i_name);
 			if (name == "")
 			{
-				speak("Category id cannot be empty");
+				speak(tr("store_manager.id_empty"));
+				continue;
+			}
+			if (store_category_exists(name))
+			{
+				speak(tr("store_manager.id_exists"));
 				continue;
 			}
 			store_cfg@ s = @store_cfg();
@@ -265,7 +270,8 @@ void store_create_form()
 			s.item_names = items;
 			s.item_prices = prices;
 			save_store_config(name, s);
-			speak("Store category saved successfully.");
+			if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
+			speak(tr("store_manager.saved_success"));
 			break;
 		}
 		if (f.is_pressed(btn_add))
@@ -298,8 +304,8 @@ void store_edit_form()
 {
 	if (is_store_encrypted())
 	{
-		speak("Stores are encrypted and cannot be edited. Please decrypt stores first.");
-		dlg("Stores are encrypted and cannot be edited. Please decrypt stores first.");
+		speak(tr("store_manager.encrypted"));
+		dlg(tr("store_manager.encrypted"));
 		return;
 	}
 	init_stores();
@@ -310,19 +316,19 @@ void store_edit_form()
 	}
 	if (store_names.length() == 0)
 	{
-		speak("No stores found. Create a store first.");
+		speak(tr("store_manager.no_stores_found"));
 		return;
 	}
 
 	audio_form f;
-			f.create_window("Select Category to Edit", false, true, false);
-	int list_stores = f.create_list("Category", 0, false, false);
+	f.create_window(tr("store_manager.select_edit_title"), false, true, false);
+	int list_stores = f.create_list(tr("store_manager.title"), 0, false, false);
 	for (uint i = 0; i < store_names.length(); i++)
 	{
 		f.add_list_item(list_stores, store_names[i], store_names[i]);
 	}
-	int btn_ok = f.create_button("Edit", true);
-	int btn_cancel = f.create_button("Cancel", false, true);
+	int btn_ok = f.create_button("&" + tr("ui.edit"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus_silently(list_stores);
 
@@ -338,7 +344,7 @@ void store_edit_form()
 			int pos = f.get_list_position(list_stores);
 			if (pos < 0)
 			{
-				speak("Select a store first.");
+				speak(tr("store_manager.select_store_first"));
 				continue;
 			}
 			id = f.get_list_item_id(list_stores, pos);
@@ -349,7 +355,7 @@ void store_edit_form()
 	store_cfg@ s = get_store(id);
 	if (s is null)
 	{
-		speak("Store not found.");
+		speak(tr("store_manager.not_found"));
 		return;
 	}
 
@@ -357,9 +363,10 @@ void store_edit_form()
 	string[] prices = s.item_prices;
 
 	audio_form f2;
-	f2.create_window("Edit Store Category: " + s.name, false, true, false);
-	int i_display = f2.create_input_box("Category name", s.display_name);
-	int l_currency = f2.create_list("Store currency", 0, false, false);
+	f2.create_window(tr("store_manager.edit_title", {s.name}), false, true, false);
+	int i_id = f2.create_input_box(tr("store_manager.category_id"), s.name);
+	int i_display = f2.create_input_box(tr("store_manager.category_name"), s.display_name);
+	int l_currency = f2.create_list(tr("store_manager.store_currency"), 0, false, false);
 	int cur_sel = 0;
 	string cur_norm = normalize_currency(s.currency);
 	for (uint c = 0; c < store_currencies.length(); c++)
@@ -368,18 +375,18 @@ void store_edit_form()
 		if (cur_norm == store_currencies[c]) cur_sel = int(c);
 	}
 	f2.set_list_position(l_currency, cur_sel, false);
-	int l_payments = f2.create_list("Payment methods accepted by the store (Space to check/uncheck)", 0, true, true);
+	int l_payments = f2.create_list(tr("store_manager.accepted_payments"), 0, true, true);
 	store_populate_payment_list(f2, l_payments, s.accepted_currencies);
-	int list_items = f2.create_list("Store Items", 0, false, false);
+	int list_items = f2.create_list(tr("store_manager.store_items"), 0, false, false);
 	for (uint i = 0; i < items.length(); i++)
 	{
 		f2.add_list_item(list_items, items[i] + " - " + prices[i], items[i]);
 	}
-	int btn_add = f2.create_button("&select items to sell", false);
-	int btn_edit = f2.create_button("&edit price", false);
-	int btn_remove = f2.create_button("&remove", false);
-	int btn_save = f2.create_button("&save store", true);
-	int btn_cancel2 = f2.create_button("&cancel", false, true);
+	int btn_add = f2.create_button("&" + tr("store_manager.select_items_to_sell"), false);
+	int btn_edit = f2.create_button("&" + tr("store_manager.edit_price"), false);
+	int btn_remove = f2.create_button("&" + tr("ui.remove"), false);
+	int btn_save = f2.create_button("&" + tr("ui.update_and_save"), true);
+	int btn_cancel2 = f2.create_button("&" + tr("ui.cancel"), false, true);
 	f2.set_default_controls(btn_save, btn_cancel2);
 
 	while(true)
@@ -390,7 +397,21 @@ void store_edit_form()
 		if (key_pressed(KEY_ESCAPE) || f2.is_pressed(btn_cancel2)) break;
 		if (f2.is_pressed(btn_save))
 		{
+			string new_id = normalize_currency(f2.get_text(i_id));
+			if (new_id == "")
+			{
+				speak(tr("store_manager.id_empty"));
+				f2.focus(i_id);
+				continue;
+			}
+			if (new_id != id && store_category_exists(new_id))
+			{
+				speak(tr("store_manager.id_exists"));
+				f2.focus(i_id);
+				continue;
+			}
 			s.display_name = f2.get_text(i_display);
+			if (s.display_name == "") s.display_name = new_id;
 			int cur_pos = f2.get_list_position(l_currency);
 			s.currency = (cur_pos >= 0 && cur_pos < int(store_currencies.length())) ? store_currencies[cur_pos] : CURRENCY_GOLD;
 			s.accepted_currencies = store_read_checked_payments(f2, l_payments);
@@ -400,8 +421,27 @@ void store_edit_form()
 			}
 			s.item_names = items;
 			s.item_prices = prices;
-			save_store_config(id, s);
-			speak("Store category updated successfully.");
+
+			if (new_id != id)
+			{
+				string old_path = get_store_path(id);
+				if (file_exists(old_path)) file_delete(old_path);
+				string legacy_old = STORE_DIR + "/" + id + ".txt";
+				if (file_exists(legacy_old)) file_delete(legacy_old);
+
+				s.name = new_id;
+				for (uint i = 0; i < store_configs.length(); i++)
+				{
+					if (store_configs[i].name == id)
+					{
+						store_configs[i].name = new_id;
+						break;
+					}
+				}
+			}
+			save_store_config(s.name, s);
+			if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
+			speak(tr("store_manager.updated_success"));
 			break;
 		}
 		if (f2.is_pressed(btn_add))
@@ -434,8 +474,8 @@ void store_delete_form()
 {
 	if (is_store_encrypted())
 	{
-		speak("Stores are encrypted and cannot be edited. Please decrypt stores first.");
-		dlg("Stores are encrypted and cannot be edited. Please decrypt stores first.");
+		speak(tr("store_manager.encrypted"));
+		dlg(tr("store_manager.encrypted"));
 		return;
 	}
 	init_stores();
@@ -446,19 +486,19 @@ void store_delete_form()
 	}
 	if (store_names.length() == 0)
 	{
-		speak("No stores found.");
+		speak(tr("store_manager.no_stores_found"));
 		return;
 	}
 
 	audio_form f;
-			f.create_window("Select Category to Delete", false, true, false);
-	int list_stores = f.create_list("Category", 0, false, false);
+	f.create_window(tr("store_manager.delete_title"), false, true, false);
+	int list_stores = f.create_list(tr("store_manager.title"), 0, false, false);
 	for (uint i = 0; i < store_names.length(); i++)
 	{
 		f.add_list_item(list_stores, store_names[i], store_names[i]);
 	}
-	int btn_delete = f.create_button("Delete", true);
-	int btn_cancel = f.create_button("Cancel", false, true);
+	int btn_delete = f.create_button("&" + tr("ui.delete"), true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_delete, btn_cancel);
 
 	string id = "";
@@ -473,7 +513,7 @@ void store_delete_form()
 			int pos = f.get_list_position(list_stores);
 			if (pos < 0)
 			{
-				speak("Select a store first.");
+				speak(tr("store_manager.select_store_first"));
 				continue;
 			}
 			id = f.get_list_item_id(list_stores, pos);
@@ -483,8 +523,9 @@ void store_delete_form()
 	if (id == "") return;
 	if (!store_remove_category(id))
 	{
-		speak("Store not found.");
+		speak(tr("store_manager.not_found"));
 		return;
 	}
-	speak("Store category deleted.");
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
+	speak(tr("store_manager.deleted_success"));
 }

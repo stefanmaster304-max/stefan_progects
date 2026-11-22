@@ -89,7 +89,7 @@ void toggle_sit_stand()
 		is_sitting = false;
 		string snd = get_sound_path("standup.ogg");
 		if (snd != "") p.play_stationary(snd, false);
-		speak("You stand up.");
+		speak(tr("game.stand_up"));
 	}
 	else
 	{
@@ -99,7 +99,7 @@ void toggle_sit_stand()
 		string platform = gmt();
 		string fall_snd = get_platform_sound(platform, "fall");
 		if (fall_snd != "") p.play_stationary(fall_snd, false);
-		speak("You sit down.");
+		speak(tr("game.sit_down"));
 	}
 }
 int kills=0;
@@ -156,7 +156,7 @@ void normalize_player_xp(bool announce = false)
 	}
 	if(announce && level > old_level)
 	{
-		speak("You are now at level " + level + ".");
+		speak(tr("game.now_at_level", {"" + level}));
 		string level_sound = get_player_sound("levelup");
 		if (sound_file_exists(level_sound)) p.play_stationary(level_sound, false);
 	}
@@ -335,7 +335,7 @@ if (fire_k_active and !key_down(KEY_SPACE) and !key_pressed(KEY_SPACE) and jumpi
 		}
 		else if (key_pressed(KEY_LCONTROL) || kb_pressed("fire"))
 		{
-			speak("You cannot fire in a safe zone.");
+			speak(tr("game.safe_zone_no_fire"));
 		}
 	}
 	else if ((key_pressed(KEY_LCONTROL) || kb_pressed("fire")) && current_weapon_id == "")
@@ -402,7 +402,7 @@ if (shift_held && key_pressed(KEY_LEFT))
 {
 	if (is_sitting)
 	{
-		speak("You are sitting. Press Q to stand up.");
+		speak(tr("game.sitting_hint"));
 	}
 	else
 	{
@@ -414,7 +414,7 @@ else if (shift_held && key_pressed(KEY_RIGHT))
 {
 	if (is_sitting)
 	{
-		speak("You are sitting. Press Q to stand up.");
+		speak(tr("game.sitting_hint"));
 	}
 	else
 	{
@@ -655,7 +655,7 @@ else if (!shiftisdown() and (kb_pressed("use") or key_pressed(KEY_RETURN) or key
 {
 	if (is_sitting)
 	{
-		speak("You are sitting. Press Q to stand up.");
+		speak(tr("game.sitting_hint"));
 	}
 }
 if (kb_pressed("coordinates") or key_pressed(KEY_C))
@@ -683,7 +683,7 @@ if (dmoving==false and movetimer.elapsed>=movetime)
 			if (sitting_speech_debounce.elapsed >= 1500)
 			{
 				sitting_speech_debounce.restart();
-				speak("You are sitting. Press Q to stand up.");
+				speak(tr("game.sitting_hint"));
 			}
 		}
 	}
@@ -721,7 +721,7 @@ if (key_pressed(KEY_SPACE) and !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTRO
 		if (sitting_speech_debounce.elapsed >= 1500)
 		{
 			sitting_speech_debounce.restart();
-			speak("You are sitting. Press Q to stand up.");
+			speak(tr("game.sitting_hint"));
 		}
 	}
 	else
@@ -801,7 +801,7 @@ if (fallcounter > 9)
 {
 healtimer.restart();	int actual_fall_dmg = fallcounter * 2;
 	health -= actual_fall_dmg;
-	speak("You lost " + actual_fall_dmg + " health!");
+	speak(tr("game.lost_health_fall", {"" + actual_fall_dmg}));
 }
 if (fallcounter >= 8)
 {
@@ -809,7 +809,7 @@ if (fallcounter >= 8)
 	string sit_snd = get_sound_path("sitdown.ogg");
 	if (sit_snd != "") p.play_stationary(sit_snd, false);
 	sitting_speech_debounce.restart();
-	speak("You hit the ground hard and land in a seated position.");
+	speak(tr("game.land_seated"));
 }
 falling = false;
 fallcounter = 0;

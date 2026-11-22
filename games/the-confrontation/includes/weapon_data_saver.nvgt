@@ -374,6 +374,7 @@ bool save_weapon_wpm(weapon_data@ w)
 	if (!found) weapon_registry.insert_last(w);
 	weapon_cache_version++;
 	if (file_exists(WEAPONS_DAT_PATH)) encrypt_all_weapons_silent();
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 	return true;
 }
 
@@ -635,6 +636,7 @@ bool delete_weapon_file(const string&in id)
 		else
 			file_delete(WEAPONS_DAT_PATH);
 	}
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 	return true;
 }
 

@@ -59,7 +59,7 @@ string currency_key_for_item(item_data@ it)
 
 string store_cart_balances_text()
 {
-	return "Balances: " + get_item_count(CURRENCY_GOLD) + " gold, " + get_item_count(CURRENCY_GOLDEN_CRYSTAL) + " golden crystals, " + get_item_count(CURRENCY_DIAMOND) + " diamonds, " + get_item_count(CURRENCY_SILVER) + " silver.";
+	return tr("store.balances", {"" + get_item_count(CURRENCY_GOLD), "" + get_item_count(CURRENCY_GOLDEN_CRYSTAL), "" + get_item_count(CURRENCY_DIAMOND), "" + get_item_count(CURRENCY_SILVER)});
 }
 
 // Grants a bought product and reports whether the item exists in the registry,
@@ -97,14 +97,14 @@ void store_browse_announce_category(int cat)
 {
 	store_cfg@ s = store_configs[cat];
 	store_browse_resize_cart(cat);
-	speak(s.display_name + ", category " + (cat + 1) + " of " + store_configs.length() + ", " + s.item_names.length() + " items. Press Tab to browse the items of this category.");
+	speak(s.display_name);
 }
 
 void store_browse_announce_item(int cat, int item)
 {
 	store_cfg@ s = store_configs[cat];
 	string iname = get_item_display_name(s.item_names[item]);
-	speak(iname + ", " + s.item_prices[item] + " " + store_charge_currency(s) + ", in the cart: " + store_browse_amounts[cat][item] + ".");
+	speak(tr("store.in_cart", {iname, s.item_prices[item], store_charge_currency(s), "" + store_browse_amounts[cat][item]}));
 }
 
 void play_store_error()

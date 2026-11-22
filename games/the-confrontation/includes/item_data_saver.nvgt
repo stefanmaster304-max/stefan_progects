@@ -368,6 +368,7 @@ bool save_item_config(item_data@ it)
 		}
 	}
 	if (!found) item_registry.insert_last(it);
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 	return true;
 }
 
@@ -559,5 +560,6 @@ bool delete_item_file(const string&in id)
 		else
 			file_delete(ITEMS_DAT_PATH);
 	}
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 	return true;
 }

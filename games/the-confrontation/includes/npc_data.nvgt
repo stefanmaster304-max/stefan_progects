@@ -249,6 +249,7 @@ bool save_npc_file(npc_data@ n)
 	npc_data@ existing = find_npc_data(n.id);
 	if (existing is null)
 		npc_registry.insert_last(n);
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 	return true;
 }
 
@@ -265,19 +266,47 @@ void delete_npc_file(const string&in id)
 			break;
 		}
 	}
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 }
 
 void load_all_npcs(bool force = false)
 {
 	if (!force && npc_registry.length() > 0) return;
 
+	// Check loose files first
+	ensure_npc_directories();
+	string[]@ loose_files = find_files(NPC_DIR + "/*.npc");
+	if (loose_files !is null && loose_files.length() > 0)
+	{
+		npc_registry.resize(0);
+		for (uint i = 0; i < loose_files.length(); i++)
+		{
+			string fname = loose_files[i];
+			string id = fname;
+			if (string_ends_with(string_to_lower_case(id), ".npc")) id = id.substr(0, id.length() - 4);
+
+			file f;
+			if (f.open(NPC_DIR + "/" + fname, "r"))
+			{
+				string c = f.read();
+				f.close();
+
+				npc_data@ n = @npc_data();
+				n.id = id;
+				parse_npc_content(n, c);
+				validate_npc_data(n);
+				npc_registry.insert_last(n);
+			}
+		}
+		if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
+		return;
+	}
+
 	if (SCRIPT_COMPILED)
 	{
 		if (load_all_contents(force)) return;
 	}
 
-	// Nothing is ever created here: no folder, no example NPC. Until the
-	// developer writes an .npc file the list is simply empty.
 	npc_registry.resize(0);
 	if (!directory_exists(NPC_DIR))
 	{

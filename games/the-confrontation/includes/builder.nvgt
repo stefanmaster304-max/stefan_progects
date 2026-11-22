@@ -384,7 +384,7 @@ void map_editor_menu()
 {
 	if (SCRIPT_COMPILED || is_map_encrypted(mapname))
 	{
-		speak("Cannot edit an encrypted map.");
+		speak(tr("builder.cannot_edit_encrypted"));
 		return;
 	}
 	string path = MAP_DIR + "/" + mapname + ".map";
@@ -409,22 +409,22 @@ void map_editor_menu()
 		}
 
 		audio_form f;
-		f.create_window("Map Editor - " + mapname, false, true, false);
+		f.create_window(tr("builder.map_editor_title") + " - " + mapname, false, true, false);
 		
-		int list_lines = f.create_list("Map Lines (Use Up/Down arrows)");
+		int list_lines = f.create_list(tr("builder.map_lines"));
 		for (uint i = 0; i < lines.length(); i++)
 		{
 			f.add_list_item(list_lines, lines[i]);
 		}
 
-		int btn_add = f.create_button("Add Line");
-		int btn_edit = f.create_button("Edit Line");
-		int btn_delete = f.create_button("Delete Line");
-		int btn_copy = f.create_button("Copy Line");
-		int btn_paste = f.create_button("Paste Line");
-		int btn_ren = f.create_button("Rename Map");
-		int btn_copy_all = f.create_button("Copy All to Clipboard");
-		int btn_close = f.create_button("Close", false, true);
+		int btn_add = f.create_button(tr("builder.add_line"));
+		int btn_edit = f.create_button(tr("builder.edit_line"));
+		int btn_delete = f.create_button(tr("builder.delete_line"));
+		int btn_copy = f.create_button(tr("builder.copy_line"));
+		int btn_paste = f.create_button(tr("builder.paste_line"));
+		int btn_ren = f.create_button(tr("builder.rename_map"));
+		int btn_copy_all = f.create_button(tr("builder.copy_all"));
+		int btn_close = f.create_button(tr("ui.close"), false, true);
 
 		f.set_default_controls(btn_edit, btn_close);
 		f.focus_silently(list_lines);
@@ -661,14 +661,14 @@ void maptoolmenu()
 {
 	if (SCRIPT_COMPILED)
 	{
-		speak("Resource tools cannot be accessed in compiled mode.");
+		speak(tr("builder.cannot_edit_encrypted"));
 		return;
 	}
 	string[] tool_names = {
-		"compile maps",
-		"compile contents",
-		"compile everything",
-		"back"
+		tr("builder.compile_maps"),
+		tr("builder.compile_contents"),
+		tr("builder.compile_everything"),
+		tr("ui.back")
 	};
 	string[] tool_ids = {
 		"cm",
@@ -678,7 +678,7 @@ void maptoolmenu()
 	};
 
 	audio_form f;
-	f.create_window("Map and Resource Tools", false, true, false);
+	f.create_window(tr("builder.map_and_tools"), false, true, false);
 	int[] buttons(tool_names.length());
 	for (uint i = 0; i < tool_names.length(); i++)
 		buttons[i] = f.create_button(tool_names[i]);

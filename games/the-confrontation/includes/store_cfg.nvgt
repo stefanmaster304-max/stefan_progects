@@ -412,6 +412,7 @@ void save_store_config(string name, store_cfg@ s = null)
 	put_store_content(path, cfg);
 	string legacy = STORE_DIR+"/"+name+".txt";
 	if (file_exists(legacy) && string_right(path, 4) != ".dat") file_delete(legacy);
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 }
 
 string[]@ list_store_files()
@@ -454,6 +455,18 @@ string[]@ list_store_files()
 void init_stores()
 {
 	ensure_store_dir();
+
+	string[]@ loose_stores = list_store_files();
+	if (loose_stores !is null && loose_stores.length() > 0)
+	{
+		store_configs.resize(0);
+		for (uint i = 0; i < loose_stores.length(); i++)
+		{
+			load_store_config(loose_stores[i]);
+		}
+		if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
+		return;
+	}
 
 	// 1. In compiled release mode: the single encrypted contents.dat bundle
 	if (SCRIPT_COMPILED)
@@ -586,6 +599,7 @@ bool store_remove_category(const string&in id)
 		if (store_configs.length() > 0) encrypt_all_stores_silent();
 		else file_delete(SHOPS_DAT_PATH);
 	}
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 	return removed;
 }
 

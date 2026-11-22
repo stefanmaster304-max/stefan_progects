@@ -30,15 +30,15 @@ void weapon_chooser()
 		wait(5);
 		audio_form wform;
 		wform.create_window(tr("weapon_manager.title"), false, true, false);
-		int list = wform.create_list("select an action", 0, false, true);
+		int list = wform.create_list(tr("weapon_manager.select_action"), 0, false, true);
 		wform.add_list_item(list, tr("weapon_manager.create_title"), "add");
 		wform.add_list_item(list, tr("weapon_manager.edit_title"), "edit");
 		wform.add_list_item(list, tr("weapon_manager.view_title"), "view");
 		wform.add_list_item(list, tr("weapon_manager.remove_title"), "remove");
-		wform.add_list_item(list, "Create New Weapon Subclass / Class", "create_subclass");
-		wform.add_list_item(list, "Remove Weapon Subclass", "remove_subclass");
-		wform.add_list_item(list, "Give Weapon To Player Inventory", "give");
-		int b_select = wform.create_button("&" + tr("ui.select", "select"), true);
+		wform.add_list_item(list, tr("weapon_manager.create_subclass"), "create_subclass");
+		wform.add_list_item(list, tr("weapon_manager.remove_subclass"), "remove_subclass");
+		wform.add_list_item(list, tr("ui.give_to_inventory"), "give");
+		int b_select = wform.create_button("&" + tr("ui.select"), true);
 		int b_back = wform.create_button("&" + tr("ui.back"), false, true);
 		wform.focus(list);
 
@@ -524,10 +524,10 @@ bool weapon_edit_form(string weapon_id, bool is_new, bool view_only, string chos
 	int btn_ricochet = form.create_button("&ricochet sound" + weapon_sound_count_label(w.sound_ricochet));
 
 	int b_give = -1;
-	if (!view_only) b_give = form.create_button("&give to inventory");
+	if (!view_only) b_give = form.create_button("&" + tr("ui.give_to_inventory"));
 	int b_save = -1;
-	if (!view_only) b_save = form.create_button("&save weapon", true);
-	int b_cancel = form.create_button("&close", false, true);
+	if (!view_only) b_save = form.create_button("&" + (is_new ? tr("ui.save") : tr("ui.update_and_save")), true);
+	int b_cancel = form.create_button("&" + tr("ui.close"), false, true);
 
 	form.focus(is_new ? in_id : in_name);
 

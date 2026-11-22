@@ -273,7 +273,7 @@ void quick_inventory_announce()
 	if (quick_inv_index >= int(keys.length())) quick_inv_index = 0;
 	string item = keys[quick_inv_index];
 	int count = get_item_count(item);
-	speak(get_item_display_name(item) + (count > 1 ? ", " + count + "." : ".") + " " + (quick_inv_index + 1) + " of " + keys.length() + ".");
+	speak(get_item_display_name(item) + (count > 1 ? ", " + count + "." : ".") + " " + (quick_inv_index + 1) + " " + tr("inventory.of") + " " + keys.length() + ".");
 }
 
 void quick_inventory_cycle(int step)

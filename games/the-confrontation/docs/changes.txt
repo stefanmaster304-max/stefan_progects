@@ -5,6 +5,35 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 22, 2026 at 10:00
+-------------------------------------------------------------------------------
+
+1. Comprehensive Multilingual Translation Coverage:
+   - Eliminated hardcoded English across internal dialogs, form buttons, and managers:
+     - NPC Manager (`includes/npc_manager.nvgt`): actions, class selection, drop item configuration, sound picker buttons, and feedback messages.
+     - Weapon Manager (`includes/weapon_manager.nvgt`): actions, inventory options, view/edit buttons, and save feedback.
+     - Item Manager (`includes/item_manager.nvgt`): actions, inventory grants, properties, and save feedback.
+     - Map Editor & Builder (`includes/builder.nvgt`): line editor buttons ("Add Line", "Edit Line", "Delete Line", "Copy", "Paste", "Rename Map", "Copy All"), line content forms, and map compilation tools.
+   - Localized sitting, standing, safe zone warnings, level-up, and fall damage messages in gameplay.
+
+2. In-Place Editing vs Creation Button Logic:
+   - Implemented strict differentiation between creation from scratch and editing an existing entity across NPCs, Weapons, Items, and Store categories:
+     - When creating: the action button says "&Salvar" / "&Save" / "&Guardar" (`tr("ui.save")`).
+     - When editing existing: the action button says "&Atualizar e salvar" / "&Update and Save" / "&Actualizar y guardar" (`tr("ui.update_and_save")`).
+   - Preserves existing file paths and overwrites files directly in place. If an internal ID is renamed, the obsolete file is cleaned up so no duplicates or orphaned files remain.
+
+3. Store Category Speech & Persistence Fix:
+   - Removed tab counter numbers ("category X of Y") and instructions when navigating categories in the Store; now speaks exclusively the category's display name.
+   - Synchronized category deletion with `contents.dat`, preventing deleted store categories from reappearing in compiled release mode.
+
+4. Main Menu Exit Confirmation:
+   - When exit confirmation is enabled, selecting "Exit" or pressing Escape in the main menu now opens an interactive confirmation dialog with "Sim" / "Não" before terminating.
+
+5. Restoration of Weapons Directory in Downloads:
+   - Fully restored `C:\Users\enzo\Downloads\Weapons` containing all 70 categorized weapon sound directories.
+
+
+-------------------------------------------------------------------------------
 New on November 21, 2026 at 20:55
 -------------------------------------------------------------------------------
 
