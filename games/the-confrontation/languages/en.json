@@ -33,8 +33,8 @@
     "select_character": "Select your character",
     "character_stefan": "Stefan, male",
     "character_ilana": "Ilana, female",
-    "character_stefan_desc": "The rebellious boy with an athletic, toned body, blond hair, long beard, holding a double-barreled machine gun in his hands. Features his own voice with Tristan's pain sounds (1 to 16), 5,000 maximum health, and moves 5% slower than the standard speed.",
-    "character_ilana_desc": "An athletic, toned, and very attractive girl with long blond hair, holding a double-barreled rifle in her hand of golden color that glows in the dark. Features her own female voice with Aria's pain sounds (1 to 16), 10,000 maximum health, and moves 5% faster than the standard speed.",
+    "character_stefan_desc": "The rebellious boy with an athletic, toned body, blond hair, long beard, holding a double-barreled machine gun in his hands. He has his own voice and runs at his own speed.",
+    "character_ilana_desc": "An athletic, toned, and very attractive girl with long blond hair, holding a double-barreled golden rifle that glows in the dark. She has her own voice and runs at her own speed.",
     "disable_wrap": "Disable menu wrapping",
     "footdrag": "Foot dragging sound when standing still",
     "confirm_exit": "Confirm before exiting with Escape",
@@ -374,6 +374,7 @@
     "error_opening": "Could not open documentation file."
   },
   "game": {
+    "select_character_first": "Select your character first in the settings.",
     "health_status": "Health: &1 of &2",
     "level_status": "Level &1 of &2 for resurrection, Resurrection &3, XP &4, &5 XP required for level &6",
     "died": "You died!",

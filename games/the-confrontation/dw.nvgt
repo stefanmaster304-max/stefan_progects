@@ -1121,7 +1121,15 @@ selected_default_map=sd.read("selected_default_map");
 }
 if (sd.d.exists("player_character"))
 {
-set_player_character(sd.read("player_character"), false);
+    string pc = sd.read("player_character");
+    if (pc == "stefan" || pc == "ilana")
+        set_player_character(pc, false);
+    else
+        current_player_character = "";
+}
+else
+{
+    current_player_character = "";
 }
 }
 void writeprefs()
@@ -1148,8 +1156,12 @@ void writeprefs()
 // here: position and facing, vitals, level and experience, resurrections,
 // inventory, equipment, posture and discovered maps.
 const string GAME_SAVE_KEY = "G4m3S4v3!2026#pR7$xT2%wQ9&mN4*bV8(nK1)zJ5-fH3+gD6=lS0_aE7@iU2^oY8$cW4";
-string get_game_save_path()
+string get_game_save_path(const string&in char_id = "")
 {
+    string c = char_id;
+    if (c == "") c = current_player_character;
+    if (c == "stefan" || c == "ilana")
+        return prefsdir + "/gamesave_" + c + ".dat";
     return prefsdir + "/gamesave.dat";
 }
 void migrate_legacy_location_save()
@@ -1161,8 +1173,8 @@ void migrate_legacy_location_save()
 }
 void save_location()
 {
-    migrate_legacy_location_save();
-    savedata loc(get_game_save_path(), GAME_SAVE_KEY);
+    if (current_player_character != "stefan" && current_player_character != "ilana") return;
+    savedata loc(get_game_save_path(current_player_character), GAME_SAVE_KEY);
     loc.add("mapname", mapname);
     loc.add("pos_x", int(me.x));
     loc.add("pos_y", int(me.y));
@@ -1185,14 +1197,21 @@ void save_location()
 }
 void clear_location()
 {
-    if (file_exists(get_game_save_path()))
-        file_delete(get_game_save_path());
-    if (file_exists(prefsdir+"/location.dat"))
-        file_delete(prefsdir+"/location.dat");
+    if (current_player_character != "")
+    {
+        string p = get_game_save_path(current_player_character);
+        if (file_exists(p)) file_delete(p);
+    }
+    if (file_exists(prefsdir + "/gamesave.dat"))
+        file_delete(prefsdir + "/gamesave.dat");
+    if (file_exists(prefsdir + "/location.dat"))
+        file_delete(prefsdir + "/location.dat");
 }
 void reset_location_on_death()
 {
-    savedata loc(get_game_save_path(), GAME_SAVE_KEY);
+    if (current_player_character != "stefan" && current_player_character != "ilana") return;
+    string save_path = get_game_save_path(current_player_character);
+    savedata loc(save_path, GAME_SAVE_KEY);
     loc.load();
     string default_spawn_map = "florest";
     string[] available = get_available_maps();
@@ -1205,14 +1224,13 @@ void reset_location_on_death()
     loc.add("level", level);
     loc.add("xp", xp);
     loc.add("resurrections", resurrections);
+    maxhealth = calculate_player_max_health(current_player_character, resurrections);
     loc.add("maxhealth", maxhealth);
     loc.add("health", maxhealth);
     loc.add("player_character", current_player_character);
     loc.add("current_weapon", "");
     loc.add("equipped_shield_id", "");
     loc.add("equipped_shield_durability", 0);
-    // Death costs everything: the inventory is cleared before it is written, so
-    // the next life starts with no items at all.
     clear_player_inventory();
     remove_all_equipment();
     loc.add("inventory_data", serialize_inventory());
@@ -1222,8 +1240,27 @@ void reset_location_on_death()
 }
 void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz, int &out lfacing)
 {
-    migrate_legacy_location_save();
-    savedata loc(get_game_save_path(), GAME_SAVE_KEY);
+    if (current_player_character != "stefan" && current_player_character != "ilana")
+    {
+        saved_map = "florest";
+        string[] available = get_available_maps();
+        if (available.length() > 0) saved_map = available[0];
+        deserialize_discovered_maps("");
+        lx = 1; ly = 0; lz = 0; lfacing = 0;
+        level = 1;
+        xp = 0;
+        resurrections = 0;
+        maxhealth = 5000;
+        health = maxhealth;
+        xprequired = get_xp_required(level);
+        current_weapon_id = "";
+        walktime = 160;
+        remove_all_equipment();
+        return;
+    }
+
+    string save_path = get_game_save_path(current_player_character);
+    savedata loc(save_path, GAME_SAVE_KEY);
     loc.load();
     if (loc.d.exists("mapname"))
     {
@@ -1237,20 +1274,12 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         xprequired = get_xp_required(level);
         xp = loc.readn("xp");
         resurrections = loc.readn("resurrections");
-        if (loc.d.exists("player_character"))
-        {
-            set_player_character(loc.read("player_character"), false);
-        }
-        else if (sd.d.exists("player_character"))
-        {
-            set_player_character(sd.read("player_character"), false);
-        }
+        
         maxhealth = calculate_player_max_health(current_player_character, resurrections);
-        if (loc.d.exists("maxhealth")) maxhealth = loc.readn("maxhealth");
-        int base_hp = get_character_base_max_health(current_player_character);
-        if (maxhealth < base_hp) maxhealth = base_hp;
         if (loc.d.exists("health")) health = loc.readn("health");
         else health = maxhealth;
+        if (health > maxhealth || health <= 0) health = maxhealth;
+
 		normalize_player_xp(false);
         current_weapon_id = "";
         walktime = get_current_walktime();
@@ -1270,8 +1299,6 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         if (loc.d.exists("equipped_shield_id"))
         {
             string s_id = loc.read("equipped_shield_id");
-            // New saves store the damage-point durability pool; old saves with
-            // hit counts are read as-is (they are valid damage points too).
             int s_dur = 0;
             if (loc.d.exists("equipped_shield_durability")) s_dur = loc.readn("equipped_shield_durability");
             else if (loc.d.exists("equipped_shield_charges")) s_dur = loc.readn("equipped_shield_charges");
@@ -1292,22 +1319,22 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
     }
     else
     {
-        saved_map = "main";
+        string default_spawn_map = "florest";
+        string[] available = get_available_maps();
+        if (available.length() > 0) default_spawn_map = available[0];
+        saved_map = default_spawn_map;
         deserialize_discovered_maps("");
         lx = 1; ly = 0; lz = 0; lfacing = 0;
         level = 1;
         xp = 0;
         resurrections = 0;
-        if (sd.d.exists("player_character"))
-        {
-            set_player_character(sd.read("player_character"), false);
-        }
         maxhealth = calculate_player_max_health(current_player_character, 0);
         health = maxhealth;
         xprequired = get_xp_required(level);
         current_weapon_id = "";
         walktime = get_current_walktime();
         remove_all_equipment();
+        save_location();
     }
 }
 void tempreset_internal(bool save_state, const string&in target_map = "")

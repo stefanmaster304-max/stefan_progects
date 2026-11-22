@@ -4,12 +4,13 @@
 const string CHAR_STEFAN = "stefan";
 const string CHAR_ILANA = "ilana";
 
-string current_player_character = CHAR_STEFAN;
+string current_player_character = "";
 
 int get_character_base_max_health(const string&in char_id)
 {
 	string c = string_to_lower_case(char_id.trim_whitespace());
 	if (c == "ilana" || c == "ylana") return 10000;
+	if (c == "stefan") return 5000;
 	return 5000;
 }
 
@@ -28,41 +29,50 @@ int get_player_modified_walktime(int base_walk)
 		int wt = int(round(double(base_walk) * 0.95, 0));
 		return (wt > 10) ? wt : 10;
 	}
-	else
+	else if (current_player_character == "stefan")
 	{
 		// Stefan runs 5% slower than standard (step interval is increased by 5%)
 		int wt = int(round(double(base_walk) * 1.05, 0));
 		return wt;
 	}
+	return base_walk;
 }
 
 string get_character_name(const string&in char_id)
 {
 	string c = string_to_lower_case(char_id.trim_whitespace());
 	if (c == "ilana" || c == "ylana") return tr("options.character_ilana");
-	return tr("options.character_stefan");
+	if (c == "stefan") return tr("options.character_stefan");
+	return "";
 }
 
 string get_character_description(const string&in char_id)
 {
 	string c = string_to_lower_case(char_id.trim_whitespace());
 	if (c == "ilana" || c == "ylana") return tr("options.character_ilana_desc");
-	return tr("options.character_stefan_desc");
+	if (c == "stefan") return tr("options.character_stefan_desc");
+	return "";
 }
 
 void set_player_character(const string&in char_id, bool update_vitals = true)
 {
 	string c = string_to_lower_case(char_id.trim_whitespace());
-	if (c != "ilana" && c != "ylana") c = "stefan";
-	else c = "ilana";
+	if (c != "ilana" && c != "ylana" && c != "stefan")
+	{
+		current_player_character = "";
+		return;
+	}
+	if (c == "ylana") c = "ilana";
 
 	current_player_character = c;
-	int old_max = maxhealth;
 	maxhealth = calculate_player_max_health(c, resurrections);
 	if (update_vitals)
 	{
-		if (health >= old_max || health <= 0) health = maxhealth;
-		else if (health > maxhealth) health = maxhealth;
+		health = maxhealth;
+	}
+	else
+	{
+		if (health > maxhealth || health <= 0) health = maxhealth;
 	}
 	walktime = get_current_walktime();
 }

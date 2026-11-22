@@ -5,6 +5,24 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 22, 2026 at 17:45
+-------------------------------------------------------------------------------
+
+1. Multi-Character Player System (Stefan & Ilana):
+   - Introduced two distinct playable characters with unique physical profiles, audio sets, speeds, and vital stats:
+     - Stefan (Masculine): Athletic, toned body with blond hair and long beard, holding a double-barreled machine gun. 5,000 base HP, moves 5% slower than standard speed, exclusive Tristan pain sounds (1-16) and death voice 17.
+     - Ilana (Feminino): Athletic, toned, attractive body with long blond hair, holding a double-barreled golden glowing rifle. 10,000 base HP, moves 5% faster than standard speed, exclusive Aria pain sounds (1-16) and death voice 17.
+   - General sound effects (footsteps, jumps, lands, inventory, equipment) remain universal and shared.
+
+2. Character Selection & Dedicated Save Separation:
+   - Added "Selecione o seu personagem" to Options menu.
+   - Pressing Spacebar on a character speaks their concise physical and weapon description, their individual voice, and their unique movement speed.
+   - Created separate save files (`gamesave_stefan.dat` and `gamesave_ilana.dat`), preventing cross-character stat contamination and ensuring Stefan maintains his designated 5,000 HP and Ilana maintains her 10,000 HP.
+   - Removed legacy single save file to prevent obsolete data contamination.
+   - The game no longer picks a default character randomly. Attempting to click Play without selecting a character informs the player: "Selecione o seu personagem primeiro nas configurações."
+
+
+-------------------------------------------------------------------------------
 New on November 22, 2026 at 10:00
 -------------------------------------------------------------------------------
 

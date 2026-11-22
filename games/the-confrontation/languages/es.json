@@ -33,8 +33,8 @@
     "select_character": "Selecciona tu personaje",
     "character_stefan": "Stefan, masculino",
     "character_ilana": "Ilana, femenino",
-    "character_stefan_desc": "El chico rebelde de cuerpo atlético, fuerte, cabello rubio, barba larga, sosteniendo una ametralladora de dos cañones en sus manos. Cuenta con voz propia con los sonidos de dolor de Tristan (1 a 16), 5.000 de salud máxima y movimiento un 5% más lento que la velocidad estándar.",
-    "character_ilana_desc": "Una chica de cuerpo atlético, fuerte y muy atractiva, cabello rubio largo, sosteniendo un rifle de dos cañones largos en su mano de color dorado que brilla en la oscuridad. Cuenta con voz propia femenina con los sonidos de dolor de Aria (1 a 16), 10.000 de salud máxima y movimiento un 5% más rápido que la velocidad estándar.",
+    "character_stefan_desc": "El chico rebelde de cuerpo atlético, fuerte, cabello rubio, barba larga, sosteniendo una ametralladora de dos cañones en sus manos. Tiene voz propia y corre a su propia velocidad.",
+    "character_ilana_desc": "Una chica de cuerpo atlético, fuerte y muy atractiva, cabello rubio largo, sosteniendo un rifle de dos cañones largos de color dorado que brilla en la oscuridad. Tiene voz propia y corre a su propia velocidad.",
     "disable_wrap": "Desactivar rotación del menú",
     "footdrag": "Sonido de arrastrar los pies al estar quieto",
     "confirm_exit": "Confirmar antes de salir con Escape",
@@ -374,6 +374,7 @@
     "error_opening": "No se pudo abrir el archivo de documentación."
   },
   "game": {
+    "select_character_first": "Selecciona tu personaje primero en la configuración.",
     "health_status": "Salud: &1 de &2",
     "level_status": "Nivel &1 de &2 para resurrección, Resurrección &3, XP &4, &5 XP necesarios para el nivel &6",
     "died": "¡Has muerto!",
