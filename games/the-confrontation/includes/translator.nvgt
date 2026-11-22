@@ -148,7 +148,8 @@ string tr(const string& in key, const string& in default_val) {
 string current_language = "en";
 
 void init_localization() {
-    _translator.path = "languages";
+    if (directory_exists("settings/languages")) _translator.path = "settings/languages";
+    else _translator.path = "languages";
     _translator.format = "json";
     _translator.load_fallback("en");
     if (current_language == "") current_language = "en";

@@ -317,6 +317,12 @@ void mainmenu()
 		}
 		else if (menuitem=="store")
 		{
+			if (current_player_character != "stefan" && current_player_character != "ilana")
+			{
+				p.play_stationary(get_sound_path("misc/error.ogg"), false);
+				speak(tr("options.select_character_first"));
+				continue;
+			}
 			m.fade_music(15);
 			store_main_menu();
 			setupmenu(true);

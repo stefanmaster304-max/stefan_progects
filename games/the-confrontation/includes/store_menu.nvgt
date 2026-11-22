@@ -107,10 +107,66 @@ void store_browse_announce_item(int cat, int item)
 	speak(tr("store.in_cart", {iname, s.item_prices[item], store_charge_currency(s), "" + store_browse_amounts[cat][item]}));
 }
 
+string get_store_sound(const string&in name)
+{
+	string char_folder = (current_player_character == "ilana") ? "sounds/players/ylana/" : "sounds/players/stefan/";
+	string snd = find_sound_in_disk(char_folder + name + ".ogg");
+	if (snd == "") snd = find_sound_in_disk(char_folder + name);
+	if (snd == "") snd = get_player_sound(name);
+	if (snd == "") snd = find_sound_in_disk("sounds/players/stefan/" + name + ".ogg");
+	if (snd == "") snd = find_sound_in_disk("sounds/players/stefan/" + name);
+	if (snd == "") snd = get_sound_path(name + ".ogg");
+	return snd;
+}
+
 void play_store_error()
 {
-	string err_snd = get_sound_path("player/store_error.ogg;sounds/player/store_error.ogg;misc/error.ogg;error.ogg");
+	string err_snd = get_store_sound("store_error");
+	if (err_snd == "") err_snd = get_sound_path("player/store_error.ogg;sounds/player/store_error.ogg;misc/error.ogg;error.ogg");
 	if (err_snd != "") p.play_stationary(err_snd, false);
+}
+
+void load_player_store_inventory()
+{
+	if (current_player_character != "stefan" && current_player_character != "ilana") return;
+	string save_path = get_game_save_path(current_player_character);
+	if (file_exists(save_path))
+	{
+		savedata loc(save_path, GAME_SAVE_KEY);
+		loc.load();
+		if (loc.d.exists("inventory_data"))
+		{
+			deserialize_inventory(loc.read("inventory_data"));
+		}
+	}
+}
+
+void save_player_store_inventory()
+{
+	if (current_player_character != "stefan" && current_player_character != "ilana") return;
+	string save_path = get_game_save_path(current_player_character);
+	savedata loc(save_path, GAME_SAVE_KEY);
+	if (file_exists(save_path))
+	{
+		loc.load();
+	}
+	else
+	{
+		loc.add("mapname", "florest");
+		loc.add("pos_x", 1);
+		loc.add("pos_y", 0);
+		loc.add("pos_z", 0);
+		loc.add("facing", 0);
+		loc.add("level", 1);
+		loc.add("xp", 0);
+		loc.add("resurrections", 0);
+		int base_hp = calculate_player_max_health(current_player_character, 0);
+		loc.add("maxhealth", base_hp);
+		loc.add("health", base_hp);
+	}
+	loc.add("player_character", current_player_character);
+	loc.add("inventory_data", serialize_inventory());
+	loc.save();
 }
 
 void store_browse_buy(int cat)
@@ -157,7 +213,10 @@ void store_browse_buy(int cat)
 		summary += q + " " + get_item_display_name(s.item_names[i]);
 	}
 
-	string buy_snd = get_sound_path("player/buy.ogg;sounds/player/buy.ogg;player/storepurchase.ogg;items/buy.ogg;items/storepurchase.ogg;storepurchase.ogg;buy.ogg");
+	save_player_store_inventory();
+
+	string buy_snd = get_store_sound("buy");
+	if (buy_snd == "") buy_snd = get_sound_path("player/buy.ogg;sounds/player/buy.ogg;player/storepurchase.ogg;items/buy.ogg;items/storepurchase.ogg;storepurchase.ogg;buy.ogg");
 	if (buy_snd != "") p.play_stationary(buy_snd, false);
 	speak(tr("store.purchase_success", {summary, "" + total_cost, currency}));
 }
@@ -173,8 +232,16 @@ string store_welcome_text()
 
 void store_main_menu()
 {
+	if (current_player_character != "stefan" && current_player_character != "ilana")
+	{
+		p.play_stationary(get_sound_path("misc/error.ogg"), false);
+		speak(tr("options.select_character_first"));
+		return;
+	}
+
 	init_stores();
 	load_all_items_config();
+	load_player_store_inventory();
 	if (store_configs.length() == 0)
 	{
 		speak(tr("store.no_categories"));
@@ -186,7 +253,8 @@ void store_main_menu()
 		wait(5);
 	}
 
-	string st_snd = get_sound_path("player/st.ogg;sounds/player/st.ogg;st.ogg");
+	string st_snd = get_store_sound("st");
+	if (st_snd == "") st_snd = get_sound_path("player/st.ogg;sounds/player/st.ogg;st.ogg");
 	if (st_snd != "") p.play_stationary(st_snd, false);
 	speak(store_welcome_text());
 

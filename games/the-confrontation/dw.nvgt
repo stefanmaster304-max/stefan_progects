@@ -9,7 +9,7 @@ timer sitting_speech_debounce;
 
 string ver = "0.1";
 
-#include "bgt_compat.nvgt"
+#include "includes/bgt_compat.nvgt"
 #include "includes/player_character.nvgt"
 #include "includes/sound_paths.nvgt"
 #include"includes/rotation.nvgt"
@@ -1171,15 +1171,6 @@ void writeprefs()
 // Single encrypted progress save. Everything the player earns or changes lives
 // here: position and facing, vitals, level and experience, resurrections,
 // inventory, equipment, posture and discovered maps.
-const string GAME_SAVE_KEY = "G4m3S4v3!2026#pR7$xT2%wQ9&mN4*bV8(nK1)zJ5-fH3+gD6=lS0_aE7@iU2^oY8$cW4";
-string get_game_save_path(const string&in char_id = "")
-{
-    string c = char_id;
-    if (c == "") c = current_player_character;
-    if (c == "stefan" || c == "ilana")
-        return prefsdir + "/gamesave_" + c + ".dat";
-    return prefsdir + "/gamesave.dat";
-}
 void migrate_legacy_location_save()
 {
     string legacy = prefsdir + "/location.dat";

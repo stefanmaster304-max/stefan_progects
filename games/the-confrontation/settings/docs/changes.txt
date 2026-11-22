@@ -5,6 +5,27 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 22, 2026 at 19:10
+-------------------------------------------------------------------------------
+
+1. Project Structure Clean-Up:
+   - Moved bgt_compat.nvgt from the root directory into includes/bgt_compat.nvgt and updated project include in dw.nvgt.
+   - Moved languages directory from the root directory into settings/languages and updated localization loader in translator.nvgt.
+   - Moved docs directory from the root directory into settings/docs and updated documentation reader paths in documentation.nvgt.
+
+2. Store Audio Profiles for Both Characters:
+   - Implemented character-aware store sound resolution via get_store_sound(): store welcome (st.ogg), purchase success (buy.ogg), and store error (store_error.ogg) audio now correctly load from the active character's audio folder (Stefan and Ilana).
+   - Both characters now cleanly play their respective greetings and purchase confirmations in the store.
+
+3. Store Purchases Inventory Persistence:
+   - Implemented load_player_store_inventory() and save_player_store_inventory() in store_menu.nvgt.
+   - When entering the store, the active character's save file is loaded to display and use their true currency balances.
+   - Every store purchase immediately writes the updated inventory and deducted currency to the character's save file (gamesave_<character>.dat).
+   - When entering any map, all purchased items are preserved in the player's inventory.
+   - Guarded store access to require selecting a character first in Options.
+
+
+-------------------------------------------------------------------------------
 New on November 22, 2026 at 18:30
 -------------------------------------------------------------------------------
 
