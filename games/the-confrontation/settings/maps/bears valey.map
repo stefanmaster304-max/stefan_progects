@@ -11,4 +11,4 @@ minresurrection: 0
 maxresurrection: 0
 platform:0:150:0:150:0:0:grass3
 zone:0:150:0:150:0:150:bears valey
-npcspawner:bear:1:3000:0:0:0:0:0:0:1
+npcspawner:bear:4:5600:0:0:0:150:150:0:1

@@ -26,12 +26,6 @@ New on November 22, 2026 at 10:00
    - Removed tab counter numbers ("category X of Y") and instructions when navigating categories in the Store; now speaks exclusively the category's display name.
    - Synchronized category deletion with `contents.dat`, preventing deleted store categories from reappearing in compiled release mode.
 
-4. Main Menu Exit Confirmation:
-   - When exit confirmation is enabled, selecting "Exit" or pressing Escape in the main menu now opens an interactive confirmation dialog with "Sim" / "Não" before terminating.
-
-5. Restoration of Weapons Directory in Downloads:
-   - Fully restored `C:\Users\enzo\Downloads\Weapons` containing all 70 categorized weapon sound directories.
-
 
 -------------------------------------------------------------------------------
 New on November 21, 2026 at 20:55
