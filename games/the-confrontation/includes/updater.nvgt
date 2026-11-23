@@ -407,10 +407,16 @@ string dl_file(string url, string disk_file, bool quiet = false, string msg = ""
 	return status;
 }
 
-bool check_and_prompt_missing_sounds()
+bool are_game_sounds_installed()
 {
 	if (file_exists("sounds.dw") || file_exists("settings/sounds.dw")) return true;
-	if (directory_exists("sounds") && !directory_empty("sounds")) return true;
+	if (directory_exists("sounds/anbients") || directory_exists("sounds/weapons") || directory_exists("sounds/players") || directory_exists("sounds/menu sounds") || directory_exists("sounds/map platforms")) return true;
+	return false;
+}
+
+bool check_and_prompt_missing_sounds()
+{
+	if (are_game_sounds_installed()) return true;
 
 	string prompt = tr("updater.sounds_not_found_prompt", "Os sons do jogo não foram encontrados. Deseja fazer o download dos sons do jogo? Pressione Y ou Enter para Sim, ou Escape para continuar sem sons.");
 	speak(prompt);
@@ -446,6 +452,7 @@ bool check_and_prompt_missing_sounds()
 	string sound_file = "sounds.zip";
 	if (file_exists(sound_file) && file_get_size(sound_file) > 1048576)
 	{
+		play_updater_music();
 		speak(tr("updater.sound_already_downloaded", "Pacote de sons já baixado. Iniciando extração."));
 	}
 	else
@@ -509,7 +516,7 @@ bool check_and_prompt_missing_sounds()
 	wait(120);
 	play_update_complete_sound();
 
-	if (directory_exists("sounds") && !directory_empty("sounds"))
+	if (are_game_sounds_installed())
 	{
 		speak(tr("updater.extraction_complete", "Extração concluída com sucesso. O jogo agora será reiniciado."));
 		if (file_exists(sound_file)) file_delete(sound_file);
@@ -1083,7 +1090,7 @@ bool apply_sounds_update(update_item@ item)
 	if (file_exists("sounds_applied.flag")) file_delete("sounds_applied.flag");
 	if (file_exists("apply_sounds.bat")) file_delete("apply_sounds.bat");
 
-	if (!directory_exists("sounds") || directory_empty("sounds"))
+	if (!are_game_sounds_installed())
 	{
 		speak(tr("updater.sound_install_failed", "A nova pasta de sons não pôde ser instalada. Reinstale o jogo para restaurar os sons."));
 		cleanup_update_temp();
@@ -1242,7 +1249,29 @@ bool check_for_updates(bool interactive = true)
 		return false;
 	}
 
-	var@ parsed_var = parse_json(manifest);
+	string clean_manifest = manifest.trim_whitespace();
+	int brace_pos = clean_manifest.find("{");
+	int bracket_pos = clean_manifest.find("[");
+	int start_pos = -1;
+	if (brace_pos >= 0 && bracket_pos >= 0)
+		start_pos = (brace_pos < bracket_pos) ? brace_pos : bracket_pos;
+	else if (brace_pos >= 0)
+		start_pos = brace_pos;
+	else if (bracket_pos >= 0)
+		start_pos = bracket_pos;
+
+	if (start_pos > 0)
+		clean_manifest = clean_manifest.substr(start_pos);
+
+	clean_manifest = clean_manifest.trim_whitespace();
+
+	if (clean_manifest == "")
+	{
+		if (interactive) dlg(tr("updater.corrupt_manifest_dialog"));
+		return false;
+	}
+
+	var@ parsed_var = parse_json(clean_manifest);
 	if (parsed_var is null)
 	{
 		if (interactive) dlg(tr("updater.corrupt_manifest_dialog"));
