@@ -5,6 +5,23 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+Novidades em 23 de novembro de 2026 às 19:40 (v0.5 Atualizador com Música e Download Automático)
+-------------------------------------------------------------------------------
+
+1. Música de Fundo durante Atualizações:
+   - Durante o processo de download e extração de qualquer tipo de atualização (sons, executável do jogo, conteúdos e mapas), o atualizador reproduz a música tema do atualizador (updater mus.mp3) em harmonia com os bips de progresso senoidais. Ambos os sons tocam simultaneamente sem que um silencie ou substitua o outro.
+
+2. Download Automático do Pacote ZIP Completo:
+   - Removida a pergunta que solicitava a escolha do tipo de download. O jogo agora baixa automaticamente o pacote ZIP completo (the_confront_v0.5.zip), garantindo que tanto o executável quanto todos os arquivos de configuração, traduções e notas de alterações cheguem sempre atualizados ao computador do jogador, extraindo os arquivos e reiniciando o jogo de forma autônoma.
+
+3. Ajuste Fino nos Sons de Sentar e Levantar:
+   - O som de queda de plataforma (fall) agora toca especificamente ao sentar. Ao levantar-se, apenas o som de se levantar (stand) é reproduzido.
+
+4. Armazenamento de Saves e Configurações no AppData:
+   - As informações de perfil, progresso e arquivos de save (gamesave_*.dat) e settings.dat agora residem com segurança na pasta do usuário em AppData/Roaming/Stefan Projects/The Confront/, mantendo a pasta settings do jogo reservada exclusivamente aos arquivos de dados criptografados do jogo.
+
+
+-------------------------------------------------------------------------------
 New on November 23, 2026 at 18:15 (v0.5 Audio & Annie Update)
 -------------------------------------------------------------------------------
 

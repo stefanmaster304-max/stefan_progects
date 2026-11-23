@@ -5,6 +5,23 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 23, 2026 at 19:40 (v0.5 Updater with Music & Automatic ZIP Download)
+-------------------------------------------------------------------------------
+
+1. Background Music During Updater Progress:
+   - While downloading and extracting any update (sounds, game executable, contents, and maps), the updater now plays the updater soundtrack (updater mus.mp3) simultaneously with the rising progress beeps. Both audio layers play together without replacing or muting each other.
+
+2. Automatic Full ZIP Package Download:
+   - Removed the prompt asking whether to download only the executable or the zip file. The updater now automatically downloads the full ZIP package (the_confront_v0.5.zip), extracts all updated binaries, translations, configurations, and changelogs, and restarts automatically.
+
+3. Refined Sit and Stand Sound Effects:
+   - The platform fall sound (fall) plays specifically upon sitting down. Standing up now plays only the character stand sound (stand).
+
+4. Player Saves and Settings Relocated to AppData:
+   - Player game saves (gamesave_*.dat) and settings.dat are now stored in AppData/Roaming/Stefan Projects/The Confront/, leaving the game's settings folder strictly for encrypted game assets.
+
+
+-------------------------------------------------------------------------------
 New on November 23, 2026 at 18:15 (v0.5 Audio & Annie Update)
 -------------------------------------------------------------------------------
 

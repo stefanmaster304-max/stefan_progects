@@ -178,7 +178,52 @@ string format_byte_size(int64 bytes)
 }
 
 sound updater_audio;
+sound updater_music;
 bool bypass_missing_sounds_check = false;
+
+string get_updater_music_path()
+{
+	string[] candidates = {
+		"sounds/updater/updater mus.mp3",
+		"sounds/updater/updater mus.ogg",
+		"sounds/updater/updater mus.wav",
+		"sounds/updater/updater_mus.mp3",
+		"sounds/updater/updater_mus.ogg",
+		"sounds/updater/updater_mus.wav",
+		"updater/updater mus.mp3",
+		"updater/updater mus.ogg"
+	};
+	for (uint i = 0; i < candidates.length(); i++)
+	{
+		if (file_exists(candidates[i])) return candidates[i];
+	}
+	string fallback = get_sound_path("updater/updater mus.mp3;updater/updater mus.ogg;updater/updater mus.wav;sounds/updater/updater mus.mp3");
+	if (fallback != "" && file_exists(fallback)) return fallback;
+	return "";
+}
+
+void play_updater_music()
+{
+	if (updater_music.active && updater_music.playing) return;
+	string snd = get_updater_music_path();
+	if (snd != "" && file_exists(snd))
+	{
+		if (updater_music.load(snd))
+		{
+			updater_music.volume = -10.0;
+			updater_music.play_looped();
+		}
+	}
+}
+
+void stop_updater_music()
+{
+	if (updater_music.active)
+	{
+		updater_music.stop();
+		updater_music.close();
+	}
+}
 
 void play_update_found_sound()
 {
@@ -222,6 +267,7 @@ upcoming::sound@ progress_sound;
 
 void cleanup_update_temp()
 {
+	stop_updater_music();
 	if (directory_exists(UPDATE_TEMP_DIR))
 	{
 		string[]@ flist = find_files(UPDATE_TEMP_DIR + "/*");
@@ -289,6 +335,7 @@ bool directory_empty(const string&in dir)
 string dl_file(string url, string disk_file, bool quiet = false, string msg = "")
 {
 	if (msg == "") msg = tr("updater.download_help");
+	play_updater_music();
 	internet_request r(url, disk_file);
 	if (!quiet) speak(msg);
 	double last_percentage = 0;
@@ -305,6 +352,7 @@ string dl_file(string url, string disk_file, bool quiet = false, string msg = ""
 		if (key_pressed(KEY_ESCAPE))
 		{
 			status = "canceled";
+			stop_updater_music();
 			speak(tr("updater.cancelled"));
 			return status;
 		}
@@ -457,6 +505,7 @@ bool check_and_prompt_missing_sounds()
 	}
 	if (file_exists("extract_done.flag")) file_delete("extract_done.flag");
 	beep_percentage(100.0);
+	stop_updater_music();
 	wait(120);
 	play_update_complete_sound();
 
@@ -725,6 +774,7 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 		string result = dl_file(url, dest);
 		if (result == "canceled")
 		{
+			stop_updater_music();
 			if (file_exists(dest)) file_delete(dest);
 			error_message = "Update cancelled.";
 			return false;
@@ -744,6 +794,7 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 		}
 	}
 
+	stop_updater_music();
 	error_message = "Download failed after multiple attempts.";
 	updater_beep(220, 300);
 	return false;
@@ -823,18 +874,29 @@ void remove_legacy_content_bundles()
 
 bool apply_game_update(update_item@ item)
 {
-	string temp_payload = UPDATE_TEMP_DIR + "/game_update_payload";
+	bool is_zip_update = (string_ends_with(item.url.lower(), ".zip") || item.zip_url != "");
+	string temp_payload = UPDATE_TEMP_DIR + (is_zip_update ? "/game_update_payload.zip" : "/game_update_payload.exe");
 	string error_message = "";
-	if (!download_update_file(item.url, temp_payload, item.size, error_message)) { speak(error_message); return false; }
+	if (!download_update_file(item.url, temp_payload, item.size, error_message))
+	{
+		stop_updater_music();
+		speak(error_message);
+		cleanup_update_temp();
+		return false;
+	}
 
 	bool is_zip = validate_sound_archive(temp_payload);
 	bool is_exe = validate_game_executable(temp_payload);
 
 	if (!is_zip && !is_exe)
 	{
+		stop_updater_music();
 		speak("The downloaded update file is not valid. Update aborted.");
+		cleanup_update_temp();
 		return false;
 	}
+
+	string win_payload = string_replace(temp_payload, "/", "\\", true);
 
 	file bat;
 	if (bat.open("apply_game_update.bat", "w"))
@@ -850,14 +912,14 @@ bool apply_game_update(update_item@ item)
 		bat.write("if exist \"tcf.exe\" ren \"tcf.exe\" \"tcf.exe.old\" > nul 2> nul\r\n");
 		if (is_zip)
 		{
-			bat.write("tar.exe -xf \"" + temp_payload + "\" -C . 2> nul\r\n");
+			bat.write("tar.exe -xf \"" + win_payload + "\" -C . 2> nul\r\n");
 			bat.write("if not exist \"tcf.exe\" (\r\n");
-			bat.write("  powershell.exe -WindowStyle Hidden -NoProfile -Command \"Expand-Archive -Force -Path '" + temp_payload + "' -DestinationPath '.'\"\r\n");
+			bat.write("  powershell.exe -WindowStyle Hidden -NoProfile -Command \"Expand-Archive -Force -Path '" + win_payload + "' -DestinationPath '.'\"\r\n");
 			bat.write(")\r\n");
 		}
 		else if (is_exe)
 		{
-			bat.write("move /y \"" + temp_payload + "\" \"tcf.exe\" > nul 2> nul\r\n");
+			bat.write("move /y \"" + win_payload + "\" \"tcf.exe\" > nul 2> nul\r\n");
 		}
 		bat.write("if exist \"tcf.exe\" (\r\n");
 		bat.write("  if exist \"tcf.exe.old\" del /f /q \"tcf.exe.old\" > nul 2> nul\r\n");
@@ -875,6 +937,7 @@ bool apply_game_update(update_item@ item)
 	current_game_build = item.new_build;
 	save_updater_settings();
 
+	stop_updater_music();
 	play_update_complete_sound();
 	speak(tr("updater.game_restart"));
 	wait_for_update_complete_sound();
@@ -917,6 +980,7 @@ bool apply_content_update(update_item@ item)
 	current_content_build = item.new_build;
 	save_updater_settings();
 
+	stop_updater_music();
 	play_update_complete_sound();
 	speak(tr("updater.content_restart"));
 	wait_for_update_complete_sound();
@@ -968,6 +1032,7 @@ bool apply_sounds_update(update_item@ item)
 	}
 	if (file_exists("extract_done.flag")) file_delete("extract_done.flag");
 	beep_percentage(100.0);
+	stop_updater_music();
 	wait(120);
 
 	updater_audio.stop();
@@ -1072,6 +1137,7 @@ bool apply_maps_update(update_item@ item)
 	current_maps_build = item.new_build;
 	save_updater_settings();
 
+	stop_updater_music();
 	play_update_complete_sound();
 	speak(tr("updater.map_restart"));
 	wait_for_update_complete_sound();
@@ -1341,9 +1407,7 @@ bool check_for_updates(bool interactive = true)
 	{
 		if (available_update.type == UPDATE_GAME)
 		{
-			int choice = ask_download_option();
-			if (choice == -1) return false;
-			if (choice == 1 && available_update.zip_url != "")
+			if (available_update.zip_url != "")
 			{
 				available_update.url = available_update.zip_url;
 				available_update.size = 0;
