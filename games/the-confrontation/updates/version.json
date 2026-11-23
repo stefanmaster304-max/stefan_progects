@@ -1,22 +1,22 @@
 {
   "game": {
-    "version": "0.2",
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.2/the_confront_v0.2.zip",
+    "version": "0.3",
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.3/the_confront_v0.3.zip",
     "size": 0
   },
   "content": {
-    "version": "0.2",
+    "version": "0.3",
     "url": "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/contents.dat",
     "size": 0
   },
   "sounds": {
-    "version": "0.2",
+    "version": "0.3",
     "new_count": 0,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.2/sounds.zip",
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.3/sounds.zip",
     "size": 0
   },
   "maps": {
-    "version": "0.2",
+    "version": "0.3",
     "url": "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/maps.dat",
     "size": 0
   }

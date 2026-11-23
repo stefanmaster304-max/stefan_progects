@@ -34,10 +34,10 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-string current_game_version = "0.2";
-string current_content_version = "0.2";
-string current_sounds_version = "0.2";
-string current_maps_version = "0.2";
+string current_game_version = "0.3";
+string current_content_version = "0.3";
+string current_sounds_version = "0.3";
+string current_maps_version = "0.3";
 int check_updates_on_startup = 1;
 string update_manifest_url = UPDATE_MANIFEST_URL_DEFAULT;
 

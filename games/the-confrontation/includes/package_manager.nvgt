@@ -243,9 +243,14 @@ bool delete_package_file(const string&in id)
 
 package_data@ find_package_data(const string&in id)
 {
+	string nid = id.lower().trim_whitespace();
+	string nid_space = string_replace(nid, "_", " ", true);
 	for (uint i = 0; i < package_registry.length(); i++)
 	{
-		if (package_registry[i].id == id) return package_registry[i];
+		string pid = package_registry[i].id.lower().trim_whitespace();
+		string pid_space = string_replace(pid, "_", " ", true);
+		if (pid == nid || pid_space == nid_space || package_registry[i].name.lower() == nid_space)
+			return package_registry[i];
 	}
 	return null;
 }

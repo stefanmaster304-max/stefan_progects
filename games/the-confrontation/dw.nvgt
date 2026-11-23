@@ -8,7 +8,7 @@
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
-string ver = "0.2";
+string ver = "0.3";
 
 #include "includes/bgt_compat.nvgt"
 #include "includes/player_character.nvgt"
@@ -1236,11 +1236,13 @@ void reset_location_on_death()
     loc.add("maxhealth", maxhealth);
     loc.add("health", maxhealth);
     loc.add("player_character", current_player_character);
-    loc.add("current_weapon", "");
-    loc.add("equipped_shield_id", "");
-    loc.add("equipped_shield_durability", 0);
-    clear_player_inventory();
-    remove_all_equipment();
+    loc.add("current_weapon", current_weapon_id);
+    if (has_shield_equipped())
+    {
+        loc.add("equipped_shield_id", current_shield.id);
+        loc.add("equipped_shield_durability", current_shield.durability);
+    }
+    // Items are NOT lost on death! Carried inventory is preserved and saved.
     loc.add("inventory_data", serialize_inventory());
     loc.add("is_sitting", 0);
     loc.add("discovered_maps", serialize_discovered_maps());
@@ -1264,6 +1266,8 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         current_weapon_id = "";
         walktime = 160;
         remove_all_equipment();
+        clear_player_inventory();
+        give("starter pack", 1);
         return;
     }
 
@@ -1295,6 +1299,11 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         if (loc.d.exists("inventory_data"))
         {
             deserialize_inventory(loc.read("inventory_data"));
+        }
+        // Starter Pack as standard default item in the inventory for both characters:
+        if (get_item_count("starter pack") == 0 && get_item_count("starter_pack") == 0)
+        {
+            give("starter pack", 1);
         }
         if (loc.d.exists("current_weapon"))
         {
@@ -1342,6 +1351,8 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         current_weapon_id = "";
         walktime = get_current_walktime();
         remove_all_equipment();
+        clear_player_inventory();
+        give("starter pack", 1);
         save_location();
     }
 }
