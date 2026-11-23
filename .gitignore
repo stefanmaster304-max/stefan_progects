@@ -15,5 +15,6 @@ scratch_*.py
 step1_*.py
 
 # Player data (never published)
-games/*/settings/gamesave.dat
+games/*/settings/gamesave*.dat
 games/*/settings/settings.dat
+games/*/settings/killfeed.log

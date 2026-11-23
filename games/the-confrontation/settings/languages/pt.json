@@ -383,6 +383,8 @@
     "beeps_muted": "Bips de progresso desativados.",
     "beeps_unmuted": "Bips de progresso ativados.",
     "percent_downloaded": "por cento baixado.",
+    "sound_extract_failed": "O pacote de sons não pôde ser extraído. Os sons atuais foram mantidos.",
+    "sound_install_failed": "A nova pasta de sons não pôde ser instalada. Reinstale o jogo para restaurar os sons.",
     "progress_unavailable": "Progresso de download indisponível."
   },
   "documentation": {

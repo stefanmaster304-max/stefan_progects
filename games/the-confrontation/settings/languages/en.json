@@ -383,6 +383,8 @@
     "beeps_muted": "Progress beeps muted.",
     "beeps_unmuted": "Progress beeps unmuted.",
     "percent_downloaded": "percent downloaded.",
+    "sound_extract_failed": "The sound package could not be extracted. The current sounds were kept.",
+    "sound_install_failed": "The new sound folder could not be installed. Reinstall the game to restore the sounds.",
     "progress_unavailable": "Download progress unavailable."
   },
   "documentation": {

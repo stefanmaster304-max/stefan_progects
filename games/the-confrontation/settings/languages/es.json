@@ -383,6 +383,8 @@
     "beeps_muted": "Pitidos de progreso silenciados.",
     "beeps_unmuted": "Pitidos de progreso activados.",
     "percent_downloaded": "por ciento descargado.",
+    "sound_extract_failed": "No se pudo extraer el paquete de sonidos. Se mantuvieron los sonidos actuales.",
+    "sound_install_failed": "No se pudo instalar la nueva carpeta de sonidos. Reinstala el juego para restaurar los sonidos.",
     "progress_unavailable": "Progreso de descarga no disponible."
   },
   "documentation": {

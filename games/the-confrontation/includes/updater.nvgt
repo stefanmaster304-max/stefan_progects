@@ -253,6 +253,8 @@ void cleanup_update_temp()
 	if (file_exists("run_extract_update.bat")) file_delete("run_extract_update.bat");
 	if (file_exists("extract_done.flag")) file_delete("extract_done.flag");
 	if (file_exists("apply_game_update.bat")) file_delete("apply_game_update.bat");
+	if (file_exists("apply_sounds.bat")) file_delete("apply_sounds.bat");
+	if (file_exists("sounds_applied.flag")) file_delete("sounds_applied.flag");
 	if (file_exists("tcf.exe.old")) file_delete("tcf.exe.old");
 }
 
@@ -400,13 +402,13 @@ bool check_and_prompt_missing_sounds()
 	}
 	else
 	{
-		string sound_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.4/sounds.zip";
+		string sound_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/sounds.zip";
 		string result = dl_file(sound_url, sound_file);
 		if (result != "finished" || !file_exists(sound_file) || file_get_size(sound_file) < 1048576)
 		{
 			if (result != "canceled")
 			{
-				string fallback_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.2/sounds.zip";
+				string fallback_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.4/sounds.zip";
 				result = dl_file(fallback_url, sound_file);
 			}
 		}
@@ -967,7 +969,9 @@ bool apply_sounds_update(update_item@ item)
 	if (file_exists("extract_done.flag")) file_delete("extract_done.flag");
 	beep_percentage(100.0);
 	wait(120);
-	play_update_complete_sound();
+
+	updater_audio.stop();
+	updater_audio.close();
 
 	string source_dir = "";
 	if (directory_exists(extract_dir + "/sounds")) source_dir = extract_dir + "/sounds";
@@ -980,20 +984,43 @@ bool apply_sounds_update(update_item@ item)
 	if (extracted_dirs !is null) extracted_count += extracted_dirs.length();
 	if (source_dir == "" || extracted_count == 0)
 	{
-		speak("The sound package could not be extracted. The current sounds were kept.");
+		speak(tr("updater.sound_extract_failed", "O pacote de sons não pôde ser extraído. Os sons atuais foram mantidos."));
 		cleanup_update_temp();
 		return false;
 	}
 
-	if (directory_exists("sounds"))
-		run("cmd.exe", "/c rd /s /q sounds", true, true);
-	wait(100);
-	run("cmd.exe", "/c move \"" + source_dir + "\" sounds", true, true);
-	wait(100);
+	string win_source = string_replace(source_dir, "/", "\\", true);
+	if (!directory_exists("sounds")) directory_create("sounds");
 
-	if (!directory_exists("sounds"))
+	file apply_bat;
+	if (apply_bat.open("apply_sounds.bat", "w"))
 	{
-		speak("The new sound folder could not be installed. Reinstall the game to restore the sounds.");
+		apply_bat.write("@echo off\r\n");
+		apply_bat.write("if exist \"sounds_applied.flag\" del /f /q \"sounds_applied.flag\"\r\n");
+		apply_bat.write("robocopy.exe \"" + win_source + "\" \"sounds\" /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS\r\n");
+		apply_bat.write("if %errorlevel% leq 7 (\r\n");
+		apply_bat.write("  echo done > \"sounds_applied.flag\"\r\n");
+		apply_bat.write(") else (\r\n");
+		apply_bat.write("  xcopy.exe \"" + win_source + "\\*\" \"sounds\\\" /S /E /Y /I > nul\r\n");
+		apply_bat.write("  if exist \"sounds\" echo done > \"sounds_applied.flag\"\r\n");
+		apply_bat.write(")\r\n");
+		apply_bat.write("del \"%~f0\"\r\n");
+		apply_bat.close();
+	}
+	if (file_exists("sounds_applied.flag")) file_delete("sounds_applied.flag");
+	run("cmd.exe", "/c apply_sounds.bat", false, true);
+
+	timer apply_timer;
+	while (!file_exists("sounds_applied.flag") && apply_timer.elapsed < 60000)
+	{
+		wait(50);
+	}
+	if (file_exists("sounds_applied.flag")) file_delete("sounds_applied.flag");
+	if (file_exists("apply_sounds.bat")) file_delete("apply_sounds.bat");
+
+	if (!directory_exists("sounds") || directory_empty("sounds"))
+	{
+		speak(tr("updater.sound_install_failed", "A nova pasta de sons não pôde ser instalada. Reinstale o jogo para restaurar os sons."));
 		cleanup_update_temp();
 		return false;
 	}
@@ -1003,6 +1030,7 @@ bool apply_sounds_update(update_item@ item)
 	save_updater_settings();
 	cleanup_update_temp();
 
+	play_update_complete_sound();
 	speak(tr("updater.sound_restart"));
 	wait_for_update_complete_sound();
 	restart_game_client();
