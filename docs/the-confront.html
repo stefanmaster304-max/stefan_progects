@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Página oficial do jogo The Confront, desenvolvido por Stefan de Freedom Technology. Jogo de tiro FPS 3D com acessibilidade, sistema de ressurreições, personagens e muito mais.">
+  <meta name="description" content="Página oficial do jogo The Confront, desenvolvido por Stefan de Freedom Technology. Jogo de tiro FPS 3D com acessibilidade, áudio espacial King Audio, ressurreições, personagens e mundo em expansão.">
   <meta name="theme-color" content="#102a43">
-  <title>The Confront — Página Oficial | stefan_progects</title>
+  <title>The Confront — Página Oficial | Stefan Projects</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <a class="skip-link" href="#conteudo">Pular para o conteúdo principal</a>
   <header class="site-header">
     <div class="container header-inner">
-      <p class="site-name">stefan_progects</p>
+      <p class="site-name">Stefan Projects</p>
       <nav aria-label="Navegação principal">
         <ul class="nav-list">
           <li><a href="index.html">Início</a></li>
@@ -27,63 +27,225 @@
   <main id="conteudo" class="container page-main game-page">
     <header class="page-heading">
       <div class="badge-row">
-        <span class="badge badge-accent">Beta Pública 0.4</span>
+        <span class="badge badge-accent">Beta Pública v0.5</span>
+        <span class="badge">FPS 3D em Primeira Pessoa</span>
         <span class="badge">NVGT + King Audio 3D</span>
+        <span class="badge">Auxílio de IA</span>
         <span class="badge">Starter Pack Incluso</span>
         <span class="badge">Itens Preservados na Morte</span>
-        <span class="badge">FPS 3D em Primeira Pessoa</span>
       </div>
-      <h1>Página oficial do jogo The Confront</h1>
-      <p class="lead">Desenvolvido por Stefan de <strong>Freedom Technology</strong>. Bem-vindos à página oficial!</p>
+      <h1>The Confront</h1>
+      <p class="lead">Desenvolvido por Stefan de <strong>Freedom Technology</strong>. Conheça todos os detalhes e mecânicas do jogo antes de iniciar sua jornada de sobrevivência.</p>
     </header>
 
-    <!-- Resumo / Hero -->
+    <!-- 1. DESCRIÇÃO GERAL DO JOGO (PRIMEIRO) -->
     <section class="welcome game-hero" aria-labelledby="intro-title">
       <p class="eyebrow">Sobre o Jogo</p>
       <h2 id="intro-title">O que é The Confront?</h2>
       <p class="welcome-copy">
-        <strong>The Confront</strong> é um jogo de tiro FPS em 3D, em primeira pessoa, onde seu principal objetivo é sobreviver às ameaças de cada mapa específico.
+        <strong>The Confront</strong> é um jogo de tiro em primeira pessoa (FPS) em 3D imersivo, desenvolvido com foco prioritário em áudio espacial e total acessibilidade. Nele, seu objetivo fundamental é sobreviver às ameaças brutais e implacáveis de cada mapa.
       </p>
       <p class="welcome-copy">
-        Enfrente hordas de animais selvagens, robôs táticos, zumbis famintos e, futuramente, espíritos e outros tipos de criaturas que surgirão à medida que você explora este universo em constante expansão.
+        Você é colocado em um universo hostil e em constante expansão: comece no mapa inicial da floresta (<em>florest</em>), enfrente coelhos selvagens, coiotes astutos, lobos velozes e avance conforme supera os desafios até enfrentar robôs táticos blindados e criaturas de elite que estão sendo gradualmente introduzidas no mundo.
       </p>
     </section>
 
-    <!-- Painel de Downloads -->
+    <!-- 2. FLUXO ESSENCIAL: PERSONAGEM, MAPA E LOJA -->
+    <section class="content-section feature-block" aria-labelledby="flow-title">
+      <h2 id="flow-title">Fluxo Essencial de Jogo e Economia</h2>
+      <p>
+        Para que a progressão ocorra corretamente e seus itens fiquem salvos em segurança, o jogo adota um fluxo intuitivo:
+      </p>
+      <ul>
+        <li><strong>Seleção Obrigatória de Personagem:</strong> Antes de entrar no mapa e antes de realizar qualquer transação na Loja, você deve obrigatoriamente selecionar o personagem com o qual irá jogar (Stefan ou Ilana). Cada herói mantém seus próprios registros de vida, nível, armas, inventário e saldo de moedas de forma individual.</li>
+        <li><strong>Seleção de Mapa:</strong> Após definir seu herói, escolha o mapa disponível para sua faixa de ressurreição. Iniciantes começam no mapa da floresta e desbloqueiam novos territórios à medida que evoluem.</li>
+        <li><strong>Acesso à Loja de Equipamentos:</strong> Com o personagem selecionado, você pode acessar a Loja para adquirir munições, tambores de alta capacidade, coletes, espadas, rifles e poções vitais utilizando as moedas adquiridas nos combates.</li>
+      </ul>
+    </section>
+
+    <!-- 3. SISTEMA DE MOEDAS E DROPS DE CADA NPC -->
+    <section class="content-section" aria-labelledby="economy-title">
+      <h2 id="economy-title">Sistema de Moedas e Espécies de Inimigos</h2>
+      <p>
+        Cada criatura ou inimigo derrotado derruba um tipo específico de moeda, permitindo ao guerreiro acumular riquezas em seu inventário:
+      </p>
+      <div class="character-cards" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <article class="character-card">
+          <div class="char-header">
+            <h3>Coelhos Selvagens</h3>
+            <span class="badge">Mapa da Floresta</span>
+          </div>
+          <p class="char-desc">Ágeis e numerosos. Cada abate dropa moedas de <strong>Ouro</strong> para iniciar a sua economia.</p>
+        </article>
+
+        <article class="character-card">
+          <div class="char-header">
+            <h3>Coiotes</h3>
+            <span class="badge">Predadores</span>
+          </div>
+          <p class="char-desc">Ataques rápidos em matilha. Recompensam o jogador com moedas de <strong>Prata</strong>.</p>
+        </article>
+
+        <article class="character-card">
+          <div class="char-header">
+            <h3>Lobos do Vale</h3>
+            <span class="badge">Wolfs Valey</span>
+          </div>
+          <p class="char-desc">Ferozes e resistentes. Derrubam valiosos <strong>Cristais Dourados</strong> ao serem vencidos.</p>
+        </article>
+
+        <article class="character-card">
+          <div class="char-header">
+            <h3>Robôs e Guardas</h3>
+            <span class="badge">Robots World</span>
+          </div>
+          <p class="char-desc">Autômatos armados com alta precisão e escudos metálicos. Dropam raros <strong>Diamantes</strong>.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 4. SISTEMA DE RESSURREIÇÕES (1.500 NÍVEIS) -->
+    <section class="content-section feature-block" aria-labelledby="resurrection-title">
+      <h2 id="resurrection-title">Sistema de Ressurreições (1.500 Níveis por Ciclo)</h2>
+      <p>
+        The Confront apresenta um ciclo de evolução profunda: para atingir uma nova Ressurreição, o jogador deve alcançar <strong>1.500 níveis</strong> através do ganho contínuo de XP em batalha.
+      </p>
+      <ul>
+        <li><strong>Bônus Permanente de Saúde:</strong> Cada ressurreição conquistada eleva o patamar de vida máxima do personagem, tornando-o mais resistente contra inimigos de mapas avançados.</li>
+        <li><strong>Desbloqueio de Novos Mapas:</strong> Atingir a Ressurreição 1 desbloqueia o <em>Wolfs Valey</em>; a Ressurreição 2 abre o <em>Robots World</em>, e patamares superiores darão acesso a mundos ainda mais perigosos.</li>
+      </ul>
+    </section>
+
+    <!-- 5. AVISO IMPORTANTE: MAPAS DE TESTE -->
+    <section class="content-section" aria-labelledby="warning-title">
+      <h2 id="warning-title">Aviso sobre Mapas de Teste Experimentais</h2>
+      <div class="alert-box" style="border-left: 4px solid #f6ad55; background: rgba(246, 173, 85, 0.1); padding: 1.25rem; border-radius: 6px;">
+        <h3 style="margin-top: 0; color: #f6ad55; font-size: 1.2rem;">Cuidado Redobrado ao Explorar</h3>
+        <p>
+          Como o jogo está em constante expansão e desenvolvimento ativo, <strong>alguns mapas de teste podem aparecer e sumir</strong> temporariamente entre as atualizações.
+        </p>
+        <p style="margin-bottom: 0;">
+          <strong>Recomendação Oficial:</strong> Não entre nesses mapas experimentais a menos que esteja muito bem equipado e ciente dos riscos, pois criaturas em estágio de teste com atributos colossais e ataques devastadores estão sendo introduzidas nesses ambientes — quem entrar despreparado certamente morrerá antes da hora!
+        </p>
+      </div>
+    </section>
+
+    <!-- 6. SISTEMA DE PERSONAGENS INDIVIDUAIS -->
+    <section class="content-section" aria-labelledby="chars-title">
+      <h2 id="chars-title">Personagens Jogáveis e Saves Próprios</h2>
+      <p>
+        O jogo conta com dois personagens com progressão, vozes e atributos totalmente distintos:
+      </p>
+
+      <div class="character-cards">
+        <article class="character-card">
+          <div class="char-header">
+            <h3>Stefan (Masculino)</h3>
+            <span class="badge">Atleta Guerreiro</span>
+          </div>
+          <p class="char-desc">Jovem de espírito destemido, cabelos loiros e barba imponente. Especialista em poder de fogo direto com metralhadora de cano duplo.</p>
+          <ul class="char-stats">
+            <li><strong>Vida Base:</strong> 5.000 HP (+ bônus de ressurreição)</li>
+            <li><strong>Arma Inicial:</strong> Metralhadora pesada de cano duplo</li>
+            <li><strong>Dublagem:</strong> Vozes exclusivas gravadas</li>
+            <li><strong>Starter Pack:</strong> Concedido no inventário no 1º início</li>
+          </ul>
+        </article>
+
+        <article class="character-card">
+          <div class="char-header">
+            <h3>Ilana (Feminino)</h3>
+            <span class="badge">Velocista Ágil</span>
+          </div>
+          <p class="char-desc">Guerreira veloz e focada, cabelos loiros e reflexos cirúrgicos. Empunha um rifle dourado de alta precisão e disparo veloz.</p>
+          <ul class="char-stats">
+            <li><strong>Vida Base:</strong> 10.000 HP (+ bônus de ressurreição)</li>
+            <li><strong>Arma Inicial:</strong> Rifle dourado de cano duplo radiante</li>
+            <li><strong>Dublagem:</strong> Vozes femininas exclusivas</li>
+            <li><strong>Starter Pack:</strong> Concedido no inventário no 1º início</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- 7. TECNOLOGIA: NVGT, KING AUDIO ENGINE E IA -->
+    <section class="content-section" aria-labelledby="tech-title">
+      <h2 id="tech-title">Tecnologia, Motor Sonoro e Inteligência Artificial</h2>
+      <p>
+        The Confront combina ferramentas modernas desenvolvidas sob medida para a comunidade de áudio jogos:
+      </p>
+      <ul>
+        <li><strong>NVGT (NonVisual Gaming Toolkit):</strong> Utilizado em toda a infraestrutura central de código, compilador de bundles criptografados (contents.dat e maps.dat), física de movimentação e leitor de tela integrado.</li>
+        <li><strong>King Audio Engine (Áudio 3D Binaural):</strong> Responsável pelo sistema acústico tridimensional em tempo real. Permite que o jogador identifique com extrema precisão a distância, elevação e direção (Norte, Sul, Leste, Oeste) de cada tiro, passo, recarga e rugido de criatura.</li>
+        <li><strong>Inteligência Artificial:</strong> O projeto utiliza auxílio contínuo de IA na arquitetura e otimização dos algoritmos de combate, rotinas de rede, inteligência dos NPCs e geração procedural de mecânicas.</li>
+      </ul>
+    </section>
+
+    <!-- 8. SISTEMA DE ATUALIZAÇÕES AUTOMÁTICAS -->
+    <section class="content-section" aria-labelledby="updates-title">
+      <h2 id="updates-title">Atualizador Inteligente e Silencioso</h2>
+      <p>
+        O cliente de The Confront possui um sistema próprio de atualização integrado que opera de forma silenciosa:
+      </p>
+      <ul>
+        <li><strong>Sem Telas de Terminal:</strong> Todos os downloads e extrações ocorrem dentro do próprio cliente nativo sem abrir prompts de comando intrusivos.</li>
+        <li><strong>Downloads Individuais Leves:</strong> O jogo é capaz de baixar apenas pacotes criptografados pequenos de mapas ou de conteúdos sem forçar o download do jogo inteiro.</li>
+        <li><strong>Bips Progressivos no Estilo NVDA:</strong> O processo de download emite bips com tom senoidal suave e crescente que reflete o percentual exato do progresso.</li>
+        <li><strong>Limpeza Automática:</strong> Quaisquer arquivos ou pastas temporárias de download são rigorosamente eliminados após a instalação.</li>
+      </ul>
+    </section>
+
+    <!-- 9. NOVIDADES DA VERSÃO v0.5 -->
+    <section class="contact-panel" aria-labelledby="v05-title" style="margin-bottom: 3rem;">
+      <h2 id="v05-title">O que há de novo na Versão v0.5</h2>
+      <ul style="line-height: 1.7; padding-left: 1.5rem; margin-top: 0.75rem;">
+        <li><strong>Correção do Pacote Inicial (Starter Pack):</strong> Som de abertura funcionando perfeitamente no executável compilado com pacote devidamente registrado.</li>
+        <li><strong>Áudio de Plataforma ao Sentar e Levantar:</strong> Pressionar a tecla S agora reproduz o som da plataforma onde o jogador está pisando (grama, concreto, terra, madeira) simultaneamente ao som de postura.</li>
+        <li><strong>Bips NVDA Unificados:</strong> O mesmo tom de onda senoidal suave agora acompanha os downloads de conteúdos, mapas e executável.</li>
+        <li><strong>Eliminação Rigorosa de Temporários:</strong> A pasta update_temp é completamente eliminada após a instalação da atualização e ao iniciar o jogo.</li>
+        <li><strong>Localização Completa do Atualizador:</strong> Informações de download e atalhos de consulta (Barra de espaço, 1, 2, 3 e M) traduzidos para Português, Inglês e Espanhol.</li>
+      </ul>
+      <p style="margin-top: 1rem;">
+        Canal de suporte e contato com Stefan: 
+        <a class="text-link" href="https://t.me/damomgamer" target="_blank" rel="noopener noreferrer">Telegram (@damomgamer)</a>.
+      </p>
+    </section>
+
+    <!-- 10. PAINEL DE DOWNLOADS (POSICIONADO RIGOROSAMENTE NO FINAL DA PÁGINA) -->
     <section class="download-section" id="downloads" aria-labelledby="downloads-title">
       <div class="section-header">
-        <p class="eyebrow">Baixe e Jogue</p>
-        <h2 id="downloads-title">Downloads Disponíveis (Versão v0.4)</h2>
-        <p class="section-desc">Clique no botão desejado para iniciar o download direto no seu navegador, sem sair desta página.</p>
+        <p class="eyebrow">Instale Agora</p>
+        <h2 id="downloads-title">Opções de Download — Versão Oficial v0.5</h2>
+        <p class="section-desc">Escolha a opção mais adequada para o seu caso. O download se iniciará diretamente no seu navegador, sem redirecionamentos indesejados.</p>
       </div>
 
       <div class="download-cards">
-        <!-- Opção 1: Cliente Leve v0.4 (Com Auto-Downloader de Sons) -->
+        <!-- Opção 1: Cliente Leve v0.5 -->
         <article class="download-card featured">
-          <div class="card-tag">Recomendado · Versão v0.4</div>
+          <div class="card-tag">Recomendado · Versão v0.5</div>
           <h3>Cliente Leve (Com Auto-Downloader)</h3>
-          <p class="card-desc">Versão mais recente v0.4 com atualizador silencioso (sem telas de terminal), downloads individuais leves de conteúdo e mapas, suporte a atualização mesmo sem mudança no número de versão, tradução completa e bips de progresso suaves!</p>
+          <p class="card-desc">Pacote rápido e compacto contendo o executável tcf.exe v0.5, bibliotecas e dados criptografados. Na primeira execução, o atualizador integrado baixa os sons automaticamente com bips no estilo NVDA.</p>
           <ul class="specs-list">
-            <li><strong>Tamanho:</strong> ~41.6 MB</li>
+            <li><strong>Tamanho:</strong> ~42 MB</li>
             <li><strong>Formato:</strong> Arquivo ZIP compacto</li>
-            <li><strong>Inclui:</strong> tcf.exe v0.4, bibliotecas completas e dados criptografados</li>
+            <li><strong>Versão:</strong> v0.5 Beta Pública</li>
           </ul>
-          <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.4/the_confront_v0.4.zip"
+          <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/the_confront_v0.5.zip"
              class="btn btn-primary js-download"
-             data-file="the_confront_v0.4.zip">
-            <span class="icon">⬇</span> Baixar Cliente v0.4 (Sem Sons)
+             data-file="the_confront_v0.5.zip">
+            <span class="icon">⬇</span> Baixar Cliente Leve v0.5
           </a>
         </article>
 
         <!-- Opção 2: Jogo Completo -->
         <article class="download-card">
-          <div class="card-tag">Pacote Pronto</div>
+          <div class="card-tag">Pacote Pronto para Jogar</div>
           <h3>Jogo Completo (Com Sons Embutidos)</h3>
-          <p class="card-desc">Contém o executável do jogo, todas as bibliotecas necessárias e o pacote de sons completo já integrado. Baixe, extraia e comece a jogar imediatamente sem downloads adicionais.</p>
+          <p class="card-desc">Contém o executável do jogo, todas as dependências e a biblioteca integral de áudio espacial 3D já descompactada. Baixe, extraia e jogue sem necessidade de conexões adicionais.</p>
           <ul class="specs-list">
             <li><strong>Tamanho:</strong> ~1.95 GB</li>
-            <li><strong>Formato:</strong> Arquivo ZIP pronto para jogar</li>
-            <li><strong>Inclui:</strong> Cliente tcf.exe + Todos os sons</li>
+            <li><strong>Formato:</strong> Arquivo ZIP completo</li>
+            <li><strong>Inclui:</strong> Cliente v0.5 + Pasta sounds completa</li>
           </ul>
           <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/the_confront_v0.1_complete.zip"
              class="btn btn-secondary js-download"
@@ -94,15 +256,15 @@
 
         <!-- Opção 3: Pacote de Sons Avulso -->
         <article class="download-card">
-          <div class="card-tag">Pacote de Áudio</div>
-          <h3>Pacote de Sons Avulso</h3>
-          <p class="card-desc">Pacote contendo toda a biblioteca sonoplástica do jogo (ambientes, armas, criaturas e vozes). Basta descompactar a pasta <code>sounds</code> na raiz do jogo.</p>
+          <div class="card-tag">Biblioteca de Sons</div>
+          <h3>Pacote de Sons Avulso (sounds.zip)</h3>
+          <p class="card-desc">Destinado a quem já possui o cliente do jogo e deseja descompactar a pasta <code>sounds</code> manualmente na raiz do diretório.</p>
           <ul class="specs-list">
             <li><strong>Tamanho:</strong> ~1.87 GB</li>
             <li><strong>Formato:</strong> Arquivo ZIP de sons</li>
-            <li><strong>Uso:</strong> Extrair dentro da pasta do jogo</li>
+            <li><strong>Uso:</strong> Descompactar na pasta do jogo</li>
           </ul>
-          <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1/sounds.zip"
+          <a href="https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.2/sounds.zip"
              class="btn btn-outline js-download"
              data-file="sounds.zip">
             <span class="icon">⬇</span> Baixar Pacote de Sons Avulso
@@ -110,123 +272,19 @@
         </article>
       </div>
 
-      <!-- Link para o Código-Fonte -->
-      <div class="source-code-bar">
+      <!-- Link para o Repositório GitHub -->
+      <div class="source-code-bar" style="margin-top: 2rem;">
         <div>
-          <h3>Código-Fonte Aberto</h3>
-          <p>O desenvolvimento do The Confront é transparente. Você pode acompanhar as novidades e conferir o código no repositório.</p>
+          <h3 style="margin: 0 0 0.25rem 0;">Código-Fonte e Repositório Aberto</h3>
+          <p style="margin: 0;">Você pode acompanhar a árvore de commits, relatórios e documentação técnica diretamente no GitHub.</p>
         </div>
         <a href="https://github.com/stefanmaster304-max/stefan_progects"
            target="_blank"
            rel="noopener noreferrer"
            class="btn btn-link-ext">
-          Visitar Código-Fonte no GitHub ↗
+          Repositório Stefan Projects no GitHub ↗
         </a>
       </div>
-    </section>
-
-    <!-- Sistema de Ressurreições -->
-    <section class="content-section feature-block" aria-labelledby="resurrection-title">
-      <h2 id="resurrection-title">Sistema de Ressurreições</h2>
-      <p>
-        O jogo conta com um desafiador <strong>sistema de ressurreição</strong> que exige <strong>1.500 níveis</strong> acumulados para que você possa alcançar uma nova ressurreição.
-      </p>
-      <p>
-        Ao conquistar uma nova ressurreição, você <strong>desbloqueia um novo mapa</strong>, podendo visitá-lo pelo menu de mapas e enfrentar as criaturas exclusivas desse novo território.
-      </p>
-      <div class="alert-box">
-        <strong>Atenção Guerreiro:</strong> Cada mapa possui suas criaturas específicas e elas se tornam consideravelmente mais fortes a cada novo mapa. Prepare-se bem, aprimore seus equipamentos e explore o mundo com cautela, pois nenhuma das criaturas está para brincadeira!
-      </div>
-    </section>
-
-    <!-- Sistema de Personagens -->
-    <section class="content-section" aria-labelledby="chars-title">
-      <h2 id="chars-title">Sistema de Personagens Individuais</h2>
-      <p>
-        The Confront traz um sistema de personagens com histórico, saves e progressão totalmente individuais. Cada herói possui seus próprios atributos de vida, velocidade, armas exclusivas e dublagem própria:
-      </p>
-
-      <div class="character-cards">
-        <article class="character-card">
-          <div class="char-header">
-            <h3>Stefan (Masculino)</h3>
-            <span class="badge">Atleta Guerreiro</span>
-          </div>
-          <p class="char-desc">Jovem rebelde de espírito atlético, cabelos loiros e barba longa imponente. Equipado com metralhadora de cano duplo de alto impacto.</p>
-          <ul class="char-stats">
-            <li><strong>Vida Base:</strong> 5.000 HP</li>
-            <li><strong>Arma Característica:</strong> Metralhadora de cano duplo</li>
-            <li><strong>Vozes Exclusivas:</strong> Dublagem de Tristan (17 variações)</li>
-            <li><strong>Save Individual:</strong> Níveis e inventário próprios</li>
-          </ul>
-        </article>
-
-        <article class="character-card">
-          <div class="char-header">
-            <h3>Ilana (Feminino)</h3>
-            <span class="badge">Velocista Ágil</span>
-          </div>
-          <p class="char-desc">Garota atlética e destemida, com longos cabelos loiros e agilidade impressionante. Empunha um rifle de cano duplo dourado com brilho radiante.</p>
-          <ul class="char-stats">
-            <li><strong>Vida Base:</strong> 10.000 HP</li>
-            <li><strong>Arma Característica:</strong> Rifle dourado de cano duplo brilhante</li>
-            <li><strong>Vozes Exclusivas:</strong> Dublagem de Aria (17 variações)</li>
-            <li><strong>Save Individual:</strong> Níveis e inventário próprios</li>
-          </ul>
-        </article>
-      </div>
-    </section>
-
-    <!-- Tecnologia, NVGT, King Audio e Inteligência Artificial -->
-    <section class="content-section" aria-labelledby="tech-title">
-      <h2 id="tech-title">Tecnologia, NVGT, King Audio e Inteligência Artificial</h2>
-      <p>
-        <strong>The Confront</strong> combina tecnologias modernas para entregar uma experiência de jogo fluida e totalmente acessível:
-      </p>
-      <ul>
-        <li>
-          <strong>NVGT (NonVisual Gaming Toolkit):</strong> Utilizada para toda a <strong>codificação</strong>, lógica central de jogabilidade, menus, gerenciamento de entidades, criptografia e infraestrutura do jogo.
-        </li>
-        <li>
-          <strong>King Audio Engine:</strong> Motor sonoro avançado utilizado especificamente para o <strong>sistema de som espacial 3D</strong>, proporcionando posicionamento acústico tridimensional preciso, efeitos dinâmicos de reverberação, oclusão sonora e imersão total.
-        </li>
-        <li>
-          <strong>Inteligência Artificial:</strong> O desenvolvimento do jogo contou com auxílio de IA na elaboração de algoritmos complexos, estruturação de rotinas, inteligência de NPCs e refinamentos contínuos de código.
-        </li>
-      </ul>
-    </section>
-
-    <!-- Atualizações Contínuas -->
-    <section class="content-section" aria-labelledby="updates-title">
-      <h2 id="updates-title">Sistema de Atualizações Contínuas</h2>
-      <p>
-        O jogo recebe frequentemente atualizações de conteúdo, correções e novidades.
-      </p>
-      <p>
-        O cliente possui um <strong>sistema integrado de atualização</strong>. Recomendamos checar periodicamente por novas atualizações através do menu do jogo ou, se preferir praticidade, habilitar nas configurações a <strong>checagem automática de atualizações ao iniciar</strong>.
-      </p>
-    </section>
-
-    <!-- Beta e Contato / Feedback -->
-    <section class="contact-panel" aria-labelledby="feedback-title">
-      <h2 id="feedback-title">Beta Pública 0.4 e Relato de Bugs</h2>
-      <p>
-        The Confront está atualmente em sua versão <strong>Beta Pública 0.4</strong>. As novidades desta versão incluem:
-      </p>
-      <ul>
-        <li><strong>Atualizador 100% Silencioso:</strong> Todo o processo de download e extração de sons e arquivos ocorre discretamente em segundo plano, sem abrir nenhuma janela de prompt de comando ou terminal.</li>
-        <li><strong>Downloads Individuais e Suporte a ZIP:</strong> O cliente agora pode atualizar componentes individuais (conteúdo, mapas ou executável) de forma leve, além de suportar descompactação direta de pacotes ZIP com total segurança.</li>
-        <li><strong>Detecção Inteligente de Versões e Builds:</strong> O atualizador reconhece novas atualizações mesmo sem mudança no número de versão (via build/revisão) e anuncia mensagens faladas específicas para jogo, conteúdos, mapas e sons.</li>
-        <li><strong>Traduções e Bips Suaves:</strong> Aviso de recarga ("a arma já está totalmente carregada") e todas as mensagens de atualização traduzidas para Português, Inglês e Espanhol. Os bips sonoros de progresso de download foram redesenhados para ondas senoidais suaves com atenuação gradual, sem estalos.</li>
-      </ul>
-      <p>
-        Caso encontre qualquer problema ou tenha sugestões para o jogo, por favor relate diretamente para o Stefan pelo Telegram:
-      </p>
-      <p>
-        <a class="text-link btn btn-secondary" href="https://t.me/damomgamer" target="_blank" rel="noopener noreferrer">
-          Entrar em contato com Stefan via Telegram (@damomgamer)
-        </a>
-      </p>
     </section>
   </main>
 
@@ -236,7 +294,7 @@
     </div>
   </footer>
 
-  <!-- Script para download em segundo plano sem navegação/redirecionamento de aba -->
+  <!-- Script para download em segundo plano -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const downloadButtons = document.querySelectorAll('.js-download');
@@ -246,7 +304,6 @@
           const targetUrl = this.getAttribute('href');
           const fileName = this.getAttribute('data-file') || '';
 
-          // Cria elemento temporário invisível para iniciar o download em segundo plano
           const tempAnchor = document.createElement('a');
           tempAnchor.href = targetUrl;
           if (fileName) {

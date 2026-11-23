@@ -1,28 +1,28 @@
 {
   "game": {
-    "version": "0.4",
-    "build": 4,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.4/tcf.exe",
-    "zip_url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.4/the_confront_v0.4.zip",
+    "version": "0.5",
+    "build": 0,
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/tcf.exe",
+    "zip_url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/the_confront_v0.5.zip",
     "size": 0
   },
   "content": {
-    "version": "0.4",
-    "build": 2,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.4/contents.dat",
+    "version": "0.5",
+    "build": 0,
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/contents.dat",
     "size": 0
   },
   "sounds": {
-    "version": "0.4",
+    "version": "0.5",
     "build": 0,
     "new_count": 0,
     "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.2/sounds.zip",
     "size": 0
   },
   "maps": {
-    "version": "0.4",
-    "build": 1,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.4/maps.dat",
+    "version": "0.5",
+    "build": 0,
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/maps.dat",
     "size": 0
   }
 }
