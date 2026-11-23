@@ -95,8 +95,6 @@ void toggle_sit_stand()
 		if (snd == "") snd = find_sound_in_disk("sounds/players/stefan/stand.ogg");
 		if (snd == "") snd = get_sound_path("players/" + char_sub + "/stand.ogg;players/stefan/stand.ogg;stand.ogg;standup.ogg");
 		if (snd != "") p.play_stationary(snd, false);
-		string plat_snd = get_platform_sound(gmt(), "fall");
-		if (plat_snd != "") p.play_stationary(plat_snd, false);
 		speak(tr("game.stand_up"), true);
 	}
 	else
@@ -141,7 +139,7 @@ string currentloc;
 timer autosave_timer;
 double xp=0;
 int resurrections=0;
-const string prefsdir="settings";
+string prefsdir = get_user_data_dir();
 
 double get_xp_required(int lvl)
 {
@@ -250,10 +248,11 @@ void play_logo_intro()
 	// Logo playback disabled as the game does not currently have a valid logo.
 	return;
 }
-savedata sd(prefsdir+"/settings.dat","gipwjefiqoiqewiofeiofqwehjoiwmoiwaniewnfoipwqenefowqiniosawENGRWORWIOPNHGRNIOOGINWGR");
+savedata sd(get_user_data_dir() + "settings.dat","gipwjefiqoiqewiofeiofqwehjoiwmoiwaniewnfoipwqenefowqiniosawENGRWORWIOPNHGRNIOOGINWGR");
 void main()
 {
 	cleanup_update_temp();
+	migrate_user_settings_files();
 	if (file_exists("compile_bundles.trigger") || COMMAND_LINE.find("--compile-bundles") >= 0)
 	{
 		if (file_exists("compile_bundles.trigger")) file_delete("compile_bundles.trigger");
@@ -286,7 +285,7 @@ cheater.load(cpath);
 cheater.play_wait();
 exit();
 }
-if (!file_exists(prefsdir+"/settings.dat"))
+if (!file_exists(prefsdir+"settings.dat") && !file_exists(prefsdir+"/settings.dat"))
 {
 dlg("Settings file not found, creating a new settings file...");
 }
@@ -1185,7 +1184,7 @@ void writeprefs()
 // inventory, equipment, posture and discovered maps.
 void migrate_legacy_location_save()
 {
-    string legacy = prefsdir + "/location.dat";
+    string legacy = prefsdir + "location.dat";
     if (file_exists(get_game_save_path()) || !file_exists(legacy)) return;
     file_copy(legacy, get_game_save_path(), true);
     file_delete(legacy);
@@ -1222,10 +1221,10 @@ void clear_location()
         string p = get_game_save_path(current_player_character);
         if (file_exists(p)) file_delete(p);
     }
-    if (file_exists(prefsdir + "/gamesave.dat"))
-        file_delete(prefsdir + "/gamesave.dat");
-    if (file_exists(prefsdir + "/location.dat"))
-        file_delete(prefsdir + "/location.dat");
+    if (file_exists(prefsdir + "gamesave.dat"))
+        file_delete(prefsdir + "gamesave.dat");
+    if (file_exists(prefsdir + "location.dat"))
+        file_delete(prefsdir + "location.dat");
 }
 void reset_location_on_death()
 {
