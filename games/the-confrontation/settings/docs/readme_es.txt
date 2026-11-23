@@ -1,54 +1,36 @@
-===============================================================================
-THE CONFRONT - LÉAME (Versión 0.4)
-===============================================================================
+¡Bienvenido a The Confront, un FPS 3D offline!
 
-Bienvenido a The Confront, un juego de acción táctica en audio 3D desarrollado en NVGT con renderizado espacial mediante King Audio Engine y total accesibilidad para lectores de pantalla.
+¿Qué es The Confront?
+The Confront es un juego de audio donde te enfrentas a varios tipos de enemigos para subir de nivel, ganar XP, desbloquear nuevos mapas y recolectar monedas para comprar artículos en la tienda del juego — ¡desde objetos de recuperación de salud hasta escudos y armas poderosas!
 
--------------------------------------------------------------------------------
-1. VISIÓN GENERAL Y OBJETIVO
--------------------------------------------------------------------------------
-The Confront te sitúa en arenas dinámicas con combate en tiempo real contra NPCs hostiles. El juego fue diseñado especialmente para una inmersión completa mediante audio 3D y accesibilidad absoluta para personas con discapacidad visual, con audio posicional HRTF.
+Niveles y Resurrecciones
+Cada 1.500 niveles, tu personaje alcanza una nueva resurrección, lo que aumenta tu HP y desbloquea nuevos mapas.
+Cada nivel alcanzado y mapa desbloqueado introduce nuevos enemigos, haciendo que el juego sea más desafiante con el tiempo.
 
--------------------------------------------------------------------------------
-2. CONTROLES BÁSICOS
--------------------------------------------------------------------------------
-- Flechas (Arriba, Abajo, Izquierda, Derecha): Movimiento del personaje en el plano 2D (Norte, Sur, Este, Oeste).
-- Q / E: Girar la orientación y puntería del personaje (Q gira a la izquierda, E gira a la derecha en incrementos de 45 grados).
-- Barra espaciadora: Saltar.
-- S: Alternar postura entre sentarse y levantarse.
-- Re Pág / Av Pág: Subir o bajar escaleras, o sumergirse/emerger bajo el agua.
-- Control Izquierdo: Disparar el arma equipada.
-- R: Recargar el arma equipada con munición compatible del inventario.
-- Enter: Interactuar con objetos en el suelo, puertas e interruptores.
-- Tab / Shift+Tab: Ciclar el inventario rápido.
-- H: Anunciar vida y estado actual.
-- L: Anunciar nivel, resurrección y progreso de experiencia.
-- C: Anunciar coordenadas.
-- Z: Anunciar ubicación y nombre de zona actual.
-- F: Anunciar dirección y ángulo actual.
-- Alt + Arriba/Abajo: Ajustar volumen de efectos de sonido.
-- Escape: Pausar, retroceder en menús o cerrar diálogos.
+Mapas y Personajes
+Después de desbloquear un mapa, el juego te notifica qué mapa fue desbloqueado y te pide que lo selecciones en el menú principal a través de la opción Menú de Mapas.
+Además, para jugar o comprar artículos en la tienda, debes seleccionar un personaje en el Menú de Configuración. Cada personaje tiene su propia velocidad de caminata y cantidad de salud:
+Stefan: 5.000 de salud.
+Hane: 10.000 de salud.
+Ten en cuenta que estos son los valores predeterminados y, como se mencionó en la sección anterior, las resurrecciones aumentan tu salud.
 
--------------------------------------------------------------------------------
-3. PERSONAJES JUGABLES (STEFAN & ILANA)
--------------------------------------------------------------------------------
-En Opciones -> Seleccionar personaje:
-- Stefan (Masculino):
-  * Joven rebelde de complexión atlética con barba y ametralladora de doble cañón.
-  * Vida base: 5.000 HP. Voces y quejidos exclusivos masculinos de Tristan.
-- Ilana (Femenino):
-  * Chica atlética y atractiva con cabello rubio largo y rifle dorado brillante.
-  * Vida base: 10.000 HP. Movimiento más rápido. Voces exclusivas de Aria.
+Monedas y Tienda
+El juego cuenta con 4 tipos de monedas: Oro, Plata, Cristal Dorado y Diamante. Al ser derrotado, cada enemigo puede soltar aleatoriamente cualquiera de estas monedas.
+Estas monedas se utilizan para comprar artículos en la tienda. Cada artículo tiene su propio precio y requiere un tipo específico de moneda, lo que significa que no puedes comprar, por ejemplo, una Poción de Salud con Cristales Dorados o un Paquete de Munición con Oro.
 
--------------------------------------------------------------------------------
-4. INVENTARIO Y REGLAS DE MUERTE
--------------------------------------------------------------------------------
-- Los objetos del inventario se conservan al morir.
-- El arma empuñada se desequipa al morir, y el escudo equipado se retira.
-- El paquete inicial (Starter Pack) se entrega una única vez al crear el personaje.
-
--------------------------------------------------------------------------------
-5. AYUDA Y DOCUMENTACIÓN
--------------------------------------------------------------------------------
-- El menú de Ayuda permite consultar las actualizaciones recientes y los manuales en Español, Portugués e Inglés.
-- Presiona Escape en cualquier momento para volver al menú.
+Teclas y Controles
+Teclas de flecha (Arriba, Abajo, Derecha e Izquierda): Mueven al personaje. Flecha Arriba camina hacia adelante, Flecha Abajo camina hacia atrás, Flecha Derecha camina hacia la derecha y Flecha Izquierda camina hacia la izquierda.
+C: Anuncia tus coordenadas actuales (X, Y, Z).
+Tab y Shift + Tab: Recorren los objetos de tu inventario.
+A: Anuncia cuánta munición hay cargada en el arma equipada y cuánta queda en reserva.
+Control Izquierdo (Ctrl): Dispara el arma equipada.
+R: Recarga el arma equipada.
+S: Hace que el personaje se agache/siente y se levante.
+H: Anuncia la salud actual.
+F: Anuncia en qué dirección está mirando el personaje.
+Q y E: Giran al personaje a lo largo de las direcciones cardinales.
+K: Anuncia cuántos enemigos has eliminado.
+L: Anuncia tu nivel actual, XP y número de resurrecciones.
+Page Up y Page Down: Durante la partida, sube y baja escaleras. En los menús, aumenta y disminuye el volumen de la música de fondo.
+Home y End: Controlan el volumen maestro del juego.
+Alt + Flecha Arriba o Abajo: Controla el volumen de la música del mapa.

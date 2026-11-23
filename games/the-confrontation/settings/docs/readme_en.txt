@@ -1,54 +1,36 @@
-===============================================================================
-THE CONFRONT - README (Version 0.4)
-===============================================================================
+Welcome to The Confront, an offline 3D FPS!
 
-Welcome to The Confront, a 3D tactical audio action game developed in NVGT featuring King Audio Engine spatial rendering and full screen reader accessibility.
+What is The Confront?
+The Confront is an audiogame where you face various types of enemies to level up, earn XP, unlock new maps, and collect coins to buy items in the in-game shop — from health recovery items to shields and powerful weapons!
 
--------------------------------------------------------------------------------
-1. OVERVIEW & OBJECTIVE
--------------------------------------------------------------------------------
-The Confront places you in dynamic arenas with real-time combat against armed hostile NPCs. The game is designed from the ground up for high-fidelity 3D spatial audio and blind accessibility, featuring HRTF positional audio and screen reader support.
+Levels and Resurrections
+Every 1,500 levels, your character reaches a new resurrection, which increases your HP and unlocks new maps.
+Every level reached and map unlocked introduces new enemies, making the game more challenging over time.
 
--------------------------------------------------------------------------------
-2. BASIC CONTROLS
--------------------------------------------------------------------------------
-- Arrow Keys (Up, Down, Left, Right): Move character across the 2D grid (North, South, East, West). Movement interval depends on chosen character.
-- Q / E: Rotate character facing direction and aim (Q turns left, E turns right in 45-degree increments: North, Northeast, East, Southeast, South, Southwest, West, Northwest).
-- Spacebar: Jump.
-- S: Toggle posture between sitting and standing up.
-- Page Up / Page Down: Ascend or descend staircases when inside a stairwell, or dive/surface underwater.
-- Left Control: Fire equipped weapon.
-- R: Reload equipped weapon with compatible ammunition from your inventory.
-- Enter: Interact with items on the ground, doors, and objects.
-- Tab / Shift+Tab: Quick inventory cycle.
-- H: Check health and current vitals status.
-- L: Check level, resurrection and XP progress.
-- C: Check coordinates.
-- Z: Check current location and zone name.
-- F: Check current facing direction and angle in degrees.
-- Alt + Up/Down: Adjust sound effects volume.
-- Escape: Pause, return from menus or close dialogs.
+Maps and Characters
+After unlocking a map, the game notifies you which map was unlocked and prompts you to select it on the main menu via the Map Menu option.
+Additionally, to play or buy items in the shop, you must select a character in the Settings Menu. Each character has their own walking speed and health:
+Stefan: 5,000 health.
+Hane: 10,000 health.
+Keep in mind that these are the default values and, as mentioned in the previous section, resurrections increase your health.
 
--------------------------------------------------------------------------------
-3. PLAYABLE CHARACTERS (STEFAN & ILANA)
--------------------------------------------------------------------------------
-In Options -> Select Character:
-- Stefan (Masculine):
-  * Rebel athletic build, blond hair, beard, wielding a double-barreled machine gun.
-  * Base HP: 5,000 HP. Exclusive Tristan pain vocalizations and death sequence.
-- Ilana (Feminine):
-  * Athletic, attractive build, long blond hair, wielding a double-barreled glowing rifle.
-  * Base HP: 10,000 HP. Moves faster. Exclusive Aria pain vocalizations and death sequence.
+Currencies and Shop
+The game features 4 types of currency: Gold, Silver, Golden Crystal, and Diamond. Upon defeat, each enemy may randomly drop any of these currencies.
+These currencies are used to buy items in the shop. Each item has its own price and requires a specific type of currency, meaning you cannot buy, for example, a Health Potion with Golden Crystals or an Ammo Pack with Gold.
 
--------------------------------------------------------------------------------
-4. INVENTORY & DEATH RULES
--------------------------------------------------------------------------------
-- Inventory items are preserved upon death.
-- Weapons are unequipped upon death, and damaged/worn shields are removed.
-- Starter packs are granted once upon character creation.
-
--------------------------------------------------------------------------------
-5. HELP & DOCUMENTATION
--------------------------------------------------------------------------------
-- The Help menu lets you view recent updates and readmes in English, Portuguese, and Spanish.
-- Press Escape at any time to return to the menu.
+Keys and Controls
+Arrow keys (Up, Down, Right, and Left): Move the character. Up Arrow walks forward, Down Arrow walks backward, Right Arrow walks right, and Left Arrow walks left.
+C: Announces your current coordinates (X, Y, Z).
+Tab and Shift + Tab: Cycle through your inventory items.
+A: Announces how much ammo is loaded in the equipped weapon and how much is left in reserve.
+Left Control (Ctrl): Fires the equipped weapon.
+R: Reloads the equipped weapon.
+S: Makes the character crouch and stand up.
+H: Announces current health.
+F: Announces which direction the character is facing.
+Q and E: Rotate the character along the cardinal directions.
+K: Announces how many enemies you have killed.
+L: Announces your current level, XP, and number of resurrections.
+Page Up and Page Down: During gameplay, go up and down stairs. In menus, increase and decrease background music volume.
+Home and End: Control the master game volume.
+Alt + Up or Down Arrow: Control the map music volume.
