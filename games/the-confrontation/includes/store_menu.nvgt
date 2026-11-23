@@ -109,7 +109,7 @@ void store_browse_announce_item(int cat, int item)
 
 string get_store_sound(const string&in name)
 {
-	string char_folder = (current_player_character == "ilana") ? "sounds/players/ylana/" : "sounds/players/stefan/";
+	string char_folder = (current_player_character == "annie" || current_player_character == "ilana" || current_player_character == "hane") ? "sounds/players/hane/" : "sounds/players/stefan/";
 	string snd = find_sound_in_disk(char_folder + name + ".ogg");
 	if (snd == "") snd = find_sound_in_disk(char_folder + name);
 	if (snd == "") snd = get_player_sound(name);
@@ -128,7 +128,7 @@ void play_store_error()
 
 void load_player_store_inventory()
 {
-	if (current_player_character != "stefan" && current_player_character != "ilana") return;
+	if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana") return;
 	string save_path = get_game_save_path(current_player_character);
 	if (file_exists(save_path))
 	{
@@ -143,7 +143,7 @@ void load_player_store_inventory()
 
 void save_player_store_inventory()
 {
-	if (current_player_character != "stefan" && current_player_character != "ilana") return;
+	if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana") return;
 	string save_path = get_game_save_path(current_player_character);
 	savedata loc(save_path, GAME_SAVE_KEY);
 	if (file_exists(save_path))
@@ -232,7 +232,7 @@ string store_welcome_text()
 
 void store_main_menu()
 {
-	if (current_player_character != "stefan" && current_player_character != "ilana")
+	if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana")
 	{
 		p.play_stationary(get_sound_path("misc/error.ogg"), false);
 		speak(tr("options.select_character_first"));

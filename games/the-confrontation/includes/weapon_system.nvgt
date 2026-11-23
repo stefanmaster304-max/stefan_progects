@@ -45,18 +45,7 @@ void equip_weapon(const string&in wid, bool silent = false)
 		string dsnd = get_sound_path(w.sound_draw);
 		if (dsnd != "") p.play_stationary(dsnd, false);
 	}
-
-	if (!silent)
-	{
-		if (w.melee)
-		{
-			speak(tr("weapon.equipped_melee", {w.name}));
-		}
-		else
-		{
-			speak(tr("weapon.equipped", {w.name}));
-		}
-	}
+	/* Weapon equipped: draw sound plays, speech removed to avoid unnecessary chatter */
 }
 
 

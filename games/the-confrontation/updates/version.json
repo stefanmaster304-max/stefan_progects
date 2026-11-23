@@ -4,25 +4,25 @@
     "build": 0,
     "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/tcf.exe",
     "zip_url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/the_confront_v0.5.zip",
-    "size": 0
+    "size": 15547748
   },
   "content": {
     "version": "0.5",
     "build": 0,
     "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/contents.dat",
-    "size": 0
+    "size": 123184
   },
   "sounds": {
     "version": "0.5",
-    "build": 0,
+    "build": 1,
     "new_count": 0,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.2/sounds.zip",
-    "size": 0
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/sounds.zip",
+    "size": 1128149251
   },
   "maps": {
     "version": "0.5",
     "build": 0,
     "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/maps.dat",
-    "size": 0
+    "size": 1616
   }
 }

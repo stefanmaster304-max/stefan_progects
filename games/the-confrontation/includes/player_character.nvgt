@@ -2,7 +2,8 @@
 // Manages character identity, stats (HP, movement speed), audio profiles and descriptions.
 
 const string CHAR_STEFAN = "stefan";
-const string CHAR_ILANA = "ilana";
+const string CHAR_ANNIE = "annie";
+const string CHAR_ILANA = "annie"; /* Backward compatibility alias */
 
 const string GAME_SAVE_KEY = "G4m3S4v3!2026#pR7$xT2%wQ9&mN4*bV8(nK1)zJ5-fH3+gD6=lS0_aE7@iU2^oY8$cW4";
 
@@ -10,8 +11,16 @@ string get_game_save_path(const string&in char_id = "")
 {
     string c = char_id;
     if (c == "") c = current_player_character;
-    if (c == "stefan" || c == "ilana")
+    if (c == "ilana" || c == "ylana" || c == "hane") c = "annie";
+    if (c == "stefan" || c == "annie")
+    {
+        /* Migrate legacy gamesave_ilana.dat to gamesave_annie.dat if present */
+        if (c == "annie" && !file_exists("settings/gamesave_annie.dat") && file_exists("settings/gamesave_ilana.dat"))
+        {
+            file_copy("settings/gamesave_ilana.dat", "settings/gamesave_annie.dat", true);
+        }
         return "settings/gamesave_" + c + ".dat";
+    }
     return "settings/gamesave.dat";
 }
 
@@ -20,7 +29,7 @@ string current_player_character = "";
 int get_character_base_max_health(const string&in char_id)
 {
 	string c = string_to_lower_case(char_id.trim_whitespace());
-	if (c == "ilana" || c == "ylana") return 10000;
+	if (c == "annie" || c == "ilana" || c == "ylana" || c == "hane") return 10000;
 	if (c == "stefan") return 5000;
 	return 5000;
 }
@@ -34,9 +43,9 @@ int calculate_player_max_health(const string&in char_id, int res_count)
 int get_player_modified_walktime(int base_walk)
 {
 	if (base_walk <= 0) base_walk = 160;
-	if (current_player_character == "ilana")
+	if (current_player_character == "annie" || current_player_character == "ilana" || current_player_character == "hane")
 	{
-		// Ilana runs 5% faster than standard (step interval is reduced by 5%)
+		// Annie runs 5% faster than standard (step interval is reduced by 5%)
 		int wt = int(round(double(base_walk) * 0.95, 0));
 		return (wt > 10) ? wt : 10;
 	}
@@ -52,7 +61,7 @@ int get_player_modified_walktime(int base_walk)
 string get_character_name(const string&in char_id)
 {
 	string c = string_to_lower_case(char_id.trim_whitespace());
-	if (c == "ilana" || c == "ylana") return tr("options.character_ilana");
+	if (c == "annie" || c == "ilana" || c == "ylana" || c == "hane") return tr("options.character_annie");
 	if (c == "stefan") return tr("options.character_stefan");
 	return "";
 }
@@ -60,7 +69,7 @@ string get_character_name(const string&in char_id)
 string get_character_description(const string&in char_id)
 {
 	string c = string_to_lower_case(char_id.trim_whitespace());
-	if (c == "ilana" || c == "ylana") return tr("options.character_ilana_desc");
+	if (c == "annie" || c == "ilana" || c == "ylana" || c == "hane") return tr("options.character_annie_desc");
 	if (c == "stefan") return tr("options.character_stefan_desc");
 	return "";
 }
@@ -68,12 +77,12 @@ string get_character_description(const string&in char_id)
 void set_player_character(const string&in char_id, bool update_vitals = true)
 {
 	string c = string_to_lower_case(char_id.trim_whitespace());
-	if (c != "ilana" && c != "ylana" && c != "stefan")
+	if (c == "ilana" || c == "ylana" || c == "hane") c = "annie";
+	if (c != "annie" && c != "stefan")
 	{
 		current_player_character = "";
 		return;
 	}
-	if (c == "ylana") c = "ilana";
 
 	current_player_character = c;
 	maxhealth = calculate_player_max_health(c, resurrections);

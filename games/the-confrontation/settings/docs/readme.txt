@@ -13,14 +13,14 @@ The Confront coloca o jogador em cenários e arenas dinâmicas com combate em te
 2. CONTROLES BÁSICOS
 -------------------------------------------------------------------------------
 - Setas Direcionais (Cima, Baixo, Esquerda, Direita): Movimentação do personagem no plano 2D (Norte, Sul, Leste, Oeste). A velocidade de deslocamento é determinada pelos atributos do personagem selecionado.
-- Shift + Setas Esquerda/Direita: Girar orientação e mira do personagem em incrementos de 45 graus.
+- Q / E: Girar orientação e mira do personagem (Q gira à esquerda, E gira à direita em incrementos de 45 graus: Norte, Nordeste, Leste, Sudeste, Sul, Sudoeste, Oeste, Noroeste).
 - Barra de Espaço: Pular / Saltar.
-- C: Alternar postura (Sentar / Levantar).
+- S: Alternar postura (Sentar / Levantar).
 - Page Up / Page Down: Subir ou descer escadas quando em uma casa de escada.
 - Left Control (Ctrl Esquerdo): Disparar arma equipada.
   * Nota de combate: Apenas o Control Esquerdo dispara a arma.
 - R: Recarregar arma equipada utilizando a munição reserva compatível.
-- E / Enter: Interagir com itens no chão, portas e objetos.
+- Enter: Interagir com itens no chão, portas e objetos.
 - I: Abrir inventário do jogador.
 - W: Ciclar armas equipadas / inventário de armas.
 - H: Anunciar vida e status atual.

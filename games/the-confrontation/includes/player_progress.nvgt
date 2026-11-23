@@ -52,7 +52,7 @@ bool check_and_use_anti_death_card()
 		string s = find_sound_in_disk(snd_file);
 		if (s == "") s = get_sound_path(snd_file);
 		if (s != "") p.play_stationary(s, false);
-		speak("Anti-death card activated. Your life has been saved and your health is fully restored.");
+		/* Anti-death card consumed: sound plays, speech removed to avoid unnecessary chatter */
 		save_location();
 		return true;
 	}

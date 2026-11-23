@@ -1,0 +1,523 @@
+Changelog - The Confront
+========================
+
+This document records the chronological history of updates, improvements, and fixes for The Confront by release date and time.
+
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 18:15 (v0.5 Audio & Annie Update)
+-------------------------------------------------------------------------------
+
+1. Som de Queda de Plataforma ao Sentar e Levantar:
+   - Ao pressionar a tecla S para sentar ou levantar, o jogo agora reproduz o som exato de queda da plataforma onde o jogador está pisando (fall.ogg) em conjunto com o respectivo som de sit.ogg ou stand.ogg.
+
+2. Renomeação da Personagem Feminina para Annie:
+   - A personagem feminina foi renomeada de Ilana para Annie, conectando sua pasta de áudio correspondente (sounds/players/hane/) com todas as falas da personagem Aria e migrando automaticamente saves anteriores.
+
+3. Atualização da Pasta de Músicas e Novo Pacote de Sons:
+   - A pasta de trilha sonora foi padronizada para sounds/Music/ e um novo pacote sounds.zip atualizado foi gerado e disponibilizado para download.
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 12:25 (v0.5 Update)
+-------------------------------------------------------------------------------
+
+1. Correção Sonora no Pacote Inicial (Starter Pack) em Modo Compilado:
+   - Corrigida a reprodução do som de abertura do pacote inicial no cliente compilado, adicionando suporte resiliente para pack.ogg e _packageopen.ogg e garantindo o registro permanente do pacote.
+
+2. Áudio de Plataforma ao Sentar e Levantar:
+   - Ao pressionar a tecla S para sentar, o jogo agora reproduz o som da plataforma onde o personagem está pisando (grama, concreto, madeira, pedra, terra, etc.) em conjunto com o som de sentar.
+   - Ao levantar-se, o som de passo na plataforma também é executado harmonicamente junto ao som de levantar.
+
+3. Eliminação Definitiva de Pastas Temporárias de Atualização:
+   - A pasta temporária update_temp e todos os seus arquivos (contents_payload, maps_payload, scripts e pacotes baixados) agora são removidos de forma completa e imediata pelo atualizador antes da reinicialização do jogo e também na inicialização inicial do cliente.
+
+4. Bips de Progresso no Estilo NVDA para Todas as Atualizações:
+   - O mesmo sistema de bips com ondas senoidais puras e frequência crescente (estilo barra de progresso do NVDA) agora é utilizado em todos os downloads do jogo: pacote de sons, atualização de conteúdo, mapas e executável.
+
+5. Localização Completa das Mensagens do Atualizador:
+   - Traduzidas as instruções de download ("Baixando. Pressione Barra de espaço...", "Tamanho do arquivo", "Total baixado", "Total restante", "Bips de progresso ativados/desativados") para Português, Inglês e Espanhol.
+
+6. Reformulação Completa do Site Oficial:
+   - Nova página inicial com calorosa mensagem de boas-vindas do Stefan Projects e direcionamento intuitivo para a página de projetos.
+   - Página de projetos destacando The Confront com informações completas de jogabilidade, mapas de teste e desenvolvimento.
+   - Página oficial do jogo reestruturada: descrição e mecânicas detalhadas apresentadas em primeiro lugar, e painel de downloads posicionado estrategicamente ao final da página.
+
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 11:45 (v0.4 Build 4 Update)
+-------------------------------------------------------------------------------
+
+1. Compilação de Mapas e Ocultação do Vale dos Ursos:
+   - O mapa dos ursos ("Bears Valey") foi devidamente compilado no pacote criptografado settings/maps.dat com o requisito de Ressurreição 4 mínima, garantindo que ele não apareça prematuramente na lista de mapas do cliente compilado.
+   - Adicionado e compilado o novo mapa "Robots World" (robots map) com geradores de robôs avançados, plataforma de concreto e ambiência sonora de cidade.
+
+2. Novos NPCs Criados e Criptografados no Pacote de Conteúdo:
+   - Mine Robocop (mine_robocop.npc): robô tático armado com escudo de metal, 5.500 HP, passos próprios e tiros de precisão.
+   - Patrulha (patrol.npc): robô patrulheiro de reconhecimento ágil com 5.400 HP, disparos rápidos e vocalizações mecânicas em 3D.
+   - Ambos os novos NPCs foram integrados e compilados com sucesso no pacote criptografado settings/contents.dat, com drops equilibrados de moedas (ouro, prata, cristais e diamantes).
+
+3. Atualização Simultânea de Conteúdo e Mapas:
+   - Os novos pacotes binários maps.dat e contents.dat foram gerados com as últimas definições e integrados aos servidores de atualização e pacotes de lançamento.
+
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 11:10 (v0.4 Build 3 Update)
+-------------------------------------------------------------------------------
+
+1. Documentação Trilíngue Completa e Menu de Ajuda Expandido:
+   - Os arquivos de documentação Leia-me (readme) e Histórico de Alterações (changes) agora estão disponíveis nos 3 idiomas oficiais: Português, Inglês e Espanhol.
+   - O menu de documentação oferece agora opções dedicadas para consultar as alterações recentes e o manual em cada um dos idiomas.
+
+2. Diálogo Nativo Virtual para Pacote de Sons:
+   - Substituída a antiga caixa de diálogo padrão do Windows por diálogo de áudio virtual acessível no próprio áudio form do jogo.
+   - Suporte a confirmação via Y ou Enter para iniciar o download, e Escape ou N para cancelar e continuar sem sons.
+
+3. Notificação Falada e Bips de Progresso de Extração no Estilo NVDA:
+   - Durante a extração do pacote de som, o jogo anuncia "Extraindo pacote de sons..." e emite bips progressivos de pitch incremental com duração curta, semelhantes à barra de progresso do NVDA, com bip tonal harmônico de conclusão.
+
+4. Limpeza Completa de Pastas e Arquivos Temporários:
+   - Após a conclusão e aplicação de qualquer atualização (conteúdo, mapas, sons ou executável), todos os diretórios e arquivos temporários (como update_temp) são completamente eliminados do disco.
+
+5. Ajuste no Pacote Inicial (Starter Pack):
+   - O Starter Pack agora é concedido estritamente na primeira vez que o personagem é criado. Ao trocar ou reentrar em qualquer mapa, o jogo não concede mais pacotes duplicados.
+
+6. Regras de Morte Refinadas:
+   - O inventário geral do jogador é mantido intacto após a morte, porém a arma empunhada no momento é automaticamente desequipada e qualquer escudo equipado é removido.
+
+7. Blindagem no Processo de Atualização de Executável:
+   - O script de reinicialização do atualizador no Windows agora monitora o encerramento completo do processo antes da substituição e utiliza renomeação segura para prevenir bloqueios de arquivo.
+
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 10:20 (v0.4 Build 2 Update)
+-------------------------------------------------------------------------------
+
+1. Opções de Download no Atualizador (Executável ou Arquivo ZIP Completo):
+   - Ao confirmar uma atualização do jogo, é exibido um diálogo acessível perguntando: "O que você deseja baixar?" com as opções:
+     * "Apenas o executável": baixa diretamente o binário tcf.exe atualizado.
+     * "Arquivo ZIP completo": baixa o pacote completo em zip contendo documentação atualizada (changes.txt, manuais), configurações e binários.
+   - Diálogo totalmente traduzido em Português, Inglês e Espanhol com navegação por som e teclado (Enter/Setas/Escape).
+
+2. Correção de Áudio e Ação da Tecla S (Sentar e Levantar):
+   - A tecla S agora executa de maneira confiável a transição de postura do personagem (sentar e levantar).
+   - Corrigida a reprodução dos sons dedicados de postura: reproduz os sons reais de sentar (sit.ogg) e levantar (stand.ogg) de cada personagem.
+
+3. Redução de Mensagens de Voz Desnecessárias (Menos Falatório):
+   - Silenciadas narrações verbais repetitivas durante o combate:
+     * Consumo de poção de vida: reproduz apenas o som de cura/beber, sem voz.
+     * Ativação do cartão anti-morte: reproduz apenas o som deathfree.ogg, sem voz.
+     * Equipar armas: reproduz apenas o som de saque/desembainhar, sem voz.
+     * Quebra de escudo: reproduz apenas o som de estilhaço/quebra do escudo, sem voz.
+
+4. Balanceamento de Recompensas e Drops de NPCs:
+   - Configurados drops equilibrados de moedas em todos os NPCs ao morrerem:
+     * Coelho (rabbith.npc): drop fixo de 50 cristais dourados (golden_crystal:50) + quantias aleatórias baixas de prata, ouro e diamante.
+     * Coiote (coiote.npc): drop fixo de 100 diamantes (diamond:100) + quantias aleatórias baixas de ouro, prata e cristais dourados.
+     * Lobo (wolf.npc): drop fixo de 150 ouros (gold:150) + quantias aleatórias baixas de prata, cristal dourado, diamante e cartão anti-morte.
+     * Demais NPCs (Urso, Cão, Robô policial): drops aleatórios baixos de cada moeda (ouro, prata, cristal dourado e diamante).
+   - Registros criptografados atualizados com sucesso em contents.dat.
+
+5. Preservação de Inventário na Morte:
+   - O jogador não perde seus itens ao morrer; todo o inventário é preservado e salvo.
+   - O Starter Pack é garantido como item padrão nos personagens.
+
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 09:50 (v0.4 Build 1 Update)
+-------------------------------------------------------------------------------
+
+1. Controles Atualizados de Postura e Rotação:
+   - A tecla S agora alterna a postura do jogador entre sentar e levantar (substituindo a antiga tecla Q).
+   - As teclas Q e E agora realizam a rotação da orientação e mira do personagem para Norte, Sul, Leste, Oeste, Sudoeste e direções intermediárias em incrementos de 45 graus (Q gira para a esquerda, E gira para a direita).
+   - As combinações Shift + Seta Esquerda e Shift + Seta Direita foram desativadas para rotação.
+   - Mensagens de auxílio e dicas ("Você está sentado. Pressione S para se levantar") devidamente atualizadas nos idiomas Português, Inglês e Espanhol.
+
+2. Padronização do Executável do Jogo (TCF):
+   - Removida a criação de executáveis duplicados (dw.exe).
+   - O executável oficial único do jogo agora é tcf.exe em todos os pacotes, atualizações e scripts de reinicialização.
+
+3. Atualizador e Distribuição:
+   - Suporte nativo a atualizações menores de build/revisão mantendo o número da versão (0.4 Build 1).
+   - O atualizador detecta e anuncia atualizações faladas específicas de maneira suave e silenciosa.
+
+
+-------------------------------------------------------------------------------
+New on November 22, 2026 at 19:35
+-------------------------------------------------------------------------------
+
+1. Store Categories Resolution in Compiled Executable (dw.exe):
+   - Fixed category loading in compiled mode by prioritizing encrypted content decryption (load_all_contents()) at the start of init_stores(), ensuring contents.dat supplies all categories (ammo, medical items, weapons).
+   - Removed unintentional encrypt_all_contents_silent() triggers from read/init functions (init_stores() and load_all_npcs()) which could overwrite contents.dat with uninitialized registries.
+   - Guarded encrypt_all_contents_silent() to populate all empty registries (items, weapons, stores, packages, npcs) before serializing to contents.dat.
+
+2. Sounds Package & Release Assets:
+   - Packaged and compressed the full game sounds directory into sounds.zip (1,921 MB), safely beneath the 2 GB GitHub Releases file size limit and fully compatible with the in-game auto-updater.
+   - Built standalone game distribution package the_confront_v0.1.zip (35.5 MB) containing dw.exe, lib/, and encrypted settings/.
+   - Reverted NVGT to the stable release environment compatible with King Audio Engine.
+
+
+-------------------------------------------------------------------------------
+New on November 22, 2026 at 19:10
+-------------------------------------------------------------------------------
+
+1. Project Structure Clean-Up:
+   - Moved bgt_compat.nvgt from the root directory into includes/bgt_compat.nvgt and updated project include in dw.nvgt.
+   - Moved languages directory from the root directory into settings/languages and updated localization loader in translator.nvgt.
+   - Moved docs directory from the root directory into settings/docs and updated documentation reader paths in documentation.nvgt.
+
+2. Store Audio Profiles for Both Characters:
+   - Implemented character-aware store sound resolution via get_store_sound(): store welcome (st.ogg), purchase success (buy.ogg), and store error (store_error.ogg) audio now correctly load from the active character's audio folder (Stefan and Ilana).
+   - Both characters now cleanly play their respective greetings and purchase confirmations in the store.
+
+3. Store Purchases Inventory Persistence:
+   - Implemented load_player_store_inventory() and save_player_store_inventory() in store_menu.nvgt.
+   - When entering the store, the active character's save file is loaded to display and use their true currency balances.
+   - Every store purchase immediately writes the updated inventory and deducted currency to the character's save file (gamesave_<character>.dat).
+   - When entering any map, all purchased items are preserved in the player's inventory.
+   - Guarded store access to require selecting a character first in Options.
+
+
+-------------------------------------------------------------------------------
+New on November 22, 2026 at 18:30
+-------------------------------------------------------------------------------
+
+1. Weapon Fire Audio Restoration:
+   - Restored shotgun fire audio configurations (AA-12, Fabarm FP6, Remington 870, Winchester 1300) to exclusively play their proper firing sounds (*_fire1.ogg, *_fire2.ogg, *_fire3.ogg).
+   - Removed auxiliary sounds (impact/hit, reload, distance, and draw audio) from the sound_fire field so weapons fire cleanly with their actual gunshots.
+   - Cleaned global audio search paths in sound_paths.nvgt to prevent character-specific folders from shadowing general weapon and game sounds.
+
+2. Bleeding Sound & Vital Loop Synchronization:
+   - Fixed player vital sound loading via load_player_vital_sounds(): both characters (Stefan and Ilana) now dynamically load their designated bleeding.ogg and heartbeat sounds from their respective audio folders.
+   - When player health is low (health <= 1,000 HP), the bleeding sound plays in a continuous loop alongside the heartbeat until the player recovers or health reaches zero.
+
+3. NPC Death Drop Configurations Restored:
+   - Restored item dropping behavior and drop configurations across animal NPCs:
+     - Bear (bear.npc): drop_items_on_death enabled, drops golden_crystal:1.
+     - Coyote (coiote.npc): drop_items_on_death enabled, drops golden_crystal:1.
+     - Wolf (wolf.npc): drop_items_on_death enabled, drops anti_death_card:1.
+     - Rabbit (rabbith.npc): drop_items_on_death enabled, drops golden_crystal:230.
+   - Defeated NPCs now consistently spawn and drop their configured loot directly onto the ground upon death.
+
+
+-------------------------------------------------------------------------------
+New on November 22, 2026 at 17:45
+-------------------------------------------------------------------------------
+
+1. Multi-Character Player System (Stefan & Ilana):
+   - Introduced two distinct playable characters with unique physical profiles, audio sets, speeds, and vital stats:
+     - Stefan (Masculine): Athletic, toned body with blond hair and long beard, holding a double-barreled machine gun. 5,000 base HP, moves slower than standard speed (28% increased movement interval), exclusive Tristan pain sounds (1-16) and death voice 17.
+     - Ilana (Feminino): Athletic, toned, attractive body with long blond hair, holding a double-barreled golden glowing rifle. 10,000 base HP, moves faster than standard speed (5% reduced movement interval), exclusive Aria pain sounds (1-16) and death voice 17.
+   - General sound effects (footsteps, jumps, lands, inventory, equipment) remain universal and shared.
+
+2. Character Selection & Dedicated Save Separation:
+   - Added "Selecione o seu personagem" to Options menu.
+   - Non-intrusive Spacebar handling: Pressing Spacebar on a character speaks their description without intercepting or blocking Spacebar from toggling checkboxes across audio_form menus.
+   - Created separate save files (`gamesave_stefan.dat` and `gamesave_ilana.dat`), preventing cross-character stat contamination and ensuring Stefan maintains his designated 5,000 HP and Ilana maintains her 10,000 HP.
+   - Removed legacy single save file to prevent obsolete data contamination.
+   - The game no longer picks a default character randomly. Attempting to click Play without selecting a character informs the player: "Selecione o seu personagem primeiro nas configurações."
+
+
+-------------------------------------------------------------------------------
+New on November 22, 2026 at 10:00
+-------------------------------------------------------------------------------
+
+1. Comprehensive Multilingual Translation Coverage:
+   - Eliminated hardcoded English across internal dialogs, form buttons, and managers:
+     - NPC Manager (`includes/npc_manager.nvgt`): actions, class selection, drop item configuration, sound picker buttons, and feedback messages.
+     - Weapon Manager (`includes/weapon_manager.nvgt`): actions, inventory options, view/edit buttons, and save feedback.
+     - Item Manager (`includes/item_manager.nvgt`): actions, inventory grants, properties, and save feedback.
+     - Map Editor & Builder (`includes/builder.nvgt`): line editor buttons ("Add Line", "Edit Line", "Delete Line", "Copy", "Paste", "Rename Map", "Copy All"), line content forms, and map compilation tools.
+   - Localized sitting, standing, safe zone warnings, level-up, and fall damage messages in gameplay.
+
+2. In-Place Editing vs Creation Button Logic:
+   - Implemented strict differentiation between creation from scratch and editing an existing entity across NPCs, Weapons, Items, and Store categories:
+     - When creating: the action button says "&Salvar" / "&Save" / "&Guardar" (`tr("ui.save")`).
+     - When editing existing: the action button says "&Atualizar e salvar" / "&Update and Save" / "&Actualizar y guardar" (`tr("ui.update_and_save")`).
+   - Preserves existing file paths and overwrites files directly in place. If an internal ID is renamed, the obsolete file is cleaned up so no duplicates or orphaned files remain.
+
+3. Store Category Speech & Persistence Fix:
+   - Removed tab counter numbers ("category X of Y") and instructions when navigating categories in the Store; now speaks exclusively the category's display name.
+   - Synchronized category deletion with `contents.dat`, preventing deleted store categories from reappearing in compiled release mode.
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 20:55
+-------------------------------------------------------------------------------
+
+1. Audio Source & Ambience Resolution Fix:
+   - Resolved an issue where ambient audio configured for map sound sources (such as "forest" in Vale dos Lobos / `wolfs valey.map`) was inadvertently resolved as music due to greedy wildcard search matches in `sounds/Musics/*`.
+   - Map sources and ambiences now properly prioritize ambient sound files (`sounds/anbients/`, `sounds/ambients/`) first, preserving 3D positioning and proper ambient volume levels.
+   - Builder audio source and ambience tools now save explicit folder prefixes (`musics/` vs `sources/`), guaranteeing unambiguous classification.
+
+2. In-Game Documentation Submenu & Native NVGT Notepad:
+   - Added a dedicated "Documentation" ("Documentação" / "Documentación") submenu to the main menu powered by `audio_form`.
+   - Offers two primary options:
+     - "Read recent changes" ("Ler alterações recentes" / "Leer cambios recientes"): Opens `docs/changes.txt` directly inside a native NVGT multiline text viewer. Screen reader players can navigate line by line, scroll with arrow keys, copy text to clipboard, and return immediately with Escape without opening Windows Notepad or leaving the game.
+     - "Read Readme file" ("Ler arquivo Leia-me" / "Leer archivo Léame"): Reads the game's Readme. If the file is not found, the game clearly announces "Arquivo LEIAME não encontrado" (localized) and smoothly returns to the documentation submenu.
+
+3. Interactive Update Check Dialog:
+   - When checking for updates from the main menu, if no update is found or a network/manifest error occurs, the game now displays a modal dialog with `dlg()` instead of instantly returning.
+   - The player can read and repeat the message with arrow keys or copy it with 'C', and pressing Enter or Escape returns to the menu, resuming main menu music seamlessly.
+
+4. Death and Item Pickup Translations:
+   - Localized NPC player-kill death messages across English, Portuguese, and Spanish:
+     - EN: "You were killed by <NPC>."
+     - PT: "Você foi morto por <NPC>."
+     - ES: "Fuiste asesinado por <NPC>."
+   - Localized NPC kill announcements when the player defeats an enemy.
+   - Localized item pickup speech when collecting items on the ground:
+     - EN: "You collected <amount> <item>."
+     - PT: "Você coletou <amount> <item>."
+     - ES: "Has recogido <amount> <item>."
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 20:25
+-------------------------------------------------------------------------------
+
+1. Speech & Prompt Text Restoration:
+   - Restored the complete full-length announcement for the Exit Confirmation Dialog across all languages:
+     - EN: "Are you sure you want to exit? Press Y or Enter for Yes, or Escape to cancel."
+     - PT: "Tem certeza de que deseja sair? Pressione Y ou Enter para Sim, ou Escape para cancelar."
+     - ES: "¿Estás seguro de que deseas salir? Presiona Y o Enter para Sí, o Escape para cancelar."
+   - Restored the complete welcoming message in the Store Menu:
+     - EN: "Welcome to the store! What would you like to buy today? Select items in one of the available categories."
+     - PT: "Bem-vindo à loja! O que você gostaria de comprar hoje? Selecione itens em uma das categorias disponíveis."
+     - ES: "¡Bienvenido a la tienda! ¿Qué te gustaría comprar hoy? Selecciona artículos en una de las categorías disponibles."
+
+2. In-Game Inventory & Weapon Translation:
+   - Localized weapon and inventory status speech:
+     - "No weapon equipped." ("Nenhuma arma equipada." / "Ninguna arma equipada.")
+     - "Your inventory is empty." ("Seu inventário está vazio." / "Tu inventario está vacío.")
+     - Weapon equipped/unequipped and melee weapon status announcements.
+     - Equipment and worn shield status announcements.
+
+3. Builder, Map & Coordinate Form Localization:
+   - Localized all coordinate input boxes across the engine: Minimum X, Maximum X, Minimum Y, Maximum Y, Minimum Z, Maximum Z, minimum/maximum levels, and resurrection requirements.
+   - Localized builder forms for Item Spawner, Create New Map, Add Platform, Add Wall, Add Safe Zone, Add Text Zone, Add Staircase, Sound Ambience, and Sound Sources.
+   - Localized NPC Manager and Weapon Manager main menus and edit forms.
+
+4. 16 New Weapon Configurations (.wpm) for 70 Weapon Sound Folders:
+   - Created complete .wpm configuration files for all remaining weapon sound folders, achieving 100% coverage across all 70 directories in `sounds/Weapons`:
+     - Shotguns: `aa12_drum_shotgun.wpm`, `winchester_1300_defender_shotgun.wpm`
+     - Sniper Rifles: `ai_aw_suppressed_sniper_rifle.wpm`, `fn_scar_20_marksman_rifle.wpm`, `heavy_sniper.wpm`, `winchester_model70_hunting_rifle.wpm`
+     - Rifles: `ak12_assault_rifle.wpm`, `ak5c_assault_rifle.wpm`, `an94_abakan_assault_rifle.wpm`, `fn_scar_h_battle_rifle.wpm`, `haenel_mk556_modular_rifle.wpm`, `zastava_m70_assault_rifle.wpm`
+     - Pistols: `colt1911.wpm`, `fn_five_seven_pistol.wpm`, `heckler_koch_usp_pistol.wpm`
+     - Launchers: `grenade_launcher.wpm`
+   - Recompiled unified contents bundle (`settings/contents.dat`).
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 19:30
+-------------------------------------------------------------------------------
+
+1. Main Menu Map Separation:
+   - Separated the main menu into two distinct game entries:
+     - "Play" ("Jogar" / "Jugar"): Directly and immediately loads the player's selected default map without opening any map selection submenu.
+     - "Maps Menu" ("Menu de mapas"): Displays all currently unlocked maps (respecting resurrection and level requirements). Selecting a map saves it as the player's preferred default map for subsequent "Play" actions.
+
+2. Multilingual Localization System:
+   - Implemented a complete translation system powered by `includes/translator.nvgt` using JSON language files:
+     - English (`languages/en.json`)
+     - Portuguese (`languages/pt.json`)
+     - Spanish (`languages/es.json`)
+   - Fully localized Main Menu, Maps Menu, Options Menu, confirmation dialogs, Speaker Test, Builder Menu, Store Menu, Updater routines, and in-game status messages (health, level, XP, zone announcements).
+
+3. Options Menu & Audio Modernization:
+   - Removed the "Select Menu Music" button from the Options Menu; menu music is now fixed and unified (`sounds/menu sounds/menumus.ogg`).
+   - Added the "Select Language" ("Selecionar Idioma" / "Seleccionar Idioma") button to the Options Menu.
+   - Language changes are applied immediately in real-time across menus and interface elements without requiring a restart or manual pre-save.
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 17:35
+-------------------------------------------------------------------------------
+
+1. Map Isolation & Transition Data Cleansing:
+   - Fixed map data leakage across transitions (e.g. zones, platforms, walls from a previous map persisting when loading another map such as wolfs valey):
+     - Implemented clear_map_data() to completely reset the native map instance (g_active_map.reset_data()), clear map platforms/walls, zones, safezones, text squares, and staircases.
+     - Enforced clear_map_data() at the start of draw_map(), on player reset/death, and in map init routines.
+     - Added strict guard in get_zone_at() and is_safe() to immediately return empty when a map defines no zones or safezones, preventing residual zone announcements on zoneless maps.
+     - Re-ordered draw_map() and player positioning in the map selection menu to spawn players cleanly at defined map spawn points.
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 17:15
+-------------------------------------------------------------------------------
+
+1. Map Resurrection & Level Unlock Logic:
+   - Fixed unlocked maps disappearing from the "Play" menu upon completely restarting the game:
+     - Player save data (level, resurrections, stats) is now explicitly loaded upon cold game startup prior to entering the main menu, and refreshed when selecting "Play".
+     - Fixed can_enter_map() requirement evaluation: maps with equal minimum and maximum resurrection thresholds (e.g. minres 4, maxres 4) or zero/lower maximum now unlock at that resurrection and remain accessible for all superior resurrections (resurrections >= check_min_res).
+     - Applied the same non-blocking minimum logic to player level thresholds.
+
+2. NPC Manager Cleanups:
+   - Streamlined death drop item quantity configuration in the NPC manager dialog:
+     - Removed redundant "Set Quantity for selected item" button; quantities entered in the input box are now seamlessly applied on item navigation and dialog save.
+     - Confirmed dedicated sound selection buttons without redundant manual text edit boxes for impact and combat audio.
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 13:10
+-------------------------------------------------------------------------------
+
+1. Unified Weapon Manager & Inventory Granting Flow:
+   - Fixed weapon listing in the "Give Weapon To Player Inventory" dialog and throughout the weapon manager:
+     - All weapons across all folders and classes are now presented in a clean, single unified flat list sorted alphabetically A-Z by name.
+     - Removed confusing category directory folder labels from item displays.
+     - Routed action selection by string ID in the weapon manager menu to prevent position-based routing errors.
+     - Safely resolved weapon IDs via get_list_item_id() for both single selection and batch checkbox selection.
+     - Initialized loaded ammo capacity and granted starting reserve magazines/ammo upon receiving weapons into inventory.
+     - Added support in the weapon loader to scan root settings/weapons/*.wpm files alongside subfolders.
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 12:40
+-------------------------------------------------------------------------------
+
+1. NPC Impact Sound Configuration:
+   - Added the impact sound field (sound_hit) to NPC data structures and persistence (.npc files and encrypted contents.dat bundle).
+   - Added the "Select impact sound" button in the NPC editor form (npc_manager.nvgt), allowing developers to choose dedicated impact audio played when the NPC strikes the target.
+   - Connected sound_hit playback in the combat engine (npc_system.nvgt) when NPC attacks land on the player.
+
+2. Map Selection & Zone Speech Fix:
+   - Fixed the issue where entering the "Select your map" menu after dying caused the engine to speak "unknown area":
+     - Deferred init() until after a map is selected from the menu instead of invoking it prematurely.
+     - Ensured is_in_game remains false until game() begins execution.
+     - Properly reset mapname and currentloc to empty on reset(), and guarded update_game_world() and checkloc() against running when map.length() == 0 or zones.length() == 0.
+     - Updated reset_location_on_death() to restore the active default map rather than a legacy "main" identifier.
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 12:15
+-------------------------------------------------------------------------------
+
+1. Weapon Firing Key & Timing Precision:
+   - Enforced Left Control (KEY_LCONTROL) as the sole weapon firing key (Right Control never fires).
+   - Resolved a critical firing loop timing bug: previously, holding down the trigger on semi-automatic weapons prematurely restarted the fire timer on every frame without firing, causing subsequent key taps to be dropped and creating the illusion of oscillating fire rates or key failures.
+   - Enforced strict adherence to each weapon's configured firetime: firing only occurs when weapon_fire_timer.elapsed >= firetime, with zero firing outside the configured interval and the timer restarting strictly upon an actual confirmed shot.
+
+2. Store Cart Audio Corrections:
+   - Connected player/store_error.ogg to all store cart operations: attempting to add an item to the cart without sufficient funds (Right Arrow), attempting to remove an item when quantity is 0 (Left Arrow), or attempting checkout with an empty cart or insufficient funds now reliably plays store_error.ogg.
+
+3. Main Menu Polish:
+   - Removed the unused "Listen to story" option from the main menu.
+   - Added "Test speakers" option to the main menu: fades menu music, announces "Testing speakers", and plays the speaker test audio (sounds/menu sounds/speakertest1.ogg / speaker.ogg). Pressing Escape cancels the test and returns to the menu; pressing Enter skips the test.
+
+4. Startup Streamlining:
+   - Removed startup logo audio playback since the game currently does not have an active logo.
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 11:45
+-------------------------------------------------------------------------------
+
+1. Unified Contents Bundle & Source Mode Preservation:
+   - NPCs added into the single encrypted package (settings/contents.dat) under [section:npcs].
+   - Compiling contents and maps preserves all loose .config, .wpm, .st, .npc, and .map files so developer/builder workflows are never disrupted.
+   - Running from source code (!SCRIPT_COMPILED) prioritizes loose files, allowing full editing and deletion in builders and tool menus without encryption locks.
+   - Removed decompile options from tool menus, retaining compilation tools.
+
+2. Updater Completion Audio & Download Cancellation:
+   - All update routines (game, content, sounds, maps) explicitly wait for the completion sound to finish playing before restarting or exiting.
+   - Added Escape key cancellation confirmation dialog during downloads: players can confirm cancellation (aborting download, terminating transfer, and purging temporary files) or resume, keeping the window fully responsive.
+
+3. Store Audio Polish:
+   - Added store greeting sound (player/st.ogg) alongside the welcome message upon entering store menus.
+   - Added successful purchase audio (player/buy.ogg).
+
+4. NPC Death & Drop Mechanics:
+   - NPC active voice clips are cleanly terminated immediately upon death so they do not overlap with the death sound.
+   - NPC editor now supports configuring custom drop quantities for each death item (item_id:quantity).
+
+5. Ground Item Audio & Native Currencies:
+   - Removed single-item tile suppression so multiple ground items (2, 3, 4+) on the same or neighboring tiles all emit their beacon beeps.
+   - Added dedicated configurations for the 4 native currencies (gold, silver, diamond, golden_crystal) featuring the items/bet_money.ogg pickup sound and English loot announcements ("You collected X [Currency]").
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 11:00
+-------------------------------------------------------------------------------
+
+1. Audio-Backed Weapon Updates:
+   - Sword: Configured new dedicated audio (draw, 3 fire swings, 3 impacts) with effective range of 7 steps.
+   - Axe: Updated audio set (draw, 3 swings, 3 impacts) with effective range of 5 steps.
+   - Knife: Added new dedicated melee knife configuration (draw, 3 swings, 3 impacts) with range of 3 steps.
+   - Rifle: Added new rifle weapon configuration (draw, empty, 3 fire sounds, 3 impacts, reload) with range of 20 steps.
+   - Machete: Permanently removed obsolete machete configuration and audio.
+
+2. Release Package & On-Demand Sound Delivery:
+   - Implemented automated missing sounds detection at startup: if the game directory lacks sounds, an accessible prompt offers to download and extract the sounds package (Y/Enter) or proceed without sounds (Escape).
+   - Downloads run via the native updater engine with tone progress beeps and automatic zip extraction.
+   - Standalone lightweight release bundle prepared for GitHub distribution without the ~2 GB audio payload.
+
+
+-------------------------------------------------------------------------------
+New on November 21, 2026 at 10:20
+-------------------------------------------------------------------------------
+
+1. WPM-Driven Weapon Configuration:
+   - Verified and enforced that all weapons load stats, ranges, damages, weights, fire rates, and audio exclusively from individual .wpm configuration files without hardcoded values in code.
+   - Fire rates strictly adhere to a single exact firetime interval per weapon with zero min/max oscillation.
+
+2. Reload Sound System & Fallback Removal:
+   - Removed generic reload sound fallbacks across the ammo and weapon engines; weapons with missing reload sound entries reload silently via a dedicated 2000ms safety timer without generic sound substitution.
+   - Audited the sound library and pruned weapons that lacked reload sounds or complete sound profiles (colt1911, magnum revouver, tauros revouver, tar 21 assalt rifle, beneli m4, ithica_m37, ks123), ensuring every remaining firearm is backed by verified audio.
+
+3. Weapon Range and Damage Rebalancing:
+   - Melee: Short ranges (3 to 7 steps) and balanced damage (knife: 180-280, sword: 260-400, axe: 350-500).
+   - Pistols: Ranges between 9 and 15 steps; damages scaled between 480 and 790.
+   - Revolvers: Ranges between 14 and 20 steps; damages scaled between 400 and 680.
+   - Shotguns: Ranges between 20 and 32 steps; damages scaled between 550 and 1550.
+   - Machine Guns & Submachine Guns: Ranges between 22 and 45 steps; damage rebalanced to high-tier 1000 to 4500, eliminating underpowered 50-150 damage values.
+   - Rifles: Ranges between 20 and 50 steps; damages scaled between 610 and 1500.
+   - Sniper Rifles: Long ranges between 50 and 65 steps; damages scaled between 900 and 3500.
+   - Heavy Artillery & Launchers: Cannon range scaled to 70 steps (5000-6000 damage), crossbow to 30 steps, flamethrower to 10 steps.
+
+4. Source Code and Sound Tree Cleanup:
+   - Pruned orphaned sound directories and unreferenced weapon aliases.
+   - Removed unused stub files (dlgplayer.nvgt), empty legacy stub functions (init_sound_package), dead language directories (sounds/boas-vindas), and unreferenced utilities in hip.nvgt.
+
+5. Update System Audio:
+   - Configured the new update discovery audio (updatFound.ogg) played when a new version is detected.
+   - Preserved silent background download with native NVGT tone generator percentage progress beeps without background music playback.
+   - Configured update completion audio playback (updatecomplete.ogg) upon successful package installation.
+
+
+-------------------------------------------------------------------------------
+New on November 20, 2026 at 19:15
+-------------------------------------------------------------------------------
+
+1. NPC AI and Map Performance:
+   - Zero-allocation A* pathfinding using static generation-stamped buffers.
+   - Smooth 60+ FPS without player movement stutter or RAM spikes regardless of NPC count.
+   - Waypoint navigation guiding NPCs around walls and obstacles without straight-line beelining.
+   - Dynamic 3D audio updates restricted to active voices to eliminate CPU overhead.
+
+2. Unified Single-Line Map Spawners:
+   - Map spawner format consolidated into a single line per multi-NPC group:
+     Format: npcspawner:<id1,id2,...>:<count>:<respawn_ms>:<x0>:<y0>:<z0>:<x1>:<y1>:<z1>:<respawn_after_death>
+   - Spawners strictly respect configured quantities above zero without creating duplicate instances.
+   - Initial map entry delay: NPCs wait for the full configured millisecond timer before spawning randomly.
+   - "Only respawn after death" configuration: dead NPCs only respawn if enabled, waiting the exact configured cooldown.
+
+3. Player Health and Death Announcement:
+   - Standardized player maximum base health to 5000.
+   - Removed spatial coordinates and map names from death broadcasts, announcing strictly who killed the player.
+
+
+-------------------------------------------------------------------------------
+New on November 18, 2026 at 09:30
+-------------------------------------------------------------------------------
+
+1. Identity and Versioning:
+   - Game officially renamed to "The Confront" (Version 0.1).
+
+2. Sound Engine (King Audio & FMOD):
+   - Restored stable baseline for King Audio, FMOD, and sound pool architecture.
+   - Underwater low-pass filtering and cross-map music continuation.
+   - Constant 0 dB footstep mixing with natural pitch variations.
+
+3. Weapons, Ammunition, and Store:
+   - Curated firearm catalog with complete audio and explicit projectile physics.
+   - Main menu store organized into distinct category shelves charging native currencies (gold, golden crystal, diamond, silver).

@@ -221,7 +221,7 @@ void mainmenu()
 		}
 		if (menuitem=="play")
 		{
-			if (current_player_character != "stefan" && current_player_character != "ilana")
+			if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana")
 			{
 				p.play_stationary(get_sound_path("misc/error.ogg"), false);
 				speak(tr("game.select_character_first"));
@@ -317,7 +317,7 @@ void mainmenu()
 		}
 		else if (menuitem=="store")
 		{
-			if (current_player_character != "stefan" && current_player_character != "ilana")
+			if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana")
 			{
 				p.play_stationary(get_sound_path("misc/error.ogg"), false);
 				speak(tr("options.select_character_first"));
@@ -390,8 +390,8 @@ audio_form form;
 form.create_window(tr("options.title"), false);
 int char_list = form.create_list(tr("options.select_character"), 0, false, false);
 form.add_list_item(char_list, tr("options.character_stefan"), "stefan");
-form.add_list_item(char_list, tr("options.character_ilana"), "ilana");
-if (current_player_character == "ilana") form.set_list_position(char_list, 1, false);
+form.add_list_item(char_list, tr("options.character_annie"), "annie");
+if (current_player_character == "annie" || current_player_character == "ilana") form.set_list_position(char_list, 1, false);
 else if (current_player_character == "stefan") form.set_list_position(char_list, 0, false);
 else form.set_list_position(char_list, 0, false);
 
@@ -407,7 +407,7 @@ int cancel_btn = form.create_button(tr("options.cancel"), false, true);
 
 form.focus(char_list);
 
-int last_char_pos = (current_player_character == "ilana") ? 1 : ((current_player_character == "stefan") ? 0 : -1);
+int last_char_pos = (current_player_character == "annie" || current_player_character == "ilana") ? 1 : ((current_player_character == "stefan") ? 0 : -1);
 int last_wrap_box = form.is_checked(wrap_box) ? 1 : 0;
 int last_footdrag_box = form.is_checked(footdrag_box) ? 1 : 0;
 int last_confirm_exit_box = form.is_checked(confirm_exit_box) ? 1 : 0;
@@ -425,7 +425,7 @@ int cur_char_pos = form.get_list_position(char_list);
 if (cur_char_pos != last_char_pos && cur_char_pos >= 0)
 {
 last_char_pos = cur_char_pos;
-string chosen = (cur_char_pos == 1) ? "ilana" : "stefan";
+string chosen = (cur_char_pos == 1) ? "annie" : "stefan";
 set_player_character(chosen, true);
 prefs_dirty = true;
 }
@@ -435,7 +435,7 @@ if (form.get_current_focus() == char_list && space_down && !space_handled)
 {
 space_handled = true;
 int cpos = form.get_list_position(char_list);
-if (cpos == 1) speak(tr("options.character_ilana_desc"), true);
+if (cpos == 1) speak(tr("options.character_annie_desc"), true);
 else speak(tr("options.character_stefan_desc"), true);
 }
 if (!space_down)
@@ -510,7 +510,7 @@ return;
 if (form.is_pressed(save_btn))
 {
 int c_pos = form.get_list_position(char_list);
-string chosen = (c_pos == 1) ? "ilana" : "stefan";
+string chosen = (c_pos == 1) ? "annie" : "stefan";
 set_player_character(chosen, true);
 writeprefs();
 speak(tr("options.saved"));

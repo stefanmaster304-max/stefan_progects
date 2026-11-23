@@ -160,32 +160,14 @@ void load_all_packages()
 {
 	ensure_package_directories();
 
-	// 1. In compiled release mode: the single encrypted contents.dat bundle
+	/* 1. In compiled release mode: the single encrypted contents.dat bundle */
 	if (SCRIPT_COMPILED)
 	{
-		if (load_all_contents()) return;
+		load_all_contents();
+		if (package_registry.length() > 0 && find_package_data("starter pack") !is null) return;
 	}
 
-	package_registry.resize(0);
-
-	// 2. Development: encrypted packages.dat bundle
-	if (file_exists(PACKAGES_DAT_PATH))
-	{
-		file f;
-		if (f.open(PACKAGES_DAT_PATH, "rb"))
-		{
-			string enc = f.read();
-			f.close();
-			string decrypted = string_decrypt(enc, PACKAGE_ENC_KEY);
-			if (decrypted.length() > 0)
-			{
-				parse_packages_bundle(decrypted);
-				if (package_registry.length() > 0) return;
-			}
-		}
-	}
-
-	// 2. Fallback: Scan loose .config files
+	/* 2. Scan loose .config files */
 	string[]@ files = find_files(PACKAGE_DIR + "/*.config");
 	if (files !is null)
 	{
@@ -210,9 +192,17 @@ void load_all_packages()
 		}
 	}
 
-	if (package_registry.length() == 0)
+	/* Fallback builtin starter pack if not loaded from anywhere */
+	if (find_package_data("starter pack") is null)
 	{
-		load_all_contents();
+		package_data starter;
+		starter.id = "starter pack";
+		starter.name = "starter pack";
+		starter.description = "A starter pack with a few survival items.";
+		starter.sound_open = "items/pack.ogg";
+		starter.contains_items = "life_potion:10;12_gauge_20_round_drum_magazine:10;aa12_drum_shotgun:1;knife:1;sword:1";
+		starter.open_message = "you opened the package and received items useful for your survival in this world weapons ammunition and healing portions";
+		package_registry.insert_last(starter);
 	}
 }
 
@@ -283,18 +273,18 @@ bool open_package_by_id(const string&in pkg_id)
 	if (pkg is null) return false;
 
 	string osnd = pkg.sound_open;
+	string pth = "";
 	if (osnd != "")
 	{
-		string pth = get_sound_path(osnd);
+		pth = get_sound_path(osnd);
 		if (pth == "") pth = find_sound_in_disk("sounds/" + osnd);
 		if (pth == "") pth = find_sound_in_disk("sounds/items/" + osnd);
-		if (pth != "") p.play_stationary(pth, false);
 	}
-	else
-	{
-		string def_snd = find_sound_in_disk("sounds/items/openpackage*.ogg");
-		if (def_snd != "") p.play_stationary(def_snd, false);
-	}
+	if (pth == "") pth = get_sound_path("items/pack.ogg");
+	if (pth == "") pth = get_sound_path("items/_packageopen.ogg");
+	if (pth == "") pth = find_sound_in_disk("sounds/items/*package*.ogg");
+	if (pth == "") pth = find_sound_in_disk("sounds/items/*pack*.ogg");
+	if (pth != "") p.play_stationary(pth, false);
 
 	// Opening a package EXTRACTS its contents into the inventory only:
 	// nothing is equipped, worn or consumed automatically. The player keeps

@@ -200,7 +200,7 @@ string get_player_sound(string pattern)
 	if (pattern == "") return "";
 	if (pattern.find("*") == -1 && pattern.find(".") == -1) pattern += "*.ogg";
 
-	string char_folder = (current_player_character == "ilana") ? "sounds/players/ylana/" : "sounds/players/stefan/";
+	string char_folder = (current_player_character == "annie" || current_player_character == "ilana" || current_player_character == "hane") ? "sounds/players/hane/" : "sounds/players/stefan/";
 	string snd = find_sound_in_disk(char_folder + pattern);
 	if (snd == "") snd = find_sound_in_disk(char_folder + "*" + pattern);
 	if (snd == "") snd = find_sound_in_disk(char_folder + pattern + ".ogg");
@@ -226,9 +226,10 @@ string[] get_player_death_sounds()
 {
 	string[] paths;
 	string voice = "";
-	if (current_player_character == "ilana")
+	if (current_player_character == "annie" || current_player_character == "ilana" || current_player_character == "hane")
 	{
-		voice = "sounds/players/ylana/ariavoice17.ogg";
+		voice = "sounds/players/hane/ariavoice17.ogg";
+		if (!file_exists(voice)) voice = "sounds/players/ylana/ariavoice17.ogg";
 		if (!file_exists(voice)) voice = "sounds/players/stefan/tristanvoice17.ogg";
 	}
 	else
@@ -253,16 +254,17 @@ string[] get_player_death_sounds()
 	return paths;
 }
 
-// Pain clips: Stefan uses Tristan's voices 1 to 16, Ilana uses Aria's voices 1 to 16.
+// Pain clips: Stefan uses Tristan's voices 1 to 16, Annie uses Aria's voices 1 to 16.
 string pick_player_pain_sound()
 {
 	string[] list;
-	if (current_player_character == "ilana")
+	if (current_player_character == "annie" || current_player_character == "ilana" || current_player_character == "hane")
 	{
 		for (int i = 1; i <= 16; i++)
 		{
-			string path = "sounds/players/ylana/ariavoice" + i + ".ogg";
+			string path = "sounds/players/hane/ariavoice" + i + ".ogg";
 			if (file_exists(path)) list.insert_last(path);
+			else if (file_exists("sounds/players/ylana/ariavoice" + i + ".ogg")) list.insert_last("sounds/players/ylana/ariavoice" + i + ".ogg");
 		}
 	}
 	else
@@ -440,12 +442,26 @@ string get_music_sound(string name)
 
 	string snd = "";
 	if (file_exists(name)) snd = name;
+	if (snd == "" && file_exists("sounds/Music/" + name)) snd = "sounds/Music/" + name;
 	if (snd == "" && file_exists("sounds/Musics/" + name)) snd = "sounds/Musics/" + name;
+	if (snd == "" && file_exists("sounds/Music/" + name + ".ogg")) snd = "sounds/Music/" + name + ".ogg";
+	if (snd == "" && file_exists("sounds/Music/" + name + ".OGG")) snd = "sounds/Music/" + name + ".OGG";
+	if (snd == "" && file_exists("sounds/Music/" + name + ".mp3")) snd = "sounds/Music/" + name + ".mp3";
+	if (snd == "" && file_exists("sounds/Music/" + name + ".wav")) snd = "sounds/Music/" + name + ".wav";
+	if (snd == "" && file_exists("sounds/Music/" + name + ".flac")) snd = "sounds/Music/" + name + ".flac";
 	if (snd == "" && file_exists("sounds/Musics/" + name + ".ogg")) snd = "sounds/Musics/" + name + ".ogg";
 	if (snd == "" && file_exists("sounds/Musics/" + name + ".OGG")) snd = "sounds/Musics/" + name + ".OGG";
 	if (snd == "" && file_exists("sounds/Musics/" + name + ".wav")) snd = "sounds/Musics/" + name + ".wav";
 	if (snd == "" && file_exists("sounds/Musics/" + name + ".mp3")) snd = "sounds/Musics/" + name + ".mp3";
 	if (snd == "" && file_exists("sounds/Musics/" + name + ".flac")) snd = "sounds/Musics/" + name + ".flac";
+
+	if (snd == "" && directory_exists("sounds/Music")) snd = find_sound_in_disk("sounds/Music/" + name);
+	if (snd == "" && directory_exists("sounds/Music")) snd = find_sound_in_disk("sounds/Music/" + name + ".*");
+	if (snd == "" && directory_exists("sounds/Music")) snd = find_sound_in_disk("sounds/Music/" + name + "*.ogg");
+	if (snd == "" && directory_exists("sounds/Music")) snd = find_sound_in_disk("sounds/Music/" + name + "*.OGG");
+	if (snd == "" && directory_exists("sounds/Music")) snd = find_sound_in_disk("sounds/Music/" + name + "*.wav");
+	if (snd == "" && directory_exists("sounds/Music")) snd = find_sound_in_disk("sounds/Music/" + name + "*.mp3");
+	if (snd == "" && directory_exists("sounds/Music")) snd = find_sound_in_disk("sounds/Music/*" + name + "*");
 
 	if (snd == "") snd = find_sound_in_disk("sounds/Musics/" + name);
 	if (snd == "") snd = find_sound_in_disk("sounds/Musics/" + name + ".*");
@@ -514,9 +530,12 @@ string get_sound_path(string path)
 	string[] folders = {
 		"sounds/items/",
 		"sounds/player/",
+		"sounds/players/hane/",
+		"sounds/players/stefan/",
 		"sounds/weapons/",
 		"sounds/map platforms/",
 		"sounds/anbients/",
+		"sounds/Music/",
 		"sounds/Musics/",
 		"sounds/misc/",
 		"sounds/bullets/",

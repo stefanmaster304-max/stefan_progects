@@ -331,7 +331,8 @@ void start_reload(weapon_data@ w)
 	int loaded = get_loaded_ammo(w.id);
 	if (loaded >= w.capacity)
 	{
-		speak(w.name + " is already fully loaded.");
+		string[] args = { w.name };
+		speak(tr("game.weapon_already_loaded", args));
 		return;
 	}
 

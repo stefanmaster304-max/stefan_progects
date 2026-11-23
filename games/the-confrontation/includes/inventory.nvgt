@@ -251,7 +251,7 @@ void use(string item)
 	health += it.heal_amount;
 	if (health > maxhealth) health = maxhealth;
 	give(item, -1);
-	speak("Consumed " + it.name + ". Health restored.");
+	/* Consumable health potion consumed: sound plays, speech removed */
 }
 
 void play_invcat_change_sound()

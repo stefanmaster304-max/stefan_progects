@@ -1,4 +1,4 @@
-// documentation.nvgt - In-game documentation viewer (readme, changes) using native NVGT audio_form notepad.
+/* documentation.nvgt - In-game documentation viewer (readme, changes) using native NVGT audio_form notepad. */
 
 const string DOC_README_PATH = "settings/docs/readme.txt";
 const string DOC_CHANGES_PATH = "settings/docs/changes.txt";
@@ -65,8 +65,12 @@ void documentation_menu()
 		audio_form doc_form;
 		doc_form.create_window(tr("documentation.title"), false, true, false);
 		int dl = doc_form.create_list(tr("documentation.options"), 0, false, true);
-		doc_form.add_list_item(dl, tr("documentation.file_changes"), "changes");
-		doc_form.add_list_item(dl, tr("documentation.file_readme"), "readme");
+		doc_form.add_list_item(dl, tr("documentation.changes_pt"), "changes_pt");
+		doc_form.add_list_item(dl, tr("documentation.changes_en"), "changes_en");
+		doc_form.add_list_item(dl, tr("documentation.changes_es"), "changes_es");
+		doc_form.add_list_item(dl, tr("documentation.readme_pt"), "readme_pt");
+		doc_form.add_list_item(dl, tr("documentation.readme_en"), "readme_en");
+		doc_form.add_list_item(dl, tr("documentation.readme_es"), "readme_es");
 		int select_btn = doc_form.create_button("&" + tr("ui.select"), true);
 		int back_btn = doc_form.create_button("&" + tr("ui.back"), false, true);
 		doc_form.focus(dl);
@@ -85,46 +89,63 @@ void documentation_menu()
 			if (doc_form.is_pressed(select_btn))
 			{
 				int pos = doc_form.get_list_position(dl);
+				string target_file = "";
+				string title = "";
+
 				if (pos == 0)
 				{
-					string changes_file = "";
-					if (file_exists("settings/docs/changes.txt")) changes_file = "settings/docs/changes.txt";
-					else if (file_exists("docs/changes.txt")) changes_file = "docs/changes.txt";
-					else if (file_exists("changes.txt")) changes_file = "changes.txt";
-
-					if (changes_file != "")
-					{
-						open_documentation_notepad(tr("documentation.file_changes"), changes_file);
-					}
-					else
-					{
-						speak(tr("documentation.changes_not_found"));
-					}
-					break;
+					title = tr("documentation.changes_pt");
+					if (file_exists("settings/docs/changes_pt.txt")) target_file = "settings/docs/changes_pt.txt";
+					else if (file_exists("settings/docs/changes.txt")) target_file = "settings/docs/changes.txt";
+					else if (file_exists("docs/changes_pt.txt")) target_file = "docs/changes_pt.txt";
+					else if (file_exists("changes.txt")) target_file = "changes.txt";
 				}
 				else if (pos == 1)
 				{
-					string readme_file = "";
-					if (file_exists("settings/docs/readme.txt")) readme_file = "settings/docs/readme.txt";
-					else if (file_exists("docs/readme.txt")) readme_file = "docs/readme.txt";
-					else if (file_exists("readme.txt")) readme_file = "readme.txt";
-					else if (file_exists("settings/docs/LEIAME.txt")) readme_file = "settings/docs/LEIAME.txt";
-					else if (file_exists("docs/LEIAME.txt")) readme_file = "docs/LEIAME.txt";
-					else if (file_exists("LEIAME.txt")) readme_file = "LEIAME.txt";
-					else if (file_exists("settings/docs/leame.txt")) readme_file = "settings/docs/leame.txt";
-					else if (file_exists("docs/leame.txt")) readme_file = "docs/leame.txt";
-					else if (file_exists("leame.txt")) readme_file = "leame.txt";
-
-					if (readme_file != "")
-					{
-						open_documentation_notepad(tr("documentation.file_readme"), readme_file);
-					}
-					else
-					{
-						speak(tr("documentation.readme_not_found"));
-					}
-					break;
+					title = tr("documentation.changes_en");
+					if (file_exists("settings/docs/changes_en.txt")) target_file = "settings/docs/changes_en.txt";
+					else if (file_exists("docs/changes_en.txt")) target_file = "docs/changes_en.txt";
+					else if (file_exists("settings/docs/changes.txt")) target_file = "settings/docs/changes.txt";
 				}
+				else if (pos == 2)
+				{
+					title = tr("documentation.changes_es");
+					if (file_exists("settings/docs/changes_es.txt")) target_file = "settings/docs/changes_es.txt";
+					else if (file_exists("docs/changes_es.txt")) target_file = "docs/changes_es.txt";
+					else if (file_exists("settings/docs/changes.txt")) target_file = "settings/docs/changes.txt";
+				}
+				else if (pos == 3)
+				{
+					title = tr("documentation.readme_pt");
+					if (file_exists("settings/docs/readme_pt.txt")) target_file = "settings/docs/readme_pt.txt";
+					else if (file_exists("settings/docs/readme.txt")) target_file = "settings/docs/readme.txt";
+					else if (file_exists("settings/docs/LEIAME.txt")) target_file = "settings/docs/LEIAME.txt";
+				}
+				else if (pos == 4)
+				{
+					title = tr("documentation.readme_en");
+					if (file_exists("settings/docs/readme_en.txt")) target_file = "settings/docs/readme_en.txt";
+					else if (file_exists("docs/readme_en.txt")) target_file = "docs/readme_en.txt";
+					else if (file_exists("settings/docs/readme.txt")) target_file = "settings/docs/readme.txt";
+				}
+				else if (pos == 5)
+				{
+					title = tr("documentation.readme_es");
+					if (file_exists("settings/docs/readme_es.txt")) target_file = "settings/docs/readme_es.txt";
+					else if (file_exists("docs/readme_es.txt")) target_file = "docs/readme_es.txt";
+					else if (file_exists("settings/docs/leame.txt")) target_file = "settings/docs/leame.txt";
+					else if (file_exists("settings/docs/readme.txt")) target_file = "settings/docs/readme.txt";
+				}
+
+				if (target_file != "" && file_exists(target_file))
+				{
+					open_documentation_notepad(title, target_file);
+				}
+				else
+				{
+					speak(tr("documentation.error_opening"));
+				}
+				break;
 			}
 		}
 		if (exit_doc) break;

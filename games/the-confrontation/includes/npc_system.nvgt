@@ -976,8 +976,8 @@ void npc_close_in(npc_instance@ npc, int tx, int ty)
 // ---------------------------------------------------------------------------
 // Death drops
 // ---------------------------------------------------------------------------
-// Semicolon separated item_id:quantity pairs. A pair without a quantity drops
-// a single unit. The item lands on the ground exactly where the NPC fell.
+/* Semicolon separated item_id:quantity pairs. Supports ranges like item_id:min-max.
+   A pair without a quantity drops a single unit. The item lands on the ground exactly where the NPC fell. */
 void npc_drop_death_items(npc_instance@ npc)
 {
 	if (npc is null || npc.data is null) return;
@@ -994,8 +994,21 @@ void npc_drop_death_items(npc_instance@ npc)
 		if (col != -1)
 		{
 			item_id = string_left(spec, col).trim_whitespace();
-			qty = int(string_to_number(spec.substr(col + 1).trim_whitespace()));
-			if (qty < 1) qty = 1;
+			string qstr = spec.substr(col + 1).trim_whitespace();
+			int dash = string_contains(qstr, "-", 1);
+			if (dash != -1)
+			{
+				int qmin = int(string_to_number(string_left(qstr, dash).trim_whitespace()));
+				int qmax = int(string_to_number(qstr.substr(dash + 1).trim_whitespace()));
+				if (qmin < 1) qmin = 1;
+				if (qmax < qmin) qmax = qmin;
+				qty = random(qmin, qmax);
+			}
+			else
+			{
+				qty = int(string_to_number(qstr));
+				if (qty < 1) qty = 1;
+			}
 		}
 		if (item_id == "") continue;
 		spawn_ground_item(item_id, qty, npc.x, npc.y, npc.z, 180000, 480000, "items/item.ogg", 300);

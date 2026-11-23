@@ -191,7 +191,7 @@ int shield_process_damage(int incoming_dmg, const string&in damage_source = "bul
 	{
 		// Only play shield breaking sound (no impact hit sound simultaneously)
 		play_shield_break_sounds(it);
-		speak("Your shield has broken!");
+		/* Shield broken: break sound plays, speech removed to avoid unnecessary chatter */
 		string broken_id = current_shield.id;
 		@current_shield = null;
 		give(broken_id, -1);

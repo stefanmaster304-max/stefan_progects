@@ -2,13 +2,13 @@
 #pragma plugin king_audio_engine
 #pragma plugin nvgt_curl
 
-// Player posture state (sitting / standing). Kept engine-side so every module
-// (staircases, vitals, gameplay loop) can share it without a dedicated
-// pose system.
+/* Player posture state (sitting / standing). Kept engine-side so every module
+   (staircases, vitals, gameplay loop) can share it without a dedicated
+   pose system. */
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
-string ver = "0.3";
+string ver = "0.5";
 
 #include "includes/bgt_compat.nvgt"
 #include "includes/player_character.nvgt"
@@ -83,25 +83,33 @@ bool confirm_exit_dialog()
 	}
 	return false;
 }
-// Toggles the player between sitting and standing (Q key).
+/* Toggles the player between sitting and standing (S key). */
 void toggle_sit_stand()
 {
+	string char_sub = (current_player_character == "annie" || current_player_character == "ilana" || current_player_character == "hane") ? "hane" : "stefan";
 	if (is_sitting)
 	{
 		is_sitting = false;
-		string snd = get_sound_path("standup.ogg");
+		string snd = get_player_sound("stand");
+		if (snd == "") snd = find_sound_in_disk("sounds/players/" + char_sub + "/stand.ogg");
+		if (snd == "") snd = find_sound_in_disk("sounds/players/stefan/stand.ogg");
+		if (snd == "") snd = get_sound_path("players/" + char_sub + "/stand.ogg;players/stefan/stand.ogg;stand.ogg;standup.ogg");
 		if (snd != "") p.play_stationary(snd, false);
-		speak(tr("game.stand_up"));
+		string plat_snd = get_platform_sound(gmt(), "fall");
+		if (plat_snd != "") p.play_stationary(plat_snd, false);
+		speak(tr("game.stand_up"), true);
 	}
 	else
 	{
 		is_sitting = true;
-		string snd = get_sound_path("sitdown.ogg");
+		string snd = get_player_sound("sit");
+		if (snd == "") snd = find_sound_in_disk("sounds/players/" + char_sub + "/sit.ogg");
+		if (snd == "") snd = find_sound_in_disk("sounds/players/stefan/sit.ogg");
+		if (snd == "") snd = get_sound_path("players/" + char_sub + "/sit.ogg;players/stefan/sit.ogg;sit.ogg;sitdown.ogg");
 		if (snd != "") p.play_stationary(snd, false);
-		string platform = gmt();
-		string fall_snd = get_platform_sound(platform, "fall");
-		if (fall_snd != "") p.play_stationary(fall_snd, false);
-		speak(tr("game.sit_down"));
+		string plat_snd = get_platform_sound(gmt(), "fall");
+		if (plat_snd != "") p.play_stationary(plat_snd, false);
+		speak(tr("game.sit_down"), true);
 	}
 }
 int kills=0;
@@ -182,7 +190,7 @@ sound heartbeat;
 
 void load_player_vital_sounds()
 {
-	string char_sub = (current_player_character == "ilana") ? "ylana" : "stefan";
+	string char_sub = (current_player_character == "annie" || current_player_character == "ilana" || current_player_character == "hane") ? "hane" : "stefan";
 	string bpath = find_sound_in_disk("sounds/players/" + char_sub + "/bleeding.ogg");
 	if (bpath == "") bpath = get_player_sound("bleeding");
 	if (bpath == "") bpath = find_sound_in_disk("sounds/players/stefan/bleeding.ogg");
@@ -245,6 +253,7 @@ void play_logo_intro()
 savedata sd(prefsdir+"/settings.dat","gipwjefiqoiqewiofeiofqwehjoiwmoiwaniewnfoipwqenefowqiniosawENGRWORWIOPNHGRNIOOGINWGR");
 void main()
 {
+	cleanup_update_temp();
 	if (file_exists("compile_bundles.trigger") || COMMAND_LINE.find("--compile-bundles") >= 0)
 	{
 		if (file_exists("compile_bundles.trigger")) file_delete("compile_bundles.trigger");
@@ -416,7 +425,8 @@ health+=random(3,7);
 }
 bool shift_held = (key_down(KEY_LSHIFT) or key_down(KEY_RSHIFT) or kb_down("mod_shift"));
 
-if (shift_held && key_pressed(KEY_LEFT))
+/* Character rotation: Q rotates left, E rotates right across cardinal and ordinal directions */
+if ((key_pressed(KEY_Q) or kb_pressed("turn_left")) and !shiftisdown())
 {
 	if (is_sitting)
 	{
@@ -428,7 +438,7 @@ if (shift_held && key_pressed(KEY_LEFT))
 		speak(dir_to_string(getdir(facing)));
 	}
 }
-else if (shift_held && key_pressed(KEY_RIGHT))
+else if ((key_pressed(KEY_E) or kb_pressed("turn_right")) and !shiftisdown())
 {
 	if (is_sitting)
 	{
@@ -655,15 +665,12 @@ if (key_pressed(KEY_TAB) and jumping == 0 and falling == false)
 {
 	quick_inventory_cycle(shiftisdown() ? -1 : 1);
 }
-if ((key_pressed(KEY_Q) or kb_pressed("sit_stand")) and !shiftisdown())
+if (key_pressed(KEY_S) or kb_pressed("sit_stand"))
 {
-	if (jumping == 0 && falling == false)
-	{
-		toggle_sit_stand();
-	}
+	toggle_sit_stand();
 }
-// Quick inventory: Tab and Shift+Tab only move the focus. Enter uses the
-// focused item; there is no quick inventory mode or menu to open or close.
+/* Quick inventory: Tab and Shift+Tab only move the focus. Enter uses the
+   focused item; there is no quick inventory mode or menu to open or close. */
 if (quick_inv_focused and (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER) or kb_pressed("use")))
 {
 	quick_inventory_handle_enter();
@@ -696,7 +703,7 @@ if (dmoving==false and movetimer.elapsed>=movetime)
 {
 	if (is_sitting)
 	{
-		if (kb_pressed("move_forward") or key_pressed(KEY_UP) or kb_pressed("move_back") or key_pressed(KEY_DOWN) or (!shift_held && (kb_pressed("move_left") or key_pressed(KEY_LEFT) or kb_pressed("move_right") or key_pressed(KEY_RIGHT) or kb_down("move_left") or key_down(KEY_LEFT) or kb_down("move_right") or key_down(KEY_RIGHT))) or kb_down("move_forward") or key_down(KEY_UP) or kb_down("move_back") or key_down(KEY_DOWN))
+		if (kb_pressed("move_forward") or key_pressed(KEY_UP) or kb_pressed("move_back") or key_pressed(KEY_DOWN) or kb_pressed("move_left") or key_pressed(KEY_LEFT) or kb_pressed("move_right") or key_pressed(KEY_RIGHT) or kb_down("move_left") or key_down(KEY_LEFT) or kb_down("move_right") or key_down(KEY_RIGHT) or kb_down("move_forward") or key_down(KEY_UP) or kb_down("move_back") or key_down(KEY_DOWN))
 		{
 			if (sitting_speech_debounce.elapsed >= 1500)
 			{
@@ -717,12 +724,12 @@ if (dmoving==false and movetimer.elapsed>=movetime)
 			movetimer.restart();
 			player_step(south);
 		}
-		else if (!shift_held && !alt_held && (kb_down("move_left") or key_down(KEY_LEFT)))
+		else if (!alt_held && (kb_down("move_left") or key_down(KEY_LEFT)))
 		{
 			movetimer.restart();
 			player_step(west);
 		}
-		else if (!shift_held && !alt_held && (kb_down("move_right") or key_down(KEY_RIGHT)))
+		else if (!alt_held && (kb_down("move_right") or key_down(KEY_RIGHT)))
 		{
 			movetimer.restart();
 			player_step(east);
@@ -824,8 +831,11 @@ healtimer.restart();	int actual_fall_dmg = fallcounter * 2;
 if (fallcounter >= 8)
 {
 	is_sitting = true;
-	string sit_snd = get_sound_path("sitdown.ogg");
+	string sit_snd = get_player_sound("sit");
+	if (sit_snd == "") sit_snd = get_sound_path("players/" + ((current_player_character == "annie" || current_player_character == "ilana" || current_player_character == "hane") ? "hane" : "stefan") + "/sit.ogg;sounds/players/stefan/sit.ogg;sit.ogg;sitdown.ogg");
 	if (sit_snd != "") p.play_stationary(sit_snd, false);
+	string pfall = get_platform_sound(gmt(), "fall");
+	if (pfall != "") p.play_stationary(pfall, false);
 	sitting_speech_debounce.restart();
 	speak(tr("game.land_seated"));
 }
@@ -935,11 +945,11 @@ void update_idle_scuff()
 	bool moving = (dmoving == true)
 		|| kb_down("move_forward") || key_down(KEY_UP)
 		|| kb_down("move_back") || key_down(KEY_DOWN)
-		|| (!shift_held && (kb_down("move_left") || key_down(KEY_LEFT)))
-		|| (!shift_held && (kb_down("move_right") || key_down(KEY_RIGHT)))
+		|| kb_down("move_left") || key_down(KEY_LEFT)
+		|| kb_down("move_right") || key_down(KEY_RIGHT)
 		|| jumping == 1 || falling;
-	// The scuff sound only exists after the player has actually moved for the
-	// first time and has walked since the last stop - it must never play on spawn
+	/* The scuff sound only exists after the player has actually moved for the
+	   first time and has walked since the last stop - it must never play on spawn */
 	// or when merely trying to walk while blocked at a map boundary.
 	if (moving || footdrag_enabled == 0 || !has_moved || !player_walked_since_stop)
 	{
@@ -1139,7 +1149,8 @@ selected_default_map=sd.read("selected_default_map");
 if (sd.d.exists("player_character"))
 {
     string pc = sd.read("player_character");
-    if (pc == "stefan" || pc == "ilana")
+    if (pc == "ilana" || pc == "hane") pc = "annie";
+    if (pc == "stefan" || pc == "annie")
         set_player_character(pc, false);
     else
         current_player_character = "";
@@ -1181,7 +1192,7 @@ void migrate_legacy_location_save()
 }
 void save_location()
 {
-    if (current_player_character != "stefan" && current_player_character != "ilana") return;
+    if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana") return;
     savedata loc(get_game_save_path(current_player_character), GAME_SAVE_KEY);
     loc.add("mapname", mapname);
     loc.add("pos_x", int(me.x));
@@ -1200,6 +1211,7 @@ void save_location()
     loc.add("inventory_data", serialize_inventory());
     loc.add("is_sitting", is_sitting ? 1 : 0);
     loc.add("discovered_maps", serialize_discovered_maps());
+    loc.add("starter_pack_granted", 1);
     loc.add("kills", kills);
     loc.save();
 }
@@ -1217,7 +1229,7 @@ void clear_location()
 }
 void reset_location_on_death()
 {
-    if (current_player_character != "stefan" && current_player_character != "ilana") return;
+    if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana") return;
     string save_path = get_game_save_path(current_player_character);
     savedata loc(save_path, GAME_SAVE_KEY);
     loc.load();
@@ -1236,21 +1248,22 @@ void reset_location_on_death()
     loc.add("maxhealth", maxhealth);
     loc.add("health", maxhealth);
     loc.add("player_character", current_player_character);
-    loc.add("current_weapon", current_weapon_id);
-    if (has_shield_equipped())
-    {
-        loc.add("equipped_shield_id", current_shield.id);
-        loc.add("equipped_shield_durability", current_shield.durability);
-    }
-    // Items are NOT lost on death! Carried inventory is preserved and saved.
+    /* On death: equipped weapon is unequipped and equipped shield is removed */
+    current_weapon_id = "";
+    remove_all_equipment();
+    loc.add("current_weapon", "");
+    loc.add("equipped_shield_id", "");
+    loc.add("equipped_shield_durability", 0);
+    /* Items are NOT lost on death! Carried inventory is preserved and saved. */
     loc.add("inventory_data", serialize_inventory());
     loc.add("is_sitting", 0);
     loc.add("discovered_maps", serialize_discovered_maps());
+    loc.add("starter_pack_granted", 1);
     loc.save();
 }
 void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz, int &out lfacing)
 {
-    if (current_player_character != "stefan" && current_player_character != "ilana")
+    if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana")
     {
         saved_map = "florest";
         string[] available = get_available_maps();
@@ -1300,10 +1313,15 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         {
             deserialize_inventory(loc.read("inventory_data"));
         }
-        // Starter Pack as standard default item in the inventory for both characters:
-        if (get_item_count("starter pack") == 0 && get_item_count("starter_pack") == 0)
+        /* Starter Pack is given ONLY once per character on first creation: */
+        if (!loc.d.exists("starter_pack_granted"))
         {
-            give("starter pack", 1);
+            if (get_item_count("starter pack") == 0 && get_item_count("starter_pack") == 0)
+            {
+                give("starter pack", 1);
+            }
+            loc.add("starter_pack_granted", 1);
+            loc.save();
         }
         if (loc.d.exists("current_weapon"))
         {

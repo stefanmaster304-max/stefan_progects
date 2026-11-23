@@ -5,6 +5,143 @@ This document records the chronological history of updates, improvements, and fi
 
 
 -------------------------------------------------------------------------------
+New on November 23, 2026 at 18:15 (v0.5 Audio & Annie Update)
+-------------------------------------------------------------------------------
+
+1. Som de Queda de Plataforma ao Sentar e Levantar:
+   - Ao pressionar a tecla S para sentar ou levantar, o jogo agora reproduz o som exato de queda da plataforma onde o jogador está pisando (fall.ogg) em conjunto com o respectivo som de sit.ogg ou stand.ogg.
+
+2. Renomeação da Personagem Feminina para Annie:
+   - A personagem feminina foi renomeada de Ilana para Annie, conectando sua pasta de áudio correspondente (sounds/players/hane/) com todas as falas da personagem Aria e migrando automaticamente saves anteriores.
+
+3. Atualização da Pasta de Músicas e Novo Pacote de Sons:
+   - A pasta de trilha sonora foi padronizada para sounds/Music/ e um novo pacote sounds.zip atualizado foi gerado e disponibilizado para download.
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 12:25 (v0.5 Update)
+-------------------------------------------------------------------------------
+
+1. Correção Sonora no Pacote Inicial (Starter Pack) em Modo Compilado:
+   - Corrigida a reprodução do som de abertura do pacote inicial no cliente compilado, adicionando suporte resiliente para pack.ogg e _packageopen.ogg e garantindo o registro permanente do pacote.
+
+2. Áudio de Plataforma ao Sentar e Levantar:
+   - Ao pressionar a tecla S para sentar, o jogo agora reproduz o som da plataforma onde o personagem está pisando (grama, concreto, madeira, pedra, terra, etc.) em conjunto com o som de sentar.
+   - Ao levantar-se, o som de passo na plataforma também é executado harmonicamente junto ao som de levantar.
+
+3. Eliminação Definitiva de Pastas Temporárias de Atualização:
+   - A pasta temporária update_temp e todos os seus arquivos (contents_payload, maps_payload, scripts e pacotes baixados) agora são removidos de forma completa e imediata pelo atualizador antes da reinicialização do jogo e também na inicialização inicial do cliente.
+
+4. Bips de Progresso no Estilo NVDA para Todas as Atualizações:
+   - O mesmo sistema de bips com ondas senoidais puras e frequência crescente (estilo barra de progresso do NVDA) agora é utilizado em todos os downloads do jogo: pacote de sons, atualização de conteúdo, mapas e executável.
+
+5. Localização Completa das Mensagens do Atualizador:
+   - Traduzidas as instruções de download ("Baixando. Pressione Barra de espaço...", "Tamanho do arquivo", "Total baixado", "Total restante", "Bips de progresso ativados/desativados") para Português, Inglês e Espanhol.
+
+6. Reformulação Completa do Site Oficial:
+   - Nova página inicial com calorosa mensagem de boas-vindas do Stefan Projects e direcionamento intuitivo para a página de projetos.
+   - Página de projetos destacando The Confront com informações completas de jogabilidade, mapas de teste e desenvolvimento.
+   - Página oficial do jogo reestruturada: descrição e mecânicas detalhadas apresentadas em primeiro lugar, e painel de downloads posicionado estrategicamente ao final da página.
+
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 11:45 (v0.4 Build 4 Update)
+-------------------------------------------------------------------------------
+
+1. Compilação de Mapas e Ocultação do Vale dos Ursos:
+   - O mapa dos ursos ("Bears Valey") foi devidamente compilado no pacote criptografado settings/maps.dat com o requisito de Ressurreição 4 mínima, garantindo que ele não apareça prematuramente na lista de mapas do cliente compilado.
+   - Adicionado e compilado o novo mapa "Robots World" (robots map) com geradores de robôs avançados, plataforma de concreto e ambiência sonora de cidade.
+
+2. Novos NPCs Criados e Criptografados no Pacote de Conteúdo:
+   - Mine Robocop (mine_robocop.npc): robô tático armado com escudo de metal, 5.500 HP, passos próprios e tiros de precisão.
+   - Patrulha (patrol.npc): robô patrulheiro de reconhecimento ágil com 5.400 HP, disparos rápidos e vocalizações mecânicas em 3D.
+   - Ambos os novos NPCs foram integrados e compilados com sucesso no pacote criptografado settings/contents.dat, com drops equilibrados de moedas (ouro, prata, cristais e diamantes).
+
+3. Atualização Simultânea de Conteúdo e Mapas:
+   - Os novos pacotes binários maps.dat e contents.dat foram gerados com as últimas definições e integrados aos servidores de atualização e pacotes de lançamento.
+
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 11:10 (v0.4 Build 3 Update)
+-------------------------------------------------------------------------------
+
+1. Documentação Trilíngue Completa e Menu de Ajuda Expandido:
+   - Os arquivos de documentação Leia-me (readme) e Histórico de Alterações (changes) agora estão disponíveis nos 3 idiomas oficiais: Português, Inglês e Espanhol.
+   - O menu de documentação oferece agora opções dedicadas para consultar as alterações recentes e o manual em cada um dos idiomas.
+
+2. Diálogo Nativo Virtual para Pacote de Sons:
+   - Substituída a antiga caixa de diálogo padrão do Windows por diálogo de áudio virtual acessível no próprio áudio form do jogo.
+   - Suporte a confirmação via Y ou Enter para iniciar o download, e Escape ou N para cancelar e continuar sem sons.
+
+3. Notificação Falada e Bips de Progresso de Extração no Estilo NVDA:
+   - Durante a extração do pacote de som, o jogo anuncia "Extraindo pacote de sons..." e emite bips progressivos de pitch incremental com duração curta, semelhantes à barra de progresso do NVDA, com bip tonal harmônico de conclusão.
+
+4. Limpeza Completa de Pastas e Arquivos Temporários:
+   - Após a conclusão e aplicação de qualquer atualização (conteúdo, mapas, sons ou executável), todos os diretórios e arquivos temporários (como update_temp) são completamente eliminados do disco.
+
+5. Ajuste no Pacote Inicial (Starter Pack):
+   - O Starter Pack agora é concedido estritamente na primeira vez que o personagem é criado. Ao trocar ou reentrar em qualquer mapa, o jogo não concede mais pacotes duplicados.
+
+6. Regras de Morte Refinadas:
+   - O inventário geral do jogador é mantido intacto após a morte, porém a arma empunhada no momento é automaticamente desequipada e qualquer escudo equipado é removido.
+
+7. Blindagem no Processo de Atualização de Executável:
+   - O script de reinicialização do atualizador no Windows agora monitora o encerramento completo do processo antes da substituição e utiliza renomeação segura para prevenir bloqueios de arquivo.
+
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 10:20 (v0.4 Build 2 Update)
+-------------------------------------------------------------------------------
+
+1. Opções de Download no Atualizador (Executável ou Arquivo ZIP Completo):
+   - Ao confirmar uma atualização do jogo, é exibido um diálogo acessível perguntando: "O que você deseja baixar?" com as opções:
+     * "Apenas o executável": baixa diretamente o binário tcf.exe atualizado.
+     * "Arquivo ZIP completo": baixa o pacote completo em zip contendo documentação atualizada (changes.txt, manuais), configurações e binários.
+   - Diálogo totalmente traduzido em Português, Inglês e Espanhol com navegação por som e teclado (Enter/Setas/Escape).
+
+2. Correção de Áudio e Ação da Tecla S (Sentar e Levantar):
+   - A tecla S agora executa de maneira confiável a transição de postura do personagem (sentar e levantar).
+   - Corrigida a reprodução dos sons dedicados de postura: reproduz os sons reais de sentar (sit.ogg) e levantar (stand.ogg) de cada personagem.
+
+3. Redução de Mensagens de Voz Desnecessárias (Menos Falatório):
+   - Silenciadas narrações verbais repetitivas durante o combate:
+     * Consumo de poção de vida: reproduz apenas o som de cura/beber, sem voz.
+     * Ativação do cartão anti-morte: reproduz apenas o som deathfree.ogg, sem voz.
+     * Equipar armas: reproduz apenas o som de saque/desembainhar, sem voz.
+     * Quebra de escudo: reproduz apenas o som de estilhaço/quebra do escudo, sem voz.
+
+4. Balanceamento de Recompensas e Drops de NPCs:
+   - Configurados drops equilibrados de moedas em todos os NPCs ao morrerem:
+     * Coelho (rabbith.npc): drop fixo de 50 cristais dourados (golden_crystal:50) + quantias aleatórias baixas de prata, ouro e diamante.
+     * Coiote (coiote.npc): drop fixo de 100 diamantes (diamond:100) + quantias aleatórias baixas de ouro, prata e cristais dourados.
+     * Lobo (wolf.npc): drop fixo de 150 ouros (gold:150) + quantias aleatórias baixas de prata, cristal dourado, diamante e cartão anti-morte.
+     * Demais NPCs (Urso, Cão, Robô policial): drops aleatórios baixos de cada moeda (ouro, prata, cristal dourado e diamante).
+   - Registros criptografados atualizados com sucesso em contents.dat.
+
+5. Preservação de Inventário na Morte:
+   - O jogador não perde seus itens ao morrer; todo o inventário é preservado e salvo.
+   - O Starter Pack é garantido como item padrão nos personagens.
+
+
+-------------------------------------------------------------------------------
+New on November 23, 2026 at 09:50 (v0.4 Build 1 Update)
+-------------------------------------------------------------------------------
+
+1. Controles Atualizados de Postura e Rotação:
+   - A tecla S agora alterna a postura do jogador entre sentar e levantar (substituindo a antiga tecla Q).
+   - As teclas Q e E agora realizam a rotação da orientação e mira do personagem para Norte, Sul, Leste, Oeste, Sudoeste e direções intermediárias em incrementos de 45 graus (Q gira para a esquerda, E gira para a direita).
+   - As combinações Shift + Seta Esquerda e Shift + Seta Direita foram desativadas para rotação.
+   - Mensagens de auxílio e dicas ("Você está sentado. Pressione S para se levantar") devidamente atualizadas nos idiomas Português, Inglês e Espanhol.
+
+2. Padronização do Executável do Jogo (TCF):
+   - Removida a criação de executáveis duplicados (dw.exe).
+   - O executável oficial único do jogo agora é tcf.exe em todos os pacotes, atualizações e scripts de reinicialização.
+
+3. Atualizador e Distribuição:
+   - Suporte nativo a atualizações menores de build/revisão mantendo o número da versão (0.4 Build 1).
+   - O atualizador detecta e anuncia atualizações faladas específicas de maneira suave e silenciosa.
+
+
+-------------------------------------------------------------------------------
 New on November 22, 2026 at 19:35
 -------------------------------------------------------------------------------
 
