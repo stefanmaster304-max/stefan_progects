@@ -1,3 +1,12 @@
+Build 8 | 24 de novembro de 2026 às 19:01 (America/Sao_Paulo)
+- Elevadores: corrigida a digitação do ID e do nome dos andares; sons de porta e viagem agora são escolhidos pelos seletores de pasta e arquivo já usados pelo jogo.
+- Viagem: ao existir apenas um destino diferente do andar atual, Enter inicia a viagem sem abrir o painel; com vários destinos, o painel continua disponível. O atalho também abre as portas para a saída automática no ponto configurado.
+- Sons do primeiro uso: o instalador extrai somente os arquivos de `sounds/` do ZIP completo, reduzindo o trabalho temporário; cópia validada e troca da pasta com restauração segura em caso de falha.
+
+Build 7 | 24 de novembro de 2026 às 18:41 (America/Sao_Paulo)
+- Elevadores: o construtor permite configurar uma coluna vertical com dois ou mais andares, posições da porta e da cabine, duração em milissegundos e sons de abrir, fechar e viagem.
+- Jogo: Alt+Enter entra na cabine, abre o painel para escolher o destino e, após a viagem sonora, abre as portas para sair no andar selecionado; movimento e queda ficam bloqueados dentro da cabine.
+
 Build 6 | 24 de novembro de 2026 às 17:50 (America/Sao_Paulo)
 - Controles: Shift+Enter interage com lojas posicionadas no mapa; Enter usa o item selecionado no inventário rápido e Alt+Enter continua verificando pontos de viagem.
 

@@ -10,6 +10,6 @@ TIENDAS Y MONEDAS
 El juego tiene dos monedas: Gold, que se muestra como Oro en español, y Golden Crystal, que se muestra como Cristal dorado. Los enemigos pueden otorgar estas monedas y objetos. Las tiendas se colocan en los mapas con el constructor; pulsa Enter dentro de la tienda, usa las flechas para elegir una categoría y Tab para ver sus artículos. La categoría define los precios y cuál de las dos monedas se cobrará.
 
 CONTROLES PREDETERMINADOS
-Flechas: mover. Q/E: girar. Espacio: saltar. Ctrl izquierdo: disparar. R: recargar. A: consultar munición. Tab: recorrer el inventario. Enter: usar o abrir una tienda en su ubicación. Alt+Enter: viajar en silencio desde un TravelPoint válido si el destino permite el acceso. C: coordenadas. Z: ubicación. H: salud. L: nivel y progreso. K: eliminaciones. B: constructor. P: pausar. Esc: salir.
+Flechas: mover. Q/E: girar. Espacio: saltar. Ctrl izquierdo: disparar. R: recargar. A: consultar munición. Tab: recorrer el inventario. Enter: usar el objeto seleccionado del inventario rápido. Mayús+Enter: interactuar con una tienda en la ubicación actual. Alt+Enter: entrar en un ascensor, elegir un piso o salir; fuera del ascensor, usar un TravelPoint válido si el destino permite el acceso. C: coordenadas. Z: ubicación. H: salud. L: nivel y progreso. K: eliminaciones. B: constructor. P: pausar. Esc: salir.
 
 Los controles se pueden cambiar en la configuración. The Confront sigue en desarrollo; los mapas y las reglas pueden cambiar entre versiones.

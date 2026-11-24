@@ -1,3 +1,12 @@
+Build 8 | 24 de noviembre de 2026 a las 19:01 (America/Sao_Paulo)
+- Ascensores: se corrigió la escritura del identificador y los nombres de los pisos; los sonidos de puertas y viaje ahora se eligen con los selectores de carpetas y archivos del juego.
+- Viaje: si solo existe un destino distinto del piso actual, Enter inicia el trayecto sin abrir el panel; con varios destinos, el panel sigue disponible. La tecla de interacción también abre las puertas para salir automáticamente en el punto configurado.
+- Primera instalación de sonidos: el instalador extrae solo las entradas `sounds/` del ZIP completo, reduciendo el trabajo temporal; valida la copia y restaura la carpeta anterior si falla el reemplazo.
+
+Build 7 | 24 de noviembre de 2026 a las 18:41 (America/Sao_Paulo)
+- Ascensores: el constructor configura una columna vertical con dos o más pisos, posiciones de la puerta y la cabina, duración en milisegundos y sonidos de apertura, cierre y viaje.
+- Juego: Alt+Enter permite entrar en la cabina, abrir el panel de pisos y, tras el viaje temporizado, abrir las puertas para salir en el destino elegido; el movimiento y las caídas se bloquean dentro de la cabina.
+
 Build 6 | 24 de noviembre de 2026 a las 17:50 (America/Sao_Paulo)
 - Controles: Mayús+Enter interactúa con las tiendas colocadas en el mapa; Enter usa el objeto seleccionado del inventario rápido y Alt+Enter sigue comprobando los puntos de viaje.
 

@@ -1,0 +1,240 @@
+bool elevator_builder_integer(const string&in input, int&out value)
+{
+	string raw = input.trim_whitespace();
+	if (raw == "") return false;
+	uint start = 0;
+	if (raw.substr(0, 1) == "-")
+	{
+		if (raw.length() == 1) return false;
+		start = 1;
+	}
+	for (uint i = start; i < raw.length(); i++)
+		if ("0123456789".find(raw.substr(i, 1)) < 0) return false;
+	value = int(string_to_number(raw));
+	return true;
+}
+
+bool elevator_id_is_valid(const string&in id)
+{
+	if (id == "" || id.length() > 40) return false;
+	for (uint i = 0; i < id.length(); i++)
+	{
+		string c = id.substr(i, 1);
+		if ("abcdefghijklmnopqrstuvwxyz0123456789_-".find(c) < 0) return false;
+	}
+	return true;
+}
+
+bool elevator_coordinate_is_valid(int x, int y, int z)
+{
+	return x >= minx && x <= maxx && y >= miny && y <= maxy && z >= minz && z <= maxz;
+}
+
+void build_map_elevator()
+{
+	if (SCRIPT_COMPILED || is_map_encrypted(mapname))
+	{
+		speak(tr("builder.cannot_build_encrypted"));
+		return;
+	}
+
+	audio_form settings_form;
+	settings_form.create_window(tr("elevator.builder_title"), false, true, false);
+	int id_field = settings_form.create_input_box(tr("elevator.id"), "");
+	int duration_field = settings_form.create_input_box(tr("elevator.travel_time"), "5000");
+	int open_sound_button = settings_form.create_button(tr("elevator.door_open_sound"));
+	int close_sound_button = settings_form.create_button(tr("elevator.door_close_sound"));
+	int travel_sound_button = settings_form.create_button(tr("elevator.travel_sound"));
+	settings_form.set_disallowed_chars(duration_field, "0123456789", true, tr("elevator.invalid_duration"));
+	int save_settings = settings_form.create_button("&" + tr("ui.next"), true);
+	int cancel_settings = settings_form.create_button("&" + tr("ui.cancel"), false, true);
+	settings_form.set_default_controls(save_settings, cancel_settings);
+	settings_form.focus(id_field);
+
+	string elevator_id;
+	int travel_time = 0;
+	string open_sound, close_sound, travel_sound;
+	int chosen_sound_button = -1;
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		settings_form.monitor();
+		if (settings_form.is_pressed(open_sound_button)) chosen_sound_button = open_sound_button;
+		else if (settings_form.is_pressed(close_sound_button)) chosen_sound_button = close_sound_button;
+		else if (settings_form.is_pressed(travel_sound_button)) chosen_sound_button = travel_sound_button;
+		if (chosen_sound_button >= 0)
+		{
+			if (chosen_sound_button == open_sound_button)
+				open_sound = select_sound_by_category_dialog(tr("elevator.door_open_sound"), open_sound, "", false);
+			else if (chosen_sound_button == close_sound_button)
+				close_sound = select_sound_by_category_dialog(tr("elevator.door_close_sound"), close_sound, "", false);
+			else
+				travel_sound = select_sound_by_category_dialog(tr("elevator.travel_sound"), travel_sound, "", false);
+			settings_form.set_caption(open_sound_button, tr("elevator.door_open_sound") + (open_sound == "" ? "" : ": " + open_sound));
+			settings_form.set_caption(close_sound_button, tr("elevator.door_close_sound") + (close_sound == "" ? "" : ": " + close_sound));
+			settings_form.set_caption(travel_sound_button, tr("elevator.travel_sound") + (travel_sound == "" ? "" : ": " + travel_sound));
+			chosen_sound_button = -1;
+			settings_form.focus(id_field);
+			continue;
+		}
+		if (key_pressed(KEY_ESCAPE) || settings_form.is_pressed(cancel_settings))
+		{
+			speak(tr("ui.cancel"));
+			return;
+		}
+		if (!settings_form.is_pressed(save_settings)) continue;
+
+		elevator_id = string_to_lower_case(settings_form.get_text(id_field).trim_whitespace());
+		if (!elevator_id_is_valid(elevator_id))
+		{
+			speak(tr("elevator.invalid_id"));
+			settings_form.focus(id_field);
+			continue;
+		}
+		if (find_map_elevator(elevator_id) !is null)
+		{
+			speak(tr("elevator.id_exists"));
+			settings_form.focus(id_field);
+			continue;
+		}
+		if (!elevator_builder_integer(settings_form.get_text(duration_field), travel_time) || travel_time < 100 || travel_time > 300000)
+		{
+			speak(tr("elevator.invalid_duration"));
+			settings_form.focus(duration_field);
+			continue;
+		}
+		if (open_sound.find(":") >= 0 || close_sound.find(":") >= 0 || travel_sound.find(":") >= 0 ||
+			get_sound_path(open_sound) == "" || get_sound_path(close_sound) == "" || get_sound_path(travel_sound) == "")
+		{
+			speak(tr("elevator.invalid_sound"));
+			continue;
+		}
+		break;
+	}
+	settings_form.reset();
+
+	map_elevator_floor@[] floors(0);
+	bool finish_elevator = false;
+	while (!finish_elevator)
+	{
+		audio_form floor_form;
+		floor_form.create_window(tr("elevator.floor_title", {"" + (floors.length() + 1)}), false, true, false);
+		string default_name = tr("elevator.floor_default", {"" + (floors.length() + 1)});
+		int floor_name_field = floor_form.create_input_box(tr("elevator.floor_name"), default_name);
+		int door_x_field = floor_form.create_input_box(tr("elevator.door_x"), "" + int(round(me.x, 0)));
+		int door_y_field = floor_form.create_input_box(tr("elevator.door_y"), "" + int(round(me.y, 0)));
+		int door_z_field = floor_form.create_input_box(tr("elevator.door_z"), "" + int(round(me.z, 0)));
+		int cabin_x_default = floors.length() > 0 ? floors[0].cabin_x : int(round(me.x, 0));
+		int cabin_y_default = floors.length() > 0 ? floors[0].cabin_y : int(round(me.y, 0));
+		int cabin_z_default = int(round(me.z, 0));
+		if (floors.length() == 0 && cabin_z_default < maxz) cabin_z_default++;
+		else if (floors.length() == 0 && cabin_z_default > minz) cabin_z_default--;
+		int cabin_x_field = floor_form.create_input_box(tr("elevator.cabin_x"), "" + cabin_x_default);
+		int cabin_y_field = floor_form.create_input_box(tr("elevator.cabin_y"), "" + cabin_y_default);
+		int cabin_z_field = floor_form.create_input_box(tr("elevator.cabin_z"), "" + cabin_z_default);
+		int[] coordinate_fields = {door_x_field, door_y_field, door_z_field, cabin_x_field, cabin_y_field, cabin_z_field};
+		for (uint i = 0; i < coordinate_fields.length(); i++)
+			floor_form.set_disallowed_chars(coordinate_fields[i], "0123456789-", true, tr("travel.whole_coordinates"));
+		int add_floor = floor_form.create_button("&" + tr("elevator.add_floor"), true);
+		int finish_floor = floor_form.create_button("&" + tr("elevator.finish_elevator"));
+		int cancel_floor = floor_form.create_button("&" + tr("ui.cancel"), false, true);
+		floor_form.set_default_controls(add_floor, cancel_floor);
+		floor_form.focus(floor_name_field);
+
+		while (true)
+		{
+			wait(5);
+			update_game_world();
+			floor_form.monitor();
+			if (key_pressed(KEY_ESCAPE) || floor_form.is_pressed(cancel_floor))
+			{
+				speak(tr("ui.cancel"));
+				return;
+			}
+			bool add_another = floor_form.is_pressed(add_floor);
+			bool finish_now = floor_form.is_pressed(finish_floor);
+			if (!add_another && !finish_now) continue;
+
+			string floor_name = floor_form.get_text(floor_name_field).trim_whitespace();
+			if (floor_name == "" || floor_name.find(":") >= 0 || floor_name.find("\n") >= 0 || floor_name.find("\r") >= 0)
+			{
+				speak(tr("elevator.invalid_floor_name"));
+				floor_form.focus(floor_name_field);
+				continue;
+			}
+			bool duplicate_name = false;
+			for (uint i = 0; i < floors.length(); i++)
+				if (string_to_lower_case(floors[i].name) == string_to_lower_case(floor_name)) duplicate_name = true;
+			if (duplicate_name)
+			{
+				speak(tr("elevator.duplicate_floor"));
+				floor_form.focus(floor_name_field);
+				continue;
+			}
+
+			map_elevator_floor@ floor = map_elevator_floor();
+			floor.elevator_id = elevator_id;
+			floor.name = floor_name;
+			int[] coordinates(6);
+			bool valid_coordinates = true;
+			for (uint i = 0; i < coordinate_fields.length(); i++)
+				if (!elevator_builder_integer(floor_form.get_text(coordinate_fields[i]), coordinates[i])) valid_coordinates = false;
+			if (!valid_coordinates)
+			{
+				speak(tr("travel.whole_coordinates"));
+				floor_form.focus(door_x_field);
+				continue;
+			}
+			floor.door_x = coordinates[0]; floor.door_y = coordinates[1]; floor.door_z = coordinates[2];
+			floor.cabin_x = coordinates[3]; floor.cabin_y = coordinates[4]; floor.cabin_z = coordinates[5];
+			if (!elevator_coordinate_is_valid(floor.door_x, floor.door_y, floor.door_z) ||
+				!elevator_coordinate_is_valid(floor.cabin_x, floor.cabin_y, floor.cabin_z))
+			{
+				speak(tr("elevator.coordinates_out_of_map"));
+				continue;
+			}
+			if (floors.length() > 0 && (floor.cabin_x != floors[0].cabin_x || floor.cabin_y != floors[0].cabin_y))
+			{
+				speak(tr("elevator.shaft_must_be_vertical"));
+				floor_form.focus(cabin_x_field);
+				continue;
+			}
+			bool duplicate_cabin_height = false;
+			for (uint i = 0; i < floors.length(); i++)
+				if (floor.cabin_z == floors[i].cabin_z) duplicate_cabin_height = true;
+			if (duplicate_cabin_height)
+			{
+				speak(tr("elevator.duplicate_elevation"));
+				floor_form.focus(cabin_z_field);
+				continue;
+			}
+			if (floor.door_x == floor.cabin_x && floor.door_y == floor.cabin_y && floor.door_z == floor.cabin_z)
+			{
+				speak(tr("elevator.door_and_cabin_must_differ"));
+				floor_form.focus(cabin_z_field);
+				continue;
+			}
+			floors.insert_last(floor);
+			if (finish_now)
+			{
+				if (floors.length() < 2)
+				{
+					speak(tr("elevator.at_least_two_floors"));
+					break;
+				}
+				finish_elevator = true;
+			}
+			break;
+		}
+	}
+
+	string map_lines = "elevator:" + elevator_id + ":" + travel_time + ":" + open_sound + ":" + close_sound + ":" + travel_sound;
+	for (uint i = 0; i < floors.length(); i++)
+	{
+		map_elevator_floor@ floor = floors[i];
+		map_lines += "\nelevatorfloor:" + elevator_id + ":" + floor.name + ":" + floor.door_x + ":" + floor.door_y + ":" + floor.door_z + ":" + floor.cabin_x + ":" + floor.cabin_y + ":" + floor.cabin_z;
+	}
+	save_to_map(map_lines);
+	speak(tr("elevator.created", {elevator_id, "" + floors.length()}));
+}

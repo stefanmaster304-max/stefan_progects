@@ -21,6 +21,7 @@ string ver = "0.6";
 #include "includes/translator.nvgt"
 #include"includes/sd.nvgt"
 #include"includes/map.nvgt"
+#include"includes/elevator_system.nvgt"
 #include"includes/staircase.nvgt"
 #include "includes/src.nvgt"
 #include "includes/player_progress.nvgt"
@@ -532,7 +533,7 @@ if (vol_up_pressed || vol_down_pressed || music_up_pressed || music_down_pressed
 }
 
 // Diving & Surfacing (Page Down to descend/dive, Page Up to climb/surface)
-if (!onstaircase)
+if (!player_inside_elevator && !onstaircase)
 {
 	if (kb_pressed("stairs_down") || key_pressed(KEY_NEXT) || key_pressed(KEY_PAGEDOWN))
 	{
@@ -659,11 +660,15 @@ if (key_pressed(KEY_S) or kb_pressed("sit_stand"))
 	toggle_sit_stand();
 }
 /* Tab and Shift+Tab move quick-inventory focus. Enter uses its focused item.
-   Shift+Enter interacts with a store, while Alt+Enter checks a travel point. */
+   Shift+Enter interacts with stores; Alt+Enter enters an elevator or travel point. */
 bool enter_pressed = key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER);
 if (altisdown() && enter_pressed)
 {
-	use_travel_point_at_player();
+	if (!try_use_elevator_at_player()) use_travel_point_at_player();
+}
+else if (player_inside_elevator && enter_pressed && !shiftisdown())
+{
+	try_use_elevator_at_player();
 }
 else if (shiftisdown() && enter_pressed)
 {
@@ -694,7 +699,7 @@ if (jumping==1)
 movetime=airtime;
 else
 movetime=walktime;
-if (dmoving==false and movetimer.elapsed>=movetime)
+if (!player_inside_elevator && dmoving==false and movetimer.elapsed>=movetime)
 {
 	if (is_sitting)
 	{
@@ -734,7 +739,7 @@ if (dmoving==false and movetimer.elapsed>=movetime)
 if (me.z < minz) me.z = minz;
 // Jump is triggered by the Spacebar alone. Ctrl + Space does nothing at
 // all, and Control alone only fires.
-if (key_pressed(KEY_SPACE) and !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
+if (!player_inside_elevator && key_pressed(KEY_SPACE) and !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
 {
 	if (is_sitting)
 	{
@@ -758,7 +763,7 @@ if (key_pressed(KEY_SPACE) and !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTRO
 		}
 	}
 }
-if (jumping==1)
+if (jumping==1 && !player_inside_elevator)
 {
 if (atapex==true and jumptimer.elapsed>=apextime)
 {
@@ -785,13 +790,13 @@ atapex=true;
 }
 }
 }
-if(jumping==0 && !falling && !is_underwater && me.z > minz && gmt()=="" and dmoving==false)
+if(!player_inside_elevator && jumping==0 && !falling && !is_underwater && me.z > minz && gmt()=="" and dmoving==false)
 {
 falling=true;
 fallcounter=0;
 p.play_stationary(get_player_sound("fall"), false);
 }
-if(falling)
+if(falling && !player_inside_elevator)
 {
 if(falltimer.elapsed>=falltime && me.z > minz)
 {
@@ -935,6 +940,12 @@ p.play_stationary(get_player_sound("fall"), false);
 // a scuff sound simply play nothing (no fallback, no generic sound).
 void update_idle_scuff()
 {
+	if (player_inside_elevator)
+	{
+		idle_scuff_primed = false;
+		idle_scuff_played = false;
+		return;
+	}
 	bool shift_held = (key_down(KEY_LSHIFT) or key_down(KEY_RSHIFT) or kb_down("mod_shift"));
 	bool moving = (dmoving == true)
 		|| kb_down("move_forward") || key_down(KEY_UP)

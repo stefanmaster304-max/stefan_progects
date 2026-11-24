@@ -1,0 +1,257 @@
+// Map-authored elevators. Each controller has one shared vertical shaft and
+// two or more landing/cabin coordinate pairs stored in the map file.
+class map_elevator_definition
+{
+	string id;
+	int travel_time_ms;
+	string door_open_sound;
+	string door_close_sound;
+	string travel_sound;
+}
+
+class map_elevator_floor
+{
+	string elevator_id;
+	string name;
+	int door_x, door_y, door_z;
+	int cabin_x, cabin_y, cabin_z;
+}
+
+map_elevator_definition@[] map_elevator_definitions(0);
+map_elevator_floor@[] map_elevator_floors(0);
+sound_pool elevator_audio(16);
+bool player_inside_elevator = false;
+bool elevator_arrived_waiting_for_exit = false;
+string player_elevator_id = "";
+string player_elevator_floor = "";
+
+map_elevator_definition@ find_map_elevator(const string&in id)
+{
+	string wanted = string_to_lower_case(id.trim_whitespace());
+	for (uint i = 0; i < map_elevator_definitions.length(); i++)
+	{
+		map_elevator_definition@ elevator = map_elevator_definitions[i];
+		if (elevator !is null && string_to_lower_case(elevator.id) == wanted) return elevator;
+	}
+	return null;
+}
+
+int map_elevator_floor_count(const string&in id)
+{
+	int count = 0;
+	string wanted = string_to_lower_case(id.trim_whitespace());
+	for (uint i = 0; i < map_elevator_floors.length(); i++)
+	{
+		map_elevator_floor@ floor = map_elevator_floors[i];
+		if (floor !is null && string_to_lower_case(floor.elevator_id) == wanted) count++;
+	}
+	return count;
+}
+
+map_elevator_floor@ find_map_elevator_floor(const string&in elevator_id, const string&in floor_name)
+{
+	string wanted_id = string_to_lower_case(elevator_id.trim_whitespace());
+	string wanted_floor = string_to_lower_case(floor_name.trim_whitespace());
+	for (uint i = 0; i < map_elevator_floors.length(); i++)
+	{
+		map_elevator_floor@ floor = map_elevator_floors[i];
+		if (floor !is null && string_to_lower_case(floor.elevator_id) == wanted_id &&
+			string_to_lower_case(floor.name) == wanted_floor) return floor;
+	}
+	return null;
+}
+
+void parse_map_elevator(string[]@ fields)
+{
+	if (fields is null || fields.length() < 6) return;
+	string id = string_to_lower_case(fields[1].trim_whitespace());
+	int duration = int(string_to_number(fields[2]));
+	string open_sound = fields[3].trim_whitespace();
+	string close_sound = fields[4].trim_whitespace();
+	string travel_sound = fields[5].trim_whitespace();
+	if (id == "" || duration < 100 || duration > 300000 || open_sound == "" || close_sound == "" || travel_sound == "") return;
+	if (find_map_elevator(id) !is null) return;
+	map_elevator_definition@ elevator = map_elevator_definition();
+	elevator.id = id;
+	elevator.travel_time_ms = duration;
+	elevator.door_open_sound = open_sound;
+	elevator.door_close_sound = close_sound;
+	elevator.travel_sound = travel_sound;
+	map_elevator_definitions.insert_last(elevator);
+}
+
+void parse_map_elevator_floor(string[]@ fields)
+{
+	if (fields is null || fields.length() < 9) return;
+	string id = string_to_lower_case(fields[1].trim_whitespace());
+	string floor_name = fields[2].trim_whitespace();
+	if (id == "" || floor_name == "" || find_map_elevator_floor(id, floor_name) !is null) return;
+	map_elevator_floor@ floor = map_elevator_floor();
+	floor.elevator_id = id;
+	floor.name = floor_name;
+	floor.door_x = int(string_to_number(fields[3]));
+	floor.door_y = int(string_to_number(fields[4]));
+	floor.door_z = int(string_to_number(fields[5]));
+	floor.cabin_x = int(string_to_number(fields[6]));
+	floor.cabin_y = int(string_to_number(fields[7]));
+	floor.cabin_z = int(string_to_number(fields[8]));
+	map_elevator_floors.insert_last(floor);
+}
+
+void clear_map_elevator_runtime()
+{
+	elevator_audio.destroy_all();
+	map_elevator_definitions.resize(0);
+	map_elevator_floors.resize(0);
+	player_inside_elevator = false;
+	elevator_arrived_waiting_for_exit = false;
+	player_elevator_id = "";
+	player_elevator_floor = "";
+}
+
+void update_elevator_audio_listeners()
+{
+	p.update_listener_3d(me.x, me.y, me.z, double(facing));
+	sp.update_listener_3d(me.x, me.y, me.z, double(facing));
+	elevator_audio.update_listener_3d(me.x, me.y, me.z, double(facing));
+}
+
+void play_elevator_effect(const string&in configured_path)
+{
+	string path = get_sound_path(configured_path);
+	if (path == "") return;
+	int slot = elevator_audio.play_stationary(path, false);
+	if (slot < 0) return;
+	timer effect_timeout;
+	while (elevator_audio.sound_is_playing(slot) && effect_timeout.elapsed < 15000) wait(5);
+	elevator_audio.destroy_sound(slot);
+}
+
+void move_elevator_car(map_elevator_definition@ elevator, map_elevator_floor@ destination)
+{
+	if (elevator is null || destination is null) return;
+	double start_z = me.z;
+	int travel_slot = -1;
+	string travel_path = get_sound_path(elevator.travel_sound);
+	if (travel_path != "") travel_slot = elevator_audio.play_stationary(travel_path, true);
+	timer travel_timer;
+	int duration = elevator.travel_time_ms;
+	while (travel_timer.elapsed < duration)
+	{
+		double progress = double(travel_timer.elapsed) / double(duration);
+		if (progress > 1.0) progress = 1.0;
+		me.z = start_z + (double(destination.cabin_z) - start_z) * progress;
+		update_elevator_audio_listeners();
+		wait(5);
+	}
+	me.x = destination.cabin_x;
+	me.y = destination.cabin_y;
+	me.z = destination.cabin_z;
+	if (travel_slot >= 0) elevator_audio.destroy_sound(travel_slot);
+	update_elevator_audio_listeners();
+	player_elevator_floor = destination.name;
+	elevator_arrived_waiting_for_exit = true;
+	speak(tr("elevator.arrived", {destination.name}));
+}
+
+void start_elevator_trip(map_elevator_definition@ elevator, map_elevator_floor@ destination)
+{
+	if (elevator is null || destination is null) return;
+	speak(tr("elevator.moving", {destination.name}));
+	play_elevator_effect(elevator.door_close_sound);
+	move_elevator_car(elevator, destination);
+}
+
+bool try_use_elevator_at_player()
+{
+	if (player_inside_elevator)
+	{
+		map_elevator_definition@ elevator = find_map_elevator(player_elevator_id);
+		map_elevator_floor@ current_floor = find_map_elevator_floor(player_elevator_id, player_elevator_floor);
+		if (elevator is null || current_floor is null)
+		{
+			player_inside_elevator = false;
+			elevator_arrived_waiting_for_exit = false;
+			player_elevator_id = "";
+			player_elevator_floor = "";
+			return false;
+		}
+
+		if (elevator_arrived_waiting_for_exit)
+		{
+			play_elevator_effect(elevator.door_open_sound);
+			me.x = current_floor.door_x;
+			me.y = current_floor.door_y;
+			me.z = current_floor.door_z;
+			player_inside_elevator = false;
+			elevator_arrived_waiting_for_exit = false;
+			jumping = 0;
+			falling = false;
+			player_elevator_id = "";
+			player_elevator_floor = "";
+			check_map_exploration(mapname, int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
+			save_location();
+			update_elevator_audio_listeners();
+			speak(tr("elevator.exited", {current_floor.name}));
+			return true;
+		}
+
+		map_elevator_floor@[] destinations(0);
+		for (uint i = 0; i < map_elevator_floors.length(); i++)
+		{
+			map_elevator_floor@ floor = map_elevator_floors[i];
+			if (floor is null || string_to_lower_case(floor.elevator_id) != string_to_lower_case(player_elevator_id)) continue;
+			if (string_to_lower_case(floor.name) != string_to_lower_case(player_elevator_floor))
+				destinations.insert_last(floor);
+		}
+		if (destinations.length() == 0)
+		{
+			speak(tr("elevator.floors_missing"));
+			return true;
+		}
+		if (destinations.length() == 1)
+		{
+			start_elevator_trip(elevator, destinations[0]);
+			return true;
+		}
+
+		setupmenu(false);
+		for (uint i = 0; i < destinations.length(); i++)
+			m.add_item_tts(destinations[i].name, destinations[i].name);
+		int selected = m.run(tr("elevator.panel_intro"), true);
+		if (selected <= 0 || selected > int(destinations.length())) return true;
+		start_elevator_trip(elevator, destinations[uint(selected - 1)]);
+		return true;
+	}
+
+	int px = int(round(me.x, 0));
+	int py = int(round(me.y, 0));
+	int pz = int(round(me.z, 0));
+	for (uint i = 0; i < map_elevator_floors.length(); i++)
+	{
+		map_elevator_floor@ floor = map_elevator_floors[i];
+		if (floor is null || px != floor.door_x || py != floor.door_y || pz != floor.door_z) continue;
+		map_elevator_definition@ elevator = find_map_elevator(floor.elevator_id);
+		if (elevator is null) continue;
+		if (map_elevator_floor_count(elevator.id) < 2)
+		{
+			speak(tr("elevator.floors_missing"));
+			return true;
+		}
+		play_elevator_effect(elevator.door_open_sound);
+		me.x = floor.cabin_x;
+		me.y = floor.cabin_y;
+		me.z = floor.cabin_z;
+		jumping = 0;
+		falling = false;
+		player_inside_elevator = true;
+		elevator_arrived_waiting_for_exit = false;
+		player_elevator_id = elevator.id;
+		player_elevator_floor = floor.name;
+		update_elevator_audio_listeners();
+		play_elevator_effect(elevator.door_close_sound);
+		speak(tr("elevator.entered"));
+		return true;
+	}
+	return false;
+}

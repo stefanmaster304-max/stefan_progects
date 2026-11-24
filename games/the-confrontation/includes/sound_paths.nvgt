@@ -752,7 +752,7 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 	string[] categories = get_all_sound_categories();
 	if (categories.length() == 0)
 	{
-		speak("No sound directories found in sounds folder.");
+		speak(tr("sound_picker.no_folders"));
 		return current_val;
 	}
 
@@ -796,18 +796,18 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 		wait(5);
 		update_game_world();
 		audio_form cf;
-		cf.create_window("Sound Folders: " + title + " (Up/Down to choose folder, Enter to open, Escape to cancel)", false, true, false);
+		cf.create_window(tr("sound_picker.folders_title", {title}), false, true, false);
 
-		int l_cats = cf.create_list("Select Sound Folder / Category", 0, false, true);
+		int l_cats = cf.create_list(tr("sound_picker.choose_folder"), 0, false, true);
 		for (uint i = 0; i < categories.length(); i++)
 		{
 			cf.add_list_item(l_cats, categories[i], categories[i], -1, false, (int(i) == default_cat_idx));
 		}
 		cf.set_list_position(l_cats, default_cat_idx, false);
 
-		int b_open = cf.create_button("&Open Folder (Enter)", true);
-		int b_clear = cf.create_button("&Clear Sound (None)");
-		int b_cancel = cf.create_button("&Cancel", false, true);
+		int b_open = cf.create_button("&" + tr("sound_picker.open_folder"), true);
+		int b_clear = cf.create_button("&" + tr("sound_picker.clear_sound"));
+		int b_cancel = cf.create_button("&" + tr("ui.cancel"), false, true);
 
 		cf.focus(l_cats);
 
@@ -822,13 +822,13 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 
 			if (key_pressed(KEY_ESCAPE) || cf.is_pressed(b_cancel))
 			{
-				speak("Sound selection canceled.");
+				speak(tr("sound_picker.canceled"));
 				return current_val;
 			}
 
 			if (cf.is_pressed(b_clear))
 			{
-				speak("Sound cleared.");
+				speak(tr("sound_picker.cleared"));
 				return "";
 			}
 
@@ -852,15 +852,15 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 		sound_browser_item@[] sound_items = get_sounds_in_category(chosen_category);
 		if (sound_items.length() == 0)
 		{
-			speak("No audio files found in " + chosen_category + ". Please choose another folder.");
+			speak(tr("sound_picker.no_files", {chosen_category}));
 			continue;
 		}
 
 		string[]@ existing_selections = string_split(current_val, ";", true);
 
 		audio_form sf;
-		sf.create_window("Sounds in [" + chosen_category + "] - " + title, false, true, false);
-		int l_sounds = sf.create_list("Available Sounds (Up/Down to preview, Space to check/uncheck, Enter to save)", 0, allow_multiple, true);
+		sf.create_window(tr("sound_picker.sounds_title", {chosen_category, title}), false, true, false);
+		int l_sounds = sf.create_list(tr("sound_picker.available_sounds"), 0, allow_multiple, true);
 
 		for (uint s = 0; s < sound_items.length(); s++)
 		{
@@ -880,8 +880,8 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 			sf.add_list_item(l_sounds, sound_items[s].display_name, sound_items[s].relative_path, -1, is_sel, false);
 		}
 
-		int b_save = sf.create_button("&Save Selected (Enter)", true);
-		int b_back = sf.create_button("&Back to Folders (Escape)", false, true);
+		int b_save = sf.create_button("&" + tr("sound_picker.save"), true);
+		int b_back = sf.create_button("&" + tr("sound_picker.back"), false, true);
 
 		sf.focus(l_sounds);
 
@@ -957,18 +957,18 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 							}
 						}
 						play("menuenter");
-						speak(checked.length() + " sound(s) selected.");
+						speak(tr("sound_picker.count_selected", {"" + checked.length()}));
 						return res;
 					}
 					else if (pos >= 0 && pos < int(sound_items.length()))
 					{
 						play("menuenter");
-						speak("Selected: " + sound_items[pos].display_name);
+						speak(tr("sound_picker.selected", {sound_items[pos].display_name}));
 						return sound_items[pos].relative_path;
 					}
 					else
 					{
-						speak("No sounds selected.");
+						speak(tr("sound_picker.none_selected"));
 						continue;
 					}
 				}
@@ -977,12 +977,12 @@ string select_sound_by_category_dialog(const string&in title, const string&in cu
 					if (pos >= 0 && pos < int(sound_items.length()))
 					{
 						play("menuenter");
-						speak("Selected: " + sound_items[pos].display_name);
+						speak(tr("sound_picker.selected", {sound_items[pos].display_name}));
 						return sound_items[pos].relative_path;
 					}
 					else
 					{
-						speak("No sound selected.");
+						speak(tr("sound_picker.none_selected"));
 						continue;
 					}
 				}

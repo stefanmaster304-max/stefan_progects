@@ -43,7 +43,7 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-const int COMPILED_GAME_BUILD = 6;
+const int COMPILED_GAME_BUILD = 8;
 string current_game_version = ver;
 int current_game_build = COMPILED_GAME_BUILD;
 string current_content_version = "0.6";
@@ -265,8 +265,18 @@ bool wait_for_hidden_process(process@ child, bool progress_beeps = false)
 
 bool extract_update_archive(const string&in archive_path, const string&in destination, bool progress_beeps = false)
 {
-	if (destination != "" && destination != "." && !directory_create(destination) && !directory_exists(destination)) return false;
-	string command = "$ErrorActionPreference='Stop'; try { Expand-Archive -LiteralPath " + powershell_literal(archive_path) + " -DestinationPath " + powershell_literal(destination) + " -Force; exit 0 } catch { exit 1 }";
+	if (archive_path == "" || destination == "") return false;
+	if (!directory_exists(UPDATE_TEMP_DIR) && !directory_create(UPDATE_TEMP_DIR)) return false;
+	string command = "$ErrorActionPreference='Stop'; try { Add-Type -AssemblyName System.IO.Compression.FileSystem; $archive=" + powershell_literal(archive_path) + "; $destination=" + powershell_literal(destination) + "; if(!(Test-Path -LiteralPath $archive -PathType Leaf)){throw 'Archive file not found'}; if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination -Recurse -Force}; [System.IO.Directory]::CreateDirectory($destination) | Out-Null; [System.IO.Compression.ZipFile]::ExtractToDirectory($archive,$destination); exit 0 } catch { $_ | Out-String | Set-Content -LiteralPath 'update_temp/extract_error.txt'; exit 1 }";
+	process@ child = start_hidden_powershell(command);
+	return wait_for_hidden_process(child, progress_beeps);
+}
+
+bool extract_sound_archive(const string&in archive_path, const string&in destination, bool progress_beeps = false)
+{
+	if (archive_path == "" || destination == "") return false;
+	if (!directory_exists(UPDATE_TEMP_DIR) && !directory_create(UPDATE_TEMP_DIR)) return false;
+	string command = "$ErrorActionPreference='Stop'; try { Add-Type -AssemblyName System.IO.Compression.FileSystem; $archive=" + powershell_literal(archive_path) + "; $destination=" + powershell_literal(destination) + "; if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination -Recurse -Force}; [System.IO.Directory]::CreateDirectory($destination)|Out-Null; $soundRoot=[System.IO.Path]::GetFullPath((Join-Path $destination 'sounds')); [System.IO.Directory]::CreateDirectory($soundRoot)|Out-Null; $rootPrefix=$soundRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar)+[System.IO.Path]::DirectorySeparatorChar; $zip=[System.IO.Compression.ZipFile]::OpenRead($archive); $count=0; try { foreach($entry in $zip.Entries){ if(!$entry.FullName.StartsWith('sounds/',[System.StringComparison]::OrdinalIgnoreCase) -or $entry.FullName.EndsWith('/')){continue}; $relative=$entry.FullName.Substring(7).Replace('/',[System.IO.Path]::DirectorySeparatorChar); if($relative -eq ''){continue}; $target=[System.IO.Path]::GetFullPath((Join-Path $soundRoot $relative)); if(!$target.StartsWith($rootPrefix,[System.StringComparison]::OrdinalIgnoreCase)){throw 'Unsafe sound archive path'}; [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($target))|Out-Null; $input=$entry.Open(); try{$output=[System.IO.File]::Open($target,[System.IO.FileMode]::Create,[System.IO.FileAccess]::Write,[System.IO.FileShare]::None); try{$input.CopyTo($output)}finally{$output.Dispose()}}finally{$input.Dispose()}; $count++ } } finally{$zip.Dispose()}; if($count -eq 0){throw 'Archive contains no sounds directory entries'}; exit 0 } catch { $_ | Out-String | Set-Content -LiteralPath 'update_temp/extract_sounds_error.txt'; exit 1 }";
 	process@ child = start_hidden_powershell(command);
 	return wait_for_hidden_process(child, progress_beeps);
 }
@@ -431,12 +441,12 @@ bool install_sound_directory(const string&in source_dir)
 	if (!sound_directory_is_valid(source_dir)) return false;
 	updater_audio.stop();
 	updater_audio.close();
-	string stage_command = "$ErrorActionPreference='Stop'; try { if(Test-Path -LiteralPath 'sounds.new'){Remove-Item -LiteralPath 'sounds.new' -Recurse -Force}; New-Item -ItemType Directory -Path 'sounds.new' | Out-Null; Get-ChildItem -LiteralPath " + powershell_literal(source_dir) + " | Copy-Item -Destination 'sounds.new' -Recurse -Force; exit 0 } catch { exit 1 }";
+	string stage_command = "$ErrorActionPreference='Stop'; function Copy-SoundTree([string]$from,[string]$to){[System.IO.Directory]::CreateDirectory($to)|Out-Null; foreach($entry in [System.IO.Directory]::EnumerateFileSystemEntries($from)){if([System.IO.Directory]::Exists($entry)){Copy-SoundTree $entry (Join-Path $to ([System.IO.Path]::GetFileName($entry)))}else{[System.IO.File]::Copy($entry,(Join-Path $to ([System.IO.Path]::GetFileName($entry))),$true)}}}; try { if(!(Test-Path -LiteralPath " + powershell_literal(source_dir) + " -PathType Container)){throw 'Extracted sound folder not found'}; if(Test-Path -LiteralPath 'sounds.new'){Remove-Item -LiteralPath 'sounds.new' -Recurse -Force}; Copy-SoundTree " + powershell_literal(source_dir) + " 'sounds.new'; exit 0 } catch { $_ | Out-String | Set-Content -LiteralPath 'update_temp/sounds_stage_error.txt'; exit 1 }";
 	process@ stage_process = start_hidden_powershell(stage_command);
 	if (!wait_for_hidden_process(stage_process, true) || !sound_directory_is_valid("sounds.new")) return false;
 	file swap_script;
 	if (!swap_script.open(UPDATE_TEMP_DIR + "/swap_sounds.ps1", "w")) return false;
-	swap_script.write("$ErrorActionPreference='Stop'\r\n$root=(Get-Location).Path\r\n$live=Join-Path $root 'sounds'\r\n$new=Join-Path $root 'sounds.new'\r\n$backup=Join-Path $root 'sounds.old'\r\n$hadLive=Test-Path -LiteralPath $live\r\ntry { if(Test-Path -LiteralPath $backup){Remove-Item -LiteralPath $backup -Recurse -Force}; if($hadLive){Move-Item -LiteralPath $live -Destination $backup}; Move-Item -LiteralPath $new -Destination $live; if(!(Test-Path -LiteralPath $live)){throw 'Sound directory swap failed'}; if(Test-Path -LiteralPath $backup){Remove-Item -LiteralPath $backup -Recurse -Force}; exit 0 } catch { if(Test-Path -LiteralPath $live){Remove-Item -LiteralPath $live -Recurse -Force}; if($hadLive -and (Test-Path -LiteralPath $backup)){Move-Item -LiteralPath $backup -Destination $live}; exit 1 }\r\n");
+	swap_script.write("$ErrorActionPreference='Stop'\r\n$root=(Get-Location).Path\r\n$live=Join-Path $root 'sounds'\r\n$new=Join-Path $root 'sounds.new'\r\n$backup=Join-Path $root 'sounds.old'\r\n$hadLive=Test-Path -LiteralPath $live\r\n$movedOld=$false\r\n$installedNew=$false\r\ntry { if(Test-Path -LiteralPath $backup){Remove-Item -LiteralPath $backup -Recurse -Force}; if($hadLive){Move-Item -LiteralPath $live -Destination $backup; $movedOld=$true}; Move-Item -LiteralPath $new -Destination $live; $installedNew=$true; if(!(Test-Path -LiteralPath $live)){throw 'Sound directory swap failed'}; if(Test-Path -LiteralPath $backup){Remove-Item -LiteralPath $backup -Recurse -Force}; exit 0 } catch { $_ | Out-String | Set-Content -LiteralPath 'update_temp/sounds_swap_error.txt'; if($installedNew -and (Test-Path -LiteralPath $live)){Remove-Item -LiteralPath $live -Recurse -Force}; if($movedOld -and (Test-Path -LiteralPath $backup) -and !(Test-Path -LiteralPath $live)){Move-Item -LiteralPath $backup -Destination $live}; exit 1 }\r\n");
 	swap_script.close();
 	if (!wait_for_hidden_process(start_hidden_powershell("", UPDATE_TEMP_DIR + "/swap_sounds.ps1"))) return false;
 	return are_game_sounds_installed();
@@ -507,7 +517,7 @@ bool check_and_prompt_missing_sounds()
 
 	speak(tr("updater.extracting_sounds", "Extraindo o pacote de sons. Aguarde..."));
 	string extract_dir = UPDATE_TEMP_DIR + "/sound_bootstrap";
-	if (!extract_update_archive(sound_file, extract_dir, true))
+	if (!extract_sound_archive(sound_file, extract_dir, true))
 	{
 		speak(tr("updater.sound_extract_failed", "The sound archive could not be extracted."));
 		if (file_exists(sound_file)) file_delete(sound_file);
@@ -855,7 +865,7 @@ bool apply_sounds_update(update_item@ item)
 
 	speak(tr("updater.extracting_sounds", "Extraindo o pacote de sons. Aguarde..."));
 	string extract_dir = UPDATE_TEMP_DIR + "/extracted";
-	if (!extract_update_archive(temp_zip, extract_dir, true))
+	if (!extract_sound_archive(temp_zip, extract_dir, true))
 	{
 		speak(tr("updater.sound_extract_failed", "The sound archive could not be extracted. Existing sounds were kept."));
 		cleanup_update_temp();

@@ -563,6 +563,7 @@ void clear_map_data()
 	text_squares.resize(0);
 	map_travel_points.resize(0);
 	map_store_points.resize(0);
+	clear_map_elevator_runtime();
 	destroy_all_staircases();
 	has_map_spawnpoint = false;
 	map_spawn_x = 0;
@@ -829,6 +830,14 @@ else if (cmd == "travelpoint" && parsed.length() >= 14)
 	if (point.sy0 > point.sy1) { int t = point.sy0; point.sy0 = point.sy1; point.sy1 = t; }
 	if (point.sz0 > point.sz1) { int t = point.sz0; point.sz0 = point.sz1; point.sz1 = t; }
 	map_travel_points.insert_last(point);
+}
+else if (cmd == "elevator" && parsed.length() >= 6)
+{
+	parse_map_elevator(parsed);
+}
+else if (cmd == "elevatorfloor" && parsed.length() >= 9)
+{
+	parse_map_elevator_floor(parsed);
 }
 else if (cmd == "storepoint" && parsed.length() >= 8)
 {
