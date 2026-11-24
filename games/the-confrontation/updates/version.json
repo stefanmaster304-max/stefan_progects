@@ -1,11 +1,11 @@
 {
   "game": {
     "version": "0.6",
-    "build": 1,
+    "build": 2,
     "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.6/tcf.exe",
     "zip_url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.6/the_confront_v0.6_update.zip",
-    "size": 15561188,
-    "zip_size": 40779106
+    "size": 15560484,
+    "zip_size": 40780586
   },
   "content": {
     "version": "0.6",

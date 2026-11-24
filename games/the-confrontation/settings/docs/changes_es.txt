@@ -19,3 +19,10 @@ Compilación 1 | 24 de noviembre de 2026 a las 12:05 (America/Sao_Paulo)
 - Se corrigieron las etiquetas de tiendas y puntos de viaje del constructor y se tradujo el aviso de munición a los tres idiomas.
 
 
+
+Compilación 2 | 24 de noviembre de 2026 a las 12:29 (America/Sao_Paulo)
+- Se corrigieron la extracción y la validación del paquete publicado de actualización del juego.
+- Las actualizaciones ahora se extraen e instalan mediante procesos ocultos; no se abre ninguna ventana de terminal y se conserva la carpeta de sonidos existente.
+- La confirmación ahora separa Ver novedades, Actualizar ahora y Cancelar.
+- El administrador permite crear y editar tiendas y asignar categorías a tiendas existentes.
+

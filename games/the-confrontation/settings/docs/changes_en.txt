@@ -19,3 +19,10 @@ Build 1 | November 24, 2026 at 12:05 (America/Sao_Paulo)
 - Fixed storefront and TravelPoint builder labels and localized ammunition status speech in all three languages.
 
 
+
+Build 2 | November 24, 2026 at 12:29 (America/Sao_Paulo)
+- Fixed game update extraction and validation for the published package layout.
+- Game updates now extract and install through hidden background processes; no command window is opened, and the existing sounds folder is left untouched.
+- Update confirmation now separates View what is new, Update now, and Cancel.
+- The store manager includes storefront creation/editing and category assignment to existing storefronts.
+
