@@ -1,3 +1,6 @@
+Build 2 | November 24, 2026 at 19:39 (America/Sao_Paulo) — Version 0.7
+- Updater: when moving between game versions, the saved build number now resets to the compiled build so later updates for the new version are detected correctly.
+
 Build 1 | November 24, 2026 at 19:29 (America/Sao_Paulo) — Version 0.7
 - Stores: removed the welcome sound; entering a store now speaks a greeting and asks the player to choose a category without announcing or selecting the first one automatically.
 - Sound installation: the game now downloads a ZIP containing only the `sounds/` folder, keeps it inside `update_temp`, and removes temporary files after extraction and installation.

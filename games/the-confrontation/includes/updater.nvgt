@@ -43,7 +43,7 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-const int COMPILED_GAME_BUILD = 1;
+const int COMPILED_GAME_BUILD = 2;
 string current_game_version = ver;
 int current_game_build = COMPILED_GAME_BUILD;
 string current_content_version = "0.6";
@@ -60,6 +60,7 @@ void load_updater_settings()
 	cleanup_update_temp();
 	current_game_version = ver;
 	current_game_build = COMPILED_GAME_BUILD;
+	string saved_game_version = "";
 	string cfg_path = "settings/versions.cfg";
 	if (!file_exists(cfg_path))
 	{
@@ -89,7 +90,11 @@ void load_updater_settings()
 					string k = parts[0].trim_whitespace().lower();
 					string val = parts[1].trim_whitespace();
 
-					if (k == "game_version") current_game_version = val;
+					if (k == "game_version")
+					{
+						saved_game_version = val;
+						current_game_version = val;
+					}
 					else if (k == "game_build")
 					{
 						int read_b = int(string_to_number(val));
@@ -107,6 +112,7 @@ void load_updater_settings()
 			}
 		}
 	}
+	if (saved_game_version != "" && saved_game_version != ver) current_game_build = COMPILED_GAME_BUILD;
 	current_game_version = ver;
 	save_updater_settings();
 }
