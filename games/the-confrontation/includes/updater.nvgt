@@ -43,7 +43,7 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-const int COMPILED_GAME_BUILD = 8;
+const int COMPILED_GAME_BUILD = 1;
 string current_game_version = ver;
 int current_game_build = COMPILED_GAME_BUILD;
 string current_content_version = "0.6";
@@ -283,10 +283,13 @@ bool extract_sound_archive(const string&in archive_path, const string&in destina
 
 void cleanup_update_temp()
 {
-	if (directory_exists(UPDATE_TEMP_DIR))
+	for (int attempt = 0; attempt < 4 && directory_exists(UPDATE_TEMP_DIR); attempt++)
 	{
 		directory_delete(UPDATE_TEMP_DIR, true);
+		if (directory_exists(UPDATE_TEMP_DIR)) wait(250);
 	}
+	// Older builds downloaded the bootstrap archive into the game root.
+	if (file_exists("sounds.zip")) file_delete("sounds.zip");
 	if (file_exists("run_extract_sounds.bat")) file_delete("run_extract_sounds.bat");
 	if (file_exists("run_extract_update.bat")) file_delete("run_extract_update.bat");
 	if (file_exists("stage_sounds.bat")) file_delete("stage_sounds.bat");
@@ -487,7 +490,8 @@ bool check_and_prompt_missing_sounds()
 		return false;
 	}
 
-	string sound_file = "sounds.zip";
+	ensure_clean_update_temp();
+	string sound_file = UPDATE_TEMP_DIR + "/sounds.zip";
 	if (file_exists(sound_file) && file_get_size(sound_file) > 1048576 && validate_sound_archive(sound_file))
 	{
 		speak(tr("updater.sound_already_downloaded", "Pacote de sons já baixado. Iniciando extração."));
@@ -499,6 +503,7 @@ bool check_and_prompt_missing_sounds()
 		if (!get_sound_package_metadata(sound_url, expected_size))
 		{
 			speak(tr("updater.error_dialog", {tr("updater.manifest_unavailable")}));
+			cleanup_update_temp();
 			bypass_missing_sounds_check = true;
 			return false;
 		}

@@ -347,7 +347,7 @@
   },
   "store": {
     "title": "Menu da Loja",
-    "welcome": "Bem-vindo à &1! O que você deseja comprar hoje? Use as setas para escolher uma categoria e pressione Tab para ver os itens.",
+    "welcome": "Bem-vindo à &1! Escolha uma das categorias para ver o que deseja comprar.",
     "empty_cart": "Seu carrinho está vazio.",
     "not_enough_money": "Você não tem &1 suficiente. Você precisa de &2 e possui &3.",
     "payment_returned": "A compra não pôde ser entregue; seu pagamento foi devolvido.",

@@ -347,7 +347,7 @@
   },
   "store": {
     "title": "Store Menu",
-    "welcome": "Welcome to &1! What would you like to buy today? Use the arrow keys to choose a category, then press Tab to browse its items.",
+    "welcome": "Welcome to &1! Choose a category to see what you can buy.",
     "empty_cart": "Your cart is empty.",
     "not_enough_money": "You don't have enough &1. You need &2 and have &3.",
     "payment_returned": "The purchase could not be delivered; your payment was returned.",

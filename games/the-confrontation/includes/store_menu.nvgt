@@ -277,9 +277,6 @@ void store_main_menu(const string&in storefront_id)
 		wait(5);
 	}
 
-	string st_snd = get_store_sound("st");
-	if (st_snd == "") st_snd = get_sound_path("player/st.ogg;sounds/player/st.ogg;st.ogg");
-	if (st_snd != "") p.play_stationary(st_snd, false);
 	speak(store_welcome_text(storefront.display_name));
 
 	int category_position = 0;
@@ -288,9 +285,8 @@ void store_main_menu(const string&in storefront_id)
 	bool in_items = false;
 	// Nothing is focused when the store opens: the first category is only
 	// selected after the player presses an arrow, Tab or Enter.
-	bool has_category = true;
+	bool has_category = false;
 	store_browse_resize_cart(cat);
-	store_browse_announce_category(cat);
 
 	while (true)
 	{

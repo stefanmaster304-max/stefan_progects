@@ -1,3 +1,7 @@
+Build 1 | 24 de noviembre de 2026 a las 19:29 (America/Sao_Paulo) — Versión 0.7
+- Tiendas: se eliminó el sonido de bienvenida; al entrar, el juego saluda y pide elegir una categoría, sin anunciar ni seleccionar automáticamente la primera.
+- Instalación de sonidos: el juego descarga ahora un ZIP que contiene solo la carpeta `sounds/`, conserva el paquete dentro de `update_temp` y elimina los archivos temporales tras extraer e instalar los sonidos.
+
 Build 8 | 24 de noviembre de 2026 a las 19:01 (America/Sao_Paulo)
 - Ascensores: se corrigió la escritura del identificador y los nombres de los pisos; los sonidos de puertas y viaje ahora se eligen con los selectores de carpetas y archivos del juego.
 - Viaje: si solo existe un destino distinto del piso actual, Enter inicia el trayecto sin abrir el panel; con varios destinos, el panel sigue disponible. La tecla de interacción también abre las puertas para salir automáticamente en el punto configurado.
@@ -52,4 +56,8 @@ Compilación 2 | 24 de noviembre de 2026 a las 12:29 (America/Sao_Paulo)
 - Las actualizaciones ahora se extraen e instalan mediante procesos ocultos; no se abre ninguna ventana de terminal y se conserva la carpeta de sonidos existente.
 - La confirmación ahora separa Ver novedades, Actualizar ahora y Cancelar.
 - El administrador permite crear y editar tiendas y asignar categorías a tiendas existentes.
+
+Build 1 | 24 de noviembre de 2026 a las 19:22 (America/Sao_Paulo) — Versión 0.7
+- Tiendas: se eliminó el sonido de bienvenida; al entrar, el juego saluda y pide elegir una categoría, sin anunciar ni seleccionar automáticamente la primera.
+- Instalación de sonidos: el juego descarga ahora un ZIP que contiene solo la carpeta `sounds/`, conserva el paquete dentro de `update_temp` y elimina los archivos temporales tras extraer e instalar los sonidos.
 

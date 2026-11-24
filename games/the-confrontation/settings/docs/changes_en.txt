@@ -1,3 +1,7 @@
+Build 1 | November 24, 2026 at 19:29 (America/Sao_Paulo) — Version 0.7
+- Stores: removed the welcome sound; entering a store now speaks a greeting and asks the player to choose a category without announcing or selecting the first one automatically.
+- Sound installation: the game now downloads a ZIP containing only the `sounds/` folder, keeps it inside `update_temp`, and removes temporary files after extraction and installation.
+
 Build 8 | November 24, 2026 at 19:01 (America/Sao_Paulo)
 - Elevators: fixed typing in elevator IDs and floor names; door and travel audio now use the game's existing folder and sound selectors.
 - Travel: when only one destination other than the current floor exists, Enter starts the ride without opening the panel; multiple destinations still open the panel. The interaction key also opens the doors for automatic exit at the configured landing.
