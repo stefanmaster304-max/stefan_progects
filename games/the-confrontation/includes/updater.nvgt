@@ -43,7 +43,7 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-const int COMPILED_GAME_BUILD = 4;
+const int COMPILED_GAME_BUILD = 5;
 string current_game_version = ver;
 int current_game_build = COMPILED_GAME_BUILD;
 string current_content_version = "0.6";
@@ -426,6 +426,22 @@ bool get_sound_package_metadata(string&out url, int64&out expected_size)
 	return url != "" && expected_size > 0;
 }
 
+bool install_sound_directory(const string&in source_dir)
+{
+	if (!sound_directory_is_valid(source_dir)) return false;
+	updater_audio.stop();
+	updater_audio.close();
+	string stage_command = "$ErrorActionPreference='Stop'; try { if(Test-Path -LiteralPath 'sounds.new'){Remove-Item -LiteralPath 'sounds.new' -Recurse -Force}; New-Item -ItemType Directory -Path 'sounds.new' | Out-Null; Get-ChildItem -LiteralPath " + powershell_literal(source_dir) + " | Copy-Item -Destination 'sounds.new' -Recurse -Force; exit 0 } catch { exit 1 }";
+	process@ stage_process = start_hidden_powershell(stage_command);
+	if (!wait_for_hidden_process(stage_process, true) || !sound_directory_is_valid("sounds.new")) return false;
+	file swap_script;
+	if (!swap_script.open(UPDATE_TEMP_DIR + "/swap_sounds.ps1", "w")) return false;
+	swap_script.write("$ErrorActionPreference='Stop'\r\n$root=(Get-Location).Path\r\n$live=Join-Path $root 'sounds'\r\n$new=Join-Path $root 'sounds.new'\r\n$backup=Join-Path $root 'sounds.old'\r\n$hadLive=Test-Path -LiteralPath $live\r\ntry { if(Test-Path -LiteralPath $backup){Remove-Item -LiteralPath $backup -Recurse -Force}; if($hadLive){Move-Item -LiteralPath $live -Destination $backup}; Move-Item -LiteralPath $new -Destination $live; if(!(Test-Path -LiteralPath $live)){throw 'Sound directory swap failed'}; if(Test-Path -LiteralPath $backup){Remove-Item -LiteralPath $backup -Recurse -Force}; exit 0 } catch { if(Test-Path -LiteralPath $live){Remove-Item -LiteralPath $live -Recurse -Force}; if($hadLive -and (Test-Path -LiteralPath $backup)){Move-Item -LiteralPath $backup -Destination $live}; exit 1 }\r\n");
+	swap_script.close();
+	if (!wait_for_hidden_process(start_hidden_powershell("", UPDATE_TEMP_DIR + "/swap_sounds.ps1"))) return false;
+	return are_game_sounds_installed();
+}
+
 bool check_and_prompt_missing_sounds()
 {
 	if (are_game_sounds_installed()) return true;
@@ -490,9 +506,20 @@ bool check_and_prompt_missing_sounds()
 	}
 
 	speak(tr("updater.extracting_sounds", "Extraindo o pacote de sons. Aguarde..."));
-	if (!extract_update_archive(sound_file, ".", true))
+	string extract_dir = UPDATE_TEMP_DIR + "/sound_bootstrap";
+	if (!extract_update_archive(sound_file, extract_dir, true))
 	{
 		speak(tr("updater.sound_extract_failed", "The sound archive could not be extracted."));
+		if (file_exists(sound_file)) file_delete(sound_file);
+		cleanup_update_temp();
+		bypass_missing_sounds_check = true;
+		return false;
+	}
+	if (!install_sound_directory(extract_dir + "/sounds"))
+	{
+		speak(tr("updater.sound_install_failed", "The sound files could not be installed. Existing sounds were kept."));
+		if (file_exists(sound_file)) file_delete(sound_file);
+		cleanup_update_temp();
 		bypass_missing_sounds_check = true;
 		return false;
 	}
@@ -836,9 +863,6 @@ bool apply_sounds_update(update_item@ item)
 	}
 	wait(120);
 
-	updater_audio.stop();
-	updater_audio.close();
-
 	string source_dir = "";
 	if (directory_exists(extract_dir + "/sounds")) source_dir = extract_dir + "/sounds";
 	else if (directory_exists(extract_dir)) source_dir = extract_dir;
@@ -855,33 +879,9 @@ bool apply_sounds_update(update_item@ item)
 		return false;
 	}
 
-	string stage_command = "$ErrorActionPreference='Stop'; try { if(Test-Path -LiteralPath 'sounds.new'){Remove-Item -LiteralPath 'sounds.new' -Recurse -Force}; New-Item -ItemType Directory -Path 'sounds.new' | Out-Null; Get-ChildItem -LiteralPath " + powershell_literal(source_dir) + " | Copy-Item -Destination 'sounds.new' -Recurse -Force; exit 0 } catch { exit 1 }";
-	process@ stage_process = start_hidden_powershell(stage_command);
-	if (!wait_for_hidden_process(stage_process, true) || !sound_directory_is_valid("sounds.new"))
-	{
-		speak(tr("updater.sound_install_failed", "The new sound files could not be staged. Existing sounds were kept."));
-		cleanup_update_temp();
-		return false;
-	}
-	file swap_script;
-	if (!swap_script.open(UPDATE_TEMP_DIR + "/swap_sounds.ps1", "w"))
+	if (!install_sound_directory(source_dir))
 	{
 		speak(tr("updater.sound_install_failed", "The new sound files could not be installed. Existing sounds were kept."));
-		cleanup_update_temp();
-		return false;
-	}
-	swap_script.write("$ErrorActionPreference='Stop'\r\n$root=(Get-Location).Path\r\n$live=Join-Path $root 'sounds'\r\n$new=Join-Path $root 'sounds.new'\r\n$backup=Join-Path $root 'sounds.old'\r\n$hadLive=Test-Path -LiteralPath $live\r\ntry { if(Test-Path -LiteralPath $backup){Remove-Item -LiteralPath $backup -Recurse -Force}; if($hadLive){Move-Item -LiteralPath $live -Destination $backup}; Move-Item -LiteralPath $new -Destination $live; if(!(Test-Path -LiteralPath $live)){throw 'Sound directory swap failed'}; if(Test-Path -LiteralPath $backup){Remove-Item -LiteralPath $backup -Recurse -Force}; exit 0 } catch { if(Test-Path -LiteralPath $live){Remove-Item -LiteralPath $live -Recurse -Force}; if($hadLive -and (Test-Path -LiteralPath $backup)){Move-Item -LiteralPath $backup -Destination $live}; exit 1 }\r\n");
-	swap_script.close();
-	if (!wait_for_hidden_process(start_hidden_powershell("", UPDATE_TEMP_DIR + "/swap_sounds.ps1")))
-	{
-		speak(tr("updater.sound_install_failed", "The new sound files could not be installed. Existing sounds were kept."));
-		cleanup_update_temp();
-		return false;
-	}
-
-	if (!are_game_sounds_installed())
-	{
-		speak(tr("updater.sound_install_failed", "A nova pasta de sons não pôde ser instalada. Reinstale o jogo para restaurar os sons."));
 		cleanup_update_temp();
 		return false;
 	}

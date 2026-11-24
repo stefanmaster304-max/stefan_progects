@@ -1112,27 +1112,17 @@ bool npc_projectile_aims_at(double fx, double fy, double fz, double tx, double t
 	        (ifx == npc.x && ify == npc.y && ifz == npc.z));
 }
 
-// Resolves weapon firing target and direction to hit enemies straight ahead, straight behind,
-// straight to the left, or straight to the right, strictly within weapon range.
-// A shot is blocked only if an actual solid wall exists between the player and target.
-// Diagonal targets are not in any of the 4 cardinal positions and are ignored.
-npc_instance@ get_cardinal_weapon_target(weapon_data@ w, int&out out_dir)
+// Selects the nearest living NPC in the weapon's Euclidean range. Weapon hits
+// are radial rather than tied to facing or cardinal alignment, with map walls
+// still blocking line of sight.
+npc_instance@ get_weapon_target_in_range(weapon_data@ w, int&out out_dir)
 {
-	int card = (int(round(double(facing) / 90.0, 0)) * 90) % 360;
-	if (card < 0) card += 360;
-	out_dir = card;
+	out_dir = facing;
 
 	if (w is null || npc_instances.length() == 0) return null;
 
-	int dir_front = card;
-	int dir_right = (card + 90) % 360;
-	int dir_back  = (card + 180) % 360;
-	int dir_left  = (card + 270) % 360;
-
 	npc_instance@ best_npc = null;
-	int best_dist = 999999;
-	int best_prio = 999;
-	int best_dir = card;
+	double best_dist = 1.0e30;
 
 	int px = int(round(me.x, 0));
 	int py = int(round(me.y, 0));
@@ -1144,71 +1134,18 @@ npc_instance@ get_cardinal_weapon_target(weapon_data@ w, int&out out_dir)
 		if (npc is null || npc.dead) continue;
 		if (npc.z != pz) continue;
 
-		int dx = npc.x - px;
-		int dy = npc.y - py;
+		double dist = get_3d_distance(me.x, me.y, me.z, double(npc.x), double(npc.y), double(npc.z));
+		if (dist > double(w.range)) continue;
+		if (npc_wall_between(px, py, npc.x, npc.y, pz)) continue;
 
-		int target_dir = -1;
-		int dist = 0;
-
-		// Only targets in the 4 straight positions (straight ahead, straight behind, straight left, straight right) are valid:
-		if (dx == 0 && dy > 0)
-		{
-			target_dir = 0; // North
-			dist = dy;
-		}
-		else if (dx == 0 && dy < 0)
-		{
-			target_dir = 180; // South
-			dist = -dy;
-		}
-		else if (dy == 0 && dx > 0)
-		{
-			target_dir = 90; // East
-			dist = dx;
-		}
-		else if (dy == 0 && dx < 0)
-		{
-			target_dir = 270; // West
-			dist = -dx;
-		}
-		else if (dx == 0 && dy == 0)
-		{
-			target_dir = card; // Point-blank on same tile
-			dist = 0;
-		}
-		else
-		{
-			// Diagonal target -> not in any of the four straight positions! Ignored!
-			continue;
-		}
-
-		if (dist > w.range) continue;
-		// A shot is blocked only if there is an actual solid wall in between
-		if (dist > 1 && npc_wall_between(px, py, npc.x, npc.y, pz)) continue;
-
-		int prio = 3;
-		if (target_dir == dir_front) prio = 0;
-		else if (target_dir == dir_right || target_dir == dir_left) prio = 1;
-		else if (target_dir == dir_back) prio = 2;
-
-		if (dist < best_dist || (dist == best_dist && prio < best_prio))
+		if (dist < best_dist)
 		{
 			best_dist = dist;
-			best_prio = prio;
-			best_dir = target_dir;
 			@best_npc = npc;
 		}
 	}
 
-	out_dir = best_dir;
 	return best_npc;
-}
-
-int get_weapon_fire_direction(weapon_data@ w)
-{
-	int dir = 0;
-	get_cardinal_weapon_target(w, dir);
-	return dir;
 }
 
 // Called by the projectile system so the player's own shots can hit NPCs. The

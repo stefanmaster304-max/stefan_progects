@@ -1,3 +1,8 @@
+Build 5 | November 24, 2026 at 12:31 (America/Sao_Paulo)
+- Weapons: shots now hit the nearest visible NPC within the configured radius, without cardinal or diagonal alignment; walls still block line of sight.
+- Distribution: the with-sounds and no-sounds packages contain no empty directories; the release keeps only these two ZIP files.
+- Sound installation: the updater extracts only the sounds folder from the full package and does not replace the executable or settings.
+
 Build 4 | November 24, 2026 at 12:09 (America/Sao_Paulo)
 - Stores: selecting a store to edit now opens that store directly and exits the general manager when done; stores without categories can also be edited.
 - Currencies: Gold and Golden Crystal are the only currencies; Diamond and Silver, their drops, and old saved balances were removed.

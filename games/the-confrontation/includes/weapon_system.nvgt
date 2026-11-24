@@ -128,7 +128,7 @@ void fire_current_weapon()
 	for (int ri = 0; ri < resurrections && res_mult < 1000000.0; ri++) res_mult *= 2.0;
 
 	int fire_dir = facing;
-	npc_instance@ target_npc = get_cardinal_weapon_target(w, fire_dir);
+	npc_instance@ target_npc = get_weapon_target_in_range(w, fire_dir);
 
 	if (w.melee)
 	{
@@ -175,13 +175,15 @@ void fire_current_weapon()
 
 	if (target_npc !is null)
 	{
-		// Direct instant hit on cardinal aligned target:
+		// Targets inside the weapon's range and unobstructed radius are hits
+		// regardless of which side or angle they are on.
 		if (w.sound_hit != "") npc_play_positional(target_npc, w.sound_hit);
 		npc_take_damage(target_npc, dmg, "Player", (w.name != "") ? w.name : w.id);
 	}
 	else
 	{
-		// No target in line of fire: bullet flies forward in fire_dir and impacts wall or expires at range
+		// No target is currently inside the weapon's range: launch the normal
+		// projectile in the direction the player is facing.
 		spawn_projectile(me.x, me.y, me.z, fire_dir, w.id, "bullet", dmg, spd, w.range, w.spread);
 	}
 }
