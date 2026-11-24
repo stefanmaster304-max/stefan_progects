@@ -43,7 +43,7 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-const int COMPILED_GAME_BUILD = 0;
+const int COMPILED_GAME_BUILD = 1;
 string current_game_version = ver;
 int current_game_build = COMPILED_GAME_BUILD;
 string current_content_version = "0.6";
@@ -306,7 +306,7 @@ void cleanup_update_temp()
 }
 
 /* NVDA-style rising pitch progress bar tone */
-void beep_percentage(double val, double volume = 0.126)
+void beep_percentage(double val, double volume = 0.35)
 {
 	val = round(val, 0);
 	if (val < 0) val = 0;
@@ -566,7 +566,7 @@ void updater_beep(int frequency, int duration)
 {
 	tone_synth tone;
 	tone.waveform_type = 1; /* Soft sine wave */
-	tone.volume = 0.126;
+	tone.volume = 0.35;
 	tone.set_edge_fades(8, 8);
 	tone.freq_ms(frequency, duration);
 	tone.write_wave_sound().play_wait();
@@ -747,8 +747,7 @@ bool apply_game_update(update_item@ item)
 			!validate_game_executable(staged_game + "/tcf.exe") ||
 			!validate_contents_file(staged_game + "/settings/contents.dat") ||
 			!validate_maps_file(staged_game + "/settings/maps.dat") ||
-			!directory_exists(staged_game + "/lib") || !directory_exists(staged_game + "/settings") ||
-			!directory_exists(staged_game + "/docs"))
+			!directory_exists(staged_game + "/lib") || !directory_exists(staged_game + "/settings"))
 		{
 			stop_updater_music();
 			speak(tr("updater.game_install_failed", "The game archive is incomplete or invalid. The installed game was not changed."));

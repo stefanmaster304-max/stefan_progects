@@ -126,15 +126,13 @@
       "package_manager": "package manager - create, edit, view and delete packages",
       "item_spawner": "item spawner - configure item drops and map pickup spawners",
       "weapon_manager": "weapon manager - add, edit, remove and create new weapons",
-      "store_manager": "store categories - add, edit and remove store categories and choose their items",
+      "store_manager": "Store manager - create storefronts, manage categories, and choose products",
       "npc_manager": "npc manager - create, edit and delete NPCs",
       "npc_spawner": "npc spawner - place configured NPCs on this map",
       "map_manager_tools": "map manager and tools - manage maps, properties, backup and tools",
       "delete_map": "delete current map - permanently delete the active map file",
-      "entry": {
-        "store_point": "Place a store in this map",
-        "travel_point": "Add a travel point to another map"
-      }
+      "store_point": "Place a storefront in this map",
+      "travel_point": "Add a travel point to another map"
     }
   },
   "form": {
@@ -411,7 +409,8 @@
     "whats_new_title": "What is new in version &1",
     "no_notes": "The release notes for this version are unavailable.",
     "install_failed": "The verified update could not replace the existing file. The previous file was restored.",
-    "manifest_unavailable": "The update manifest could not be read."
+    "manifest_unavailable": "The update manifest could not be read.",
+    "game_install_failed": "The game update package is invalid or could not be applied. The existing game files were restored."
   },
   "documentation": {
     "title": "Help",
@@ -452,7 +451,25 @@
     "sitting_hint": "You are sitting. Press S to stand up.",
     "now_at_level": "You are now at level &1.",
     "lost_health_fall": "You lost &1 health!",
-    "land_seated": "You hit the ground hard and land in a seated position."
+    "land_seated": "You hit the ground hard and land in a seated position.",
+    "ammo_status": "Loaded: &1 of &2 &3 of &4. Reserve: &5 &6.",
+    "melee_weapon": "&1 is a melee weapon.",
+    "reloading_weapon": "Reloading &1.",
+    "no_reserve_ammo": "No &1 or &2 remaining for &3.",
+    "ammo_fallback": "ammunition",
+    "ammo_unit": {
+      "rounds": "rounds",
+      "shells": "shells",
+      "cells": "cells",
+      "missiles": "missiles",
+      "rockets": "rockets",
+      "grenades": "grenades",
+      "arrows": "arrows",
+      "fuel_units": "fuel units",
+      "canisters": "canisters",
+      "magazine": "magazine",
+      "magazines": "magazines"
+    }
   },
   "ui": {
     "copied": "Copied",

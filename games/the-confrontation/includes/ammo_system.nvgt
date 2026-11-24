@@ -323,6 +323,25 @@ bool can_reload(weapon_data@ w)
 	return (res_item != "" && get_item_count(res_item) > 0);
 }
 
+string localized_ammo_unit(const string&in unit)
+{
+	string key = string_to_lower_case(string_trim_sides(unit));
+	key = string_replace(key, " ", "_", true);
+	string tr_key = "game.ammo_unit." + key;
+	if (key == "rounds" || key == "shells" || key == "cells" || key == "missiles" || key == "rockets" || key == "grenades" || key == "arrows" || key == "fuel_units" || key == "canisters")
+		return tr(tr_key, unit);
+	return unit;
+}
+
+string localized_reserve_label(weapon_data@ w, bool plural)
+{
+	string label = (w.reserve_label != "") ? w.reserve_label : "magazine";
+	if (string_to_lower_case(label) == "magazine" || string_to_lower_case(label) == "magazines")
+		return tr(plural ? "game.ammo_unit.magazines" : "game.ammo_unit.magazine", plural ? "magazines" : "magazine");
+	if (plural && !string_ends_with(label, "s")) label += "s";
+	return label;
+}
+
 void start_reload(weapon_data@ w)
 {
 	if (w is null or w.melee) return;
@@ -341,10 +360,9 @@ void start_reload(weapon_data@ w)
 	if (reserve <= 0)
 	{
 		// Pressing R with an empty reserve announces the required ammo type
-		string atype = (w.ammo_type != "") ? w.ammo_type : "ammunition";
-		string res_label = (w.reserve_label != "") ? w.reserve_label : "magazine";
-		if (!string_ends_with(res_label, "s")) res_label += "s";
-		speak("No " + atype + " " + res_label + " remaining for " + w.name + ".");
+		string atype = (w.ammo_type != "") ? w.ammo_type : tr("game.ammo_fallback");
+		string res_label = localized_reserve_label(w, true);
+		speak(tr("game.no_reserve_ammo", {atype, res_label, w.name}));
 		return;
 	}
 
@@ -482,7 +500,7 @@ void handle_reload_key()
 
 	if (w.melee)
 	{
-		speak(w.name + " is a melee weapon.");
+		speak(tr("game.melee_weapon", {w.name}));
 		return;
 	}
 
@@ -524,30 +542,22 @@ void speak_ammo_status()
 
 	if (w.melee)
 	{
-		speak(w.name + " is a melee weapon.");
+		speak(tr("game.melee_weapon", {w.name}));
 		return;
 	}
 
 	if (is_reloading && reloading_weapon == w.id)
 	{
-		speak("Reloading " + w.name + ".");
+		speak(tr("game.reloading_weapon", {w.name}));
 		return;
 	}
 
 	int loaded = get_loaded_ammo(w.id);
 	string res_item = find_reserve_ammo_item(w);
 	int reserve = (res_item != "") ? get_item_count(res_item) : 0;
-	string atype = (w.ammo_type != "") ? w.ammo_type : "ammunition";
-	string disp = (w.ammo_display != "") ? w.ammo_display : "rounds";
-	string res_label = (w.reserve_label != "") ? w.reserve_label : "magazine";
-	if (reserve != 1 && !string_ends_with(res_label, "s")) res_label += "s";
-
-	if (reserve > 0)
-	{
-		speak("" + loaded + " of " + w.capacity + " " + disp + " of " + atype + ", " + reserve + " " + res_label + " in reserve.");
-	}
-	else
-	{
-		speak("" + loaded + " of " + w.capacity + " " + disp + " of " + atype + ", 0 " + res_label + " in reserve.");
-	}
+	string atype = (w.ammo_type != "") ? w.ammo_type : tr("game.ammo_fallback");
+	string raw_unit = (w.ammo_display != "") ? w.ammo_display : "rounds";
+	string disp = localized_ammo_unit(raw_unit);
+	string res_label = localized_reserve_label(w, reserve != 1);
+	speak(tr("game.ammo_status", {"" + loaded, "" + w.capacity, disp, atype, "" + reserve, res_label}));
 }

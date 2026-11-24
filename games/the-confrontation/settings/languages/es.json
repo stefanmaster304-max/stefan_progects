@@ -126,15 +126,13 @@
       "package_manager": "administrador de paquetes - crear, editar, ver y eliminar paquetes",
       "item_spawner": "generador de objetos - configurar caídas de objetos y generadores de recolección en el mapa",
       "weapon_manager": "administrador de armas - añadir, editar, eliminar y crear nuevas armas",
-      "store_manager": "categorías de tienda - añadir, editar y eliminar categorías de tienda y elegir sus objetos",
+      "store_manager": "Administrador de tiendas: crear tiendas, gestionar categorías y elegir productos",
       "npc_manager": "administrador de NPCs - crear, editar y eliminar NPCs",
       "npc_spawner": "generador de NPCs - colocar NPCs configurados en este mapa",
       "map_manager_tools": "administrador de mapas y herramientas - gestionar mapas, propiedades, copias de seguridad y herramientas",
       "delete_map": "eliminar mapa actual - eliminar permanentemente el archivo de mapa activo",
-      "entry": {
-        "store_point": "Colocar una tienda en este mapa",
-        "travel_point": "Añadir un punto de viaje a otro mapa"
-      }
+      "store_point": "Colocar una tienda en este mapa",
+      "travel_point": "Añadir un punto de viaje a otro mapa"
     }
   },
   "form": {
@@ -411,7 +409,8 @@
     "whats_new_title": "Novedades de la versión &1",
     "no_notes": "No están disponibles las notas de esta versión.",
     "install_failed": "No se pudo reemplazar el archivo por la actualización validada. Se restauró el archivo anterior.",
-    "manifest_unavailable": "No se pudo leer el manifiesto de actualización."
+    "manifest_unavailable": "No se pudo leer el manifiesto de actualización.",
+    "game_install_failed": "El paquete de actualización del juego no es válido o no se pudo aplicar. Se restauraron los archivos actuales del juego."
   },
   "documentation": {
     "title": "Ayuda",
@@ -452,7 +451,25 @@
     "sitting_hint": "Estás sentado. Presiona S para levantarte.",
     "now_at_level": "Ahora estás en el nivel &1.",
     "lost_health_fall": "¡Perdiste &1 de salud!",
-    "land_seated": "Golpeaste el suelo con fuerza y quedaste sentado."
+    "land_seated": "Golpeaste el suelo con fuerza y quedaste sentado.",
+    "ammo_status": "Cargadas: &1 de &2 &3 de &4. Reserva: &5 &6.",
+    "melee_weapon": "&1 es un arma cuerpo a cuerpo.",
+    "reloading_weapon": "Recargando &1.",
+    "no_reserve_ammo": "No queda &1 ni &2 en reserva para &3.",
+    "ammo_fallback": "munición",
+    "ammo_unit": {
+      "rounds": "balas",
+      "shells": "cartuchos",
+      "cells": "celdas",
+      "missiles": "misiles",
+      "rockets": "cohetes",
+      "grenades": "granadas",
+      "arrows": "flechas",
+      "fuel_units": "unidades de combustible",
+      "canisters": "cilindros",
+      "magazine": "cargador",
+      "magazines": "cargadores"
+    }
   },
   "ui": {
     "copied": "Copiado",
