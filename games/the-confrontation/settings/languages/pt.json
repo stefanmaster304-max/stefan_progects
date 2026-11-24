@@ -249,7 +249,18 @@
     "items_added": "itens/armas/pacotes adicionados à loja.",
     "item_id_name": "ID / Nome do Item",
     "price_updated": "Preço de &1 atualizado para &2",
-    "item_removed": "Item removido da loja."
+    "item_removed": "Item removido da loja.",
+    "store_deleted": "Loja excluída. As categorias dela foram mantidas.",
+    "select_store_title": "Selecionar loja",
+    "create_store": "Criar loja",
+    "store_name": "Nome de exibição da loja",
+    "store_category_required": "Selecione pelo menos uma categoria para esta loja.",
+    "edit_store": "Editar loja",
+    "store_name_required": "Informe o nome de exibição da loja.",
+    "delete_store": "Excluir loja",
+    "store_categories": "Categorias desta loja",
+    "store_id": "ID da loja",
+    "save_failed": "Não foi possível salvar a loja."
   },
   "item_manager": {
     "title": "Gerenciador de Itens",
@@ -337,7 +348,7 @@
   },
   "store": {
     "title": "Menu da Loja",
-    "welcome": "Bem-vindo à loja! O que você gostaria de comprar hoje? Selecione itens em uma das categorias disponíveis.",
+    "welcome": "Bem-vindo à &1! O que você deseja comprar hoje? Use as setas para escolher uma categoria e pressione Tab para ver os itens.",
     "empty_cart": "Seu carrinho está vazio.",
     "not_enough_money": "Você não tem &1 suficiente. Você precisa de &2 e possui &3.",
     "payment_returned": "A compra não pôde ser entregue; seu pagamento foi devolvido.",
@@ -348,7 +359,8 @@
     "nothing_in_cart_for_item": "Nada no carrinho para este item.",
     "items_in_cart_total": "&1 itens no carrinho, total: &2 &3.",
     "in_cart": "&1, &2 &3, no carrinho: &4.",
-    "balances": "Saldos: &1 ouro, &2 cristais dourados, &3 diamantes, &4 prata."
+    "balances": "Saldos: &1 ouro, &2 cristais dourados, &3 diamantes, &4 prata.",
+    "default_name": "Loja Geral"
   },
   "updater": {
     "checking": "Verificando atualizações...",
@@ -393,7 +405,13 @@
     "percent_downloaded": "por cento baixado.",
     "sound_extract_failed": "O pacote de sons não pôde ser extraído. Os sons atuais foram mantidos.",
     "sound_install_failed": "A nova pasta de sons não pôde ser instalada. Reinstale o jogo para restaurar os sons.",
-    "progress_unavailable": "Progresso de download indisponível."
+    "progress_unavailable": "Progresso de download indisponível.",
+    "whats_new_label": "Alterações desta versão",
+    "update_now": "Atualizar agora",
+    "whats_new_title": "Novidades da versão &1",
+    "no_notes": "As notas desta versão não estão disponíveis.",
+    "install_failed": "Não foi possível substituir o arquivo pela atualização validada. O arquivo anterior foi restaurado.",
+    "manifest_unavailable": "Não foi possível ler o manifesto de atualização."
   },
   "documentation": {
     "title": "Ajuda",
@@ -481,7 +499,6 @@
     "destination_max_z": "Destino: Z máximo",
     "invalid_bounds": "Os limites das coordenadas são inválidos.",
     "source_max_y": "Mapa atual: Y máximo",
-    "destination_max_y": "Destino: Y máximo",
-    "not_here": "Você não está em um ponto de viagem."
+    "destination_max_y": "Destino: Y máximo"
   }
 }

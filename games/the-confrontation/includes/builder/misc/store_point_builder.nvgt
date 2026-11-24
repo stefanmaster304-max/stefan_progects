@@ -2,7 +2,8 @@
 void build_store_point()
 {
 	init_stores();
-	if (store_configs.length() == 0)
+	init_storefronts();
+	if (storefronts.length() == 0)
 	{
 		speak(tr("store.no_categories"));
 		return;
@@ -11,9 +12,9 @@ void build_store_point()
 	audio_form form;
 	form.create_window(tr("store_point.title"), false, true, false);
 	int list = form.create_list(tr("store_point.select_store"), 0, false, false);
-	for (uint i = 0; i < store_configs.length(); i++)
+	for (uint i = 0; i < storefronts.length(); i++)
 	{
-		store_cfg@ store = store_configs[i];
+		storefront_cfg@ store = storefronts[i];
 		form.add_list_item(list, store.display_name + " (" + store.name + ")", store.name, -1, false, (i == 0));
 	}
 	int x0 = form.create_input_box(tr("form.min_x"), "" + int(round(me.x, 0)));
@@ -66,7 +67,7 @@ void build_store_point()
 			continue;
 		}
 		string store_id = form.get_list_item_id(list, form.get_list_position(list));
-		if (store_id == "" || get_store(store_id) is null)
+		if (store_id == "" || get_storefront(store_id) is null)
 		{
 			speak(tr("store_point.store_missing"));
 			continue;

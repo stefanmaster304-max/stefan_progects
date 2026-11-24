@@ -8,7 +8,7 @@
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
-string ver = "0.5";
+string ver = "0.6";
 
 #include "includes/bgt_compat.nvgt"
 #include "includes/player_character.nvgt"
@@ -675,11 +675,7 @@ if (quick_inv_focused and (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENT
 }
 if (!quick_inv_focused && altisdown() && (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER)))
 {
-	if (!use_travel_point_at_player())
-	{
-		p.play_stationary(get_sound_path("misc/error.ogg"), false);
-		speak(tr("travel.not_here"));
-	}
+	use_travel_point_at_player();
 }
 // Plain Enter only reminds a seated player to stand up.
 else if (!quick_inv_focused && !altisdown() && !shiftisdown() and (kb_pressed("use") or key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER)))

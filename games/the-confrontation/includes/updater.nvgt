@@ -44,13 +44,13 @@ const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
 const int COMPILED_GAME_BUILD = 0;
-string current_game_version = "0.5";
+string current_game_version = ver;
 int current_game_build = COMPILED_GAME_BUILD;
-string current_content_version = "0.5";
+string current_content_version = "0.6";
 int current_content_build = 0;
 string current_sounds_version = "0.5";
 int current_sounds_build = 1;
-string current_maps_version = "0.5";
+string current_maps_version = "0.6";
 int current_maps_build = 0;
 int check_updates_on_startup = 1;
 string update_manifest_url = UPDATE_MANIFEST_URL_DEFAULT;
@@ -401,8 +401,46 @@ string dl_file(string url, string disk_file, bool quiet = false, string msg = ""
 bool are_game_sounds_installed()
 {
 	if (file_exists("sounds.dw") || file_exists("settings/sounds.dw")) return true;
-	if (directory_exists("sounds/anbients") || directory_exists("sounds/weapons") || directory_exists("sounds/players") || directory_exists("sounds/menu sounds") || directory_exists("sounds/map platforms")) return true;
+	return sound_directory_is_valid("sounds");
+	}
+
+bool sound_directory_is_valid(const string&in root)
+{
+	string[] expected_dirs = {"anbients", "weapons", "players", "menu sounds", "map platforms"};
+	for (uint i = 0; i < expected_dirs.length(); i++)
+	{
+		string path = root + "/" + expected_dirs[i];
+		if (!directory_exists(path)) continue;
+		string[]@ files = find_files(path + "/*");
+		if (files !is null && files.length() > 0) return true;
+		string[]@ subdirs = find_directories(path + "/*");
+		if (subdirs !is null)
+		{
+			for (uint d = 0; d < subdirs.length(); d++)
+			{
+				string[]@ nested = find_files(subdirs[d] + "/*");
+				if (nested !is null && nested.length() > 0) return true;
+			}
+		}
+	}
 	return false;
+}
+
+bool get_sound_package_metadata(string&out url, int64&out expected_size)
+{
+	url = "";
+	expected_size = 0;
+	string body = "", error_message = "";
+	if (fetch_manifest(body, error_message) != 0) return false;
+	var@ parsed = parse_json(body);
+	if (parsed is null) return false;
+	json_object@ root = parsed;
+	if (root is null || !root.is_object("sounds")) return false;
+	json_object@ sounds = root.get_object("sounds");
+	url = sounds["url"];
+	string size = sounds["size"];
+	if (size != "") expected_size = int64(string_to_number(size));
+	return url != "" && expected_size > 0;
 }
 
 bool check_and_prompt_missing_sounds()
@@ -441,25 +479,24 @@ bool check_and_prompt_missing_sounds()
 	}
 
 	string sound_file = "sounds.zip";
-	if (file_exists(sound_file) && file_get_size(sound_file) > 1048576)
+	if (file_exists(sound_file) && file_get_size(sound_file) > 1048576 && validate_sound_archive(sound_file))
 	{
 		play_updater_music();
 		speak(tr("updater.sound_already_downloaded", "Pacote de sons já baixado. Iniciando extração."));
 	}
 	else
 	{
-		string sound_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.5/sounds.zip";
-		string result = dl_file(sound_url, sound_file);
-		if (result != "finished" || !file_exists(sound_file) || file_get_size(sound_file) < 1048576)
+		string sound_url = "";
+		int64 expected_size = 0;
+		if (!get_sound_package_metadata(sound_url, expected_size))
 		{
-			if (result != "canceled")
-			{
-				string fallback_url = "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.4/sounds.zip";
-				result = dl_file(fallback_url, sound_file);
-			}
+			speak(tr("updater.error_dialog", {tr("updater.manifest_unavailable")}));
+			bypass_missing_sounds_check = true;
+			return false;
 		}
+		string result = dl_file(sound_url, sound_file);
 
-		if (result != "finished" || !file_exists(sound_file) || file_get_size(sound_file) < 1048576)
+		if (result != "finished" || !file_exists(sound_file) || file_get_size(sound_file) != expected_size || !validate_sound_archive(sound_file))
 		{
 			speak(tr("updater.download_failed", "Download falhou ou foi cancelado."));
 			if (file_exists(sound_file)) file_delete(sound_file);
@@ -487,6 +524,7 @@ bool check_and_prompt_missing_sounds()
 		ext_bat.close();
 	}
 	if (file_exists("extract_done.flag")) file_delete("extract_done.flag");
+		if (file_exists("extract_failed.flag")) file_delete("extract_failed.flag");
 	run("cmd.exe", "/c run_extract_sounds.bat", false, true);
 
 	double pct = 5.0;
@@ -624,16 +662,34 @@ void restart_game_client()
 	exit();
 }
 
-bool ask_update_confirmation(const string&in message)
+string load_current_update_notes()
 {
+	string language = string_to_lower_case(current_language);
+	string path = "settings/docs/changes_" + language + ".txt";
+	if (!file_exists(path)) path = "settings/docs/changes_en.txt";
+	if (file_exists(path)) return file_get_contents(path);
+	return tr("updater.no_notes");
+}
+
+bool show_update_details(update_item@ item, const string&in message)
+{
+	if (item is null) return false;
+	string[] title_args = {item.new_version};
+	audio_form form;
+	form.create_window(tr("updater.whats_new_title", title_args), false, true, false);
+	int notes = form.create_input_box(tr("updater.whats_new_label"), load_current_update_notes(), "", 0, true, true, false);
+	int update = form.create_button("&" + tr("updater.update_now"), true);
+	int cancel = form.create_button("&" + tr("ui.cancel"), false, true);
+	form.set_default_controls(update, cancel);
+	form.focus(notes);
 	speak(message);
 	while (true)
 	{
 		wait(5);
-		if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPADENTER) || key_pressed(KEY_Y)) return true;
-		if (key_pressed(KEY_ESCAPE) || key_pressed(KEY_N)) { speak(tr("updater.cancelled")); return false; }
-		if (key_pressed(KEY_UP) || key_pressed(KEY_DOWN) || key_pressed(KEY_LEFT) || key_pressed(KEY_RIGHT) || key_pressed(KEY_SPACE))
-			speak(message);
+		update_game_world();
+		form.monitor();
+		if (key_pressed(KEY_ESCAPE) || form.is_pressed(cancel)) { speak(tr("updater.cancelled")); return false; }
+		if (form.is_pressed(update)) return true;
 	}
 	return false;
 }
@@ -654,10 +710,13 @@ void remove_legacy_content_bundles()
 
 bool apply_game_update(update_item@ item)
 {
-	bool is_zip_update = (string_ends_with(item.url.lower(), ".zip") || item.zip_url != "");
+	if (item is null) return false;
+	bool is_zip_update = (item.zip_url != "");
+	string download_url = is_zip_update ? item.zip_url : item.url;
+	int64 download_size = is_zip_update ? item.zip_size : item.size;
 	string temp_payload = UPDATE_TEMP_DIR + (is_zip_update ? "/game_update_payload.zip" : "/game_update_payload.exe");
 	string error_message = "";
-	if (!download_update_file(item.url, temp_payload, item.size, error_message))
+	if (!download_update_file(download_url, temp_payload, download_size, error_message))
 	{
 		stop_updater_music();
 		speak(error_message);
@@ -665,7 +724,7 @@ bool apply_game_update(update_item@ item)
 		return false;
 	}
 
-	bool is_zip = validate_sound_archive(temp_payload);
+	bool is_zip = is_zip_update && validate_sound_archive(temp_payload);
 	bool is_exe = validate_game_executable(temp_payload);
 
 	if (!is_zip && !is_exe)
@@ -677,6 +736,35 @@ bool apply_game_update(update_item@ item)
 	}
 
 	string win_payload = string_replace(temp_payload, "/", "\\", true);
+	string staged_game = UPDATE_TEMP_DIR + "/game_staged";
+	string win_stage = string_replace(staged_game, "/", "\\", true);
+	if (is_zip)
+	{
+		if (directory_exists(staged_game)) run("cmd.exe", "/c rd /s /q \"" + win_stage + "\"", true, true);
+		directory_create(staged_game);
+		string ps_command = "Expand-Archive -LiteralPath '" + win_payload + "' -DestinationPath '" + win_stage + "' -Force";
+		if (!run("powershell.exe", "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"" + ps_command + "\"", true, false) ||
+			!validate_game_executable(staged_game + "/tcf.exe") ||
+			!validate_contents_file(staged_game + "/settings/contents.dat") ||
+			!validate_maps_file(staged_game + "/settings/maps.dat") ||
+			!directory_exists(staged_game + "/lib") || !directory_exists(staged_game + "/settings") ||
+			!directory_exists(staged_game + "/docs"))
+		{
+			stop_updater_music();
+			speak(tr("updater.game_install_failed", "The game archive is incomplete or invalid. The installed game was not changed."));
+			cleanup_update_temp();
+			return false;
+		}
+		file installer;
+		if (!installer.open(UPDATE_TEMP_DIR + "/install_game_update.ps1", "w"))
+		{
+			speak(tr("updater.game_install_failed", "The game installer could not be prepared."));
+			cleanup_update_temp();
+			return false;
+		}
+		installer.write("$ErrorActionPreference='Stop'\r\n$root=(Get-Location).Path\r\n$stage=Join-Path $root 'update_temp\\game_staged'\r\n$backup=Join-Path $root 'update_temp\\game_backup'\r\nNew-Item -ItemType Directory -Force -Path $backup | Out-Null\r\n$paths=@('tcf.exe','lib','settings\\contents.dat','settings\\maps.dat','settings\\versions.cfg','settings\\languages','docs','sounds')\r\n$installed=New-Object System.Collections.Generic.List[string]\r\ntry { foreach($rel in $paths) { $src=Join-Path $stage $rel; if(!(Test-Path -LiteralPath $src)) { continue }; $dst=Join-Path $root $rel; $bak=Join-Path $backup $rel; $parent=Split-Path -Parent $dst; if(!(Test-Path -LiteralPath $parent)){New-Item -ItemType Directory -Force -Path $parent | Out-Null}; if(Test-Path -LiteralPath $dst){$bp=Split-Path -Parent $bak; if(!(Test-Path -LiteralPath $bp)){New-Item -ItemType Directory -Force -Path $bp | Out-Null}; Move-Item -LiteralPath $dst -Destination $bak -Force}; $installed.Add($rel); Move-Item -LiteralPath $src -Destination $dst -Force }; if(!(Test-Path -LiteralPath (Join-Path $root 'tcf.exe'))){throw 'Missing installed executable'}; New-Item -ItemType File -Force -Path (Join-Path $root 'game_update_done.flag') | Out-Null } catch { $rollback=$installed.ToArray(); [array]::Reverse($rollback); foreach($rel in $rollback) { $dst=Join-Path $root $rel; $bak=Join-Path $backup $rel; if(Test-Path -LiteralPath $dst){Remove-Item -LiteralPath $dst -Recurse -Force}; if(Test-Path -LiteralPath $bak){$parent=Split-Path -Parent $dst; if(!(Test-Path -LiteralPath $parent)){New-Item -ItemType Directory -Force -Path $parent | Out-Null}; Move-Item -LiteralPath $bak -Destination $dst -Force} }; New-Item -ItemType File -Force -Path (Join-Path $root 'game_update_failed.flag') | Out-Null; exit 1 }\r\n");
+		installer.close();
+	}
 
 	file bat;
 	if (bat.open("apply_game_update.bat", "w"))
@@ -689,33 +777,24 @@ bool apply_game_update(update_item@ item)
 		bat.write("tasklist /fi \"imagename eq tcf.exe\" 2> nul | find /i \"tcf.exe\" > nul\r\n");
 		bat.write("if not errorlevel 1 goto wait_loop\r\n");
 		bat.write("if exist \"tcf.exe.old\" del /f /q \"tcf.exe.old\" > nul 2> nul\r\n");
-		bat.write("if exist \"tcf.exe\" ren \"tcf.exe\" \"tcf.exe.old\" > nul 2> nul\r\n");
 		if (is_zip)
 		{
-			bat.write("tar.exe -xf \"" + win_payload + "\" -C . 2> nul\r\n");
-			bat.write("if not exist \"tcf.exe\" (\r\n");
-			bat.write("  powershell.exe -WindowStyle Hidden -NoProfile -Command \"Expand-Archive -Force -Path '" + win_payload + "' -DestinationPath '.'\"\r\n");
-			bat.write(")\r\n");
+			bat.write("powershell.exe -WindowStyle Hidden -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"" + string_replace(UPDATE_TEMP_DIR, "/", "\\", true) + "\\install_game_update.ps1\"\r\n");
 		}
 		else if (is_exe)
 		{
+			bat.write("if exist \"tcf.exe\" ren \"tcf.exe\" \"tcf.exe.old\" > nul 2> nul\r\n");
 			bat.write("move /y \"" + win_payload + "\" \"tcf.exe\" > nul 2> nul\r\n");
 		}
-		bat.write("if exist \"tcf.exe\" (\r\n");
-		bat.write("  if exist \"tcf.exe.old\" del /f /q \"tcf.exe.old\" > nul 2> nul\r\n");
-		bat.write(") else (\r\n");
-		bat.write("  if exist \"tcf.exe.old\" ren \"tcf.exe.old\" \"tcf.exe\" > nul 2> nul\r\n");
-		bat.write(")\r\n");
+		bat.write("if not exist \"tcf.exe\" if exist \"tcf.exe.old\" ren \"tcf.exe.old\" \"tcf.exe\" > nul 2> nul\r\n");
+		bat.write("if exist \"game_update_done.flag\" del /f /q \"game_update_done.flag\"\r\n");
+		bat.write("if exist \"game_update_failed.flag\" del /f /q \"game_update_failed.flag\"\r\n");
 		bat.write("if exist \"dw.exe\" del /f /q \"dw.exe\" > nul 2> nul\r\n");
 		bat.write("if exist \"update_temp\" rd /s /q \"update_temp\" 2> nul\r\n");
 		bat.write("start \"\" \"tcf.exe\"\r\n");
 		bat.write("del \"%~f0\"\r\n");
 		bat.close();
 	}
-
-	current_game_version = item.new_version;
-	current_game_build = item.new_build;
-	save_updater_settings();
 
 	stop_updater_music();
 	play_update_complete_sound();
@@ -751,8 +830,32 @@ bool apply_content_update(update_item@ item)
 	}
 
 	if (!directory_exists("settings")) directory_create("settings");
-	if (file_exists(CONTENTS_DAT_PATH)) file_delete(CONTENTS_DAT_PATH);
-	file_copy(final_content_file, CONTENTS_DAT_PATH, true);
+	string staged_contents = CONTENTS_DAT_PATH + ".new";
+	string backup_contents = CONTENTS_DAT_PATH + ".bak";
+	if (!file_copy(final_content_file, staged_contents, true) || !validate_contents_file(staged_contents))
+	{
+		speak(tr("updater.corrupt_content"));
+		cleanup_update_temp();
+		return false;
+	}
+	bool had_contents = file_exists(CONTENTS_DAT_PATH);
+	if (had_contents && !file_copy(CONTENTS_DAT_PATH, backup_contents, true))
+	{
+		file_delete(staged_contents);
+		speak(tr("updater.install_failed"));
+		cleanup_update_temp();
+		return false;
+	}
+	if (!file_copy(staged_contents, CONTENTS_DAT_PATH, true))
+	{
+		if (had_contents) file_copy(backup_contents, CONTENTS_DAT_PATH, true);
+		file_delete(staged_contents);
+		speak(tr("updater.install_failed"));
+		cleanup_update_temp();
+		return false;
+	}
+	file_delete(staged_contents);
+	if (file_exists(backup_contents)) file_delete(backup_contents);
 	remove_legacy_content_bundles();
 	cleanup_update_temp();
 
@@ -791,7 +894,7 @@ bool apply_sounds_update(update_item@ item)
 		ext_bat.write("@echo off\r\n");
 		ext_bat.write("if exist \"extract_done.flag\" del /f /q \"extract_done.flag\"\r\n");
 		ext_bat.write("tar.exe -xf \"" + temp_zip + "\" -C \"" + extract_dir + "\" 2> nul\r\n");
-		ext_bat.write("echo done > \"extract_done.flag\"\r\n");
+		ext_bat.write("if errorlevel 1 (echo failed > \"extract_failed.flag\") else (echo done > \"extract_done.flag\")\r\n");
 		ext_bat.write("del \"%~f0\"\r\n");
 		ext_bat.close();
 	}
@@ -800,7 +903,7 @@ bool apply_sounds_update(update_item@ item)
 
 	double pct = 5.0;
 	timer beep_timer;
-	while (!file_exists("extract_done.flag"))
+	while (!file_exists("extract_done.flag") && !file_exists("extract_failed.flag"))
 	{
 		wait(25);
 		if (beep_timer.elapsed >= 350)
@@ -811,6 +914,13 @@ bool apply_sounds_update(update_item@ item)
 		}
 	}
 	if (file_exists("extract_done.flag")) file_delete("extract_done.flag");
+	if (file_exists("extract_failed.flag"))
+	{
+		file_delete("extract_failed.flag");
+		speak(tr("updater.sound_extract_failed", "The sound archive could not be extracted. Existing sounds were kept."));
+		cleanup_update_temp();
+		return false;
+	}
 	beep_percentage(100.0);
 	stop_updater_music();
 	wait(120);
@@ -827,7 +937,7 @@ bool apply_sounds_update(update_item@ item)
 	int extracted_count = 0;
 	if (extracted_files !is null) extracted_count += extracted_files.length();
 	if (extracted_dirs !is null) extracted_count += extracted_dirs.length();
-	if (source_dir == "" || extracted_count == 0)
+	if (source_dir == "" || extracted_count == 0 || !sound_directory_is_valid(source_dir))
 	{
 		speak(tr("updater.sound_extract_failed", "O pacote de sons não pôde ser extraído. Os sons atuais foram mantidos."));
 		cleanup_update_temp();
@@ -835,33 +945,70 @@ bool apply_sounds_update(update_item@ item)
 	}
 
 	string win_source = string_replace(source_dir, "/", "\\", true);
-	if (!directory_exists("sounds")) directory_create("sounds");
-
-	file apply_bat;
-	if (apply_bat.open("apply_sounds.bat", "w"))
+	file stage_bat;
+	if (stage_bat.open("stage_sounds.bat", "w"))
 	{
-		apply_bat.write("@echo off\r\n");
-		apply_bat.write("if exist \"sounds_applied.flag\" del /f /q \"sounds_applied.flag\"\r\n");
-		apply_bat.write("robocopy.exe \"" + win_source + "\" \"sounds\" /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS\r\n");
-		apply_bat.write("if %errorlevel% leq 7 (\r\n");
-		apply_bat.write("  echo done > \"sounds_applied.flag\"\r\n");
-		apply_bat.write(") else (\r\n");
-		apply_bat.write("  xcopy.exe \"" + win_source + "\\*\" \"sounds\\\" /S /E /Y /I > nul\r\n");
-		apply_bat.write("  if exist \"sounds\" echo done > \"sounds_applied.flag\"\r\n");
-		apply_bat.write(")\r\n");
-		apply_bat.write("del \"%~f0\"\r\n");
-		apply_bat.close();
+		stage_bat.write("@echo off\r\n");
+		stage_bat.write("if exist \"sounds.new\" rd /s /q \"sounds.new\"\r\n");
+		stage_bat.write("if exist \"sounds_stage.flag\" del /f /q \"sounds_stage.flag\"\r\n");
+		stage_bat.write("if exist \"sounds_stage_failed.flag\" del /f /q \"sounds_stage_failed.flag\"\r\n");
+		stage_bat.write("robocopy.exe \"" + win_source + "\" \"sounds.new\" /E /COPY:DAT /R:2 /W:1 /NFL /NDL /NJH /NJS\r\n");
+		stage_bat.write("if errorlevel 8 (echo failed > \"sounds_stage_failed.flag\") else (echo done > \"sounds_stage.flag\")\r\n");
+		stage_bat.write("del \"%~f0\"\r\n");
+		stage_bat.close();
 	}
-	if (file_exists("sounds_applied.flag")) file_delete("sounds_applied.flag");
-	run("cmd.exe", "/c apply_sounds.bat", false, true);
+	if (file_exists("sounds_stage.flag")) file_delete("sounds_stage.flag");
+	if (file_exists("sounds_stage_failed.flag")) file_delete("sounds_stage_failed.flag");
+	run("cmd.exe", "/c stage_sounds.bat", false, true);
 
-	timer apply_timer;
-	while (!file_exists("sounds_applied.flag") && apply_timer.elapsed < 60000)
+	timer stage_timer;
+	while (!file_exists("sounds_stage.flag") && !file_exists("sounds_stage_failed.flag") && stage_timer.elapsed < 900000)
 	{
 		wait(50);
 	}
-	if (file_exists("sounds_applied.flag")) file_delete("sounds_applied.flag");
-	if (file_exists("apply_sounds.bat")) file_delete("apply_sounds.bat");
+	if (file_exists("sounds_stage_failed.flag")) file_delete("sounds_stage_failed.flag");
+	if (!file_exists("sounds_stage.flag") || !sound_directory_is_valid("sounds.new"))
+	{
+		if (file_exists("sounds_stage.flag")) file_delete("sounds_stage.flag");
+		speak(tr("updater.sound_install_failed", "The new sound files could not be staged. Existing sounds were kept."));
+		cleanup_update_temp();
+		return false;
+	}
+	file_delete("sounds_stage.flag");
+	if (file_exists("sounds_swap_done.flag")) file_delete("sounds_swap_done.flag");
+	if (file_exists("sounds_swap_failed.flag")) file_delete("sounds_swap_failed.flag");
+	file swap_bat;
+	if (swap_bat.open("swap_sounds.bat", "w"))
+	{
+		swap_bat.write("@echo off\r\n");
+		swap_bat.write("if exist \"sounds.old\" rd /s /q \"sounds.old\"\r\n");
+		swap_bat.write("if exist \"sounds\" ren \"sounds\" \"sounds.old\"\r\n");
+		swap_bat.write("if exist \"sounds\" goto rollback\r\n");
+		swap_bat.write("ren \"sounds.new\" \"sounds\"\r\n");
+		swap_bat.write("if exist \"sounds\" goto success\r\n");
+		swap_bat.write(":rollback\r\n");
+		swap_bat.write("if exist \"sounds.old\" ren \"sounds.old\" \"sounds\"\r\n");
+		swap_bat.write("echo failed > \"sounds_swap_failed.flag\"\r\n");
+		swap_bat.write("goto finish\r\n");
+		swap_bat.write(":success\r\n");
+		swap_bat.write("echo done > \"sounds_swap_done.flag\"\r\n");
+		swap_bat.write("if exist \"sounds.old\" rd /s /q \"sounds.old\"\r\n");
+		swap_bat.write(":finish\r\n");
+		swap_bat.write("del \"%~f0\"\r\n");
+		swap_bat.close();
+	}
+	run("cmd.exe", "/c swap_sounds.bat", false, true);
+	timer swap_timer;
+	while (!file_exists("sounds_swap_done.flag") && !file_exists("sounds_swap_failed.flag") && swap_timer.elapsed < 60000) wait(50);
+	if (file_exists("sounds_swap_failed.flag")) file_delete("sounds_swap_failed.flag");
+	if (!file_exists("sounds_swap_done.flag"))
+	{
+		speak(tr("updater.sound_install_failed", "The new sound files could not be installed. Existing sounds were kept."));
+		cleanup_update_temp();
+		return false;
+	}
+	file_delete("sounds_swap_done.flag");
+	if (file_exists("swap_sounds.bat")) file_delete("swap_sounds.bat");
 
 	if (!are_game_sounds_installed())
 	{
@@ -907,8 +1054,32 @@ bool apply_maps_update(update_item@ item)
 	}
 
 	if (!directory_exists("settings")) directory_create("settings");
-	if (file_exists(MAPS_DAT_PATH)) file_delete(MAPS_DAT_PATH);
-	file_copy(final_maps_file, MAPS_DAT_PATH, true);
+	string staged_maps = MAPS_DAT_PATH + ".new";
+	string backup_maps = MAPS_DAT_PATH + ".bak";
+	if (!file_copy(final_maps_file, staged_maps, true) || !validate_maps_file(staged_maps))
+	{
+		speak(tr("updater.corrupt_map"));
+		cleanup_update_temp();
+		return false;
+	}
+	bool had_maps = file_exists(MAPS_DAT_PATH);
+	if (had_maps && !file_copy(MAPS_DAT_PATH, backup_maps, true))
+	{
+		file_delete(staged_maps);
+		speak(tr("updater.install_failed"));
+		cleanup_update_temp();
+		return false;
+	}
+	if (!file_copy(staged_maps, MAPS_DAT_PATH, true))
+	{
+		if (had_maps) file_copy(backup_maps, MAPS_DAT_PATH, true);
+		file_delete(staged_maps);
+		speak(tr("updater.install_failed"));
+		cleanup_update_temp();
+		return false;
+	}
+	file_delete(staged_maps);
+	if (file_exists(backup_maps)) file_delete(backup_maps);
 	if (file_exists("data/maps.dat")) file_delete("data/maps.dat");
 	if (file_exists("maps.dat")) file_delete("maps.dat");
 	cleanup_update_temp();
@@ -1207,7 +1378,7 @@ bool check_for_updates(bool interactive = true)
 		prompt_msg = tr("updater.map_update_available");
 	}
 
-	if (ask_update_confirmation(prompt_msg))
+	if (show_update_details(available_update, prompt_msg))
 	{
 		if (available_update.type == UPDATE_GAME)
 		{

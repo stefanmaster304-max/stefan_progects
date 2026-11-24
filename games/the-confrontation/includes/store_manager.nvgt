@@ -178,6 +178,9 @@ void store_manager_menu()
 		audio_form f;
 		f.create_window(tr("store_manager.title"), false, true, false);
 		int list = f.create_list(tr("store_manager.options"), 0, false, false);
+		f.add_list_item(list, tr("store_manager.create_store"), "storefront_create");
+		f.add_list_item(list, tr("store_manager.edit_store"), "storefront_edit");
+		f.add_list_item(list, tr("store_manager.delete_store"), "storefront_delete");
 		f.add_list_item(list, tr("store_manager.create_category"), "store_create");
 		f.add_list_item(list, tr("store_manager.edit_category"), "store_edit");
 		f.add_list_item(list, tr("store_manager.delete_category"), "store_delete");
@@ -203,10 +206,117 @@ void store_manager_menu()
 		}
 		if (choice == "") return;
 		if (choice == "back") return;
+		else if (choice == "storefront_create") storefront_edit_form();
+		else if (choice == "storefront_edit") storefront_select_and_edit();
+		else if (choice == "storefront_delete") storefront_delete_form();
 		else if (choice == "store_create") store_create_form();
 		else if (choice == "store_edit") store_edit_form();
 		else if (choice == "store_delete") store_delete_form();
 	}
+}
+
+string normalize_storefront_id(string raw)
+{
+	string id = string_to_lower_case(raw.trim_whitespace());
+	id = string_replace(id, " ", "_", true);
+	id = string_replace(id, "/", "_", true);
+	id = string_replace(id, "\\", "_", true);
+	id = string_replace(id, ":", "_", true);
+	return id;
+}
+
+void storefront_edit_form(const string&in existing_id = "")
+{
+	if (is_store_encrypted()) { speak(tr("store_manager.encrypted")); return; }
+	init_stores();
+	init_storefronts();
+	if (store_configs.length() == 0) { speak(tr("store.no_categories")); return; }
+	storefront_cfg@ current = (existing_id != "") ? get_storefront(existing_id) : null;
+	if (existing_id != "" && current is null) { speak(tr("store_manager.not_found")); return; }
+	audio_form f;
+	f.create_window(existing_id == "" ? tr("store_manager.create_store") : tr("store_manager.edit_store"), false, true, false);
+	int id_field = f.create_input_box(tr("store_manager.store_id"), current is null ? "" : current.name);
+	int name_field = f.create_input_box(tr("store_manager.store_name"), current is null ? "" : current.display_name);
+	int category_list = f.create_list(tr("store_manager.store_categories"), 0, true, true);
+	for (uint i = 0; i < store_configs.length(); i++)
+	{
+		bool checked = (current !is null && current.categories.find(store_configs[i].name) >= 0);
+		f.add_list_item(category_list, store_configs[i].display_name, store_configs[i].name, -1, checked, false);
+	}
+	int save = f.create_button("&" + tr("ui.save"), true);
+	int cancel = f.create_button("&" + tr("ui.cancel"), false, true);
+	f.set_default_controls(save, cancel);
+	f.focus(id_field);
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		f.monitor();
+		if (key_pressed(KEY_ESCAPE) || f.is_pressed(cancel)) return;
+		if (!f.is_pressed(save)) continue;
+		string id = normalize_storefront_id(f.get_text(id_field));
+		string display_name = f.get_text(name_field).trim_whitespace();
+		if (id == "") { speak(tr("store_manager.id_empty")); f.focus(id_field); continue; }
+		if (display_name == "") { speak(tr("store_manager.store_name_required")); f.focus(name_field); continue; }
+		if (id != existing_id && file_exists(STOREFRONT_DIR + "/" + id + ".st"))
+		{ speak(tr("store_manager.id_exists")); f.focus(id_field); continue; }
+		string[] categories;
+		int[]@ checked = f.get_checked_list_items(category_list);
+		if (checked !is null)
+			for (uint c = 0; c < checked.length(); c++)
+				if (checked[c] >= 0 && checked[c] < int(store_configs.length())) categories.insert_last(store_configs[checked[c]].name);
+		if (categories.length() == 0) { speak(tr("store_manager.store_category_required")); f.focus(category_list); continue; }
+		storefront_cfg@ store = storefront_cfg();
+		store.name = id;
+		store.display_name = display_name;
+		store.categories = categories;
+		if (!save_storefront(store)) { speak(tr("store_manager.save_failed")); continue; }
+		if (existing_id != "" && existing_id != id && file_exists(STOREFRONT_DIR + "/" + existing_id + ".st")) file_delete(STOREFRONT_DIR + "/" + existing_id + ".st");
+		speak(tr("store_manager.saved_success"));
+		return;
+	}
+}
+
+string choose_storefront()
+{
+	init_stores();
+	init_storefronts();
+	if (storefronts.length() == 0) { speak(tr("store_manager.no_stores_found")); return ""; }
+	audio_form f;
+	f.create_window(tr("store_manager.select_store_title"), false, true, false);
+	int list = f.create_list(tr("store_manager.select_store_title"), 0, false, false);
+	for (uint i = 0; i < storefronts.length(); i++) f.add_list_item(list, storefronts[i].display_name, storefronts[i].name, -1, false, i == 0);
+	int select = f.create_button("&" + tr("ui.select"), true);
+	int cancel = f.create_button("&" + tr("ui.cancel"), false, true);
+	f.set_default_controls(select, cancel);
+	f.focus(list);
+	while (true)
+	{
+		wait(5); update_game_world(); f.monitor();
+		if (key_pressed(KEY_ESCAPE) || f.is_pressed(cancel)) return "";
+		if (f.is_pressed(select))
+		{
+			int pos = f.get_list_position(list);
+			return (pos >= 0) ? f.get_list_item_id(list, pos) : "";
+		}
+	}
+	return "";
+}
+
+void storefront_select_and_edit()
+{
+	string id = choose_storefront();
+	if (id != "") storefront_edit_form(id);
+}
+
+void storefront_delete_form()
+{
+	if (is_store_encrypted()) { speak(tr("store_manager.encrypted")); return; }
+	string id = choose_storefront();
+	if (id == "") return;
+	if (file_exists(STOREFRONT_DIR + "/" + id + ".st")) file_delete(STOREFRONT_DIR + "/" + id + ".st");
+	for (int i = int(storefronts.length()) - 1; i >= 0; i--) if (storefronts[i].name == id) storefronts.remove_at(i);
+	speak(tr("store_manager.store_deleted"));
 }
 
 void store_create_form()
@@ -434,6 +544,12 @@ void store_edit_form()
 				if (file_exists(legacy_old)) file_delete(legacy_old);
 
 				s.name = new_id;
+				for (uint g = 0; g < storefronts.length(); g++)
+				{
+					for (uint c = 0; c < storefronts[g].categories.length(); c++)
+						if (storefronts[g].categories[c] == id) storefronts[g].categories[c] = new_id;
+					save_storefront(storefronts[g]);
+				}
 				for (uint i = 0; i < store_configs.length(); i++)
 				{
 					if (store_configs[i].name == id)

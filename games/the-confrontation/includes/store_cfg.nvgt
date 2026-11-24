@@ -1,4 +1,5 @@
 const string STORE_DIR = "settings/stores";
+const string STOREFRONT_DIR = "settings/storefronts";
 const string STORE_ENC_KEY = "sT7#rE5!wE3$oL9@pY2&lK8^zX4*mN6+vB1?cF5/gH8*jR3=pL6+dS2-fG9_DWShopsPack2026";
 const string SHOPS_DAT_PATH = "settings/shops.dat";
 const string STORES_DAT_PATH = "settings/stores.dat";
@@ -24,6 +25,157 @@ class store_cfg
 }
 
 store_cfg@[] store_configs(0);
+
+string serialize_storefront_categories(const string[]&in categories)
+{
+	string result = "";
+	for (uint i = 0; i < categories.length(); i++)
+	{
+		if (i > 0) result += ";";
+		result += categories[i];
+	}
+	return result;
+}
+
+class storefront_cfg
+{
+	string name;
+	string display_name;
+	string[] categories;
+
+	storefront_cfg()
+	{
+		name = "";
+		display_name = "";
+		categories.resize(0);
+	}
+}
+
+storefront_cfg@[] storefronts(0);
+
+storefront_cfg@ find_storefront(const string&in name)
+{
+	for (uint i = 0; i < storefronts.length(); i++)
+		if (storefronts[i].name == name) return storefronts[i];
+	return null;
+}
+
+storefront_cfg@ get_storefront(const string&in name)
+{
+	storefront_cfg@ found = find_storefront(name);
+	if (found !is null) return found;
+	string path = STOREFRONT_DIR + "/" + name + ".st";
+	if (!file_exists(path)) return null;
+	file f;
+	if (!f.open(path, "r")) return null;
+	string data = f.read();
+	f.close();
+	storefront_cfg@ s = storefront_cfg();
+	string[]@ lines = string_split(string_replace(data, "\r", "", true), "\n", false);
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		int colon = lines[i].find(":");
+		if (colon < 0) continue;
+		string key = string_to_lower_case(lines[i].substr(0, colon).trim_whitespace());
+		string value = lines[i].substr(colon + 1).trim_whitespace();
+		if (key == "name") s.name = value;
+		else if (key == "display_name") s.display_name = value;
+		else if (key == "categories") s.categories = string_split(value, ";", false);
+	}
+	if (s.name == "") s.name = name;
+	if (s.display_name == "") s.display_name = s.name;
+	for (uint i = 0; i < storefronts.length(); i++)
+	{
+		if (storefronts[i].name == s.name) { @storefronts[i] = s; return s; }
+	}
+	storefronts.insert_last(s);
+	return s;
+}
+
+void init_storefronts()
+{
+	if (!SCRIPT_COMPILED && directory_exists(STOREFRONT_DIR))
+	{
+		string[]@ files = find_files(STOREFRONT_DIR + "/*.st");
+		if (files !is null)
+		{
+			for (uint i = 0; i < files.length(); i++)
+			{
+				string id = files[i];
+				int slash = id.find("/");
+				if (slash >= 0) id = id.substr(slash + 1);
+				if (id.ends_with(".st")) id = id.substr(0, id.length() - 3);
+				get_storefront(id);
+			}
+		}
+	}
+	if (storefronts.length() == 0 && store_configs.length() > 0)
+	{
+		storefront_cfg@ general = storefront_cfg();
+		general.name = "general";
+		general.display_name = tr("store.default_name");
+		for (uint i = 0; i < store_configs.length(); i++) general.categories.insert_last(store_configs[i].name);
+		storefronts.insert_last(general);
+	}
+}
+
+string serialize_all_storefronts_bundle()
+{
+	string s = "";
+	for (uint i = 0; i < storefronts.length(); i++)
+	{
+		storefront_cfg@ store = storefronts[i];
+		s += "[storefront:" + store.name + "]\n";
+		s += "display_name:" + store.display_name + "\n";
+		s += "categories:" + serialize_storefront_categories(store.categories) + "\n\n";
+	}
+	return s;
+}
+
+void parse_storefronts_bundle(const string&in content)
+{
+	storefronts.resize(0);
+	string[]@ lines = string_split(string_replace(content, "\r", "", true), "\n", false);
+	storefront_cfg@ current = null;
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string line = lines[i].trim_whitespace();
+		if (line == "" || line.starts_with("#")) continue;
+		if (line.starts_with("[storefront:") && line.ends_with("]"))
+		{
+			@current = storefront_cfg();
+			current.name = line.substr(12, line.length() - 13).trim_whitespace();
+			current.display_name = current.name;
+			storefronts.insert_last(current);
+			continue;
+		}
+		if (current is null) continue;
+		int colon = line.find(":");
+		if (colon < 0) continue;
+		string key = string_to_lower_case(line.substr(0, colon).trim_whitespace());
+		string value = line.substr(colon + 1).trim_whitespace();
+		if (key == "display_name") current.display_name = value;
+		else if (key == "categories") current.categories = string_split(value, ";", false);
+	}
+}
+
+bool save_storefront(storefront_cfg@ store)
+{
+	if (SCRIPT_COMPILED || store is null || store.name == "") return false;
+	if (!directory_exists(STOREFRONT_DIR)) directory_create(STOREFRONT_DIR);
+	file f;
+	if (!f.open(STOREFRONT_DIR + "/" + store.name + ".st", "w")) return false;
+	f.write("name:" + store.name + "\n");
+	f.write("display_name:" + store.display_name + "\n");
+	f.write("categories:" + serialize_storefront_categories(store.categories) + "\n");
+	f.close();
+	for (uint i = 0; i < storefronts.length(); i++)
+	{
+		if (storefronts[i].name == store.name) { @storefronts[i] = store; return true; }
+	}
+	storefronts.insert_last(store);
+	return true;
+}
 
 void ensure_store_dir()
 {
@@ -439,7 +591,7 @@ void init_stores()
 	// 1. In compiled release mode: the single encrypted contents.dat bundle
 	if (SCRIPT_COMPILED)
 	{
-		if (load_all_contents()) return;
+		if (load_all_contents()) { init_storefronts(); return; }
 	}
 
 	string[]@ loose_stores = list_store_files();
@@ -450,6 +602,7 @@ void init_stores()
 		{
 			load_store_config(loose_stores[i]);
 		}
+		init_storefronts();
 		return;
 	}
 
@@ -468,7 +621,7 @@ void init_stores()
 			if (decrypted.length() > 0)
 			{
 				parse_stores_bundle(decrypted);
-				if (store_configs.length() > 0) return;
+				if (store_configs.length() > 0) { init_storefronts(); return; }
 			}
 		}
 	}
@@ -516,6 +669,7 @@ void init_stores()
 	{
 		load_all_contents();
 	}
+	init_storefronts();
 }
 
 void encrypt_stores()
@@ -561,6 +715,9 @@ bool store_remove_category(const string&in id)
 {
 	if (id == "") return false;
 	bool removed = store_category_exists(id);
+	for (uint g = 0; g < storefronts.length(); g++)
+		for (int c = int(storefronts[g].categories.length()) - 1; c >= 0; c--)
+			if (storefronts[g].categories[c] == id) storefronts[g].categories.remove_at(c);
 	for (int i = int(store_configs.length()) - 1; i >= 0; i--)
 	{
 		if (store_configs[i].name == id)
@@ -578,5 +735,9 @@ bool store_remove_category(const string&in id)
 		else file_delete(SHOPS_DAT_PATH);
 	}
 	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
+	else if (!SCRIPT_COMPILED)
+	{
+		for (uint g = 0; g < storefronts.length(); g++) save_storefront(storefronts[g]);
+	}
 	return removed;
 }

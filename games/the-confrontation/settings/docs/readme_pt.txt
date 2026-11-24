@@ -1,36 +1,15 @@
-Bem-vindo ao The Confront, um FPS 3D offline!
+Bem-vindo a The Confront, um jogo de tiro acessível em 3D.
 
-O que é o The Confront?
-The Confront é um jogo de áudio onde você enfrenta vários tipos de inimigos para subir de nível, ganhar XP, desbloquear novos mapas e coletar moedas para comprar itens na loja do jogo — desde itens de recuperação de vida até escudos e armas poderosas!
+OBJETIVO
+Sobreviva: enfrente os inimigos, evite ser derrotado, ganhe experiência e avance pelos níveis e ressurreições. As batalhas podem render moedas e itens para melhorar seu equipamento.
 
-Níveis e Ressurreições
-A cada 1.500 níveis, seu personagem alcança uma nova ressurreição, que aumenta seu HP e desbloqueia novos mapas.
-Cada nível alcançado e mapa desbloqueado introduz novos inimigos, tornando o jogo mais desafiador com o passar do tempo.
+PROGRESSÃO E MAPAS
+O jogo oferece mapas com limites de nível e ressurreição. Novos desafios e inimigos aparecem conforme a progressão. Alguns mapas podem ser liberados para testes e bloqueados novamente depois; os requisitos do próprio jogo indicam quando você pode entrar.
 
-Mapas e Personagens
-Depois de desbloquear um mapa, o jogo notifica qual mapa foi desbloqueado e solicita que você o selecione no menu principal através da opção Menu de Mapas.
-Além disso, para jogar ou comprar itens na loja, você deve selecionar um personagem no Menu de Configurações. Cada personagem tem sua própria velocidade de caminhada e quantidade de vida:
-Stefan: 5.000 de vida.
-Hane: 10.000 de vida.
-Tenha em mente que estes são os valores padrão e, como mencionado na seção anterior, as ressurreições aumentam sua vida.
+LOJAS E RECOMPENSAS
+Inimigos podem conceder experiência, moedas e itens. Lojas são posicionadas nos mapas pelo construtor. Ao entrar na área de uma loja, pressione Enter. Use as setas para percorrer as categorias e Tab para navegar nos itens da categoria. Os preços e moedas aceitas dependem da configuração da categoria.
 
-Moedas e Loja
-O jogo conta com 4 tipos de moedas: Ouro, Prata, Cristal Dourado e Diamante. Ao ser derrotado, cada inimigo pode dropar aleatoriamente qualquer uma dessas moedas.
-Essas moedas são usadas para comprar itens na loja. Cada item tem seu próprio preço e exige um tipo específico de moeda, o que significa que você não pode comprar, por exemplo, uma Poção de Vida com Cristais Dourados ou um Pacote de Munição com Ouro.
+CONTROLES PADRÃO
+Setas: mover. Q/E: virar. Espaço: pular. Ctrl esquerdo: disparar. R: recarregar. A: consultar munição. Tab: navegar pelo inventário. Enter: usar ou abrir uma loja no local. Alt+Enter: viajar silenciosamente se houver um TravelPoint válido e o mapa de destino permitir entrada. C: coordenadas. Z: localização. H: vida. L: nível e progresso. K: eliminações. B: construtor. P: pausar. Esc: sair.
 
-Teclas e Controles
-Teclas de seta (Cima, Baixo, Direita e Esquerda): Movem o personagem. Seta para Cima anda para frente, Seta para Baixo anda para trás, Seta para a Direita anda para a direita e Seta para a Esquerda anda para a esquerda.
-C: Informa suas coordenadas atuais (X, Y, Z).
-Tab e Shift + Tab: Percorrem os itens do seu inventário.
-A: Informa quanta munição está carregada na arma equipada e quanto resta na reserva.
-Control Esquerdo (Ctrl): Dispara a arma equipada.
-R: Recarrega a arma equipada.
-S: Faz o personagem agachar/sentar e se levantar.
-H: Informa a vida atual.
-F: Informa a direção para a qual o personagem está virado.
-Q e E: Giram o personagem ao longo das direções cardeais.
-K: Informa quantos inimigos você já eliminou.
-L: Informa seu nível atual, XP e número de ressurreições.
-Page Up e Page Down: Durante o jogo, sobe e desce escadas. Nos menus, aumenta e diminui o volume da música de fundo.
-Home e End: Controlam o volume mestre do jogo.
-Alt + Seta para Cima ou para Baixo: Controla o volume da música do mapa.
+Os controles podem ser alterados nas configurações. The Confront permanece em desenvolvimento; mapas e regras podem mudar entre versões.

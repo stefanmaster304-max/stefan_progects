@@ -1,11 +1,9 @@
 The Confront — Historial de cambios
-Versión 0.5 | 24 de noviembre de 2026 a las 10:53 (America/Sao_Paulo)
+Versión 0.6 | 24 de noviembre de 2026 a las 11:16 (America/Sao_Paulo)
 
-- NPC: eliminada la selección de clase por separado; la clase elegida en el formulario se guarda en el archivo del NPC. Añadida la clase Espíritus.
-- Armas: los sonidos de disparo cercanos y lejanos, la velocidad y la dispersión respetan la configuración individual de cada archivo .wpm.
-- Menús y mapas: eliminados la tienda y el selector de mapas del menú principal. Ahora las tiendas se colocan en el mapa desde el constructor y se abren en su ubicación.
-- TravelPoint: añadido un formulario para los límites XYZ de origen y destino y el mapa de destino; Alt+Enter solo transfiere desde una zona válida y respeta los bloqueos por nivel/resurrección.
-- Transiciones: se detienen las fuentes de audio del mapa anterior y se actualizan los sonidos del nuevo mapa.
-- Traducciones: formulario y mensajes de TravelPoint, colocación de tiendas y clase Espíritus traducidos al portugués, inglés y español.
-- Actualizador: sincronizado el manifiesto con las versiones y archivos publicados, verificados los tamaños de los paquetes y eliminada la entrada duplicada de configuración de mapas.
-- Limpieza: eliminado código muerto/duplicado identificado durante la revisión, incluido el archivo duplicado dw.nvgt y helpers antiguos del actualizador.
+- Tiendas: cada tienda ahora agrupa sus propias categorías; Enter abre una tienda colocada en el mapa, las flechas recorren sus categorías y Tab abre los artículos de la categoría seleccionada.
+- TravelPoint: Alt+Enter comprueba la posición en silencio cuando no hay un punto de viaje válido.
+- Actualizador: antes de confirmar, muestra los cambios de esta versión en un campo multilínea nativo; los paquetes del juego, contenido, mapas y sonidos usan archivos y validaciones separados.
+- Instalación: los archivos cifrados de contenido y mapas se validan y preparan antes de reemplazarlos; si falla la instalación, se restaura el archivo anterior.
+- Sitio web: actualizadas las páginas de inicio y proyectos y añadida una página de presentación y manual de The Confront con descargas de la versión 0.6.
+- Distribución: los paquetes completos se preparan sin código fuente ni datos guardados de los jugadores.

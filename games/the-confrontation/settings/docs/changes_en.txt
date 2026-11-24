@@ -1,11 +1,9 @@
 The Confront — Changelog
-Version 0.5 | November 24, 2026 at 10:53 (America/Sao_Paulo)
+Version 0.6 | November 24, 2026 at 11:16 (America/Sao_Paulo)
 
-- NPCs: removed the separate class-selection step; the class selected in the form is saved to the NPC file. Added the Spirits class.
-- Weapons: close and distant firing sounds, projectile speed, and spread follow each individual .wpm configuration.
-- Menus and maps: removed the store and map selector from the main menu. Stores are now placed on maps through the builder and opened at their location.
-- TravelPoint: added a form for source and destination XYZ bounds and destination map; Alt+Enter transfers only from a valid area and enforces level/resurrection locks.
-- Transitions: audio sources from the previous map are stopped and the new map's sounds are refreshed.
-- Translations: TravelPoint form and messages, map store placement, and Spirits class are translated in Portuguese, English, and Spanish.
-- Updater: synchronized the manifest with published versions and files, verified package sizes, and removed the duplicate maps configuration entry.
-- Cleanup: removed dead/duplicate code identified during review, including the duplicate dw.nvgt source and obsolete updater helpers.
+- Stores: each storefront now contains its own categories; Enter opens a placed store, arrow keys move through its categories, and Tab opens the selected category's items.
+- TravelPoint: Alt+Enter checks the current position silently when no valid travel point is present.
+- Updater: before confirmation, it displays this version's changes in a native multiline field; game, content, map, and sound packages use separate files and validation.
+- Installation: encrypted content and map files are validated and staged before replacement; the previous file is restored if installation fails.
+- Website: refreshed the home and projects pages and added a The Confront overview and manual with version 0.6 downloads.
+- Distribution: full packages are prepared without source code or player save data.

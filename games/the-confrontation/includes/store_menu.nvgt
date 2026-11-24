@@ -1,8 +1,5 @@
-// store_menu.nvgt - The single store, opened from the main menu.
-//
-// The store is not tied to any map: it is one place, opened from the main menu.
-// Its categories are the store configurations in settings/stores. Every item of
-// a category is charged in that category's own currency.
+// store_menu.nvgt - One placed storefront containing its configured categories.
+// Each category loads its inventory and payment settings from its own .st data.
 //
 //   Up / Down   - move between categories (the first press selects the first
 //                 category; nothing is selected when the store opens)
@@ -221,16 +218,17 @@ void store_browse_buy(int cat)
 	speak(tr("store.purchase_success", {summary, "" + total_cost, currency}));
 }
 
-string store_welcome_text()
+string store_welcome_text(const string&in store_name)
 {
-	return tr("store.welcome");
+	string[] args = {store_name};
+	return tr("store.welcome", args);
 }
 
 bool try_open_map_store_at_player()
 {
 	string store_id = get_map_store_at(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
 	if (store_id == "") return false;
-	if (get_store(store_id) is null)
+	if (get_storefront(store_id) is null)
 	{
 		speak(tr("store_point.store_missing"));
 		return true;
@@ -239,7 +237,7 @@ bool try_open_map_store_at_player()
 	return true;
 }
 
-void store_main_menu(const string&in only_store = "")
+void store_main_menu(const string&in storefront_id)
 {
 	if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana")
 	{
@@ -251,28 +249,23 @@ void store_main_menu(const string&in only_store = "")
 	init_stores();
 	load_all_items_config();
 	load_player_store_inventory();
+	init_storefronts();
 	if (store_configs.length() == 0)
 	{
 		speak(tr("store.no_categories"));
 		return;
 	}
-	int locked_category = -1;
-	if (only_store != "")
+	storefront_cfg@ storefront = get_storefront(storefront_id);
+	if (storefront is null)
 	{
-		for (uint i = 0; i < store_configs.length(); i++)
-		{
-			if (store_configs[i].name == only_store)
-			{
-				locked_category = int(i);
-				break;
-			}
-		}
-		if (locked_category < 0)
-		{
-			speak(tr("store_point.store_missing"));
-			return;
-		}
+		speak(tr("store_point.store_missing"));
+		return;
 	}
+	int[] visible_categories;
+	for (uint c = 0; c < storefront.categories.length(); c++)
+		for (uint i = 0; i < store_configs.length(); i++)
+			if (store_configs[i].name == storefront.categories[c]) { visible_categories.insert_last(int(i)); break; }
+	if (visible_categories.length() == 0) { speak(tr("store.no_categories")); return; }
 
 	while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
 	{
@@ -282,15 +275,17 @@ void store_main_menu(const string&in only_store = "")
 	string st_snd = get_store_sound("st");
 	if (st_snd == "") st_snd = get_sound_path("player/st.ogg;sounds/player/st.ogg;st.ogg");
 	if (st_snd != "") p.play_stationary(st_snd, false);
-	speak(store_welcome_text());
+	speak(store_welcome_text(storefront.display_name));
 
-	int cat = (locked_category >= 0) ? locked_category : 0;
+	int category_position = 0;
+	int cat = visible_categories[category_position];
 	int item = 0;
 	bool in_items = false;
 	// Nothing is focused when the store opens: the first category is only
 	// selected after the player presses an arrow, Tab or Enter.
-	bool has_category = false;
+	bool has_category = true;
 	store_browse_resize_cart(cat);
+	store_browse_announce_category(cat);
 
 	while (true)
 	{
@@ -308,7 +303,8 @@ void store_main_menu(const string&in only_store = "")
 			if (!has_category)
 			{
 				has_category = true;
-				cat = (locked_category >= 0) ? locked_category : 0;
+				category_position = 0;
+				cat = visible_categories[category_position];
 				in_items = false;
 			}
 			store_cfg@ s = store_configs[cat];
@@ -331,33 +327,25 @@ void store_main_menu(const string&in only_store = "")
 		{
 			if (key_pressed(KEY_UP) || kb_pressed("menu_up"))
 			{
-				if (locked_category >= 0)
+				if (!has_category)
 				{
 					has_category = true;
-					play("menuedge");
+					category_position = 0;
+					cat = visible_categories[category_position];
 				}
-				else if (!has_category)
-				{
-					has_category = true;
-					cat = 0;
-				}
-				else if (cat > 0) cat--;
+				else if (category_position > 0) { category_position--; cat = visible_categories[category_position]; }
 				else play("menuedge");
 				store_browse_announce_category(cat);
 			}
 			if (key_pressed(KEY_DOWN) || kb_pressed("menu_down"))
 			{
-				if (locked_category >= 0)
+				if (!has_category)
 				{
 					has_category = true;
-					play("menuedge");
+					category_position = 0;
+					cat = visible_categories[category_position];
 				}
-				else if (!has_category)
-				{
-					has_category = true;
-					cat = 0;
-				}
-				else if (cat < int(store_configs.length()) - 1) cat++;
+				else if (category_position < int(visible_categories.length()) - 1) { category_position++; cat = visible_categories[category_position]; }
 				else play("menuedge");
 				store_browse_announce_category(cat);
 			}

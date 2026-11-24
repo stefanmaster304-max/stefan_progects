@@ -249,7 +249,18 @@
     "items_added": "items/weapons/packages added to store.",
     "item_id_name": "Item ID / Name",
     "price_updated": "Updated &1 price to &2",
-    "item_removed": "Item removed from store."
+    "item_removed": "Item removed from store.",
+    "store_deleted": "Store deleted. Its categories were kept.",
+    "select_store_title": "Select a store",
+    "create_store": "Create a store",
+    "store_name": "Store display name",
+    "store_category_required": "Select at least one category for this store.",
+    "edit_store": "Edit a store",
+    "store_name_required": "Enter a display name for this store.",
+    "delete_store": "Delete a store",
+    "store_categories": "Categories in this store",
+    "store_id": "Store ID",
+    "save_failed": "The store could not be saved."
   },
   "item_manager": {
     "title": "Items Manager",
@@ -337,7 +348,7 @@
   },
   "store": {
     "title": "Store Menu",
-    "welcome": "Welcome to the store! What would you like to buy today? Select items in one of the available categories.",
+    "welcome": "Welcome to &1! What would you like to buy today? Use the arrow keys to choose a category, then press Tab to browse its items.",
     "empty_cart": "Your cart is empty.",
     "not_enough_money": "You don't have enough &1. You need &2 and have &3.",
     "payment_returned": "The purchase could not be delivered; your payment was returned.",
@@ -348,7 +359,8 @@
     "nothing_in_cart_for_item": "Nothing in the cart for this item.",
     "items_in_cart_total": "&1 items in the cart, total: &2 &3.",
     "in_cart": "&1, &2 &3, in the cart: &4.",
-    "balances": "Balances: &1 gold, &2 golden crystals, &3 diamonds, &4 silver."
+    "balances": "Balances: &1 gold, &2 golden crystals, &3 diamonds, &4 silver.",
+    "default_name": "General Store"
   },
   "updater": {
     "checking": "Checking for updates...",
@@ -393,7 +405,13 @@
     "percent_downloaded": "percent downloaded.",
     "sound_extract_failed": "The sound package could not be extracted. The current sounds were kept.",
     "sound_install_failed": "The new sound folder could not be installed. Reinstall the game to restore the sounds.",
-    "progress_unavailable": "Download progress unavailable."
+    "progress_unavailable": "Download progress unavailable.",
+    "whats_new_label": "Changes in this version",
+    "update_now": "Update now",
+    "whats_new_title": "What is new in version &1",
+    "no_notes": "The release notes for this version are unavailable.",
+    "install_failed": "The verified update could not replace the existing file. The previous file was restored.",
+    "manifest_unavailable": "The update manifest could not be read."
   },
   "documentation": {
     "title": "Help",
@@ -481,7 +499,6 @@
     "destination_max_z": "Destination maximum Z",
     "invalid_bounds": "The coordinate bounds are invalid.",
     "source_max_y": "Current map maximum Y",
-    "destination_max_y": "Destination maximum Y",
-    "not_here": "You are not standing in a travel point."
+    "destination_max_y": "Destination maximum Y"
   }
 }

@@ -29,6 +29,7 @@ string serialize_all_contents_bundle()
 	s += "[section:items]\n" + serialize_all_items_bundle() + "\n";
 	s += "[section:weapons]\n" + serialize_all_weapons_bundle() + "\n";
 	s += "[section:stores]\n" + serialize_all_stores_bundle() + "\n";
+	s += "[section:storefronts]\n" + serialize_all_storefronts_bundle() + "\n";
 	s += "[section:packages]\n" + serialize_all_packages_bundle() + "\n";
 	s += "[section:npcs]\n" + serialize_all_npcs_bundle() + "\n";
 	return s;
@@ -39,6 +40,7 @@ void parse_contents_bundle(const string&in content)
 	string items_sec = "";
 	string weapons_sec = "";
 	string stores_sec = "";
+	string storefronts_sec = "";
 	string packages_sec = "";
 	string npcs_sec = "";
 	string section = "";
@@ -57,6 +59,7 @@ void parse_contents_bundle(const string&in content)
 		if (section == "items") items_sec += lines[i] + "\n";
 		else if (section == "weapons") weapons_sec += lines[i] + "\n";
 		else if (section == "stores") stores_sec += lines[i] + "\n";
+		else if (section == "storefronts") storefronts_sec += lines[i] + "\n";
 		else if (section == "packages") packages_sec += lines[i] + "\n";
 		else if (section == "npcs") npcs_sec += lines[i] + "\n";
 	}
@@ -64,6 +67,8 @@ void parse_contents_bundle(const string&in content)
 	parse_items_bundle(items_sec);
 	parse_weapons_bundle(weapons_sec);
 	parse_stores_bundle(stores_sec);
+	parse_storefronts_bundle(storefronts_sec);
+	init_storefronts();
 	parse_packages_bundle(packages_sec);
 	parse_npcs_bundle(npcs_sec);
 }
@@ -105,6 +110,7 @@ bool load_all_contents(bool force = false)
 	item_registry.resize(0);
 	weapon_registry.resize(0);
 	store_configs.resize(0);
+	storefronts.resize(0);
 	package_registry.resize(0);
 	npc_registry.resize(0);
 
@@ -120,6 +126,7 @@ bool encrypt_all_contents_silent()
 	if (item_registry.length() == 0) load_all_items_config(false);
 	if (weapon_registry.length() == 0) load_all_weapons_wpm(false);
 	if (store_configs.length() == 0) init_stores();
+	if (storefronts.length() == 0) init_storefronts();
 	if (package_registry.length() == 0) load_all_packages();
 	if (npc_registry.length() == 0) load_all_npcs(false);
 
@@ -163,6 +170,7 @@ void encrypt_all_contents()
 	if (item_registry.length() == 0) load_all_items_config();
 	if (weapon_registry.length() == 0) load_all_weapons_wpm();
 	if (store_configs.length() == 0) init_stores();
+	if (storefronts.length() == 0) init_storefronts();
 	if (package_registry.length() == 0) load_all_packages();
 	if (npc_registry.length() == 0) load_all_npcs();
 
@@ -223,6 +231,19 @@ void decrypt_all_contents()
 	{
 		store_cfg@ st = @store_configs[i];
 		put_store_content(STORE_DIR + "/" + st.name + ".st", serialize_store_st(st));
+	}
+	if (!directory_exists(STOREFRONT_DIR)) directory_create(STOREFRONT_DIR);
+	for (uint i = 0; i < storefronts.length(); i++)
+	{
+		storefront_cfg@ storefront = storefronts[i];
+		file f;
+		if (f.open(STOREFRONT_DIR + "/" + storefront.name + ".st", "w"))
+		{
+			f.write("name:" + storefront.name + "\n");
+			f.write("display_name:" + storefront.display_name + "\n");
+			f.write("categories:" + serialize_storefront_categories(storefront.categories) + "\n");
+			f.close();
+		}
 	}
 
 	ensure_package_directories();
