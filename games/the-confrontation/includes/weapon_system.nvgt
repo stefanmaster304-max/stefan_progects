@@ -15,11 +15,6 @@ void play_weapon_fire_sounds(weapon_data@ w)
 		string close_path = get_sound_path(w.sound_fire);
 		if (close_path != "") p.play_stationary(close_path, false);
 	}
-	if (w.sound_distant_fire != "")
-	{
-		string distant_path = get_sound_path(w.sound_distant_fire);
-		if (distant_path != "") dp.play_3d(distant_path, me.x, me.y, me.z, me.x, me.y, me.z, double(facing), false);
-	}
 }
 
 int get_current_walktime()

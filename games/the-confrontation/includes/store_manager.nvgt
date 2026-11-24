@@ -1,5 +1,3 @@
-#include"includes/m_pro.nvgt"
-#include"includes/dlg.nvgt"
 
 // Payment methods are a single list where the space bar checks/unchecks each
 // currency accepted by the store, exactly like selecting multiple items to

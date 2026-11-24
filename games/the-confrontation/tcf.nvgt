@@ -180,7 +180,6 @@ double xprequired=50;
 string mapname;
 vector me, old;
 sound_pool p(512); // Bounded effects/NPC voice pool to avoid thousands of active voices
-sound_pool dp(128); // Separate, bounded pool for distant weapon reports
 virtualizer v;
 sound bleading;
 sound heartbeat;
@@ -219,7 +218,6 @@ void dive_underwater()
 
 	sp.set_lowpass(450.0, 1.2);
 	p.set_lowpass(450.0, 1.2);
-	dp.set_lowpass(450.0, 1.2);
 	itempool.set_lowpass(450.0, 1.2);
 }
 
@@ -234,7 +232,6 @@ void surface_from_underwater()
 
 	sp.set_lowpass(0);
 	p.set_lowpass(0);
-	dp.set_lowpass(0);
 	itempool.set_lowpass(0);
 }
 timer movetimer, jumptimer, hittimer, healtimer;
@@ -295,24 +292,18 @@ king_realistic_distance = false;
 	p.volume_step = SOUND_VOLUME_STEP;
 	sp.volume_step = SOUND_VOLUME_STEP;
 	itempool.volume_step = SOUND_VOLUME_STEP;
-	dp.volume_step = 0.001;
 	spool.volume_step = SOUND_VOLUME_STEP;
-	dp.pan_step = SOUND_PAN_STEP;
 	// War Cry lowers the pitch of its distant reports by 6 when the sound sits
 	// behind the listener, and the same cue is used here.
-	dp.behind_pitch_decrease = 6.0;
 	// Max audible radius for pools. The distant weapon pool is unbounded: its
 	// reports must reach the far side of any map. King Audio silences a sound at
 	// 125 / volume_step units, so this step (a range of 125,000) makes the
 	// engine's own falloff negligible; the report level is computed from the
 	// distance instead, so a map of any size can be covered without the far
 	// shots sinking into silence.
-	dp.max_distance = 0;
-	dp.hrtf = true;
 p.pan_step = SOUND_PAN_STEP;
 sp.pan_step = SOUND_PAN_STEP;
 itempool.pan_step = SOUND_PAN_STEP;
-dp.pan_step = SOUND_PAN_STEP;
 spool.pan_step = SOUND_PAN_STEP;
 p.hrtf = true;
 sp.hrtf = true;
@@ -852,7 +843,6 @@ update_idle_scuff();
 	p.update_listener_3d(me.x, me.y, me.z, double(facing));
 	sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 	itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
-	dp.update_listener_3d(me.x, me.y, me.z, double(facing));
 	king_system_update();
 if (kb_pressed("exit_game") and jumping==0 and falling==false)
 {
@@ -1037,7 +1027,6 @@ currentloc = "";
 cancel_reload();
 fade_pool(@sp, -50, 10);
 fade_pool(@p, -50, 10);
-fade_pool(@dp, -50, 10);
 bleading.stop();
 heartbeat.stop();
 	clear_all_map_states();
@@ -1045,8 +1034,6 @@ heartbeat.stop();
 	destroy_all_map_spawners();
 	p.destroy_all();
 	p.update_listener_3d(0, 0, 0, 0);
-	dp.destroy_all();
-	dp.update_listener_3d(0, 0, 0, 0);
 	killbodyfalls();
 itempool.update_listener_3d(0, 0, 0, 0);
 killsrcs();
@@ -1232,7 +1219,7 @@ void reset_location_on_death()
     loc.load();
     string default_spawn_map = "florest";
     string[] available = get_available_maps();
-    if (available.length() > 0) default_spawn_map = available[0];
+    if (!map_exists_on_disk(default_spawn_map) && available.length() > 0) default_spawn_map = available[0];
     loc.add("mapname", default_spawn_map);
     loc.add("pos_x", 1);
     loc.add("pos_y", 0);
@@ -1264,7 +1251,7 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
     {
         saved_map = "florest";
         string[] available = get_available_maps();
-        if (available.length() > 0) saved_map = available[0];
+        if (!map_exists_on_disk(saved_map) && available.length() > 0) saved_map = available[0];
         deserialize_discovered_maps("");
         lx = 1; ly = 0; lz = 0; lfacing = 0;
         level = 1;
@@ -1353,7 +1340,7 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
     {
         string default_spawn_map = "florest";
         string[] available = get_available_maps();
-        if (available.length() > 0) default_spawn_map = available[0];
+        if (!map_exists_on_disk(default_spawn_map) && available.length() > 0) default_spawn_map = available[0];
         saved_map = default_spawn_map;
         deserialize_discovered_maps("");
         lx = 1; ly = 0; lz = 0; lfacing = 0;
@@ -1388,8 +1375,6 @@ void tempreset_internal(bool save_state)
     killbodyfalls();
     itempool.destroy_all();
     itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
-    dp.destroy_all();
-    dp.update_listener_3d(me.x, me.y, me.z, double(facing));
     destroy_all_builder_objects();
     npc_destroy_all();
     apply_ambient_volume();
@@ -1414,8 +1399,6 @@ void tempreset()
     cancel_reload();
     p.destroy_all();
     p.update_listener_3d(0, 0, 0, 0);
-    dp.destroy_all();
-    dp.update_listener_3d(0, 0, 0, 0);
     killsrcs();
     surface_from_underwater();
     tempreset_internal(false);

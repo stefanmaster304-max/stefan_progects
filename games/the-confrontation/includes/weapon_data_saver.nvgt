@@ -47,7 +47,6 @@ class weapon_data
 	// a rocket launcher launches rockets and a flamethrower launches fire.
 	string projectile;
 	string sound_fire;
-	string sound_distant_fire;
 	string sound_ricochet;
 	string sound_empty_mag;
 	string sound_reload;
@@ -79,7 +78,6 @@ class weapon_data
 		fire_modes = "semi";
 		projectile = "auto";
 		sound_fire = "";
-		sound_distant_fire = "";
 		sound_ricochet = "";
 		sound_empty_mag = "";
 		sound_reload = "";
@@ -111,7 +109,6 @@ class weapon_data
 		fire_modes = "semi";
 		projectile = "auto";
 		sound_fire = "";
-		sound_distant_fire = "";
 		sound_ricochet = "";
 		sound_empty_mag = "";
 		sound_reload = "";
@@ -197,7 +194,6 @@ void parse_weapon_wpm(weapon_data@ w, const string&in content)
 		else if (key == "fire_modes") w.fire_modes = normalize_fire_mode(val);
 		else if (key == "projectile" || key == "projectile_type") w.projectile = normalize_projectile_name(val);
 		else if (key == "sound_fire") w.sound_fire = val;
-		else if (key == "sound_distant_fire") w.sound_distant_fire = val;
 		else if (key == "sound_ricochet") w.sound_ricochet = val;
 		else if (key == "sound_empty_mag") w.sound_empty_mag = val;
 		else if (key == "sound_reload") w.sound_reload = val;
@@ -232,7 +228,6 @@ string serialize_weapon_wpm(weapon_data@ w)
 	s += "fire_modes=" + w.fire_modes + "\n";
 	if (w.projectile != "" && w.projectile != "auto") s += "projectile=" + w.projectile + "\n";
 	if (w.sound_fire != "") s += "sound_fire=" + w.sound_fire + "\n";
-	if (w.sound_distant_fire != "") s += "sound_distant_fire=" + w.sound_distant_fire + "\n";
 	if (w.sound_ricochet != "") s += "sound_ricochet=" + w.sound_ricochet + "\n";
 	if (w.sound_empty_mag != "") s += "sound_empty_mag=" + w.sound_empty_mag + "\n";
 	if (w.sound_reload != "") s += "sound_reload=" + w.sound_reload + "\n";
@@ -270,7 +265,6 @@ string serialize_all_weapons_bundle()
 		s += "fire_modes=" + w.fire_modes + "\n";
 		s += "projectile=" + normalize_projectile_name(w.projectile) + "\n";
 		s += "sound_fire=" + w.sound_fire + "\n";
-		s += "sound_distant_fire=" + w.sound_distant_fire + "\n";
 		s += "sound_ricochet=" + w.sound_ricochet + "\n";
 		s += "sound_empty_mag=" + w.sound_empty_mag + "\n";
 		s += "sound_reload=" + w.sound_reload + "\n";
@@ -336,7 +330,6 @@ void parse_weapons_bundle(const string&in content)
 		else if (key == "fire_modes") current.fire_modes = normalize_fire_mode(val);
 		else if (key == "projectile" || key == "projectile_type") current.projectile = normalize_projectile_name(val);
 		else if (key == "sound_fire") current.sound_fire = val;
-		else if (key == "sound_distant_fire") current.sound_distant_fire = val;
 		else if (key == "sound_ricochet") current.sound_ricochet = val;
 		else if (key == "sound_empty_mag") current.sound_empty_mag = val;
 		else if (key == "sound_reload") current.sound_reload = val;

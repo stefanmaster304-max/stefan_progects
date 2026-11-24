@@ -150,17 +150,57 @@ string[] get_unlocked_maps()
 	return unlocked;
 }
 
+string get_developer_default_map()
+{
+	if (SCRIPT_COMPILED) return "";
+	string path = prefsdir + "developer_default_map.txt";
+	if (!file_exists(path)) return "";
+	return file_get_contents(path).trim_whitespace();
+}
+
+void developer_map_menu()
+{
+	if (SCRIPT_COMPILED) return;
+	string[] maps = get_available_maps();
+	if (maps.length() == 0)
+	{
+		alert(tr("map.no_maps_found_msg"), tr("map.no_maps_found_title"));
+		return;
+	}
+	string current = get_developer_default_map();
+	while (true)
+	{
+		setupmenu(false);
+		for (uint i = 0; i < maps.length(); i++)
+		{
+			string label = maps[i];
+			if (maps[i] == current) label += " " + tr("map.selected_indicator");
+			m.add_item_tts(label, maps[i]);
+		}
+		int result = m.run(tr("map.select_map_title"), true);
+		if (result <= 0) return;
+		string selected = m.get_item_name(result);
+		if (selected == "" || !map_exists_on_disk(selected)) continue;
+		if (file_put_contents(prefsdir + "developer_default_map.txt", selected, FILE_WRITE))
+		{
+			current = selected;
+			speak(tr("map.selected_as_default", {selected}));
+		}
+		return;
+	}
+}
+
 void mainmenu()
 {
 	p.update_listener_3d(0, 0, 0, 0);
 	sp.update_listener_3d(0, 0, 0, 0);
 	itempool.update_listener_3d(0, 0, 0, 0);
-	dp.update_listener_3d(0, 0, 0, 0);
 
 	while (true)
 	{
 		setupmenu(true);
 		m.add_item_tts(tr("menu.main.play"), "play");
+		if (!SCRIPT_COMPILED) m.add_item_tts(tr("menu.main.maps_menu"), "maps_menu");
 		m.add_item_tts(tr("menu.main.test_speakers"), "test_speakers");
 		m.add_item_tts(tr("menu.main.check_updates"), "check_updates");
 		m.add_item_tts(tr("menu.main.documentation"), "documentation");
@@ -186,7 +226,9 @@ void mainmenu()
 			int sx = 0, sy = 0, sz = 0, sface = 0;
 			load_location(smap, sx, sy, sz, sface);
 			string[] unlocked_maps = get_unlocked_maps();
-			if (unlocked_maps.length() == 0)
+			string developer_map = get_developer_default_map();
+			bool use_developer_map = !SCRIPT_COMPILED && developer_map != "" && map_exists_on_disk(developer_map);
+			if (unlocked_maps.length() == 0 && !use_developer_map)
 			{
 				p.play_stationary(get_sound_path("misc/error.ogg"), false);
 				if (get_available_maps().length() == 0)
@@ -197,7 +239,11 @@ void mainmenu()
 			}
 
 			string target_map = "";
-			if (smap != "" && unlocked_maps.find(smap) >= 0)
+			if (use_developer_map)
+			{
+				target_map = developer_map;
+			}
+			else if (smap != "" && unlocked_maps.find(smap) >= 0)
 			{
 				target_map = smap;
 			}
@@ -254,14 +300,16 @@ void mainmenu()
 			p.update_listener_3d(me.x, me.y, me.z, double(facing));
 			sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 			itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
-			dp.update_listener_3d(me.x, me.y, me.z, double(facing));
 			initial_session_welcome_played = false;
 			announce_zone_on_load();
 			game();
 			p.update_listener_3d(0, 0, 0, 0);
 			sp.update_listener_3d(0, 0, 0, 0);
 			itempool.update_listener_3d(0, 0, 0, 0);
-			dp.update_listener_3d(0, 0, 0, 0);
+		}
+		else if (menuitem=="maps_menu")
+		{
+			developer_map_menu();
 		}
 		else if (menuitem=="test_speakers")
 		{

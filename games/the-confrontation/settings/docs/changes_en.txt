@@ -1,3 +1,8 @@
+Build 3 | November 24, 2026 at 12:44 (America/Sao_Paulo)
+- Developer map menu: persistent default-map selection is available only in source runs; new compiled-release games start in the forest.
+- Weapons: removed distant-fire sound from runtime, editor, and all 77 WPM files; primary fire, impact, and ricochet sounds remain.
+- Updater: removed music and slightly lowered beep volume without changing frequencies; removed obsolete download-choice translations.
+
 The Confront — Changelog
 Version 0.6 | November 24, 2026 at 11:16 (America/Sao_Paulo)
 

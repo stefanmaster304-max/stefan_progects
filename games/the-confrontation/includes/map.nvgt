@@ -81,7 +81,6 @@ bool use_travel_point_at_player()
 		p.update_listener_3d(me.x, me.y, me.z, double(facing));
 		sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 		itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
-		dp.update_listener_3d(me.x, me.y, me.z, double(facing));
 		announce_zone_on_load();
 		return true;
 	}

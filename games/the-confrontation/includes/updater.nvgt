@@ -43,7 +43,7 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-const int COMPILED_GAME_BUILD = 2;
+const int COMPILED_GAME_BUILD = 3;
 string current_game_version = ver;
 int current_game_build = COMPILED_GAME_BUILD;
 string current_content_version = "0.6";
@@ -179,52 +179,7 @@ string format_byte_size(int64 bytes)
 }
 
 sound updater_audio;
-sound updater_music;
 bool bypass_missing_sounds_check = false;
-
-string get_updater_music_path()
-{
-	string[] candidates = {
-		"sounds/updater/updater mus.mp3",
-		"sounds/updater/updater mus.ogg",
-		"sounds/updater/updater mus.wav",
-		"sounds/updater/updater_mus.mp3",
-		"sounds/updater/updater_mus.ogg",
-		"sounds/updater/updater_mus.wav",
-		"updater/updater mus.mp3",
-		"updater/updater mus.ogg"
-	};
-	for (uint i = 0; i < candidates.length(); i++)
-	{
-		if (file_exists(candidates[i])) return candidates[i];
-	}
-	string fallback = get_sound_path("updater/updater mus.mp3;updater/updater mus.ogg;updater/updater mus.wav;sounds/updater/updater mus.mp3");
-	if (fallback != "" && file_exists(fallback)) return fallback;
-	return "";
-}
-
-void play_updater_music()
-{
-	if (updater_music.active && updater_music.playing) return;
-	string snd = get_updater_music_path();
-	if (snd != "" && file_exists(snd))
-	{
-		if (updater_music.load(snd))
-		{
-			updater_music.volume = -10.0;
-			updater_music.play_looped();
-		}
-	}
-}
-
-void stop_updater_music()
-{
-	if (updater_music.active)
-	{
-		updater_music.stop();
-		updater_music.close();
-	}
-}
 
 void play_update_found_sound()
 {
@@ -318,7 +273,6 @@ bool extract_update_archive(const string&in archive_path, const string&in destin
 
 void cleanup_update_temp()
 {
-	stop_updater_music();
 	if (directory_exists(UPDATE_TEMP_DIR))
 	{
 		directory_delete(UPDATE_TEMP_DIR, true);
@@ -337,7 +291,7 @@ void cleanup_update_temp()
 }
 
 /* NVDA-style rising pitch progress bar tone */
-void beep_percentage(double val, double volume = 0.35)
+void beep_percentage(double val, double volume = 0.28)
 {
 	val = round(val, 0);
 	if (val < 0) val = 0;
@@ -357,7 +311,6 @@ void beep_percentage(double val, double volume = 0.35)
 string dl_file(string url, string disk_file, bool quiet = false, string msg = "")
 {
 	if (msg == "") msg = tr("updater.download_help");
-	play_updater_music();
 	internet_request r(url, disk_file);
 	if (!quiet) speak(msg);
 	double last_percentage = 0;
@@ -374,7 +327,6 @@ string dl_file(string url, string disk_file, bool quiet = false, string msg = ""
 		if (key_pressed(KEY_ESCAPE))
 		{
 			status = "canceled";
-			stop_updater_music();
 			speak(tr("updater.cancelled"));
 			return status;
 		}
@@ -512,7 +464,6 @@ bool check_and_prompt_missing_sounds()
 	string sound_file = "sounds.zip";
 	if (file_exists(sound_file) && file_get_size(sound_file) > 1048576 && validate_sound_archive(sound_file))
 	{
-		play_updater_music();
 		speak(tr("updater.sound_already_downloaded", "Pacote de sons já baixado. Iniciando extração."));
 	}
 	else
@@ -545,7 +496,6 @@ bool check_and_prompt_missing_sounds()
 		bypass_missing_sounds_check = true;
 		return false;
 	}
-	stop_updater_music();
 	wait(120);
 	play_update_complete_sound();
 
@@ -570,7 +520,7 @@ void updater_beep(int frequency, int duration)
 {
 	tone_synth tone;
 	tone.waveform_type = 1; /* Soft sine wave */
-	tone.volume = 0.35;
+	tone.volume = 0.28;
 	tone.set_edge_fades(8, 8);
 	tone.freq_ms(frequency, duration);
 	tone.write_wave_sound().play_wait();
@@ -596,7 +546,6 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 		string result = dl_file(url, dest);
 		if (result == "canceled")
 		{
-			stop_updater_music();
 			if (file_exists(dest)) file_delete(dest);
 			error_message = "Update cancelled.";
 			return false;
@@ -615,8 +564,6 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 			wait(500);
 		}
 	}
-
-	stop_updater_music();
 	error_message = "Download failed after multiple attempts.";
 	updater_beep(220, 300);
 	return false;
@@ -744,7 +691,6 @@ bool apply_game_update(update_item@ item)
 	string error_message = "";
 	if (!download_update_file(item.zip_url, temp_payload, item.zip_size, error_message))
 	{
-		stop_updater_music();
 		speak(error_message);
 		cleanup_update_temp();
 		return false;
@@ -752,7 +698,6 @@ bool apply_game_update(update_item@ item)
 
 	if (!validate_sound_archive(temp_payload))
 	{
-		stop_updater_music();
 		speak(tr("updater.corrupt_game_zip"));
 		cleanup_update_temp();
 		return false;
@@ -762,7 +707,6 @@ bool apply_game_update(update_item@ item)
 	if (directory_exists(staged_game)) directory_delete(staged_game, true);
 	if (!directory_create(staged_game) || !extract_update_archive(temp_payload, staged_game, true))
 	{
-		stop_updater_music();
 		speak(tr("updater.game_archive_extract_failed"));
 		cleanup_update_temp();
 		return false;
@@ -774,7 +718,6 @@ bool apply_game_update(update_item@ item)
 	else if (!directory_exists(staged_game + "/lib")) validation_error = tr("updater.game_archive_library_missing");
 	if (validation_error != "")
 	{
-		stop_updater_music();
 		speak(tr("updater.game_install_failed") + " " + validation_error);
 		cleanup_update_temp();
 		return false;
@@ -789,8 +732,6 @@ bool apply_game_update(update_item@ item)
 	}
 	installer.write("$ErrorActionPreference='Stop'\r\n$root=(Get-Location).Path\r\n$stage=Join-Path $root 'update_temp\\game_staged'\r\n$backup=Join-Path $root 'update_temp\\game_backup'\r\nwhile(Get-Process -Name 'tcf' -ErrorAction SilentlyContinue){Start-Sleep -Milliseconds 250}\r\nNew-Item -ItemType Directory -Force -Path $backup | Out-Null\r\n$paths=@('tcf.exe','lib','settings\\contents.dat','settings\\maps.dat','settings\\versions.cfg','settings\\languages','settings\\docs')\r\n$installed=New-Object System.Collections.Generic.List[string]\r\ntry { foreach($rel in $paths) { $src=Join-Path $stage $rel; if(!(Test-Path -LiteralPath $src)) { continue }; $dst=Join-Path $root $rel; $bak=Join-Path $backup $rel; $parent=Split-Path -Parent $dst; if(!(Test-Path -LiteralPath $parent)){New-Item -ItemType Directory -Force -Path $parent | Out-Null}; if(Test-Path -LiteralPath $dst){$bp=Split-Path -Parent $bak; if(!(Test-Path -LiteralPath $bp)){New-Item -ItemType Directory -Force -Path $bp | Out-Null}; Move-Item -LiteralPath $dst -Destination $bak -Force}; $installed.Add($rel); Move-Item -LiteralPath $src -Destination $dst -Force }; if(!(Test-Path -LiteralPath (Join-Path $root 'tcf.exe'))){throw 'Missing installed executable'}; New-Item -ItemType File -Force -Path (Join-Path $root 'game_update_done.flag') | Out-Null; Start-Process -FilePath (Join-Path $root 'tcf.exe') -WorkingDirectory $root } catch { $rollback=$installed.ToArray(); [array]::Reverse($rollback); foreach($rel in $rollback) { $dst=Join-Path $root $rel; $bak=Join-Path $backup $rel; if(Test-Path -LiteralPath $dst){Remove-Item -LiteralPath $dst -Recurse -Force}; if(Test-Path -LiteralPath $bak){$parent=Split-Path -Parent $dst; if(!(Test-Path -LiteralPath $parent)){New-Item -ItemType Directory -Force -Path $parent | Out-Null}; Move-Item -LiteralPath $bak -Destination $dst -Force} }; if(Test-Path -LiteralPath (Join-Path $root 'tcf.exe')){Start-Process -FilePath (Join-Path $root 'tcf.exe') -WorkingDirectory $root}; New-Item -ItemType File -Force -Path (Join-Path $root 'game_update_failed.flag') | Out-Null; exit 1 }\r\n");
 	installer.close();
-
-	stop_updater_music();
 	play_update_complete_sound();
 	speak(tr("updater.game_restart"));
 	wait_for_update_complete_sound();
@@ -865,8 +806,6 @@ bool apply_content_update(update_item@ item)
 	current_content_version = item.new_version;
 	current_content_build = item.new_build;
 	save_updater_settings();
-
-	stop_updater_music();
 	play_update_complete_sound();
 	speak(tr("updater.content_restart"));
 	wait_for_update_complete_sound();
@@ -895,7 +834,6 @@ bool apply_sounds_update(update_item@ item)
 		cleanup_update_temp();
 		return false;
 	}
-	stop_updater_music();
 	wait(120);
 
 	updater_audio.stop();
@@ -1022,8 +960,6 @@ bool apply_maps_update(update_item@ item)
 	current_maps_version = item.new_version;
 	current_maps_build = item.new_build;
 	save_updater_settings();
-
-	stop_updater_music();
 	play_update_complete_sound();
 	speak(tr("updater.map_restart"));
 	wait_for_update_complete_sound();

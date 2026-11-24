@@ -25,7 +25,6 @@ void update_game_world()
 	p.update_listener_3d(me.x, me.y, me.z, double(facing));
 	sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 	itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
-	dp.update_listener_3d(me.x, me.y, me.z, double(facing));
 	king_system_update();
 }
 

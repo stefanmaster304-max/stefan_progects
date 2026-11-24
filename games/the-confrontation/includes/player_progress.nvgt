@@ -131,7 +131,6 @@ void player_die(const string&in cause_message)
 
 	sp.destroy_all();
 	p.destroy_all();
-	dp.destroy_all();
 
 	is_sitting = false;
 	reset_location_on_death();
