@@ -19,9 +19,7 @@
 
 const string CURRENCY_GOLD = "gold";
 const string CURRENCY_GOLDEN_CRYSTAL = "golden_crystal";
-const string CURRENCY_DIAMOND = "diamond";
-const string CURRENCY_SILVER = "silver";
-string[] store_currencies = {CURRENCY_GOLD, CURRENCY_GOLDEN_CRYSTAL, CURRENCY_DIAMOND, CURRENCY_SILVER};
+string[] store_currencies = {CURRENCY_GOLD, CURRENCY_GOLDEN_CRYSTAL};
 
 bool is_valid_store_currency(string cur)
 {
@@ -32,17 +30,24 @@ bool is_valid_store_currency(string cur)
 	return false;
 }
 
-// Currencies are identified by their canonical id: gold, golden_crystal,
-// diamond, silver. The only normalization is case and surrounding whitespace;
+// Currencies are identified by their canonical ids: gold, golden_crystal.
+// The only normalization is case and surrounding whitespace;
 // no other spelling is treated as a currency.
 string normalize_currency(string cur)
 {
 	return string_to_lower_case(string_trim_sides(cur));
 }
 
+string currency_display_name(const string&in currency)
+{
+	string id = normalize_currency(currency);
+	if (id == CURRENCY_GOLD) return tr("currency.gold");
+	if (id == CURRENCY_GOLDEN_CRYSTAL) return tr("currency.golden_crystal");
+	return tr("currency.gold");
+}
+
 // Resolves the inventory/balance key for a currency item: the item's id when
-// it is one of the four native currencies (gold, golden crystal, diamond,
-// silver), otherwise its subtype (so a custom item like "gold_pouch" with
+// it is one of the two native currencies (gold, golden crystal), otherwise its subtype (so a custom item like "gold_pouch" with
 // subtype "gold" still credits the gold balance).
 string currency_key_for_item(item_data@ it)
 {
@@ -56,7 +61,7 @@ string currency_key_for_item(item_data@ it)
 
 string store_cart_balances_text()
 {
-	return tr("store.balances", {"" + get_item_count(CURRENCY_GOLD), "" + get_item_count(CURRENCY_GOLDEN_CRYSTAL), "" + get_item_count(CURRENCY_DIAMOND), "" + get_item_count(CURRENCY_SILVER)});
+	return tr("store.balances", {"" + get_item_count(CURRENCY_GOLD), tr("currency.gold"), "" + get_item_count(CURRENCY_GOLDEN_CRYSTAL), tr("currency.golden_crystal")});
 }
 
 // Grants a bought product and reports whether the item exists in the registry,
@@ -101,7 +106,7 @@ void store_browse_announce_item(int cat, int item)
 {
 	store_cfg@ s = store_configs[cat];
 	string iname = get_item_display_name(s.item_names[item]);
-	speak(tr("store.in_cart", {iname, s.item_prices[item], store_charge_currency(s), "" + store_browse_amounts[cat][item]}));
+	speak(tr("store.in_cart", {iname, s.item_prices[item], currency_display_name(store_charge_currency(s)), "" + store_browse_amounts[cat][item]}));
 }
 
 string get_store_sound(const string&in name)
@@ -189,7 +194,7 @@ void store_browse_buy(int cat)
 	if (balance < total_cost)
 	{
 		play_store_error();
-		speak(tr("store.not_enough_money", {currency, "" + total_cost, "" + balance}));
+		speak(tr("store.not_enough_money", {currency_display_name(currency), "" + total_cost, "" + balance}));
 		return;
 	}
 
@@ -215,7 +220,7 @@ void store_browse_buy(int cat)
 	string buy_snd = get_store_sound("buy");
 	if (buy_snd == "") buy_snd = get_sound_path("player/buy.ogg;sounds/player/buy.ogg;player/storepurchase.ogg;items/buy.ogg;items/storepurchase.ogg;storepurchase.ogg;buy.ogg");
 	if (buy_snd != "") p.play_stationary(buy_snd, false);
-	speak(tr("store.purchase_success", {summary, "" + total_cost, currency}));
+	speak(tr("store.purchase_success", {summary, "" + total_cost, currency_display_name(currency)}));
 }
 
 string store_welcome_text(const string&in store_name)
@@ -437,7 +442,7 @@ void store_main_menu(const string&in storefront_id)
 				total_cost += int(stn(s.item_prices[ci])) * store_browse_amounts[cat][ci];
 			}
 			if (total_items == 0) speak(tr("store.empty_cart"));
-			else speak(tr("store.items_in_cart_total", {"" + total_items, "" + total_cost, store_charge_currency(s)}));
+			else speak(tr("store.items_in_cart_total", {"" + total_items, "" + total_cost, currency_display_name(store_charge_currency(s))}));
 		}
 	}
 }

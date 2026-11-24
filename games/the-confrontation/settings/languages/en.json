@@ -212,8 +212,8 @@
     "class_spirit": "Spirits"
   },
   "store_manager": {
-    "title": "Store Categories",
-    "options": "Store category options",
+    "title": "Store and Category Manager",
+    "options": "Store and category options",
     "create_category": "Create category",
     "edit_category": "Edit category and its items",
     "delete_category": "Delete category",
@@ -357,7 +357,7 @@
     "nothing_in_cart_for_item": "Nothing in the cart for this item.",
     "items_in_cart_total": "&1 items in the cart, total: &2 &3.",
     "in_cart": "&1, &2 &3, in the cart: &4.",
-    "balances": "Balances: &1 gold, &2 golden crystals, &3 diamonds, &4 silver.",
+    "balances": "Balances: &1 &2, &3 &4.",
     "default_name": "General Store"
   },
   "updater": {
@@ -524,5 +524,9 @@
     "invalid_bounds": "The coordinate bounds are invalid.",
     "source_max_y": "Current map maximum Y",
     "destination_max_y": "Destination maximum Y"
+  },
+  "currency": {
+    "gold": "Gold",
+    "golden_crystal": "Golden Crystal"
   }
 }

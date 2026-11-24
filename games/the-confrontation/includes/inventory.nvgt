@@ -13,6 +13,7 @@ bool quick_inv_focused = false;
 
 void give(string item, int amount)
 {
+	if (item == "diamond" || item == "silver") return;
 	int a;
 	if (!inv.exists(item))
 	{
@@ -134,6 +135,7 @@ void deserialize_inventory(const string&in data)
 		if (kv.length() >= 2)
 		{
 			string item = kv[0];
+			if (item == "diamond" || item == "silver") continue;
 			int qty = int(string_to_number(kv[1]));
 			if (qty > 0) inv.set(item, qty);
 		}
@@ -142,6 +144,8 @@ void deserialize_inventory(const string&in data)
 
 string get_item_display_name(const string&in item_id)
 {
+	if (item_id == "gold") return tr("currency.gold");
+	if (item_id == "golden_crystal") return tr("currency.golden_crystal");
 	weapon_data@ w = find_weapon_data(item_id);
 	if (w !is null && w.name != "") return "[Weapon] " + w.name;
 

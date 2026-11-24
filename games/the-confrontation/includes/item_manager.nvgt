@@ -375,7 +375,7 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 		if (!is_valid_store_currency(cur_cur)) cur_cur = normalize_currency(it.id);
 		for (uint c = 0; c < store_currencies.length(); c++)
 		{
-			form.add_list_item(in_currency_type, store_currencies[c], store_currencies[c]);
+			form.add_list_item(in_currency_type, tr("currency." + store_currencies[c]), store_currencies[c]);
 			if (store_currencies[c] == cur_cur) cur_def = int(c);
 		}
 		form.set_list_position(in_currency_type, cur_def, false);

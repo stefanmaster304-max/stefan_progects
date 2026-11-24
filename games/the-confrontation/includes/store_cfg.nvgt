@@ -213,14 +213,12 @@ void put_store_content(string path, string content)
 	f.close();
 }
 
-// The four native payment methods, in canonical order.
+// The two native payment methods, in canonical order.
 string[] store_all_payment_methods()
 {
 	string[] all;
 	all.insert_last("gold");
 	all.insert_last("golden_crystal");
-	all.insert_last("diamond");
-	all.insert_last("silver");
 	return all;
 }
 
@@ -244,6 +242,12 @@ void store_accept_all_payments(store_cfg@ s)
 void store_finalize_currencies(store_cfg@ s)
 {
 	if (s is null) return;
+	for (int i = int(s.accepted_currencies.length()) - 1; i >= 0; i--)
+	{
+		string id = normalize_currency(s.accepted_currencies[uint(i)]);
+		if (!is_valid_store_currency(id)) s.accepted_currencies.remove_at(uint(i));
+		else s.accepted_currencies[uint(i)] = id;
+	}
 	if (s.accepted_currencies.length() == 0) store_accept_all_payments(s);
 	if (!is_valid_store_currency(s.currency)) s.currency = "gold";
 	if (!store_payment_accepted(s.accepted_currencies, s.currency))

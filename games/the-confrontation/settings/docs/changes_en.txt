@@ -1,3 +1,8 @@
+Build 4 | November 24, 2026 at 12:09 (America/Sao_Paulo)
+- Stores: selecting a store to edit now opens that store directly and exits the general manager when done; stores without categories can also be edited.
+- Currencies: Gold and Golden Crystal are the only currencies; Diamond and Silver, their drops, and old saved balances were removed.
+- Interface and documentation: currency names are localized in all three languages, balances were adjusted, and the READMEs were updated.
+
 Build 3 | November 24, 2026 at 12:44 (America/Sao_Paulo)
 - Developer map menu: persistent default-map selection is available only in source runs; new compiled-release games start in the forest.
 - Weapons: removed distant-fire sound from runtime, editor, and all 77 WPM files; primary fire, impact, and ricochet sounds remain.

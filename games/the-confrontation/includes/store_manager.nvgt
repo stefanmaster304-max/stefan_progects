@@ -8,7 +8,7 @@ void store_populate_payment_list(audio_form@ f, int l_payments, string[]@ accept
 	for (uint i = 0; i < all.length(); i++)
 	{
 		bool chk = (accepted is null) ? true : store_payment_accepted(accepted, all[i]);
-		f.add_list_item(l_payments, all[i], all[i], -1, chk, false);
+		f.add_list_item(l_payments, tr("currency." + all[i]), all[i], -1, chk, false);
 	}
 }
 
@@ -205,7 +205,11 @@ void store_manager_menu()
 		if (choice == "") return;
 		if (choice == "back") return;
 		else if (choice == "storefront_create") storefront_edit_form();
-		else if (choice == "storefront_edit") storefront_select_and_edit();
+		else if (choice == "storefront_edit")
+		{
+			storefront_select_and_edit();
+			return;
+		}
 		else if (choice == "storefront_delete") storefront_delete_form();
 		else if (choice == "store_create") store_create_form();
 		else if (choice == "store_edit") store_edit_form();
@@ -228,7 +232,6 @@ void storefront_edit_form(const string&in existing_id = "")
 	if (is_store_encrypted()) { speak(tr("store_manager.encrypted")); return; }
 	init_stores();
 	init_storefronts();
-	if (store_configs.length() == 0) { speak(tr("store.no_categories")); return; }
 	storefront_cfg@ current = (existing_id != "") ? get_storefront(existing_id) : null;
 	if (existing_id != "" && current is null) { speak(tr("store_manager.not_found")); return; }
 	audio_form f;
@@ -263,7 +266,7 @@ void storefront_edit_form(const string&in existing_id = "")
 		if (checked !is null)
 			for (uint c = 0; c < checked.length(); c++)
 				if (checked[c] >= 0 && checked[c] < int(store_configs.length())) categories.insert_last(store_configs[checked[c]].name);
-		if (categories.length() == 0) { speak(tr("store_manager.store_category_required")); f.focus(category_list); continue; }
+		if (categories.length() == 0 && existing_id == "") { speak(tr("store_manager.store_category_required")); f.focus(category_list); continue; }
 		storefront_cfg@ store = storefront_cfg();
 		store.name = id;
 		store.display_name = display_name;
@@ -280,25 +283,11 @@ string choose_storefront()
 	init_stores();
 	init_storefronts();
 	if (storefronts.length() == 0) { speak(tr("store_manager.no_stores_found")); return ""; }
-	audio_form f;
-	f.create_window(tr("store_manager.select_store_title"), false, true, false);
-	int list = f.create_list(tr("store_manager.select_store_title"), 0, false, false);
-	for (uint i = 0; i < storefronts.length(); i++) f.add_list_item(list, storefronts[i].display_name, storefronts[i].name, -1, false, i == 0);
-	int select = f.create_button("&" + tr("ui.select"), true);
-	int cancel = f.create_button("&" + tr("ui.cancel"), false, true);
-	f.set_default_controls(select, cancel);
-	f.focus(list);
-	while (true)
-	{
-		wait(5); update_game_world(); f.monitor();
-		if (key_pressed(KEY_ESCAPE) || f.is_pressed(cancel)) return "";
-		if (f.is_pressed(select))
-		{
-			int pos = f.get_list_position(list);
-			return (pos >= 0) ? f.get_list_item_id(list, pos) : "";
-		}
-	}
-	return "";
+	setupmenu(false);
+	for (uint i = 0; i < storefronts.length(); i++)
+		m.add_item_tts(storefronts[i].display_name, storefronts[i].name);
+	int selected = m.run(tr("store_manager.select_store_title"), true);
+	return (selected > 0) ? m.get_item_name(selected) : "";
 }
 
 void storefront_select_and_edit()
@@ -332,7 +321,7 @@ void store_create_form()
 	int l_currency = f.create_list(tr("store_manager.store_currency"), 0, false, false);
 	for (uint c = 0; c < store_currencies.length(); c++)
 	{
-		f.add_list_item(l_currency, store_currencies[c], store_currencies[c]);
+		f.add_list_item(l_currency, currency_display_name(store_currencies[c]), store_currencies[c]);
 	}
 	f.set_list_position(l_currency, 0, false);
 	int l_payments = f.create_list(tr("store_manager.accepted_payments"), 0, true, true);
@@ -483,7 +472,7 @@ void store_edit_form()
 	string cur_norm = normalize_currency(s.currency);
 	for (uint c = 0; c < store_currencies.length(); c++)
 	{
-		f2.add_list_item(l_currency, store_currencies[c], store_currencies[c]);
+		f2.add_list_item(l_currency, currency_display_name(store_currencies[c]), store_currencies[c]);
 		if (cur_norm == store_currencies[c]) cur_sel = int(c);
 	}
 	f2.set_list_position(l_currency, cur_sel, false);

@@ -1,3 +1,8 @@
+Build 4 | 24 de noviembre de 2026 a las 12:09 (America/Sao_Paulo)
+- Tiendas: al elegir una tienda para editarla se abre directamente su edición y se cierra el administrador general al terminar; también se pueden editar tiendas sin categorías.
+- Monedas: Gold y Golden Crystal son las únicas monedas; se eliminaron Diamond y Silver, sus recompensas y los saldos antiguos guardados.
+- Interfaz y documentación: los nombres de las monedas se traducen en los tres idiomas, se ajustaron los saldos y se actualizaron los READMEs.
+
 Build 3 | 24 de noviembre de 2026 a las 12:44 (America/Sao_Paulo)
 - Menú de mapas para desarrolladores: selección persistente del mapa predeterminado solo al ejecutar desde el código fuente; las partidas nuevas de la versión compilada comienzan en el bosque.
 - Armas: se eliminó el sonido de disparo lejano del sistema, del editor y de los 77 archivos WPM; se mantienen los sonidos de disparo principal, impacto y rebote.

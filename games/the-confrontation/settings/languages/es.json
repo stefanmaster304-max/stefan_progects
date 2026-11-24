@@ -212,8 +212,8 @@
     "class_spirit": "Espíritus"
   },
   "store_manager": {
-    "title": "Categorías de la Tienda",
-    "options": "Opciones de categorías de la tienda",
+    "title": "Administrador de Tiendas y Categorías",
+    "options": "Opciones de tiendas y categorías",
     "create_category": "Crear categoría",
     "edit_category": "Editar categoría y sus objetos",
     "delete_category": "Eliminar categoría",
@@ -357,7 +357,7 @@
     "nothing_in_cart_for_item": "Nada en el carrito para este objeto.",
     "items_in_cart_total": "&1 objetos en el carrito, total: &2 &3.",
     "in_cart": "&1, &2 &3, en el carrito: &4.",
-    "balances": "Saldos: &1 oro, &2 cristales dorados, &3 diamantes, &4 plata.",
+    "balances": "Saldos: &1 &2, &3 &4.",
     "default_name": "Tienda general"
   },
   "updater": {
@@ -524,5 +524,9 @@
     "invalid_bounds": "Los límites de las coordenadas no son válidos.",
     "source_max_y": "Mapa actual: Y máximo",
     "destination_max_y": "Destino: Y máximo"
+  },
+  "currency": {
+    "gold": "Oro",
+    "golden_crystal": "Cristal dorado"
   }
 }

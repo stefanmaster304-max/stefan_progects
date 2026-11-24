@@ -90,7 +90,7 @@ void remove_legacy_material_items()
 	}
 }
 
-// The native currencies (gold, golden crystal, diamond, silver) are plain
+// The native currencies (gold and golden crystal) are plain
 // .config files in settings/items/currency and are loaded from disk like every
 // other item. Only the anti-death card stays hardcoded because it is protected
 // from the item editor and from serialization.

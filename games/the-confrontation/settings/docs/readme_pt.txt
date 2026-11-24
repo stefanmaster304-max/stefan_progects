@@ -1,15 +1,15 @@
 Bem-vindo a The Confront, um jogo de tiro acessível em 3D.
 
 OBJETIVO
-Sobreviva: enfrente os inimigos, evite ser derrotado, ganhe experiência e avance pelos níveis e ressurreições. As batalhas podem render moedas e itens para melhorar seu equipamento.
+Sobreviva: enfrente os inimigos, evite ser derrotado, ganhe experiência e avance pelos níveis e ressurreições.
 
 PROGRESSÃO E MAPAS
-O jogo oferece mapas com limites de nível e ressurreição. Novos desafios e inimigos aparecem conforme a progressão. Alguns mapas podem ser liberados para testes e bloqueados novamente depois; os requisitos do próprio jogo indicam quando você pode entrar.
+Os mapas podem ter limites de nível e ressurreição. Desafios e inimigos aparecem conforme a progressão. Mapas liberados para teste podem ser bloqueados em versões posteriores.
 
-LOJAS E RECOMPENSAS
-Inimigos podem conceder experiência, moedas e itens. Lojas são posicionadas nos mapas pelo construtor. Ao entrar na área de uma loja, pressione Enter. Use as setas para percorrer as categorias e Tab para navegar nos itens da categoria. Os preços e moedas aceitas dependem da configuração da categoria.
+LOJAS E MOEDAS
+O jogo possui duas moedas: Gold, exibida como Ouro em português, e Golden Crystal, exibida como Cristal Dourado. Inimigos podem conceder essas moedas e itens. Lojas são colocadas nos mapas pelo construtor; pressione Enter dentro da loja, use as setas para escolher uma categoria e Tab para ver seus itens. A categoria define os preços e qual das duas moedas será cobrada.
 
 CONTROLES PADRÃO
-Setas: mover. Q/E: virar. Espaço: pular. Ctrl esquerdo: disparar. R: recarregar. A: consultar munição. Tab: navegar pelo inventário. Enter: usar ou abrir uma loja no local. Alt+Enter: viajar silenciosamente se houver um TravelPoint válido e o mapa de destino permitir entrada. C: coordenadas. Z: localização. H: vida. L: nível e progresso. K: eliminações. B: construtor. P: pausar. Esc: sair.
+Setas: mover. Q/E: virar. Espaço: pular. Ctrl esquerdo: disparar. R: recarregar. A: consultar munição. Tab: navegar pelo inventário. Enter: usar ou abrir uma loja no local. Alt+Enter: viajar silenciosamente em um TravelPoint válido se o destino permitir entrada. C: coordenadas. Z: localização. H: vida. L: nível e progresso. K: eliminações. B: construtor. P: pausar. Esc: sair.
 
 Os controles podem ser alterados nas configurações. The Confront permanece em desenvolvimento; mapas e regras podem mudar entre versões.
