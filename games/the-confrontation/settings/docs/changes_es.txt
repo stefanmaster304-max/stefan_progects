@@ -1,3 +1,6 @@
+Build 6 | 24 de noviembre de 2026 a las 17:50 (America/Sao_Paulo)
+- Controles: Mayús+Enter interactúa con las tiendas colocadas en el mapa; Enter usa el objeto seleccionado del inventario rápido y Alt+Enter sigue comprobando los puntos de viaje.
+
 Build 5 | 24 de noviembre de 2026 a las 12:31 (America/Sao_Paulo)
 - Armas: los disparos ahora alcanzan al NPC visible más cercano dentro del radio configurado, sin exigir alineación cardinal ni diagonal; las paredes siguen bloqueando la línea de visión.
 - Distribución: los paquetes con y sin sonidos no contienen directorios vacíos; la publicación conserva únicamente estos dos ZIP.

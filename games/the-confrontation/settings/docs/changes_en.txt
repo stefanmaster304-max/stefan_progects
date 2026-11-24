@@ -1,3 +1,6 @@
+Build 6 | November 24, 2026 at 17:50 (America/Sao_Paulo)
+- Controls: Shift+Enter interacts with stores placed on the map; Enter uses the selected quick-inventory item, and Alt+Enter still checks travel points.
+
 Build 5 | November 24, 2026 at 12:31 (America/Sao_Paulo)
 - Weapons: shots now hit the nearest visible NPC within the configured radius, without cardinal or diagonal alignment; walls still block line of sight.
 - Distribution: the with-sounds and no-sounds packages contain no empty directories; the release keeps only these two ZIP files.

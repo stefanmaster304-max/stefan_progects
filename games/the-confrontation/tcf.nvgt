@@ -658,23 +658,25 @@ if (key_pressed(KEY_S) or kb_pressed("sit_stand"))
 {
 	toggle_sit_stand();
 }
-/* Quick inventory: Tab and Shift+Tab only move the focus. Enter uses the
-   focused item; there is no quick inventory mode or menu to open or close. */
-if (quick_inv_focused and (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER) or kb_pressed("use")))
-{
-	quick_inventory_handle_enter();
-}
-if (!quick_inv_focused && altisdown() && (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER)))
+/* Tab and Shift+Tab move quick-inventory focus. Enter uses its focused item.
+   Shift+Enter interacts with a store, while Alt+Enter checks a travel point. */
+bool enter_pressed = key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER);
+if (altisdown() && enter_pressed)
 {
 	use_travel_point_at_player();
 }
-// Plain Enter only reminds a seated player to stand up.
-else if (!quick_inv_focused && !altisdown() && !shiftisdown() and (kb_pressed("use") or key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER)))
+else if (shiftisdown() && enter_pressed)
 {
-	if (!try_open_map_store_at_player() && is_sitting)
-	{
-		speak(tr("game.sitting_hint"));
-	}
+	try_open_map_store_at_player();
+}
+else if (!altisdown() && !shiftisdown() && quick_inv_focused && (enter_pressed || kb_pressed("use")))
+{
+	quick_inventory_handle_enter();
+}
+// Plain Enter is reserved for using an item in the focused quick-inventory slot.
+else if (!altisdown() && !shiftisdown() && !quick_inv_focused && (kb_pressed("use") || enter_pressed) && is_sitting)
+{
+	speak(tr("game.sitting_hint"));
 }
 if (kb_pressed("coordinates") or key_pressed(KEY_C))
 {
