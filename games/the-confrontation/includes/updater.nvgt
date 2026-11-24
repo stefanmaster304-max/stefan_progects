@@ -1,8 +1,7 @@
 /* includes/updater.nvgt - Update system for The Confront.
    Every download goes to the temporary update folder first, is validated and
    only then replaces the live file. Failures are retried, and the player always
-   hears a specific reason. Progress is announced with NVGT tone beeps, never
-   with music. */
+   hears a specific reason. Transfer progress is announced with NVGT tone beeps. */
 
 enum update_type
 {
@@ -23,6 +22,7 @@ class update_item
 	string url;
 	string zip_url;
 	int64 size;
+	int64 zip_size;
 
 	update_item()
 	{
@@ -35,6 +35,7 @@ class update_item
 		url = "";
 		zip_url = "";
 		size = 0;
+		zip_size = 0;
 	}
 }
 
@@ -305,7 +306,7 @@ void cleanup_update_temp()
 }
 
 /* NVDA-style rising pitch progress bar tone */
-void beep_percentage(double val, double volume = -18)
+void beep_percentage(double val, double volume = 0.126)
 {
 	val = round(val, 0);
 	if (val < 0) val = 0;
@@ -320,16 +321,6 @@ void beep_percentage(double val, double volume = -18)
 	@progress_sound = sy.write_wave_sound();
 	sy.reset();
 	if (progress_sound !is null) progress_sound.play();
-}
-
-bool directory_empty(const string&in dir)
-{
-	if (!directory_exists(dir)) return false;
-	string[]@ files = find_files(dir + "/*");
-	string[]@ folders = find_directories(dir + "/*");
-	int f_count = (files !is null) ? files.length() : 0;
-	int d_count = (folders !is null) ? folders.length() : 0;
-	return (f_count == 0 && d_count == 0);
 }
 
 string dl_file(string url, string disk_file, bool quiet = false, string msg = "")
@@ -532,239 +523,21 @@ bool check_and_prompt_missing_sounds()
 	return false;
 }
 
-void play_menu_click_sound()
-{
-	string snd = get_sound_path("menu sounds/click.ogg;click.ogg");
-	if (snd != "" && updater_audio.load(snd)) updater_audio.play();
-	else updater_beep(700, 25);
-}
-
-void play_menu_enter_sound()
-{
-	string snd = get_sound_path("menu sounds/enter.ogg;enter.ogg");
-	if (snd != "" && updater_audio.load(snd)) updater_audio.play();
-	else updater_beep(1000, 40);
-}
-
-/* Prompts the player to choose between downloading only the executable or the full ZIP archive */
-int ask_download_option()
-{
-	string[] options = {
-		tr("updater.download_opt_exe", "Apenas o executável"),
-		tr("updater.download_opt_zip", "Arquivo ZIP completo")
-	};
-	int selected = 0;
-	speak(tr("updater.choose_download_type", "O que você deseja baixar?") + " " + options[selected]);
-	while (true)
-	{
-		wait(5);
-		if (key_pressed(KEY_UP) || key_pressed(KEY_LEFT))
-		{
-			selected--;
-			if (selected < 0) selected = int(options.length()) - 1;
-			play_menu_click_sound();
-			speak(options[selected]);
-		}
-		if (key_pressed(KEY_DOWN) || key_pressed(KEY_RIGHT))
-		{
-			selected++;
-			if (selected >= int(options.length())) selected = 0;
-			play_menu_click_sound();
-			speak(options[selected]);
-		}
-		if (key_pressed(KEY_SPACE))
-		{
-			speak(options[selected]);
-		}
-		if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPADENTER))
-		{
-			play_menu_enter_sound();
-			return selected;
-		}
-		if (key_pressed(KEY_ESCAPE))
-		{
-			speak(tr("updater.cancelled"));
-			return -1;
-		}
-	}
-	return -1;
-}
-
 /* Native NVGT tone generator with smooth sine waveform and gentle edge fades */
 void updater_beep(int frequency, int duration)
 {
 	tone_synth tone;
 	tone.waveform_type = 1; /* Soft sine wave */
-	tone.volume = -18;
+	tone.volume = 0.126;
 	tone.set_edge_fades(8, 8);
 	tone.freq_ms(frequency, duration);
 	tone.write_wave_sound().play_wait();
-}
-
-void updater_progress_beep(int percent)
-{
-	int frequency = 260 + (percent * 6);
-	updater_beep(frequency, 35);
-}
-
-bool read_text_file(const string&in path, string&out text)
-{
-	text = "";
-	if (!file_exists(path)) return false;
-	file f;
-	if (!f.open(path, "r")) return false;
-	text = f.read();
-	f.close();
-	return true;
 }
 
 void ensure_clean_update_temp()
 {
 	cleanup_update_temp();
 	if (!directory_exists(UPDATE_TEMP_DIR)) directory_create(UPDATE_TEMP_DIR);
-}
-
-/* Reads the final status code from curl's header dump. Redirects add earlier
-   HTTP/ lines, so the last one is the answer that matters. */
-int parse_server_status(const string&in headers)
-{
-	int status = 0;
-	int pos = headers.find("HTTP/");
-	while (pos >= 0)
-	{
-		int line_end = headers.find("\n", pos);
-		string line = (line_end > pos) ? headers.substr(pos, line_end - pos) : headers.substr(pos);
-		line = line.trim_whitespace();
-		string[]@ parts = string_split(line, " ", true);
-		if (parts !is null && parts.length() >= 2) status = int(string_to_number(parts[1]));
-		pos = (line_end >= 0) ? headers.find("HTTP/", line_end + 1) : -1;
-	}
-	return status;
-}
-
-string describe_curl_failure(int exit_code, int server_status, const string&in curl_error)
-{
-	if (server_status != 0 && server_status != 200)
-		return "The update server returned HTTP error " + server_status + ".";
-	if (exit_code == 6)
-		return "The update server address could not be resolved. Check your internet connection.";
-	if (exit_code == 7)
-		return "Could not connect to the update server. Check your internet connection.";
-	if (exit_code == 28)
-		return "The connection to the update server timed out.";
-	if (exit_code == 35 || exit_code == 60)
-		return "The update server certificate could not be verified.";
-	if (exit_code == 23)
-		return "The update file could not be written to disk. Check free space in the game folder.";
-	if (exit_code == 56)
-		return "The connection was lost while downloading the update.";
-	if (exit_code != 0 && curl_error != "")
-		return "The download failed with network error " + exit_code + ": " + curl_error;
-	if (exit_code != 0)
-		return "The download failed with network error " + exit_code + ".";
-	if (server_status == 0)
-		return "The update server did not answer. Check your internet connection.";
-	return "The downloaded file is empty or incomplete.";
-}
-
-/* Runs one curl attempt asynchronously so progress beeps can follow the file as
-   it grows. Returns the curl exit code, the HTTP status code and curl's error. */
-int run_download_attempt(const string&in url, const string&in dest, int64 expected_size, int&out server_status, string&out curl_error)
-{
-	server_status = 0;
-	curl_error = "";
-
-	string headers_path = UPDATE_TEMP_DIR + "/headers.txt";
-	string err_path = UPDATE_TEMP_DIR + "/curl_error.txt";
-	string exit_path = UPDATE_TEMP_DIR + "/curl_exit.txt";
-	string done_path = UPDATE_TEMP_DIR + "/curl_done.txt";
-	string bat_path = UPDATE_TEMP_DIR + "/download.bat";
-
-	if (file_exists(headers_path)) file_delete(headers_path);
-	if (file_exists(err_path)) file_delete(err_path);
-	if (file_exists(exit_path)) file_delete(exit_path);
-	if (file_exists(done_path)) file_delete(done_path);
-	if (file_exists(dest)) file_delete(dest);
-
-	file b;
-	if (!b.open(bat_path, "w")) return -1;
-	b.write("@echo off\r\n");
-	b.write("chcp 65001 >nul\r\n");
-	b.write("curl.exe -L -s -S --connect-timeout 20 -D \"" + headers_path + "\" -o \"" + dest + "\" \"" + url + "\" 2> \"" + err_path + "\"\r\n");
-	b.write("echo %errorlevel% > \"" + exit_path + "\"\r\n");
-	b.write("echo done > \"" + done_path + "\"\r\n");
-	b.close();
-
-	run("cmd.exe", "/c " + UPDATE_TEMP_DIR + "\\download.bat", false, true);
-
-	int last_beep_percent = -10;
-	bool cancelled = false;
-	while (!file_exists(done_path))
-	{
-		for (int w = 0; w < 10 && !file_exists(done_path); w++)
-		{
-			wait(10);
-		}
-		int64 size = file_exists(dest) ? file_get_size(dest) : 0;
-		int percent = 0;
-		if (expected_size > 0 && size > 0)
-		{
-			percent = int((double(size) / double(expected_size)) * 100.0);
-			if (percent > 100) percent = 100;
-		}
-		else if (size > 0)
-		{
-			/* Without a published size, still give a periodic tick. */
-			percent = last_beep_percent + 10;
-			if (percent > 95) percent = 95;
-		}
-		if (percent >= last_beep_percent + 10)
-		{
-			last_beep_percent = percent;
-			updater_progress_beep(percent);
-		}
-		if (key_pressed(KEY_ESCAPE))
-		{
-			speak(tr("updater.cancel_prompt"));
-			bool confirmed_cancel = false;
-			while (true)
-			{
-				wait(10);
-				if (key_pressed(KEY_Y) || key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER) || key_pressed(KEY_NUMPADENTER))
-				{
-					confirmed_cancel = true;
-					break;
-				}
-				if (key_pressed(KEY_ESCAPE) || key_pressed(KEY_N))
-				{
-					speak(tr("updater.resuming"));
-					break;
-				}
-			}
-			if (confirmed_cancel)
-			{
-				cancelled = true;
-				run("taskkill", "/F /IM curl.exe", true, true);
-				wait(100);
-				if (file_exists(dest)) file_delete(dest);
-				cleanup_update_temp();
-				speak(tr("updater.cancelled"));
-				break;
-			}
-		}
-	}
-
-	int exit_code = -1;
-	string raw = "";
-	if (read_text_file(exit_path, raw)) exit_code = int(string_to_number(raw.trim_whitespace()));
-	string headers = "";
-	read_text_file(headers_path, headers);
-	read_text_file(err_path, curl_error);
-	server_status = parse_server_status(headers);
-	curl_error = curl_error.trim_whitespace();
-
-	if (cancelled) return -2;
-	return exit_code;
 }
 
 /* Downloads with validation and up to three attempts. A corrupt or incomplete
@@ -1313,6 +1086,8 @@ bool check_for_updates(bool interactive = true)
 				available_update.zip_url = string_replace(available_update.url, "tcf.exe", "the_confront_v" + rem_ver + ".zip", true);
 			string game_size = g["size"];
 			if (game_size != "") available_update.size = int64(string_to_number(game_size));
+			string game_zip_size = g["zip_size"];
+			if (game_zip_size != "") available_update.zip_size = int64(string_to_number(game_zip_size));
 		}
 	}
 
@@ -1439,7 +1214,7 @@ bool check_for_updates(bool interactive = true)
 			if (available_update.zip_url != "")
 			{
 				available_update.url = available_update.zip_url;
-				available_update.size = 0;
+				available_update.size = available_update.zip_size;
 			}
 		}
 		return download_and_apply_update(available_update);

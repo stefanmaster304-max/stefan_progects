@@ -1,0 +1,77 @@
+// Places an existing configured store inside a coordinate-bounded map region.
+void build_store_point()
+{
+	init_stores();
+	if (store_configs.length() == 0)
+	{
+		speak(tr("store.no_categories"));
+		return;
+	}
+
+	audio_form form;
+	form.create_window(tr("store_point.title"), false, true, false);
+	int list = form.create_list(tr("store_point.select_store"), 0, false, false);
+	for (uint i = 0; i < store_configs.length(); i++)
+	{
+		store_cfg@ store = store_configs[i];
+		form.add_list_item(list, store.display_name + " (" + store.name + ")", store.name, -1, false, (i == 0));
+	}
+	int x0 = form.create_input_box(tr("form.min_x"), "" + int(round(me.x, 0)));
+	int x1 = form.create_input_box(tr("form.max_x"), "" + int(round(me.x, 0)));
+	int y0 = form.create_input_box(tr("form.min_y"), "" + int(round(me.y, 0)));
+	int y1 = form.create_input_box(tr("form.max_y"), "" + int(round(me.y, 0)));
+	int z0 = form.create_input_box(tr("form.min_z"), "" + int(round(me.z, 0)));
+	int z1 = form.create_input_box(tr("form.max_z"), "" + int(round(me.z, 0)));
+	int[] numeric_fields = {x0, x1, y0, y1, z0, z1};
+	for (uint i = 0; i < numeric_fields.length(); i++)
+		form.set_disallowed_chars(numeric_fields[i], "0123456789-", true, tr("travel.whole_coordinates"));
+	int save = form.create_button("&" + tr("ui.save"), true);
+	int cancel = form.create_button("&" + tr("ui.cancel"), false, true);
+	form.set_default_controls(save, cancel);
+	form.focus(list);
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		form.monitor();
+		if (key_pressed(KEY_ESCAPE) || form.is_pressed(cancel))
+		{
+			speak(tr("ui.cancel"));
+			return;
+		}
+		if (!form.is_pressed(save)) continue;
+
+		int[] values(6);
+		bool invalid_integer = false;
+		for (uint i = 0; i < numeric_fields.length(); i++)
+		{
+			string raw_value = form.get_text(numeric_fields[i]).trim_whitespace();
+			if (raw_value == "" || raw_value == "-" || raw_value.find("-", 1) >= 0)
+			{
+				invalid_integer = true;
+				break;
+			}
+			values[i] = int(string_to_number(raw_value));
+		}
+		if (invalid_integer)
+		{
+			speak(tr("travel.whole_coordinates"));
+			continue;
+		}
+		if (values[0] < minx || values[1] > maxx || values[2] < miny || values[3] > maxy || values[4] < minz || values[5] > maxz ||
+			values[0] > values[1] || values[2] > values[3] || values[4] > values[5])
+		{
+			speak(tr("travel.invalid_bounds"));
+			continue;
+		}
+		string store_id = form.get_list_item_id(list, form.get_list_position(list));
+		if (store_id == "" || get_store(store_id) is null)
+		{
+			speak(tr("store_point.store_missing"));
+			continue;
+		}
+		save_to_map("storepoint:" + store_id + ":" + values[0] + ":" + values[1] + ":" + values[2] + ":" + values[3] + ":" + values[4] + ":" + values[5]);
+		return;
+	}
+}

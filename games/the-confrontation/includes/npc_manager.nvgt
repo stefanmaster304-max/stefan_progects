@@ -187,21 +187,16 @@ void npc_edit_form(npc_data@ n, bool is_new)
 	int in_id = form.create_input_box(tr("npc_manager.internal_id"), n.id);
 	int in_name = form.create_input_box(tr("npc_manager.display_name"), n.name);
 
-	// The class is chosen once, in the create flow. The form only carries the
-	// class list when an existing NPC is being edited, so creating never asks
-	// for the same class twice.
-	int in_class = -1;
-	if (!is_new)
-	{
-		int def_class = 0;
-		if (n.npc_class == NPC_CLASS_ROBOT) def_class = 1;
-		else if (n.npc_class == NPC_CLASS_ZOMBIE) def_class = 2;
-		in_class = form.create_list(tr("npc_manager.npc_class"), 0, false, false);
-		form.add_list_item(in_class, tr("npc_manager.class_animal"), NPC_CLASS_ANIMAL, -1, false, (def_class == 0));
-		form.add_list_item(in_class, tr("npc_manager.class_robot"), NPC_CLASS_ROBOT, -1, false, (def_class == 1));
-		form.add_list_item(in_class, tr("npc_manager.class_zombie"), NPC_CLASS_ZOMBIE, -1, false, (def_class == 2));
-		form.set_list_position(in_class, def_class, false);
-	}
+	int def_class = 0;
+	if (n.npc_class == NPC_CLASS_ROBOT) def_class = 1;
+	else if (n.npc_class == NPC_CLASS_ZOMBIE) def_class = 2;
+	else if (n.npc_class == NPC_CLASS_SPIRIT) def_class = 3;
+	int in_class = form.create_list(tr("npc_manager.npc_class"), 0, false, false);
+	form.add_list_item(in_class, tr("npc_manager.class_animal"), NPC_CLASS_ANIMAL, -1, false, (def_class == 0));
+	form.add_list_item(in_class, tr("npc_manager.class_robot"), NPC_CLASS_ROBOT, -1, false, (def_class == 1));
+	form.add_list_item(in_class, tr("npc_manager.class_zombie"), NPC_CLASS_ZOMBIE, -1, false, (def_class == 2));
+	form.add_list_item(in_class, tr("npc_manager.class_spirit"), NPC_CLASS_SPIRIT, -1, false, (def_class == 3));
+	form.set_list_position(in_class, def_class, false);
 
 	int in_attack_speed = form.create_input_box(tr("npc_manager.attack_speed"), "" + n.attack_speed);
 	int in_min_dmg = form.create_input_box(tr("npc_manager.min_damage"), "" + n.min_damage);
@@ -340,13 +335,11 @@ void npc_edit_form(npc_data@ n, bool is_new)
 			n.name = form.get_text(in_name).trim_whitespace();
 			if (n.name == "") n.name = string_replace(target_id, "_", " ", true);
 
-			if (!is_new && in_class != -1)
-			{
-				int class_pos = form.get_list_position(in_class);
-				if (class_pos == 1) n.npc_class = NPC_CLASS_ROBOT;
-				else if (class_pos == 2) n.npc_class = NPC_CLASS_ZOMBIE;
-				else n.npc_class = NPC_CLASS_ANIMAL;
-			}
+			int class_pos = form.get_list_position(in_class);
+			if (class_pos == 1) n.npc_class = NPC_CLASS_ROBOT;
+			else if (class_pos == 2) n.npc_class = NPC_CLASS_ZOMBIE;
+			else if (class_pos == 3) n.npc_class = NPC_CLASS_SPIRIT;
+			else n.npc_class = NPC_CLASS_ANIMAL;
 
 			n.attack_speed = int(string_to_number(form.get_text(in_attack_speed)));
 			n.min_damage = int(string_to_number(form.get_text(in_min_dmg)));
@@ -383,40 +376,10 @@ void npc_edit_form(npc_data@ n, bool is_new)
 
 void npc_create_flow()
 {
-	audio_form cf;
-	cf.create_window(tr("npc_manager.create_title"), false, true, false);
-	int list = cf.create_list(tr("npc_manager.choose_class"), 0, false, false);
-	cf.add_list_item(list, tr("npc_manager.class_animal"), NPC_CLASS_ANIMAL, -1, false, true);
-	cf.add_list_item(list, tr("npc_manager.class_robot"), NPC_CLASS_ROBOT, -1, false, false);
-	cf.add_list_item(list, tr("npc_manager.class_zombie"), NPC_CLASS_ZOMBIE, -1, false, false);
-	int b_ok = cf.create_button("&" + tr("ui.next"), true);
-	int b_cancel = cf.create_button("&" + tr("ui.cancel"), false, true);
-	cf.set_default_controls(b_ok, b_cancel);
-	cf.focus(list);
-
-	while (true)
-	{
-		wait(5);
-		update_game_world();
-		cf.monitor();
-
-		if (key_pressed(KEY_ESCAPE) || cf.is_pressed(b_cancel))
-		{
-			speak(tr("ui.canceled"));
-			return;
-		}
-
-		if (cf.is_pressed(b_ok))
-		{
-			int pos = cf.get_list_position(list);
-			npc_data n;
-			n.npc_class = (pos == 1) ? NPC_CLASS_ROBOT : ((pos == 2) ? NPC_CLASS_ZOMBIE : NPC_CLASS_ANIMAL);
-			n.id = "novo_npc";
-			n.name = "Novo NPC";
-			npc_edit_form(n, true);
-			return;
-		}
-	}
+	npc_data n;
+	n.id = "novo_npc";
+	n.name = "Novo NPC";
+	npc_edit_form(n, true);
 }
 
 void npc_select_flow(const string&in title, const string&in action, bool confirm_delete)
@@ -454,7 +417,7 @@ void npc_select_flow(const string&in title, const string&in action, bool confirm
 
 		if (key_pressed(KEY_ESCAPE) || lf.is_pressed(b_cancel))
 		{
-			speak(tr("ui.canceled"));
+			speak(tr("ui.cancel"));
 			return;
 		}
 

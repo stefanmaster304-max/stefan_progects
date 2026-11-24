@@ -106,53 +106,6 @@ class active_projectile
 		}
 
 		projectile_type = classify_projectile_type(w);
-		if (fire_mode != "melee")
-		{
-			if (projectile_type == "energy")
-			{
-				if (speedtime > 2) speedtime = 2;
-				spread = int(spread * 0.5);
-			}
-			else if (projectile_type == "missile")
-			{
-				speedtime = 8;
-				spread = 0;
-			}
-			else if (projectile_type == "rocket")
-			{
-				speedtime = 9;
-				if (spread < 1) spread = 1;
-			}
-			else if (projectile_type == "grenade")
-			{
-				speedtime = 12;
-				if (spread < 2) spread = 2;
-			}
-			else if (projectile_type == "drainage")
-			{
-				speedtime = 10;
-				if (spread < 1) spread = 1;
-			}
-			else if (projectile_type == "fire")
-			{
-				if (speedtime < 8) speedtime = 8;
-				spread = int(spread * 2.0) + 5;
-			}
-			else if (projectile_type == "plasma")
-			{
-				if (speedtime > 3) speedtime = 3;
-				spread = int(spread * 0.5);
-			}
-			else if (projectile_type == "bolt")
-			{
-				if (speedtime > 6) speedtime = 6;
-			}
-			else if (projectile_type == "ball")
-			{
-				if (speedtime < 10) speedtime = 10;
-				spread = 0;
-			}
-		}
 
 		if (spread > 0)
 			direction = int(degree_limit(double(dir) + double(random(-spread, spread)) * 0.5));

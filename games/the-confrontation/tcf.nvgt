@@ -55,7 +55,6 @@ int footdrag_enabled=1;
 int confirm_exit=1;
 int verbalize_zones=1;
 int enable_player_pain_sounds=1;
-string selected_default_map = "";
 bool has_moved=false;
 bool dmoving=false;
 bool player_walked_since_stop=false;
@@ -674,10 +673,18 @@ if (quick_inv_focused and (key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENT
 {
 	quick_inventory_handle_enter();
 }
-// Plain Enter only reminds a seated player to stand up.
-else if (!shiftisdown() and (kb_pressed("use") or key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER)))
+if (!quick_inv_focused && altisdown() && (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER)))
 {
-	if (is_sitting)
+	if (!use_travel_point_at_player())
+	{
+		p.play_stationary(get_sound_path("misc/error.ogg"), false);
+		speak(tr("travel.not_here"));
+	}
+}
+// Plain Enter only reminds a seated player to stand up.
+else if (!quick_inv_focused && !altisdown() && !shiftisdown() and (kb_pressed("use") or key_pressed(KEY_RETURN) or key_pressed(KEY_NUMPAD_ENTER)))
+{
+	if (!try_open_map_store_at_player() && is_sitting)
 	{
 		speak(tr("game.sitting_hint"));
 	}
@@ -1141,10 +1148,6 @@ if (sd.d.exists("language"))
 {
 current_language=sd.read("language");
 }
-if (sd.d.exists("selected_default_map"))
-{
-selected_default_map=sd.read("selected_default_map");
-}
 if (sd.d.exists("player_character"))
 {
     string pc = sd.read("player_character");
@@ -1174,7 +1177,6 @@ void writeprefs()
     sd.add("enable_player_pain_sounds",enable_player_pain_sounds);
     sd.add("check_updates_on_startup",check_updates_on_startup);
     sd.add("language",current_language);
-    sd.add("selected_default_map",selected_default_map);
     sd.add("player_character",current_player_character);
     sd.save();
     save_updater_settings();
@@ -1373,10 +1375,18 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         save_location();
     }
 }
-void tempreset_internal(bool save_state, const string&in target_map = "")
+void tempreset_internal(bool save_state)
 {
     if (save_state) save_current_map_state();
     else clear_saved_map_state(mapname);
+    if (is_underwater)
+    {
+        underwater_ambient_sound.stop();
+        underwater_ambient_sound.close();
+        is_underwater = false;
+    }
+    killsrcs();
+    sp.update_listener_3d(me.x, me.y, me.z, double(facing));
     clear_map_data();
     destroy_all_projectiles();
     killbodyfalls();
@@ -1384,7 +1394,6 @@ void tempreset_internal(bool save_state, const string&in target_map = "")
     itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
     dp.destroy_all();
     dp.update_listener_3d(me.x, me.y, me.z, double(facing));
-    seamless_switch_map_sources(mapname, target_map);
     destroy_all_builder_objects();
     npc_destroy_all();
     apply_ambient_volume();
@@ -1400,7 +1409,7 @@ void tempreset_internal(bool save_state, const string&in target_map = "")
 
 void tempreset_seamless(const string&in target_map = "")
 {
-    tempreset_internal(true, target_map);
+    tempreset_internal(true);
     if (target_map != "") check_map_discovery(target_map);
 }
 

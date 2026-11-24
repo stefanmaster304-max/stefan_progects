@@ -580,13 +580,3 @@ bool store_remove_category(const string&in id)
 	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
 	return removed;
 }
-
-// The three shelves a brand new installation starts with: medical items,
-// weapons and ammunition. They are normal store configurations, so the builder
-// can rename, delete or add more. A marker records that this happened once, so
-// a category the developer deleted is never created again on the next start.
-const string STORE_DEFAULTS_MARKER = "settings/stores/.defaults_created";
-
-void create_default_stores()
-{
-}

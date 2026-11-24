@@ -12,6 +12,92 @@ bool is_underwater = false;
 sound underwater_ambient_sound;
 dictionary discovered_maps;
 
+class travel_point_definition
+{
+	int sx0, sx1, sy0, sy1, sz0, sz1;
+	string destination;
+	int dx0, dx1, dy0, dy1, dz0, dz1;
+
+	bool contains(int px, int py, int pz) const
+	{
+		return px >= sx0 && px <= sx1 && py >= sy0 && py <= sy1 && pz >= sz0 && pz <= sz1;
+	}
+}
+
+class map_store_point_definition
+{
+	string store_id;
+	int x0, x1, y0, y1, z0, z1;
+
+	bool contains(int px, int py, int pz) const
+	{
+		return px >= x0 && px <= x1 && py >= y0 && py <= y1 && pz >= z0 && pz <= z1;
+	}
+}
+
+travel_point_definition@[] map_travel_points(0);
+map_store_point_definition@[] map_store_points(0);
+
+int map_transfer_coordinate(int value, int source_min, int source_max, int destination_min, int destination_max)
+{
+	int s0 = (source_min < source_max) ? source_min : source_max;
+	int s1 = (source_min > source_max) ? source_min : source_max;
+	int d0 = (destination_min < destination_max) ? destination_min : destination_max;
+	int d1 = (destination_min > destination_max) ? destination_min : destination_max;
+	if (s1 == s0 || d1 == d0) return d0;
+	if (value < s0) value = s0;
+	if (value > s1) value = s1;
+	double position = double(value - s0) / double(s1 - s0);
+	return int(round(double(d0) + position * double(d1 - d0), 0));
+}
+
+bool use_travel_point_at_player()
+{
+	int px = int(round(me.x, 0));
+	int py = int(round(me.y, 0));
+	int pz = int(round(me.z, 0));
+	for (uint i = 0; i < map_travel_points.length(); i++)
+	{
+		travel_point_definition@ point = map_travel_points[i];
+		if (point is null || point.destination == "") continue;
+		if (!point.contains(px, py, pz)) continue;
+		if (!can_enter_map(point.destination, true)) return true;
+
+		int dx = map_transfer_coordinate(px, point.sx0, point.sx1, point.dx0, point.dx1);
+		int dy = map_transfer_coordinate(py, point.sy0, point.sy1, point.dy0, point.dy1);
+		int dz = map_transfer_coordinate(pz, point.sz0, point.sz1, point.dz0, point.dz1);
+		string destination = point.destination;
+		tempreset_seamless(destination);
+		draw_map(destination);
+		me.x = dx; me.y = dy; me.z = dz;
+		if (me.x < minx) me.x = minx;
+		if (me.x > maxx) me.x = maxx;
+		if (me.y < miny) me.y = miny;
+		if (me.y > maxy) me.y = maxy;
+		if (me.z < minz) me.z = minz;
+		if (me.z > maxz) me.z = maxz;
+		save_location();
+		update_sources();
+		p.update_listener_3d(me.x, me.y, me.z, double(facing));
+		sp.update_listener_3d(me.x, me.y, me.z, double(facing));
+		itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
+		dp.update_listener_3d(me.x, me.y, me.z, double(facing));
+		announce_zone_on_load();
+		return true;
+	}
+	return false;
+}
+
+string get_map_store_at(int px, int py, int pz)
+{
+	for (uint i = 0; i < map_store_points.length(); i++)
+	{
+		map_store_point_definition@ point = map_store_points[i];
+		if (point !is null && point.contains(px, py, pz)) return point.store_id;
+	}
+	return "";
+}
+
 bool is_primary_spawn_map(const string&in name)
 {
 	string s = string_to_lower_case(name.trim_whitespace());
@@ -476,6 +562,8 @@ void clear_map_data()
 	zones.resize(0);
 	safezones.resize(0);
 	text_squares.resize(0);
+	map_travel_points.resize(0);
+	map_store_points.resize(0);
 	destroy_all_staircases();
 	has_map_spawnpoint = false;
 	map_spawn_x = 0;
@@ -721,6 +809,42 @@ else if (cmd == "npcspawner")
 			int(string_to_number(parsed[7])), int(string_to_number(parsed[8])), int(string_to_number(parsed[9])),
 			respawn_after_death);
 	}
+}
+else if (cmd == "travelpoint" && parsed.length() >= 14)
+{
+	travel_point_definition@ point = travel_point_definition();
+	point.sx0 = int(string_to_number(parsed[1]));
+	point.sx1 = int(string_to_number(parsed[2]));
+	point.sy0 = int(string_to_number(parsed[3]));
+	point.sy1 = int(string_to_number(parsed[4]));
+	point.sz0 = int(string_to_number(parsed[5]));
+	point.sz1 = int(string_to_number(parsed[6]));
+	point.destination = parsed[7].trim_whitespace();
+	point.dx0 = int(string_to_number(parsed[8]));
+	point.dx1 = int(string_to_number(parsed[9]));
+	point.dy0 = int(string_to_number(parsed[10]));
+	point.dy1 = int(string_to_number(parsed[11]));
+	point.dz0 = int(string_to_number(parsed[12]));
+	point.dz1 = int(string_to_number(parsed[13]));
+	if (point.sx0 > point.sx1) { int t = point.sx0; point.sx0 = point.sx1; point.sx1 = t; }
+	if (point.sy0 > point.sy1) { int t = point.sy0; point.sy0 = point.sy1; point.sy1 = t; }
+	if (point.sz0 > point.sz1) { int t = point.sz0; point.sz0 = point.sz1; point.sz1 = t; }
+	map_travel_points.insert_last(point);
+}
+else if (cmd == "storepoint" && parsed.length() >= 8)
+{
+	map_store_point_definition@ point = map_store_point_definition();
+	point.store_id = parsed[1].trim_whitespace();
+	point.x0 = int(string_to_number(parsed[2]));
+	point.x1 = int(string_to_number(parsed[3]));
+	point.y0 = int(string_to_number(parsed[4]));
+	point.y1 = int(string_to_number(parsed[5]));
+	point.z0 = int(string_to_number(parsed[6]));
+	point.z1 = int(string_to_number(parsed[7]));
+	if (point.x0 > point.x1) { int t = point.x0; point.x0 = point.x1; point.x1 = t; }
+	if (point.y0 > point.y1) { int t = point.y0; point.y0 = point.y1; point.y1 = t; }
+	if (point.z0 > point.z1) { int t = point.z0; point.z0 = point.z1; point.z1 = t; }
+	map_store_points.insert_last(point);
 }
 }
 if (!(has_minx && has_maxx && has_miny && has_maxy && has_minz && has_maxz))

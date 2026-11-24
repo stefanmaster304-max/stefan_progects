@@ -632,11 +632,6 @@ void sync_map_and_neighbor_sources(const string&in active_mname)
 	registered_source_maps.set(active_mname, true);
 }
 
-void seamless_switch_map_sources(const string&in prev_map, const string&in next_map)
-{
-	// Sources and multi-hop neighbors are synchronized seamlessly in draw_map via sync_map_and_neighbor_sources
-}
-
 void update_sources()
 {
 	for (uint i = 0; i < src.length(); i++)

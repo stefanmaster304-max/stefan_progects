@@ -130,7 +130,11 @@
       "npc_manager": "administrador de NPCs - crear, editar y eliminar NPCs",
       "npc_spawner": "generador de NPCs - colocar NPCs configurados en este mapa",
       "map_manager_tools": "administrador de mapas y herramientas - gestionar mapas, propiedades, copias de seguridad y herramientas",
-      "delete_map": "eliminar mapa actual - eliminar permanentemente el archivo de mapa activo"
+      "delete_map": "eliminar mapa actual - eliminar permanentemente el archivo de mapa activo",
+      "entry": {
+        "store_point": "Colocar una tienda en este mapa",
+        "travel_point": "Añadir un punto de viaje a otro mapa"
+      }
     }
   },
   "form": {
@@ -161,6 +165,8 @@
   },
   "npc_manager": {
     "title": "Administrador de NPCs",
+    "confirm_delete": "Eliminar este NPC",
+    "deleted_success": "NPC eliminado.",
     "create_title": "Crear Nuevo NPC",
     "edit_title": "Editar NPC",
     "delete_title": "Eliminar NPC",
@@ -204,7 +210,8 @@
     "clear_selection": "Limpiar selección",
     "class_animal": "Animal",
     "class_robot": "Robot",
-    "class_zombie": "Zombi"
+    "class_zombie": "Zombi",
+    "class_spirit": "Espíritus"
   },
   "store_manager": {
     "title": "Categorías de la Tienda",
@@ -272,6 +279,7 @@
   },
   "weapon_manager": {
     "title": "administrador de armas",
+    "select_action": "seleccione una acción",
     "create_title": "Crear Nueva Arma",
     "edit_title": "editar arma",
     "view_title": "ver arma",
@@ -450,5 +458,30 @@
     "error": "Error",
     "success": "Éxito",
     "info": "Información"
+  },
+  "store_point": {
+    "select_store": "Tienda que se colocará",
+    "title": "Colocar una tienda en este mapa",
+    "store_missing": "No se encontró esta configuración de tienda."
+  },
+  "travel": {
+    "destination_map": "Nombre del mapa de destino",
+    "destination_min_x": "Destino: X mínimo",
+    "source_max_z": "Mapa actual: Z máximo",
+    "destination_missing": "El mapa de destino no existe.",
+    "destination_min_y": "Destino: Y mínimo",
+    "source_min_x": "Mapa actual: X mínimo",
+    "source_min_y": "Mapa actual: Y mínimo",
+    "destination_max_x": "Destino: X máximo",
+    "title": "Añadir un punto de viaje",
+    "source_max_x": "Mapa actual: X máximo",
+    "source_min_z": "Mapa actual: Z mínimo",
+    "destination_min_z": "Destino: Z mínimo",
+    "whole_coordinates": "Introduce coordenadas enteras.",
+    "destination_max_z": "Destino: Z máximo",
+    "invalid_bounds": "Los límites de las coordenadas no son válidos.",
+    "source_max_y": "Mapa actual: Y máximo",
+    "destination_max_y": "Destino: Y máximo",
+    "not_here": "No estás en un punto de viaje."
   }
 }

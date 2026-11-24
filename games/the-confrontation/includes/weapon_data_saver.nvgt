@@ -172,13 +172,13 @@ void parse_weapon_wpm(weapon_data@ w, const string&in content)
 		int eq = string_contains(line, "=", 1);
 		if (eq == -1) continue;
 
-		string key = string_left(line, eq).trim_whitespace();
+		string key = string_to_lower_case(string_left(line, eq).trim_whitespace());
 		string val = line.substr(eq + 1).trim_whitespace();
 
 		if (key == "name") w.name = val;
 		else if (key == "description") w.description = val;
 		else if (key == "class") w.wclass = val;
-		else if (key == "melee") w.melee = (val == "true" || val == "1");
+		else if (key == "melee") w.melee = (string_to_lower_case(val) == "true" || val == "1");
 		else if (key == "firetime") w.firetime = int(string_to_number(val));
 		else if (key == "walktime") w.walktime = int(string_to_number(val));
 		else if (key == "speedtime") w.speedtime = int(string_to_number(val));
@@ -191,7 +191,7 @@ void parse_weapon_wpm(weapon_data@ w, const string&in content)
 		else if (key == "capacity") w.capacity = int(string_to_number(val));
 		else if (key == "reserve_item") w.reserve_item = val;
 		else if (key == "reserve_label") w.reserve_label = val;
-		else if (key == "is_magazine") w.is_magazine = (val == "true" || val == "1");
+		else if (key == "is_magazine") w.is_magazine = (string_to_lower_case(val) == "true" || val == "1");
 		else if (key == "starting_reserve") w.starting_reserve = int(string_to_number(val));
 		else if (key == "ammo_display") w.ammo_display = val;
 		else if (key == "fire_modes") w.fire_modes = normalize_fire_mode(val);
@@ -308,13 +308,13 @@ void parse_weapons_bundle(const string&in content)
 
 		int eq = string_contains(line, "=", 1);
 		if (eq == -1) continue;
-		string key = string_left(line, eq).trim_whitespace();
+		string key = string_to_lower_case(string_left(line, eq).trim_whitespace());
 		string val = line.substr(eq + 1).trim_whitespace();
 
 		if (key == "name") current.name = val;
 		else if (key == "description") current.description = val;
 		else if (key == "class") current.wclass = val;
-		else if (key == "melee") current.melee = (val == "1" || val == "true");
+		else if (key == "melee") current.melee = (string_to_lower_case(val) == "true" || val == "1");
 		else if (key == "firetime")
 		{
 			current.firetime = int(string_to_number(val));
@@ -330,7 +330,7 @@ void parse_weapons_bundle(const string&in content)
 		else if (key == "capacity") current.capacity = int(string_to_number(val));
 		else if (key == "reserve_item") current.reserve_item = val;
 		else if (key == "reserve_label") current.reserve_label = val;
-		else if (key == "is_magazine") current.is_magazine = (val == "1" || val == "true");
+		else if (key == "is_magazine") current.is_magazine = (string_to_lower_case(val) == "true" || val == "1");
 		else if (key == "starting_reserve") current.starting_reserve = int(string_to_number(val));
 		else if (key == "ammo_display") current.ammo_display = val;
 		else if (key == "fire_modes") current.fire_modes = normalize_fire_mode(val);

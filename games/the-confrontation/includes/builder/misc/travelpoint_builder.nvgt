@@ -1,0 +1,82 @@
+// Adds a coordinate-bounded travel point to the current editable map.
+void build_travel_point()
+{
+	audio_form form;
+	form.create_window(tr("travel.title"), false, true, false);
+	int sx0 = form.create_input_box(tr("travel.source_min_x"), "" + minx);
+	int sx1 = form.create_input_box(tr("travel.source_max_x"), "" + maxx);
+	int sy0 = form.create_input_box(tr("travel.source_min_y"), "" + miny);
+	int sy1 = form.create_input_box(tr("travel.source_max_y"), "" + maxy);
+	int sz0 = form.create_input_box(tr("travel.source_min_z"), "" + int(round(me.z, 0)));
+	int sz1 = form.create_input_box(tr("travel.source_max_z"), "" + int(round(me.z, 0)));
+	int destination = form.create_input_box(tr("travel.destination_map"), "");
+	int dx0 = form.create_input_box(tr("travel.destination_min_x"), "0");
+	int dx1 = form.create_input_box(tr("travel.destination_max_x"), "0");
+	int dy0 = form.create_input_box(tr("travel.destination_min_y"), "0");
+	int dy1 = form.create_input_box(tr("travel.destination_max_y"), "0");
+	int dz0 = form.create_input_box(tr("travel.destination_min_z"), "0");
+	int dz1 = form.create_input_box(tr("travel.destination_max_z"), "0");
+	int[] numeric_fields = {sx0, sx1, sy0, sy1, sz0, sz1, dx0, dx1, dy0, dy1, dz0, dz1};
+	for (uint i = 0; i < numeric_fields.length(); i++)
+		form.set_disallowed_chars(numeric_fields[i], "0123456789-", true, tr("travel.whole_coordinates"));
+	int save = form.create_button("&" + tr("ui.save"), true);
+	int cancel = form.create_button("&" + tr("ui.cancel"), false, true);
+	form.set_default_controls(save, cancel);
+	form.focus(sx0);
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		form.monitor();
+		if (key_pressed(KEY_ESCAPE) || form.is_pressed(cancel))
+		{
+			speak(tr("ui.cancel"));
+			return;
+		}
+		if (!form.is_pressed(save)) continue;
+
+		string target = form.get_text(destination).trim_whitespace();
+		if (target == "" || target.find(":") >= 0 || !map_exists_on_disk(target))
+		{
+			speak(tr("travel.destination_missing"));
+			form.focus(destination);
+			continue;
+		}
+		int[] values(12);
+		bool invalid_integer = false;
+		for (uint i = 0; i < numeric_fields.length(); i++)
+		{
+			string raw_value = form.get_text(numeric_fields[i]).trim_whitespace();
+			if (raw_value == "" || raw_value == "-" || raw_value.find("-", 1) >= 0)
+			{
+				invalid_integer = true;
+				break;
+			}
+			values[i] = int(string_to_number(raw_value));
+		}
+		if (invalid_integer)
+		{
+			speak(tr("travel.whole_coordinates"));
+			continue;
+		}
+		if (values[0] < minx || values[1] > maxx || values[2] < miny || values[3] > maxy || values[4] < minz || values[5] > maxz ||
+			values[0] > values[1] || values[2] > values[3] || values[4] > values[5] ||
+			values[6] > values[7] || values[8] > values[9] || values[10] > values[11])
+		{
+			speak(tr("travel.invalid_bounds"));
+			continue;
+		}
+		map_spatial_bounds@ target_bounds = get_map_spatial_bounds(target);
+		if (values[6] < target_bounds.minx || values[7] > target_bounds.maxx ||
+			values[8] < target_bounds.miny || values[9] > target_bounds.maxy ||
+			values[10] < target_bounds.minz || values[11] > target_bounds.maxz)
+		{
+			speak(tr("travel.invalid_bounds"));
+			continue;
+		}
+		string line = "travelpoint:" + values[0] + ":" + values[1] + ":" + values[2] + ":" + values[3] + ":" + values[4] + ":" + values[5] + ":" + target + ":" + values[6] + ":" + values[7] + ":" + values[8] + ":" + values[9] + ":" + values[10] + ":" + values[11];
+		save_to_map(line);
+		return;
+	}
+}

@@ -130,7 +130,11 @@
       "npc_manager": "npc manager - create, edit and delete NPCs",
       "npc_spawner": "npc spawner - place configured NPCs on this map",
       "map_manager_tools": "map manager and tools - manage maps, properties, backup and tools",
-      "delete_map": "delete current map - permanently delete the active map file"
+      "delete_map": "delete current map - permanently delete the active map file",
+      "entry": {
+        "store_point": "Place a store in this map",
+        "travel_point": "Add a travel point to another map"
+      }
     }
   },
   "form": {
@@ -161,6 +165,8 @@
   },
   "npc_manager": {
     "title": "NPC Manager",
+    "confirm_delete": "Delete this NPC",
+    "deleted_success": "NPC deleted.",
     "create_title": "Create New NPC",
     "edit_title": "Edit NPC",
     "delete_title": "Delete NPC",
@@ -204,7 +210,8 @@
     "clear_selection": "Clear Selection",
     "class_animal": "Animal",
     "class_robot": "Robot",
-    "class_zombie": "Zombie"
+    "class_zombie": "Zombie",
+    "class_spirit": "Spirits"
   },
   "store_manager": {
     "title": "Store Categories",
@@ -272,6 +279,7 @@
   },
   "weapon_manager": {
     "title": "weapon manager",
+    "select_action": "select an action",
     "create_title": "Create New Weapon",
     "edit_title": "edit weapon",
     "view_title": "view weapon",
@@ -450,5 +458,30 @@
     "error": "Error",
     "success": "Success",
     "info": "Information"
+  },
+  "store_point": {
+    "select_store": "Store to place",
+    "title": "Place a store in this map",
+    "store_missing": "This store configuration could not be found."
+  },
+  "travel": {
+    "destination_map": "Destination map",
+    "destination_min_x": "Destination minimum X",
+    "source_max_z": "Current map maximum Z",
+    "destination_missing": "The destination map does not exist.",
+    "destination_min_y": "Destination minimum Y",
+    "source_min_x": "Current map minimum X",
+    "source_min_y": "Current map minimum Y",
+    "destination_max_x": "Destination maximum X",
+    "title": "Add a travel point",
+    "source_max_x": "Current map maximum X",
+    "source_min_z": "Current map minimum Z",
+    "destination_min_z": "Destination minimum Z",
+    "whole_coordinates": "Enter whole-number coordinates.",
+    "destination_max_z": "Destination maximum Z",
+    "invalid_bounds": "The coordinate bounds are invalid.",
+    "source_max_y": "Current map maximum Y",
+    "destination_max_y": "Destination maximum Y",
+    "not_here": "You are not standing in a travel point."
   }
 }

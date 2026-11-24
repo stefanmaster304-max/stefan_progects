@@ -221,21 +221,30 @@ void store_browse_buy(int cat)
 	speak(tr("store.purchase_success", {summary, "" + total_cost, currency}));
 }
 
-void store_fill_default_items()
-{
-}
-
 string store_welcome_text()
 {
 	return tr("store.welcome");
 }
 
-void store_main_menu()
+bool try_open_map_store_at_player()
+{
+	string store_id = get_map_store_at(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
+	if (store_id == "") return false;
+	if (get_store(store_id) is null)
+	{
+		speak(tr("store_point.store_missing"));
+		return true;
+	}
+	store_main_menu(store_id);
+	return true;
+}
+
+void store_main_menu(const string&in only_store = "")
 {
 	if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana")
 	{
 		p.play_stationary(get_sound_path("misc/error.ogg"), false);
-		speak(tr("options.select_character_first"));
+		speak(tr("game.select_character_first"));
 		return;
 	}
 
@@ -246,6 +255,23 @@ void store_main_menu()
 	{
 		speak(tr("store.no_categories"));
 		return;
+	}
+	int locked_category = -1;
+	if (only_store != "")
+	{
+		for (uint i = 0; i < store_configs.length(); i++)
+		{
+			if (store_configs[i].name == only_store)
+			{
+				locked_category = int(i);
+				break;
+			}
+		}
+		if (locked_category < 0)
+		{
+			speak(tr("store_point.store_missing"));
+			return;
+		}
 	}
 
 	while (key_down(KEY_RETURN) || key_down(KEY_NUMPAD_ENTER) || kb_down("use") || kb_down("menu_activate"))
@@ -258,7 +284,7 @@ void store_main_menu()
 	if (st_snd != "") p.play_stationary(st_snd, false);
 	speak(store_welcome_text());
 
-	int cat = 0;
+	int cat = (locked_category >= 0) ? locked_category : 0;
 	int item = 0;
 	bool in_items = false;
 	// Nothing is focused when the store opens: the first category is only
@@ -282,7 +308,7 @@ void store_main_menu()
 			if (!has_category)
 			{
 				has_category = true;
-				cat = 0;
+				cat = (locked_category >= 0) ? locked_category : 0;
 				in_items = false;
 			}
 			store_cfg@ s = store_configs[cat];
@@ -305,7 +331,12 @@ void store_main_menu()
 		{
 			if (key_pressed(KEY_UP) || kb_pressed("menu_up"))
 			{
-				if (!has_category)
+				if (locked_category >= 0)
+				{
+					has_category = true;
+					play("menuedge");
+				}
+				else if (!has_category)
 				{
 					has_category = true;
 					cat = 0;
@@ -316,7 +347,12 @@ void store_main_menu()
 			}
 			if (key_pressed(KEY_DOWN) || kb_pressed("menu_down"))
 			{
-				if (!has_category)
+				if (locked_category >= 0)
+				{
+					has_category = true;
+					play("menuedge");
+				}
+				else if (!has_category)
 				{
 					has_category = true;
 					cat = 0;

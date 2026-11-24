@@ -2,7 +2,7 @@
 //
 // Every NPC is a plain text file in settings/npcs with the .npc extension.
 // The file name is the internal id; the file itself carries everything the
-// developer configured: display name, class (animal, robot or zombie), attack
+// developer configured: display name, class, attack
 // cadence and damage, detection and attack ranges, walking and running paces,
 // health, voice clips with their silence window, and the attack, pain and
 // death sounds.
@@ -14,12 +14,13 @@ const string NPC_DIR = "settings/npcs";
 const string NPC_CLASS_ANIMAL = "animal";
 const string NPC_CLASS_ROBOT = "robot";
 const string NPC_CLASS_ZOMBIE = "zombie";
+const string NPC_CLASS_SPIRIT = "spirit";
 
 class npc_data
 {
 	string id;
 	string name;
-	string npc_class; // animal, robot or zombie
+	string npc_class; // animal, robot, zombie or spirit
 
 	int attack_speed; // milliseconds between two attacks
 	int min_damage;
@@ -92,6 +93,7 @@ string npc_class_of(const string&in value)
 	string c = string_to_lower_case(value.trim_whitespace());
 	if (c == NPC_CLASS_ROBOT) return NPC_CLASS_ROBOT;
 	if (c == NPC_CLASS_ZOMBIE) return NPC_CLASS_ZOMBIE;
+	if (c == NPC_CLASS_SPIRIT || c == "spirits") return NPC_CLASS_SPIRIT;
 	return NPC_CLASS_ANIMAL;
 }
 
