@@ -1,3 +1,6 @@
+Mapas 0.7 build 1 | 24 de noviembre de 2026 a las 20:20 (America/Sao_Paulo)
+- Mapa Robots World: se añadió un ascensor de prueba funcional entre la Planta Baja y la Terraza de Observación, con plataforma elevada, trayecto de 3 segundos y sonidos de apertura, cierre y movimiento.
+
 Build 2 | 24 de noviembre de 2026 a las 19:39 (America/Sao_Paulo) — Versión 0.7
 - Actualizador: al pasar a otra versión del juego, el número de compilación guardado ahora se restablece al de la versión compilada para detectar correctamente futuras actualizaciones.
 

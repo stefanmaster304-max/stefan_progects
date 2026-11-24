@@ -1,3 +1,6 @@
+Maps 0.7 build 1 | November 24, 2026 at 20:20 (America/Sao_Paulo)
+- Robots World map: added a working test elevator between the Ground Floor and Observation Deck, with a raised platform, a 3-second ride, and door and travel sounds.
+
 Build 2 | November 24, 2026 at 19:39 (America/Sao_Paulo) — Version 0.7
 - Updater: when moving between game versions, the saved build number now resets to the compiled build so later updates for the new version are detected correctly.
 

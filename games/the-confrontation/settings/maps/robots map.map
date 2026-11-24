@@ -1,0 +1,20 @@
+map: robots map
+minx: 0
+maxx: 400
+miny: 0
+maxy: 400
+minz: 0
+maxz: 400
+minlevel: 1
+maxlevel: 0
+minresurrection: 0
+maxresurrection: 0
+source:0:100:0:100:0:100:sources/city day:0:100
+zone:0:100:0:100:0:100:Robots World
+platform:0:400:0:400:0:0:concrete32
+spawnpoint:1:0:0
+platform:0:20:0:20:10:10:concrete32
+elevator:robots_world_lift:3000:elevador/open.ogg:elevador/close.ogg:elevador/move.ogg
+elevatorfloor:robots_world_lift:Ground Floor:1:0:0:1:1:1
+elevatorfloor:robots_world_lift:Observation Deck:1:0:10:1:1:11
+source:0:400:0:400:0:40:musics/Instrumental de Caminhos do Coração, OS MUTANTES Cobra música da novela Os Mutantes Caminhos do Coração Promessas de amor Rede Record YouTube:0:100
