@@ -67,3 +67,7 @@ Build 1 | 24 de noviembre de 2026 a las 19:22 (America/Sao_Paulo) — Versión 0
 - Tiendas: se eliminó el sonido de bienvenida; al entrar, el juego saluda y pide elegir una categoría, sin anunciar ni seleccionar automáticamente la primera.
 - Instalación de sonidos: el juego descarga ahora un ZIP que contiene solo la carpeta `sounds/`, conserva el paquete dentro de `update_temp` y elimina los archivos temporales tras extraer e instalar los sonidos.
 
+Build 3 | 24 de noviembre de 2026 a las 20:32 (America/Sao_Paulo) — Versión 0.7
+- Ascensores: el sonido de cierre ya no se repite al elegir el destino; el sonido de movimiento comienza de inmediato y se repite durante el trayecto.
+- Actualizaciones: se publicó un nuevo paquete con los sonidos actuales y un nuevo `maps.dat` cifrado, sin el ascensor de prueba eliminado de Robots World.
+

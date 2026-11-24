@@ -63,3 +63,7 @@ Build 2 | November 24, 2026 at 12:29 (America/Sao_Paulo)
 - Update confirmation now separates View what is new, Update now, and Cancel.
 - The store manager includes storefront creation/editing and category assignment to existing storefronts.
 
+Build 3 | November 24, 2026 at 20:32 (America/Sao_Paulo) — Version 0.7
+- Elevators: the door-close sound no longer repeats when selecting a destination; the travel sound starts immediately and loops throughout the ride.
+- Updates: published a new archive with the current sounds and a new encrypted `maps.dat` without the removed Robots World test elevator.
+

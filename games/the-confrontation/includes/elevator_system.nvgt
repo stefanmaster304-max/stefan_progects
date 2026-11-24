@@ -158,7 +158,6 @@ void start_elevator_trip(map_elevator_definition@ elevator, map_elevator_floor@ 
 {
 	if (elevator is null || destination is null) return;
 	speak(tr("elevator.moving", {destination.name}));
-	play_elevator_effect(elevator.door_close_sound);
 	move_elevator_car(elevator, destination);
 }
 
