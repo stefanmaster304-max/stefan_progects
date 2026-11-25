@@ -1,3 +1,9 @@
+Build 10 | November 25, 2026 at 17:50 (America/Sao_Paulo) — Version 0.1.0
+- Jumping: platform collisions during ascent are now treated as an underside impact without ending the jump inside the platform volume. Landing remains checked during descent, preventing the player from becoming suspended without gravity while running and jumping.
+
+Build 9 | November 25, 2026 at 17:45 (America/Sao_Paulo) — Version 0.1.0
+- Jumping: Space is captured at the start of each loop and held until the jump stage. The request is consumed once, without requiring the character to stop running and without repeating while the key remains held.
+
 Build 8 | November 25, 2026 at 17:38 (America/Sao_Paulo) — Version 0.1.0
 - Jump restored: activation is back in its original post-horizontal-movement stage and no longer changes height in the same frame. Space is read directly there; air speed and timer-based vertical movement are preserved. Platform footsteps remain silent while airborne.
 

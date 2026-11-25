@@ -203,6 +203,8 @@ void load_player_vital_sounds()
 }
 
 timer movetimer, jumptimer, hittimer, healtimer;
+bool jump_requested = false;
+bool jump_key_was_down = false;
 timer idle_scuff_timer;
 bool idle_scuff_primed=false;
 bool idle_scuff_played=false;
@@ -296,6 +298,13 @@ is_in_game = true;
 while(true)
 {
 inventory_closed_by_enter_this_frame = false;
+// Capture Space before the longer world updates and wait below. Keep only a
+// grounded press, then consume it once in the normal jump stage. This prevents
+// a short key_pressed event from being lost while movement is held.
+bool jump_key_down = key_down(KEY_SPACE);
+if ((key_pressed(KEY_SPACE) || (jump_key_down && !jump_key_was_down)) && jumping == 0 && !falling && !player_inside_elevator)
+	jump_requested = true;
+jump_key_was_down = jump_key_down;
 weapon_system_loop();
 // Fire is hold-to-fire for automatic weapons and one press per shot for
 // semi-automatic ones. Only Left Control (or configured fire key) fires;
@@ -622,8 +631,11 @@ if (!player_inside_elevator && dmoving==false and movetimer.elapsed>=movetime)
 if (me.z < minz) me.z = minz;
 // Keep jump activation in the original post-movement input stage. The jump
 // timer owns vertical motion; starting it does not change Z in this frame.
-if (!player_inside_elevator && key_pressed(KEY_SPACE) and !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
+if (jump_requested)
 {
+	jump_requested = false;
+	if (!player_inside_elevator && !key_down(KEY_LCONTROL) && !key_down(KEY_RCONTROL) && jumping==0 && falling==false && dmoving==false)
+	{
 	if (is_sitting)
 	{
 		if (sitting_speech_debounce.elapsed >= 1500)
@@ -646,6 +658,7 @@ if (!player_inside_elevator && key_pressed(KEY_SPACE) and !key_down(KEY_LCONTROL
 			jumptimer.restart();
 		}
 	}
+	}
 }
 if (jumping==1 && !player_inside_elevator)
 {
@@ -664,9 +677,17 @@ if (ascending==true and jumptimer.elapsed>=jumptime)
 {
 jumptimer.restart();
 me.z+=1;
-	checkforplatforms();
-
-if (me.z>=ty2)
+	// A platform volume above the player is an underside collision, not a
+	// landing. The landing check here used to cancel the jump inside the tile
+	// volume, where the fall check could not start either.
+	if (gmt() != "")
+	{
+		me.z--;
+		ascending=false;
+		atapex=true;
+		jumptimer.restart();
+	}
+	else if (me.z>=ty2)
 {
 ascending=false;
 jumptimer.restart();
