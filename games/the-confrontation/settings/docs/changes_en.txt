@@ -1,4 +1,12 @@
-Build 4 | November 24, 2026 at 20:50 (America/Sao_Paulo) — Version 0.8`r`n- Doors: added offline map doors with a physical blocking volume, Alt+Enter interaction from either adjacent side, spatial opening/closing sounds, selectable wall material and bump sound, toggle cooldown, and optional auto-close that waits until the doorway is clear.
+Build 1 | November 25, 2026 at 09:57 (America/Sao_Paulo) — Version 0.9
+- Acoustics and doors: documented the exterior low-pass filter in XANGE.LOG; removed spoken notices when doors open/close and when filtering toggles; removed the test door from Forest.
+- Updater: removed the option to view what is new; Enter or Y starts the download and Escape cancels. Beeps are clearer at lower volume.
+- Version: updated to 0.9.
+Build 5 | November 25, 2026 at 09:50 (America/Sao_Paulo) — Version 0.8
+- Indoor acoustics: doors can define an interior room volume and exterior low-pass cutoff. While the player is inside and every door assigned to that room is closed, exterior spatial effects and ambient sources are low-pass filtered; sounds placed inside the room remain clear. Opening a room door or leaving the room removes the filter.
+
+Build 4 | November 24, 2026 at 20:50 (America/Sao_Paulo) — Version 0.8
+- Doors: added offline map doors with a physical blocking volume, Alt+Enter interaction from either adjacent side, spatial opening/closing sounds, selectable wall material and bump sound, toggle cooldown, and optional auto-close that waits until the doorway is clear.
 
 Maps 0.7 build 1 | November 24, 2026 at 20:20 (America/Sao_Paulo)
 - Robots World map: added a working test elevator between the Ground Floor and Observation Deck, with a raised platform, a 3-second ride, and door and travel sounds.
@@ -68,3 +76,4 @@ Build 2 | November 24, 2026 at 12:29 (America/Sao_Paulo)
 Build 3 | November 24, 2026 at 20:32 (America/Sao_Paulo) — Version 0.7
 - Elevators: the door-close sound no longer repeats when selecting a destination; the travel sound starts immediately and loops throughout the ride.
 - Updates: published a new archive with the current sounds and a new encrypted `maps.dat` without the removed Robots World test elevator.
+

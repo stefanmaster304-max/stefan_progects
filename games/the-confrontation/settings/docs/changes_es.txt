@@ -1,4 +1,12 @@
-Build 4 | 24 de noviembre de 2026 a las 20:50 (America/Sao_Paulo) — Versión 0.8`r`n- Puertas: se añadieron puertas offline configuradas en el mapa, con bloqueo físico, interacción con Alt+Enter desde ambos lados, sonidos espaciales de apertura y cierre, selección del material y sonido de bloqueo, intervalo entre interacciones y cierre automático opcional cuando el paso queda libre.
+Build 1 | 25 de noviembre de 2026 a las 09:57 (America/Sao_Paulo) — Versión 0.9
+- Acústica y puertas: documentado el filtro paso bajo de sonidos exteriores en XANGE.LOG; se eliminaron los avisos hablados al abrir/cerrar puertas y al alternar el filtro; se quitó la puerta de prueba del Bosque.
+- Actualizador: se eliminó la opción para ver novedades; Enter o Y inicia la descarga y Escape la cancela. Los pitidos son más nítidos y tienen menos volumen.
+- Versión: actualizada a 0.9.
+Build 5 | 25 de noviembre de 2026 a las 09:50 (America/Sao_Paulo) — Versión 0.8
+- Acústica interior: las puertas pueden definir el volumen de una habitación y la frecuencia de corte paso bajo de los sonidos exteriores. Cuando el jugador está dentro y todas las puertas asociadas a la habitación están cerradas, los efectos espaciales y ambientales exteriores se filtran; los sonidos colocados dentro permanecen nítidos. Al abrir una puerta de la habitación o salir, se quita el filtro.
+
+Build 4 | 24 de noviembre de 2026 a las 20:50 (America/Sao_Paulo) — Versión 0.8
+- Puertas: se añadieron puertas offline configuradas en el mapa, con bloqueo físico, interacción con Alt+Enter desde ambos lados, sonidos espaciales de apertura y cierre, selección del material y sonido de bloqueo, intervalo entre interacciones y cierre automático opcional cuando el paso queda libre.
 
 Mapas 0.7 build 1 | 24 de noviembre de 2026 a las 20:20 (America/Sao_Paulo)
 - Mapa Robots World: se añadió un ascensor de prueba funcional entre la Planta Baja y la Terraza de Observación, con plataforma elevada, trayecto de 3 segundos y sonidos de apertura, cierre y movimiento.
@@ -72,3 +80,4 @@ Build 1 | 24 de noviembre de 2026 a las 19:22 (America/Sao_Paulo) — Versión 0
 Build 3 | 24 de noviembre de 2026 a las 20:32 (America/Sao_Paulo) — Versión 0.7
 - Ascensores: el sonido de cierre ya no se repite al elegir el destino; el sonido de movimiento comienza de inmediato y se repite durante el trayecto.
 - Actualizaciones: se publicó un nuevo paquete con los sonidos actuales y un nuevo `maps.dat` cifrado, sin el ascensor de prueba eliminado de Robots World.
+

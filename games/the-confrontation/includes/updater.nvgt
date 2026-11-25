@@ -43,7 +43,7 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-const int COMPILED_GAME_BUILD = 4;
+const int COMPILED_GAME_BUILD = 1;
 string current_game_version = ver;
 int current_game_build = COMPILED_GAME_BUILD;
 string current_content_version = "0.6";
@@ -310,7 +310,7 @@ void cleanup_update_temp()
 }
 
 /* NVDA-style rising pitch progress bar tone */
-void beep_percentage(double val, double volume = 0.28)
+void beep_percentage(double val, double volume = 0.20)
 {
 	val = round(val, 0);
 	if (val < 0) val = 0;
@@ -320,7 +320,7 @@ void beep_percentage(double val, double volume = 0.28)
 	tone_synth sy;
 	sy.waveform_type = 0; /* Pure sine wave */
 	sy.volume = volume;
-	sy.set_edge_fades(4, 4);
+	sy.set_edge_fades(2, 2);
 	sy.freq_ms(freq, 40);
 	@progress_sound = sy.write_wave_sound();
 	sy.reset();
@@ -568,8 +568,8 @@ void updater_beep(int frequency, int duration)
 {
 	tone_synth tone;
 	tone.waveform_type = 1; /* Soft sine wave */
-	tone.volume = 0.28;
-	tone.set_edge_fades(8, 8);
+	tone.volume = 0.20;
+	tone.set_edge_fades(4, 4);
 	tone.freq_ms(frequency, duration);
 	tone.write_wave_sound().play_wait();
 }
@@ -661,45 +661,16 @@ void restart_game_client()
 	exit();
 }
 
-string load_current_update_notes()
-{
-	string language = string_to_lower_case(current_language);
-	string path = "settings/docs/changes_" + language + ".txt";
-	if (!file_exists(path)) path = "settings/docs/changes_en.txt";
-	if (file_exists(path)) return file_get_contents(path);
-	return tr("updater.no_notes");
-}
-
-void show_current_update_notes(update_item@ item)
-{
-	if (item is null) return;
-	string[] title_args = {item.new_version};
-	audio_form form;
-	form.create_window(tr("updater.whats_new_title", title_args), false, true, false);
-	int notes = form.create_input_box(tr("updater.whats_new_label"), load_current_update_notes(), "", 0, true, true, false);
-	int back = form.create_button("&" + tr("ui.back"), true, true);
-	form.set_default_controls(back, back);
-	form.focus(notes);
-	while (true)
-	{
-		wait(5);
-		update_game_world();
-		form.monitor();
-		if (key_pressed(KEY_ESCAPE) || form.is_pressed(back)) return;
-	}
-}
-
-bool show_update_details(update_item@ item, const string&in message)
+bool confirm_update_download(update_item@ item, const string&in message)
 {
 	if (item is null) return false;
 	string[] title_args = {item.new_version};
 	audio_form form;
 	form.create_window(tr("updater.update_prompt_title", title_args), false, true, false);
-	int whats_new = form.create_button("&" + tr("updater.whats_new_button"), false);
 	int update = form.create_button("&" + tr("updater.update_now"), true);
 	int cancel = form.create_button("&" + tr("ui.cancel"), false, true);
 	form.set_default_controls(update, cancel);
-	form.focus(whats_new);
+	form.focus(update);
 	speak(message);
 	while (true)
 	{
@@ -707,8 +678,7 @@ bool show_update_details(update_item@ item, const string&in message)
 		update_game_world();
 		form.monitor();
 		if (key_pressed(KEY_ESCAPE) || form.is_pressed(cancel)) { speak(tr("updater.cancelled")); return false; }
-		if (form.is_pressed(update)) return true;
-		if (form.is_pressed(whats_new)) show_current_update_notes(item);
+		if (key_pressed(KEY_Y) || key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPADENTER) || key_pressed(KEY_NUMPAD_ENTER) || form.is_pressed(update)) return true;
 	}
 	return false;
 }
@@ -1270,7 +1240,7 @@ bool check_for_updates(bool interactive = true)
 		prompt_msg = tr("updater.map_update_available");
 	}
 
-	if (show_update_details(available_update, prompt_msg))
+	if (confirm_update_download(available_update, prompt_msg))
 	{
 		if (available_update.type == UPDATE_GAME)
 		{
@@ -1285,3 +1255,4 @@ bool check_for_updates(bool interactive = true)
 
 	return false;
 }
+

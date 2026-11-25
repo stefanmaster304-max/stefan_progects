@@ -9,6 +9,9 @@ class map_door_definition
 	string close_sound;
 	int cooldown_ms;
 	int auto_close_ms;
+	string room_id;
+	int room_x0, room_x1, room_y0, room_y1, room_z0, room_z1;
+	float room_cutoff_hz = 1200.0;
 	bool is_open = false;
 	bool has_toggled = false;
 	timer cooldown_timer;
@@ -31,6 +34,14 @@ class map_door_definition
 map_door_definition@[] map_doors(0);
 sound_pool map_door_audio(16);
 
+bool door_room_id_is_valid(const string&in id)
+{
+	if (id == "" || id.length() > 40) return false;
+	for (uint i = 0; i < id.length(); i++)
+		if ("abcdefghijklmnopqrstuvwxyz0123456789_-".find(id.substr(i, 1)) < 0) return false;
+	return true;
+}
+
 map_door_definition@ find_map_door(const string&in id)
 {
 	string wanted = string_to_lower_case(id.trim_whitespace());
@@ -42,9 +53,20 @@ map_door_definition@ find_map_door(const string&in id)
 	return null;
 }
 
+bool door_interior_bounds_touch_side(int x0, int x1, int y0, int y1, int z0, int z1,
+	int rx0, int rx1, int ry0, int ry1, int rz0, int rz1)
+{
+	int cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, cz = (z0 + z1) / 2;
+	if (x1 - x0 >= y1 - y0)
+		return (cx >= rx0 && cx <= rx1 && y0 - 1 >= ry0 && y0 - 1 <= ry1 && cz >= rz0 && cz <= rz1) ||
+			(cx >= rx0 && cx <= rx1 && y1 + 1 >= ry0 && y1 + 1 <= ry1 && cz >= rz0 && cz <= rz1);
+	return (x0 - 1 >= rx0 && x0 - 1 <= rx1 && cy >= ry0 && cy <= ry1 && cz >= rz0 && cz <= rz1) ||
+		(x1 + 1 >= rx0 && x1 + 1 <= rx1 && cy >= ry0 && cy <= ry1 && cz >= rz0 && cz <= rz1);
+}
+
 void parse_map_door(string[]@ fields)
 {
-	if (fields is null || fields.length() < 13) return;
+	if (fields is null || fields.length() < 13 || (fields.length() > 13 && fields.length() < 21)) return;
 	string id = string_to_lower_case(fields[1].trim_whitespace());
 	if (id == "" || find_map_door(id) !is null) return;
 	map_door_definition@ door = map_door_definition();
@@ -61,6 +83,29 @@ void parse_map_door(string[]@ fields)
 	if (door.y0 > door.y1) { int t = door.y0; door.y0 = door.y1; door.y1 = t; }
 	if (door.z0 > door.z1) { int t = door.z0; door.z0 = door.z1; door.z1 = t; }
 	if (door.wall_type == "" || door.open_sound == "" || door.close_sound == "" || door.cooldown_ms < 0 || door.auto_close_ms < 0) return;
+	if (fields.length() >= 21 && fields[13].trim_whitespace() != "")
+	{
+		door.room_id = string_to_lower_case(fields[13].trim_whitespace());
+		if (!door_room_id_is_valid(door.room_id)) return;
+		door.room_x0 = int(string_to_number(fields[14])); door.room_x1 = int(string_to_number(fields[15]));
+		door.room_y0 = int(string_to_number(fields[16])); door.room_y1 = int(string_to_number(fields[17]));
+		door.room_z0 = int(string_to_number(fields[18])); door.room_z1 = int(string_to_number(fields[19]));
+		door.room_cutoff_hz = float(string_to_number(fields[20]));
+		if (door.room_x0 > door.room_x1 || door.room_y0 > door.room_y1 || door.room_z0 > door.room_z1 ||
+			door.room_x0 < minx || door.room_x1 > maxx || door.room_y0 < miny || door.room_y1 > maxy ||
+			door.room_z0 < minz || door.room_z1 > maxz || door.room_cutoff_hz < 10.0 || door.room_cutoff_hz > 22000.0) return;
+		if (!door_interior_bounds_touch_side(door.x0, door.x1, door.y0, door.y1, door.z0, door.z1,
+			door.room_x0, door.room_x1, door.room_y0, door.room_y1, door.room_z0, door.room_z1)) return;
+		for (uint i = 0; i < map_doors.length(); i++)
+		{
+			map_door_definition@ existing = map_doors[i];
+			if (existing is null || existing.room_id != door.room_id) continue;
+			if (existing.room_x0 != door.room_x0 || existing.room_x1 != door.room_x1 ||
+				existing.room_y0 != door.room_y0 || existing.room_y1 != door.room_y1 ||
+				existing.room_z0 != door.room_z0 || existing.room_z1 != door.room_z1 ||
+				existing.room_cutoff_hz != door.room_cutoff_hz) return;
+		}
+	}
 	door.cooldown_timer.restart();
 	door.open_timer.restart();
 	map_doors.insert_last(door);
@@ -70,6 +115,82 @@ void clear_map_doors()
 {
 	map_door_audio.destroy_all();
 	map_doors.resize(0);
+	update_map_room_acoustics();
+}
+
+bool source_ambience_is_inside_room(source@ ambience, map_door_definition@ room)
+{
+	if (ambience is null || room is null || ambience.map != mapname || ambience.is_music) return false;
+	int sx0 = (ambience.x1 < ambience.x2) ? ambience.x1 : ambience.x2;
+	int sx1 = (ambience.x1 > ambience.x2) ? ambience.x1 : ambience.x2;
+	int sy0 = (ambience.y1 < ambience.y2) ? ambience.y1 : ambience.y2;
+	int sy1 = (ambience.y1 > ambience.y2) ? ambience.y1 : ambience.y2;
+	int sz0 = (ambience.z1 < ambience.z2) ? ambience.z1 : ambience.z2;
+	int sz1 = (ambience.z1 > ambience.z2) ? ambience.z1 : ambience.z2;
+	return sx0 >= room.room_x0 && sx1 <= room.room_x1 &&
+		sy0 >= room.room_y0 && sy1 <= room.room_y1 &&
+		sz0 >= room.room_z0 && sz1 <= room.room_z1;
+}
+
+void refresh_room_acoustic_pools()
+{
+	p.refresh_room_exterior_filter();
+	sp.refresh_room_exterior_filter();
+	itempool.refresh_room_exterior_filter();
+	bulletpool.refresh_room_exterior_filter();
+	map_door_audio.refresh_room_exterior_filter();
+	if (npcp !is null) npcp.refresh_room_exterior_filter();
+}
+
+void update_map_room_acoustics()
+{
+	int px = int(round(me.x, 0)), py = int(round(me.y, 0)), pz = int(round(me.z, 0));
+	map_door_definition@ room = null;
+	for (uint i = 0; i < map_doors.length(); i++)
+	{
+		map_door_definition@ candidate = map_doors[i];
+		if (candidate is null || candidate.room_id == "") continue;
+		if (px < candidate.room_x0 || px > candidate.room_x1 || py < candidate.room_y0 || py > candidate.room_y1 || pz < candidate.room_z0 || pz > candidate.room_z1) continue;
+		@room = candidate;
+		break;
+	}
+	bool active = room !is null;
+	if (active)
+	{
+		for (uint i = 0; i < map_doors.length(); i++)
+		{
+			map_door_definition@ portal = map_doors[i];
+			if (portal !is null && portal.room_id == room.room_id && portal.is_open) { active = false; break; }
+		}
+	}
+	bool changed = room_exterior_filter_active != active;
+	if (active)
+	{
+		changed = changed || room_exterior_min_x != room.room_x0 || room_exterior_max_x != room.room_x1 ||
+			room_exterior_min_y != room.room_y0 || room_exterior_max_y != room.room_y1 ||
+			room_exterior_min_z != room.room_z0 || room_exterior_max_z != room.room_z1 ||
+			room_exterior_filter_cutoff != room.room_cutoff_hz;
+		room_exterior_min_x = room.room_x0; room_exterior_max_x = room.room_x1;
+		room_exterior_min_y = room.room_y0; room_exterior_max_y = room.room_y1;
+		room_exterior_min_z = room.room_z0; room_exterior_max_z = room.room_z1;
+		room_exterior_filter_cutoff = room.room_cutoff_hz;
+	}
+	if (changed)
+	{
+		room_exterior_filter_active = active;
+		refresh_room_acoustic_pools();
+	}
+	for (uint si = 0; si < src.length(); si++)
+	{
+		source@ ambience = src[si];
+		if (ambience is null || !ambience.is_ambience || ambience.sound < 0) continue;
+		bool muffle_ambience = active && !source_ambience_is_inside_room(ambience, room);
+		if (ambience.interior_muffled != muffle_ambience)
+		{
+			sp.set_sound_room_exterior_filter(ambience.sound, muffle_ambience, room_exterior_filter_cutoff);
+			ambience.interior_muffled = muffle_ambience;
+		}
+	}
 }
 
 bool door_player_or_npc_inside(map_door_definition@ door)
@@ -108,12 +229,10 @@ bool set_map_door_state(map_door_definition@ door, bool open, bool announce_bloc
 	{
 		door.open_timer.restart();
 		play_map_door_sound(door, door.open_sound);
-		speak(tr("door.opened", {door.id}));
 	}
 	else
 	{
 		play_map_door_sound(door, door.close_sound);
-		speak(tr("door.closed", {door.id}));
 	}
 	return true;
 }

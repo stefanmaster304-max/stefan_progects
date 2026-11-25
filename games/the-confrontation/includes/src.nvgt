@@ -158,6 +158,7 @@ class source
 	double pitch;
 	bool is_music;
 	bool is_ambience;
+	bool interior_muffled;
 	bool paused;
 	bool is_neighbor;
 
@@ -225,6 +226,7 @@ class source
 		pitch = spitch;
 		is_music = false;
 		is_ambience = is_amb;
+		interior_muffled = false;
 		paused = false;
 		is_neighbor = neighbor;
 

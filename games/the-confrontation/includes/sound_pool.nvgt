@@ -12,6 +12,19 @@
 #include "rotation.nvgt"
 #pragma plugin king_audio_engine
 bool sound_pool_default_y_elevation = false;
+bool room_exterior_filter_active = false;
+int room_exterior_min_x = 0, room_exterior_max_x = 0;
+int room_exterior_min_y = 0, room_exterior_max_y = 0;
+int room_exterior_min_z = 0, room_exterior_max_z = 0;
+float room_exterior_filter_cutoff = 1200.0;
+const string ROOM_EXTERIOR_FILTER_ID = "$room_exterior";
+
+bool sound_position_is_outside_interior(float sx, float sy, float sz)
+{
+	return sx < room_exterior_min_x || sx > room_exterior_max_x ||
+		sy < room_exterior_min_y || sy > room_exterior_max_y ||
+		sz < room_exterior_min_z || sz > room_exterior_max_z;
+}
 
 // One attenuation for the whole game. Every pool - the player's own sounds, the
 // map, the items, the projectiles and the NPCs - uses these same numbers, so a
@@ -58,6 +71,7 @@ class sound_pool_item {
 	// Low-pass command kept on the item so a looping sound that is reloaded
 	// after leaving earshot comes back already muffled.
 	string pool_lowpass_fx;
+	bool room_exterior_filter_applied = false;
 	float last_set_lx = -999999.0, last_set_ly = -999999.0, last_set_lz = -999999.0;
 	float last_set_sx = -999999.0, last_set_sy = -999999.0, last_set_sz = -999999.0;
 	float last_set_rot = -999999.0;
@@ -102,10 +116,39 @@ class sound_pool_item {
 		extra_data = "";
 		fx_list.resize(0);
 		pool_lowpass_fx = "";
+		room_exterior_filter_applied = false;
 		last_set_lx = -999999.0; last_set_ly = -999999.0; last_set_lz = -999999.0;
 		last_set_sx = -999999.0; last_set_sy = -999999.0; last_set_sz = -999999.0;
 		last_set_rot = -999999.0;
 		last_set_pitch = -999999.0;
+	}
+
+	void set_room_exterior_filter(bool enabled, float cutoff_hz)
+	{
+		if (enabled)
+		{
+			string command = ROOM_EXTERIOR_FILTER_ID + ":lowpass:" + int(cutoff_hz) + ":1";
+			bool found = false;
+			for (uint i = 0; i < fx_list.length(); i++)
+			{
+				if (fx_list[i] == ROOM_EXTERIOR_FILTER_ID || string_starts_with(fx_list[i], ROOM_EXTERIOR_FILTER_ID + ":"))
+				{
+					fx_list[i] = command;
+					found = true;
+					break;
+				}
+			}
+			if (!found) fx_list.insert_last(command);
+			if (@handle != null && handle.active) handle.set_fx(command);
+			room_exterior_filter_applied = true;
+			return;
+		}
+		if (!room_exterior_filter_applied) return;
+		if (@handle != null && handle.active) handle.set_fx(ROOM_EXTERIOR_FILTER_ID);
+		for (int i = int(fx_list.length()) - 1; i >= 0; i--)
+			if (fx_list[uint(i)] == ROOM_EXTERIOR_FILTER_ID || string_starts_with(fx_list[uint(i)], ROOM_EXTERIOR_FILTER_ID + ":"))
+				fx_list.remove_at(uint(i));
+		room_exterior_filter_applied = false;
 	}
 
 	/*
@@ -334,6 +377,22 @@ class sound_pool {
 		}
 	}
 
+	void refresh_room_exterior_filter()
+	{
+		for (uint i = 0; i <= highest_slot && i < items.length(); i++)
+		{
+			bool filter_sound = room_exterior_filter_active && !items[i].stationary &&
+				sound_position_is_outside_interior(items[i].x, items[i].y, items[i].z);
+			items[i].set_room_exterior_filter(filter_sound, room_exterior_filter_cutoff);
+		}
+	}
+
+	void set_sound_room_exterior_filter(int slot, bool enabled, float cutoff_hz)
+	{
+		if (slot < 0 || slot >= int(items.length())) return;
+		items[uint(slot)].set_room_exterior_filter(enabled, cutoff_hz);
+	}
+
 	// Default constructor
 	sound_pool(int default_item_size = 100) {
 		items.resize(default_item_size);
@@ -439,6 +498,8 @@ class sound_pool {
 			items[slot].handle.set_fx(items[slot].fx_list[i]);
 		if (items[slot].pool_lowpass_fx != "")
 			items[slot].handle.set_fx(items[slot].pool_lowpass_fx);
+		bool room_filter = room_exterior_filter_active && dimension > 0 && sound_position_is_outside_interior(sound_x, sound_y, sound_z);
+		items[slot].set_room_exterior_filter(room_filter, room_exterior_filter_cutoff);
 		if (dimension > 0)
 			last_listener_x = listener_x;
 		if (dimension > 1) {
