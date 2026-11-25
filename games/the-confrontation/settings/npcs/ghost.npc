@@ -1,0 +1,19 @@
+# The Confront NPC
+name=Ghost
+class=spirit
+attack_speed=3200
+min_damage=4300
+max_damage=5400
+detection_range=500
+attack_range=5
+walk_speed=300
+run_speed=200
+max_health=9000
+xp=12000
+use_platform_footsteps=0
+drop_items_on_death=0
+voice_min_delay=500
+voice_max_delay=1000
+sound_voice=npcs/spirit/spirit_voice1.ogg;npcs/spirit/spirit_voice2.ogg;npcs/spirit/spirit_voice3.ogg
+sound_hit=npcs/spirit/spirit_hit.ogg
+sound_death=npcs/spirit/spirit_kill.ogg

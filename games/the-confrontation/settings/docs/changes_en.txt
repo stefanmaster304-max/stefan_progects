@@ -1,3 +1,9 @@
+Build 4 | novembro 25, 2026 at 13:03 (America/Sao_Paulo) — Version 0.1.0
+- Inventory: added a dedicated menu with All Inventory, Weapons and Ammunition, Medical Items, and Currencies categories; arrow, Home/End, and Tab/Shift+Tab navigation; Space reads available item descriptions; added open, close, and category-change cues.
+- Favorites: removed Tab quick-inventory cycling. Shift+1 through Shift+0 assigns the focused inventory item to an empty favorite slot; number keys 1 through 0 use the saved item. Each slot holds one item, and favorites persist per character.
+- Elevator and store: elevator occupancy and destination floor are saved and restored. Leaving the elevator now plays both door-open and door-close sounds. Space in the store reads the focused product description.
+- Localization and audio: added inventory text in all three languages plus translations for existing item names and map zones. The menu close cue now starts immediately when Escape exits the menu.
+
 Build 3 | November 25, 2026 at 11:41 (America/Sao_Paulo) — Version 0.9
 - Map cleanup: removed the temporary second-floor stairs, elevator, platform and store entrance from the Safe Zone; removed the obsolete text-square feature from the builder and map loader.
 - Tracking: N reports each living NPC within 30 tiles in nearest-first order with its current distance and direction. X lists accessible travel points; selecting one plays a spatial beacon until the player reaches its area, then plays an arrival cue. Added English, Portuguese and Spanish text.
@@ -85,4 +91,9 @@ Build 2 | November 24, 2026 at 12:29 (America/Sao_Paulo)
 Build 3 | November 24, 2026 at 20:32 (America/Sao_Paulo) — Version 0.7
 - Elevators: the door-close sound no longer repeats when selecting a destination; the travel sound starts immediately and loops throughout the ride.
 - Updates: published a new archive with the current sounds and a new encrypted `maps.dat` without the removed Robots World test elevator.
+
+
+
+
+
 

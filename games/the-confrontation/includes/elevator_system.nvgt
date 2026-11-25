@@ -24,6 +24,27 @@ bool player_inside_elevator = false;
 bool elevator_arrived_waiting_for_exit = false;
 string player_elevator_id = "";
 string player_elevator_floor = "";
+bool saved_player_inside_elevator = false;
+bool saved_elevator_arrived_waiting_for_exit = false;
+string saved_player_elevator_id = "";
+string saved_player_elevator_floor = "";
+
+void restore_saved_elevator_state()
+{
+	player_inside_elevator = saved_player_inside_elevator;
+	elevator_arrived_waiting_for_exit = saved_elevator_arrived_waiting_for_exit;
+	player_elevator_id = saved_player_elevator_id;
+	player_elevator_floor = saved_player_elevator_floor;
+	if (player_inside_elevator && (find_map_elevator(player_elevator_id) is null || find_map_elevator_floor(player_elevator_id, player_elevator_floor) is null))
+	{
+		player_inside_elevator = false;
+		elevator_arrived_waiting_for_exit = false;
+		player_elevator_id = "";
+		player_elevator_floor = "";
+		saved_player_inside_elevator = false;
+		saved_elevator_arrived_waiting_for_exit = false;
+	}
+}
 
 map_elevator_definition@ find_map_elevator(const string&in id)
 {
@@ -158,6 +179,7 @@ void move_elevator_car(map_elevator_definition@ elevator, map_elevator_floor@ de
 	update_elevator_audio_listeners();
 	player_elevator_floor = destination.name;
 	elevator_arrived_waiting_for_exit = true;
+	save_location();
 	speak(tr("elevator.arrived", {localize_elevator_floor_name(destination.name)}));
 }
 
@@ -189,6 +211,7 @@ bool try_use_elevator_at_player()
 			me.x = current_floor.door_x;
 			me.y = current_floor.door_y;
 			me.z = current_floor.door_z;
+			play_elevator_effect(elevator.door_close_sound);
 			player_inside_elevator = false;
 			elevator_arrived_waiting_for_exit = false;
 			jumping = 0;
@@ -254,7 +277,12 @@ bool try_use_elevator_at_player()
 		elevator_arrived_waiting_for_exit = false;
 		player_elevator_id = elevator.id;
 		player_elevator_floor = floor.name;
+		saved_player_inside_elevator = true;
+		saved_elevator_arrived_waiting_for_exit = false;
+		saved_player_elevator_id = elevator.id;
+		saved_player_elevator_floor = floor.name;
 		update_elevator_audio_listeners();
+		save_location();
 		play_elevator_effect(elevator.door_close_sound);
 		speak(tr("elevator.entered"));
 		return true;

@@ -1,3 +1,9 @@
+Build 4 | 25/11/2026 de noviembre de novembro de 2026 a las 13:03 (America/Sao_Paulo) — Versión 0.1.0
+- Inventario: se añadió un menú propio con las categorías Inventario completo, Armas y munición, Objetos médicos y Monedas; navegación con flechas, Inicio/Fin y Tab/Mayús+Tab; Espacio lee las descripciones disponibles; sonidos de apertura, cierre y cambio de categoría.
+- Favoritos: se eliminó la navegación del inventario rápido con Tab. Mayús+1 a Mayús+0 asigna el objeto enfocado en el inventario a una ranura vacía; las teclas 1 a 0 usan el objeto guardado. Cada ranura admite un solo objeto y los favoritos se guardan por personaje.
+- Ascensor y tienda: se guardan y restauran el estado dentro del ascensor y el piso de destino. Al salir, ahora suenan la apertura y el cierre de la puerta. Espacio en la tienda lee la descripción del producto seleccionado.
+- Traducción y audio: se añadieron textos del inventario en los tres idiomas y traducciones de los nombres de objetos y zonas existentes. El sonido de cierre del menú comienza inmediatamente al salir con Escape.
+
 Build 3 | 25 de noviembre de 2026 a las 11:41 (America/Sao_Paulo) — Versión 0.9
 - Limpieza del mapa: se eliminaron de la Zona Segura las escaleras temporales, el ascensor, la plataforma y la entrada de la tienda del segundo piso; se eliminó del constructor y del cargador de mapas la función obsoleta de cuadrado de texto.
 - Rastreo: N informa cada NPC vivo a una distancia de hasta 30 casillas, del más cercano al más lejano, con su distancia y dirección actuales. X muestra los puntos de viaje accesibles; al seleccionar uno, una señal espacial suena en bucle hasta que el jugador llega al área, donde se reproduce un sonido de llegada distinto. Textos añadidos en español, portugués e inglés.
@@ -89,4 +95,9 @@ Build 1 | 24 de noviembre de 2026 a las 19:22 (America/Sao_Paulo) — Versión 0
 Build 3 | 24 de noviembre de 2026 a las 20:32 (America/Sao_Paulo) — Versión 0.7
 - Ascensores: el sonido de cierre ya no se repite al elegir el destino; el sonido de movimiento comienza de inmediato y se repite durante el trayecto.
 - Actualizaciones: se publicó un nuevo paquete con los sonidos actuales y un nuevo `maps.dat` cifrado, sin el ascensor de prueba eliminado de Robots World.
+
+
+
+
+
 

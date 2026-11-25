@@ -90,6 +90,7 @@ void setupmenu(bool music=false)
 	m.click_sound="sounds/menu sounds/click.ogg";
 	m.enter_sound="sounds/menu sounds/enter.ogg";
 	m.open_sound="sounds/menu sounds/open.ogg";
+	m.close_sound="sounds/menu sounds/close.ogg";
 	m.edge_sound="sounds/menu sounds/edge.ogg";
 	m.wrap_sound="sounds/menu sounds/wrap.ogg";
 }
@@ -211,8 +212,6 @@ void mainmenu()
 		if (mres <= 0 or menuitem=="exit")
 		{
 			m.fade_music(15);
-			sound menu_close_effect;
-			if (menu_close_effect.load("sounds/menu sounds/close.ogg")) menu_close_effect.play_wait();
 			exit();
 			return;
 		}
@@ -287,6 +286,10 @@ void mainmenu()
 				me.y = ly;
 				me.z = lz;
 				facing = lfacing;
+				saved_player_inside_elevator = false;
+				saved_elevator_arrived_waiting_for_exit = false;
+				saved_player_elevator_id = "";
+				saved_player_elevator_floor = "";
 				save_location();
 			}
 			else
@@ -295,6 +298,14 @@ void mainmenu()
 				me.y = ly;
 				me.z = lz;
 				facing = lfacing;
+			}
+			if (saved_map == target_map) restore_saved_elevator_state();
+			else
+			{
+				saved_player_inside_elevator = false;
+				saved_elevator_arrived_waiting_for_exit = false;
+				saved_player_elevator_id = "";
+				saved_player_elevator_floor = "";
 			}
 
 			m.fade_music(15);

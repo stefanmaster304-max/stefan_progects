@@ -1,0 +1,20 @@
+# The Confront NPC
+name=wild bear
+class=animal
+attack_speed=1000
+min_damage=5900
+max_damage=7000
+detection_range=500
+attack_range=7
+walk_speed=490
+run_speed=220
+max_health=7500
+xp=7500
+use_platform_footsteps=1
+drop_items_on_death=1
+death_drops=gold:300
+voice_min_delay=4900
+voice_max_delay=8900
+sound_voice=npcs/bear/bear_voice10.ogg;npcs/bear/bear_voice11.ogg;npcs/bear/bear_voice12.ogg;npcs/bear/bear_voice13.ogg;npcs/bear/bear_voice14.ogg;npcs/bear/bear_voice15.ogg;npcs/bear/bear_voice16.ogg;npcs/bear/bear_voice7.ogg;npcs/bear/bear_voice8.ogg;npcs/bear/bear_voice9.ogg
+sound_attack=npcs/bear/bearattack4.ogg
+sound_death=npcs/bear/bearpain2.ogg;npcs/bear/bearpain4.ogg

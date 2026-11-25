@@ -1,0 +1,22 @@
+# The Confront NPC
+name=robocop
+class=robot
+attack_speed=1000
+min_damage=2200
+max_damage=4000
+detection_range=400
+attack_range=10
+walk_speed=450
+run_speed=390
+max_health=6560
+xp=4500
+use_platform_footsteps=0
+drop_items_on_death=1
+death_drops=golden_crystal:100
+sound_footsteps=npcs/robocop/robocop_step1.ogg;npcs/robocop/robocop_step2.ogg
+voice_min_delay=1500
+voice_max_delay=3500
+sound_voice=npcs/robocop/robocop_loop.ogg;npcs/robocop/robocop_voice.ogg
+sound_attack=npcs/robocop/robocop_shoot.ogg
+sound_hit=npcs/robocop/robocop_hit.ogg
+sound_death=npcs/robocop/robocop_kill.ogg

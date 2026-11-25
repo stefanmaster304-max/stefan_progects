@@ -1,0 +1,22 @@
+# The Confront NPC
+name=mine robocop
+class=robot
+attack_speed=900
+min_damage=4400
+max_damage=5400
+detection_range=400
+attack_range=8
+walk_speed=500
+run_speed=260
+max_health=5500
+xp=4400
+use_platform_footsteps=0
+drop_items_on_death=1
+death_drops=golden_crystal:400
+sound_footsteps=npcs/mine robocop/mini_robocop_step1.ogg;npcs/mine robocop/mini_robocop_step2.ogg
+voice_min_delay=20
+voice_max_delay=40
+sound_voice=npcs/mine robocop/mini_robocop_voice.ogg
+sound_attack=npcs/mine robocop/mini_robocop_shoot.ogg
+sound_hit=npcs/mine robocop/mini_robocop_hit.ogg
+sound_death=npcs/mine robocop/mini_robocop_kill.ogg

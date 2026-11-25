@@ -1,0 +1,22 @@
+# The Confront NPC
+name=patrol
+class=robot
+attack_speed=430
+min_damage=3300
+max_damage=6500
+detection_range=400
+attack_range=10
+walk_speed=410
+run_speed=260
+max_health=5400
+xp=5412
+use_platform_footsteps=0
+drop_items_on_death=1
+death_drops=gold:500
+sound_footsteps=npcs/patrol/patrol_step1.ogg;npcs/patrol/patrol_step2.ogg
+voice_min_delay=100
+voice_max_delay=200
+sound_voice=npcs/patrol/patrol_voice.ogg
+sound_attack=npcs/patrol/patrol_shoot.ogg
+sound_hit=npcs/patrol/patrol_hit.ogg
+sound_death=npcs/patrol/patrol_kill.ogg

@@ -1,0 +1,3 @@
+name:jeneral items
+payment_method:golden_crystal
+inventory:metal_shield=2000;anti_death_card=70000

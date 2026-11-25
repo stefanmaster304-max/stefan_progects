@@ -1,3 +1,3 @@
 name:general
-display_name:Loja Geral
-categories:ammo;medical items;weapons
+display_name:jeneral store
+categories:ammo;jeneral items;medical items

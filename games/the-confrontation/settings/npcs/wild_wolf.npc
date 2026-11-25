@@ -1,0 +1,20 @@
+# The Confront NPC
+name=wild wolf
+class=animal
+attack_speed=400
+min_damage=4500
+max_damage=5000
+detection_range=500
+attack_range=5
+walk_speed=500
+run_speed=260
+max_health=5500
+xp=7700
+use_platform_footsteps=1
+drop_items_on_death=1
+death_drops=metal_shield:1
+voice_min_delay=40
+voice_max_delay=60
+sound_voice=npcs/aga wolf/agawolf_voice1.ogg;npcs/aga wolf/agawolf_voice2.ogg;npcs/aga wolf/agawolf_voice3.ogg;npcs/aga wolf/agawolf_voice4.ogg;npcs/aga wolf/agawolf_voice5.ogg
+sound_attack=npcs/aga wolf/agawolf_hit1.ogg;npcs/aga wolf/agawolf_hit2.ogg;npcs/aga wolf/agawolf_hit3.ogg
+sound_death=npcs/aga wolf/agawolf_kill.ogg

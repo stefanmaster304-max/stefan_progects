@@ -1,0 +1,20 @@
+# The Confront NPC
+name=bear
+class=animal
+attack_speed=1400
+min_damage=1200
+max_damage=2000
+detection_range=500
+attack_range=7
+walk_speed=660
+run_speed=300
+max_health=3000
+xp=3400
+use_platform_footsteps=1
+drop_items_on_death=1
+death_drops=golden_crystal:200
+voice_min_delay=50
+voice_max_delay=70
+sound_voice=npcs/bear/bear_voice1.ogg;npcs/bear/bear_voice2.ogg;npcs/bear/bear_voice3.ogg;npcs/bear/bear_voice5.ogg;npcs/bear/bear_voice6.ogg
+sound_attack=npcs/bear/bearattack4.ogg
+sound_death=npcs/bear/bearpain4.ogg

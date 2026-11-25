@@ -1,15 +1,15 @@
-// inventory.nvgt - Player inventory and cyclic quick inventory.
-// Tab and Shift+Tab cycle through the carried items; Enter uses the focused item.
+// inventory.nvgt - Categorized inventory menu and numbered favorite items.
 
 #include "package_manager.nvgt"
 #include "shield_system.nvgt"
 
 dictionary inv;
 
-// Index and focus of the cyclic quick inventory. Tab and Shift+Tab move the
-// focus only; there is no quick inventory menu or open/close mode.
-int quick_inv_index = 0;
-bool quick_inv_focused = false;
+string[] player_favorite_items(10);
+string inventory_selected_item = "";
+int inventory_category_index = 0;
+string[] inventory_categories = {"all", "weapons_ammo", "medical", "currency"};
+int inventory_move_sound_index = 0;
 
 void give(string item, int amount)
 {
@@ -46,14 +46,14 @@ int count_total_items()
 	return int(keys.length());
 }
 
-// Wipes every carried item and the quick inventory focus. Used when the player
+// Wipes every carried item and favorite assignment. Used when the player
 // dies: nothing is carried into the next life.
 void clear_player_inventory()
 {
 	inv.delete_all();
 	g_inventory_item_order.resize(0);
-	quick_inv_index = 0;
-	quick_inv_focused = false;
+	for (uint i = 0; i < player_favorite_items.length(); i++) player_favorite_items[i] = "";
+	inventory_selected_item = "";
 }
 
 string[] g_inventory_item_order;
@@ -125,8 +125,7 @@ void deserialize_inventory(const string&in data)
 {
 	inv.delete_all();
 	g_inventory_item_order.resize(0);
-	quick_inv_index = 0;
-	quick_inv_focused = false;
+	inventory_selected_item = "";
 	if (data == "") return;
 	string[] pairs = string_split(data, ";", false);
 	for (uint i = 0; i < pairs.length(); i++)
@@ -147,15 +146,29 @@ string get_item_display_name(const string&in item_id)
 	if (item_id == "gold") return tr("currency.gold");
 	if (item_id == "golden_crystal") return tr("currency.golden_crystal");
 	weapon_data@ w = find_weapon_data(item_id);
-	if (w !is null && w.name != "") return "[Weapon] " + w.name;
+	if (w !is null && w.name != "") return tr("inventory.weapon_prefix") + " " + tr("weapon_names." + item_id, localize_weapon_name(w.name));
 
 	item_data@ it = get_item_data(item_id);
-	if (it !is null && it.name != "") return it.name;
+	if (it !is null && it.name != "") return tr("item_names." + item_id, it.name);
 
 	package_data@ pkg = find_package_data(item_id);
-	if (pkg !is null && pkg.name != "") return pkg.name;
+	if (pkg !is null && pkg.name != "") return tr("item_names." + item_id, pkg.name);
 
 	return string_replace(item_id, "_", " ", true);
+}
+
+string localize_weapon_name(string name)
+{
+	name = string_replace(name, "_", " ", true);
+	string[] terms = {"heavy_machine_gun", "light_machine_gun", "heavy_assault_rifle", "heavy_battle_rifle", "sub_machine_gun", "machine_pistol", "tactical_sniper_rifle", "marksman_rifle", "pump_action_shotgun", "grenade_launcher", "rocket_launcher", "assault_rifle", "battle_rifle", "combat_rifle", "sniper_rifle", "laser_rifle", "shotgun", "carbine", "revolver", "pistol", "rifle", "smg", "sword", "knife", "axe"};
+	string[] labels = {"Heavy Machine Gun", "Light Machine Gun", "Heavy Assault Rifle", "Heavy Battle Rifle", "Sub Machine Gun", "Machine Pistol", "Tactical Sniper Rifle", "Marksman Rifle", "Pump Action Shotgun", "Grenade Launcher", "Rocket Launcher", "Assault Rifle", "Battle Rifle", "Combat Rifle", "Sniper Rifle", "Laser Rifle", "Shotgun", "Carbine", "Revolver", "Pistol", "Rifle", "SMG", "Sword", "Knife", "Axe"};
+	for (uint i = 0; i < terms.length(); i++)
+		name = string_replace(name, labels[i], tr("weapon_terms." + terms[i], labels[i]), true);
+	string[] lower_labels = {"sword", "knife", "axe", "shotgun", "sniper", "rifle"};
+	string[] lower_terms = {"sword", "knife", "axe", "shotgun", "sniper_rifle", "rifle"};
+	for (uint i = 0; i < lower_labels.length(); i++)
+		name = string_replace(name, lower_labels[i], tr("weapon_terms." + lower_terms[i], lower_labels[i]), true);
+	return name;
 }
 
 string get_item_description(const string&in item_id)
@@ -260,79 +273,237 @@ void use(string item)
 
 void play_invcat_change_sound()
 {
-	string snd = "sounds/player/invcat_change.ogg";
+	string snd = "sounds/players/" + current_player_character + "/invcat_change.ogg";
+	if (!file_exists(snd)) snd = "sounds/players/hane/invcat_change.ogg";
 	if (file_exists(snd)) p.play_stationary(snd, false);
 }
 
-void quick_inventory_announce()
+bool inventory_item_matches_category(const string&in id, const string&in category)
 {
-	string[] keys = get_all_inv_keys();
-	if (keys.length() == 0)
+	if (category == "all") return true;
+	if (category == "weapons_ammo")
 	{
-		quick_inv_focused = false;
-		speak(tr("inventory.empty"));
-		return;
+		item_data@ ammo_item = get_item_data(id);
+		return find_weapon_data(id) !is null || (ammo_item !is null && (ammo_item.category == "ammo" || ammo_item.category == "ammunition")) || id.find("ammo") >= 0 || id.find("bullet") >= 0 || id.find("shell") >= 0 || id.find("round") >= 0 || id.find("cell") >= 0;
 	}
-	if (quick_inv_index < 0) quick_inv_index = int(keys.length()) - 1;
-	if (quick_inv_index >= int(keys.length())) quick_inv_index = 0;
-	string item = keys[quick_inv_index];
-	int count = get_item_count(item);
-	speak(get_item_display_name(item) + (count > 1 ? ", " + count + "." : ".") + " " + (quick_inv_index + 1) + " " + tr("inventory.of") + " " + keys.length() + ".");
+	item_data@ it = get_item_data(id);
+	if (category == "medical") return it !is null && (it.restores_health || it.heal_amount > 0 || it.category == "medical");
+	if (category == "currency") return id == "gold" || id == "golden_crystal" || (it !is null && it.category == "currency");
+	return false;
 }
 
-void quick_inventory_cycle(int step)
+string[] inventory_items_for_category(const string&in category)
 {
-	string[] keys = get_all_inv_keys();
-	if (keys.length() == 0)
-	{
-		quick_inv_focused = false;
-		speak(tr("inventory.empty"));
-		return;
-	}
-
-	if (!quick_inv_focused)
-	{
-		quick_inv_focused = true;
-		quick_inv_index = (step > 0) ? 0 : int(keys.length()) - 1;
-	}
-	else
-	{
-		quick_inv_index += step;
-		if (quick_inv_index < 0) quick_inv_index = int(keys.length()) - 1;
-		if (quick_inv_index >= int(keys.length())) quick_inv_index = 0;
-	}
-
-	play_invcat_change_sound();
-	quick_inventory_announce();
+	string[] all = get_all_inv_keys();
+	string[] filtered;
+	for (uint i = 0; i < all.length(); i++)
+		if (inventory_item_matches_category(all[i], category)) filtered.insert_last(all[i]);
+	return filtered;
 }
 
-// Returns true when the key press was consumed by the quick inventory.
-bool quick_inventory_handle_enter()
+int favorite_slot_for_key(int key)
 {
-	if (!quick_inv_focused) return false;
+	if (key == KEY_1) return 0;
+	if (key == KEY_2) return 1;
+	if (key == KEY_3) return 2;
+	if (key == KEY_4) return 3;
+	if (key == KEY_5) return 4;
+	if (key == KEY_6) return 5;
+	if (key == KEY_7) return 6;
+	if (key == KEY_8) return 7;
+	if (key == KEY_9) return 8;
+	if (key == KEY_0) return 9;
+	return -1;
+}
 
-	string[] keys = get_all_inv_keys();
-	if (keys.length() == 0)
+string favorite_slot_label(int slot)
+{
+	return slot == 9 ? "0" : "" + (slot + 1);
+}
+
+string serialize_favorite_items()
+{
+	string serialized = "";
+	for (uint i = 0; i < player_favorite_items.length(); i++)
 	{
-		quick_inv_focused = false;
-		speak(tr("inventory.empty"));
+		if (i > 0) serialized += ";";
+		serialized += player_favorite_items[i] == "" ? "-" : player_favorite_items[i];
+	}
+	return serialized;
+}
+
+void deserialize_favorite_items(const string&in data)
+{
+	for (uint i = 0; i < player_favorite_items.length(); i++) player_favorite_items[i] = "";
+	if (data == "") return;
+	string[] saved = string_split(data, ";", false);
+	for (uint i = 0; i < saved.length() && i < player_favorite_items.length(); i++)
+		player_favorite_items[i] = saved[i] == "-" ? "" : saved[i];
+}
+
+bool assign_inventory_favorite(int slot, const string&in item_id)
+{
+	if (slot < 0 || slot >= int(player_favorite_items.length()) || item_id == "") return false;
+	if (player_favorite_items[uint(slot)] != "")
+	{
+		speak(tr("inventory.favorite_occupied", {favorite_slot_label(slot)}));
+		return false;
+	}
+	player_favorite_items[uint(slot)] = item_id;
+	save_location();
+	speak(tr("inventory.favorite_assigned", {get_item_display_name(item_id), favorite_slot_label(slot)}));
+	return true;
+}
+
+void use_inventory_favorite(int slot)
+{
+	if (slot < 0 || slot >= int(player_favorite_items.length())) return;
+	string id = player_favorite_items[uint(slot)];
+	if (id == "" || get_item_count(id) <= 0)
+	{
+		if (id != "")
+		{
+			player_favorite_items[uint(slot)] = "";
+			save_location();
+		}
+		speak(tr("inventory.favorite_empty", {favorite_slot_label(slot)}));
+		return;
+	}
+	use(id);
+}
+
+bool handle_favorite_gameplay_key()
+{
+	int[] number_keys = {KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0};
+	for (uint i = 0; i < number_keys.length(); i++)
+	{
+		int key = number_keys[i];
+		if (!key_pressed(key)) continue;
+		int slot = favorite_slot_for_key(key);
+		if (key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT))
+		{
+			speak(tr("inventory.favorite_select_item"));
+		}
+		else use_inventory_favorite(slot);
 		return true;
 	}
-	if (quick_inv_index < 0 || quick_inv_index >= int(keys.length())) quick_inv_index = 0;
+	return false;
+}
 
-	string item = keys[quick_inv_index];
-	use(item);
+void play_inventory_effect(const string&in filename)
+{
+	string path = "sounds/players/" + current_player_character + "/" + filename;
+	if (!file_exists(path)) path = "sounds/players/hane/" + filename;
+	if (!file_exists(path)) path = "sounds/players/stefan/" + filename;
+	if (file_exists(path)) p.play_stationary(path, false);
+}
 
-	// Keep the quick inventory usable after an item is consumed.
-	keys = get_all_inv_keys();
-	if (keys.length() == 0)
+void play_inventory_navigation_sound()
+{
+	string[] names = {"inv move1.ogg", "inv move2.ogg", "inv move3.ogg"};
+	string name = names[uint(inventory_move_sound_index % int(names.length()))];
+	string path = "sounds/players/" + current_player_character + "/" + name;
+	if (!file_exists(path)) path = "sounds/players/hane/" + name;
+	if (!file_exists(path)) path = "sounds/players/stefan/" + name;
+	if (file_exists(path)) p.play_stationary(path, false);
+	inventory_move_sound_index++;
+}
+
+void speak_inventory_category(const string&in category, const string[]&in items)
+{
+	int quantity = 0;
+	for (uint i = 0; i < items.length(); i++) quantity += get_item_count(items[i]);
+	speak(tr("inventory.category_" + category) + ". " + tr("inventory.total_items", {"" + quantity}) + ".");
+}
+
+void speak_inventory_item(const string[]&in items, int position)
+{
+	if (items.length() == 0) { speak(tr("inventory.empty_category")); return; }
+	if (position < 0) position = 0;
+	if (position >= int(items.length())) position = int(items.length()) - 1;
+	string id = items[uint(position)];
+	int quantity = get_item_count(id);
+	speak(get_item_display_name(id) + ", " + tr("inventory.quantity", {"" + quantity}) + ".");
+}
+
+void inventory_menu()
+{
+	load_all_items_config();
+	load_all_weapons_wpm();
+	load_all_packages();
+	play_inventory_effect("inv open.ogg");
+	int position = 0;
+	inventory_selected_item = "";
+	string[] items = inventory_items_for_category(inventory_categories[uint(inventory_category_index)]);
+	if (items.length() > 0) inventory_selected_item = items[0];
+	speak_inventory_category(inventory_categories[uint(inventory_category_index)], items);
+	while (true)
 	{
-		quick_inv_focused = false;
-		quick_inv_index = 0;
+		wait(5);
+		update_game_world();
+		if (key_pressed(KEY_ESCAPE) || kb_pressed("menu_back"))
+		{
+			play_inventory_effect("inv close.ogg");
+			inventory_selected_item = "";
+			return;
+		}
+		if (key_pressed(KEY_TAB))
+		{
+			int step = (key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT)) ? -1 : 1;
+			inventory_category_index += step;
+			if (inventory_category_index < 0) inventory_category_index = int(inventory_categories.length()) - 1;
+			if (inventory_category_index >= int(inventory_categories.length())) inventory_category_index = 0;
+			position = 0;
+			items = inventory_items_for_category(inventory_categories[uint(inventory_category_index)]);
+			inventory_selected_item = items.length() > 0 ? items[0] : "";
+			play_invcat_change_sound();
+			speak_inventory_category(inventory_categories[uint(inventory_category_index)], items);
+			continue;
+		}
+		items = inventory_items_for_category(inventory_categories[uint(inventory_category_index)]);
+		if (position >= int(items.length())) position = int(items.length()) - 1;
+		if (items.length() == 0) position = 0;
+		if (key_pressed(KEY_UP) || kb_pressed("menu_up"))
+		{
+			if (position > 0) position--;
+			if (items.length() > 0) { inventory_selected_item = items[uint(position)]; play_inventory_navigation_sound(); }
+			speak_inventory_item(items, position);
+		}
+		if (key_pressed(KEY_DOWN) || kb_pressed("menu_down"))
+		{
+			if (position < int(items.length()) - 1) position++;
+			if (items.length() > 0) { inventory_selected_item = items[uint(position)]; play_inventory_navigation_sound(); }
+			speak_inventory_item(items, position);
+		}
+		if (key_pressed(KEY_HOME) || kb_pressed("menu_home"))
+		{
+			position = 0;
+			if (items.length() > 0) { inventory_selected_item = items[0]; play_inventory_navigation_sound(); }
+			speak_inventory_item(items, position);
+		}
+		if (key_pressed(KEY_END) || kb_pressed("menu_end"))
+		{
+			position = int(items.length()) - 1;
+			if (items.length() > 0) { inventory_selected_item = items[uint(position)]; play_inventory_navigation_sound(); }
+			speak_inventory_item(items, position);
+		}
+		if (key_pressed(KEY_SPACE) && inventory_selected_item != "")
+		{
+			string desc = get_item_description(inventory_selected_item);
+			if (desc != "") speak(desc);
+		}
+		int[] number_keys = {KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0};
+		for (uint key_index = 0; key_index < number_keys.length(); key_index++)
+		{
+			int key = number_keys[key_index];
+			if (!key_pressed(key)) continue;
+			int slot = favorite_slot_for_key(key);
+			if (key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT))
+			{
+				if (inventory_selected_item != "") assign_inventory_favorite(slot, inventory_selected_item);
+			}
+			else use_inventory_favorite(slot);
+			break;
+		}
 	}
-	else
-	{
-		if (quick_inv_index >= int(keys.length())) quick_inv_index = int(keys.length()) - 1;
-	}
-	return true;
 }

@@ -455,18 +455,14 @@ void handle_reload_key()
 	string wid = current_weapon_id;
 	if (wid == "" || find_weapon_data(wid) is null)
 	{
-		// If quick inventory is focused on a weapon, equip it
-		if (quick_inv_focused)
+		// If the inventory menu has a weapon selected, equip it.
+		if (inventory_selected_item != "")
 		{
-			string[] keys = get_all_inv_keys();
-			if (quick_inv_index >= 0 && quick_inv_index < int(keys.length()))
+			string candidate = inventory_selected_item;
+			if (find_weapon_data(candidate) !is null)
 			{
-				string candidate = keys[quick_inv_index];
-				if (find_weapon_data(candidate) !is null)
-				{
-					equip_weapon(candidate, true);
-					wid = candidate;
-				}
+				equip_weapon(candidate, true);
+				wid = candidate;
 			}
 		}
 		// If still empty, check carried inventory for any carried weapon
@@ -512,17 +508,13 @@ void speak_ammo_status()
 	string wid = current_weapon_id;
 	if (wid == "" || find_weapon_data(wid) is null)
 	{
-		if (quick_inv_focused)
+		if (inventory_selected_item != "")
 		{
-			string[] keys = get_all_inv_keys();
-			if (quick_inv_index >= 0 && quick_inv_index < int(keys.length()))
+			string candidate = inventory_selected_item;
+			if (find_weapon_data(candidate) !is null)
 			{
-				string candidate = keys[quick_inv_index];
-				if (find_weapon_data(candidate) !is null)
-				{
-					equip_weapon(candidate, true);
-					wid = candidate;
-				}
+				equip_weapon(candidate, true);
+				wid = candidate;
 			}
 		}
 	}

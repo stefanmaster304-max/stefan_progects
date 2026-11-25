@@ -43,7 +43,7 @@ const string UPDATE_TEMP_DIR = "update_temp";
 const int UPDATE_MAX_ATTEMPTS = 3;
 const string UPDATE_MANIFEST_URL_DEFAULT = "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/updates/version.json";
 
-const int COMPILED_GAME_BUILD = 3;
+const int COMPILED_GAME_BUILD = 4;
 string current_game_version = ver;
 int current_game_build = COMPILED_GAME_BUILD;
 string current_content_version = "0.6";
@@ -145,6 +145,9 @@ int compare_versions(const string&in v1, const string&in v2)
 	if (v1 == v2) return 0;
 	if (v1 == "") return (v2 == "") ? 0 : 1;
 	if (v2 == "") return -1;
+	// Treat the historical 0.9 and requested 0.1.0 labels as the same series
+	// so existing clients can advance by build number across this label change.
+	if ((v1 == "0.9" && v2 == "0.1.0") || (v1 == "0.1.0" && v2 == "0.9")) return 0;
 
 	string[]@ parts1 = string_split(v1, ".", true);
 	string[]@ parts2 = string_split(v2, ".", true);
@@ -1255,4 +1258,5 @@ bool check_for_updates(bool interactive = true)
 
 	return false;
 }
+
 

@@ -82,6 +82,7 @@ int volkeyup=KEY_PRIOR;
 int volkeydown=KEY_NEXT;
 int volkeycheck=KEY_V;
 string open_sound;
+string close_sound;
 string click_sound;
 string edge_sound;
 string wrap_sound;
@@ -259,6 +260,7 @@ else
 @internal_tts=tts_handle;
 }
 }
+spool.play_stationary(open_sound, false);
 if(intro!="")
 {
 if(is_intro_tts)
@@ -282,7 +284,6 @@ if(!internal_sound.stream(intro)) return -1;
 internal_sound.play();
 }
 }
-spool.play_stationary(open_sound, false);
 if (music_added)
 {
 	if (menu_music_volume > 0.0) menu_music_volume = 0.0;
@@ -451,6 +452,11 @@ return menu_position;
 
 if(allow_escape and (key_pressed(KEY_ESCAPE) or kb_pressed("menu_back")))
 {
+if(close_sound!="" and file_exists(close_sound))
+{
+	sound close_cue;
+	if(close_cue.load(close_sound)) close_cue.play_wait();
+}
 running=false;
 return 0;
 }
@@ -582,6 +588,7 @@ enable_space=false;
 enable_enter=true;
 speak_position_information=false;
 open_sound="";
+close_sound="";
 edge_sound="";
 music.close();
 click_sound="";

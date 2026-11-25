@@ -8,7 +8,7 @@
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
-string ver = "0.9";
+string ver = "0.1.0";
 
 #include "includes/bgt_compat.nvgt"
 #include "includes/player_character.nvgt"
@@ -295,12 +295,13 @@ void game()
 is_in_game = true;
 while(true)
 {
+bool jump_pressed_this_frame = key_pressed(KEY_SPACE);
 weapon_system_loop();
 // Fire is hold-to-fire for automatic weapons and one press per shot for
 // semi-automatic ones. Only Left Control (or configured fire key) fires;
 // Right Control, Spacebar and jumping never fire.
 bool fire_k_active = (kb_down("fire") or kb_pressed("fire") or key_down(KEY_LCONTROL) or key_pressed(KEY_LCONTROL)) and !key_down(KEY_RCONTROL) and !key_pressed(KEY_RCONTROL);
-if (fire_k_active and !key_down(KEY_SPACE) and !key_pressed(KEY_SPACE) and jumping == 0 and falling == false)
+if (fire_k_active and !key_down(KEY_SPACE) and !jump_pressed_this_frame and jumping == 0 and falling == false)
 {
 	string active_w = current_weapon_id;
 	if (active_w == "" || find_weapon_data(active_w) is null)
@@ -534,16 +535,14 @@ if (kb_pressed("health_status"))
         // all of them before the main menu.
         player_die(tr("game.died"));
     }
-if (key_pressed(KEY_TAB) and jumping == 0 and falling == false)
-{
-	quick_inventory_cycle(shiftisdown() ? -1 : 1);
-}
+if (kb_pressed("inventory_menu") && jumping == 0 && falling == false) inventory_menu();
+handle_favorite_gameplay_key();
 if (key_pressed(KEY_S) or kb_pressed("sit_stand"))
 {
 	toggle_sit_stand();
 }
-/* Tab and Shift+Tab move quick-inventory focus. Enter uses its focused item.
-   Shift+Enter interacts with stores; Alt+Enter enters an elevator or travel point. */
+/* Shift+Enter interacts with stores; Alt+Enter enters an elevator or travel point.
+   Item favorites use 1–0; Shift+number assigns the held or selected item. */
 bool enter_pressed = key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER);
 if (altisdown() && enter_pressed)
 {
@@ -557,12 +556,7 @@ else if (shiftisdown() && enter_pressed)
 {
 	try_open_map_store_at_player();
 }
-else if (!altisdown() && !shiftisdown() && quick_inv_focused && (enter_pressed || kb_pressed("use")))
-{
-	quick_inventory_handle_enter();
-}
-// Plain Enter is reserved for using an item in the focused quick-inventory slot.
-else if (!altisdown() && !shiftisdown() && !quick_inv_focused && (kb_pressed("use") || enter_pressed) && is_sitting)
+else if (!altisdown() && !shiftisdown() && (kb_pressed("use") || enter_pressed) && is_sitting)
 {
 	speak(tr("game.sitting_hint"));
 }
@@ -622,7 +616,7 @@ if (!player_inside_elevator && dmoving==false and movetimer.elapsed>=movetime)
 if (me.z < minz) me.z = minz;
 // Jump is triggered by the Spacebar alone. Ctrl + Space does nothing at
 // all, and Control alone only fires.
-if (!player_inside_elevator && key_pressed(KEY_SPACE) and !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
+if (!player_inside_elevator && jump_pressed_this_frame && !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
 {
 	if (is_sitting)
 	{
@@ -1084,7 +1078,12 @@ void save_location()
     loc.add("equipped_shield_id", (current_shield !is null ? current_shield.id : ""));
     loc.add("equipped_shield_durability", (current_shield !is null ? current_shield.durability : 0));
     loc.add("inventory_data", serialize_inventory());
+    loc.add("favorite_items", serialize_favorite_items());
     loc.add("is_sitting", is_sitting ? 1 : 0);
+    loc.add("player_inside_elevator", player_inside_elevator ? 1 : 0);
+    loc.add("elevator_arrived_waiting_for_exit", elevator_arrived_waiting_for_exit ? 1 : 0);
+    loc.add("player_elevator_id", player_elevator_id);
+    loc.add("player_elevator_floor", player_elevator_floor);
     loc.add("discovered_maps", serialize_discovered_maps());
     loc.add("starter_pack_granted", 1);
     loc.add("kills", kills);
@@ -1131,7 +1130,12 @@ void reset_location_on_death()
     loc.add("equipped_shield_durability", 0);
     /* Items are NOT lost on death! Carried inventory is preserved and saved. */
     loc.add("inventory_data", serialize_inventory());
+    loc.add("favorite_items", serialize_favorite_items());
     loc.add("is_sitting", 0);
+    loc.add("player_inside_elevator", 0);
+    loc.add("elevator_arrived_waiting_for_exit", 0);
+    loc.add("player_elevator_id", "");
+    loc.add("player_elevator_floor", "");
     loc.add("discovered_maps", serialize_discovered_maps());
     loc.add("starter_pack_granted", 1);
     loc.save();
@@ -1188,6 +1192,7 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         {
             deserialize_inventory(loc.read("inventory_data"));
         }
+        if (loc.d.exists("favorite_items")) deserialize_favorite_items(loc.read("favorite_items"));
         /* Starter Pack is given ONLY once per character on first creation: */
         if (!loc.d.exists("starter_pack_granted"))
         {
@@ -1221,6 +1226,10 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
         }
 
         if (loc.d.exists("is_sitting")) is_sitting = (loc.readn("is_sitting") > 0);
+        saved_player_inside_elevator = loc.d.exists("player_inside_elevator") && loc.readn("player_inside_elevator") > 0;
+        saved_elevator_arrived_waiting_for_exit = loc.d.exists("elevator_arrived_waiting_for_exit") && loc.readn("elevator_arrived_waiting_for_exit") > 0;
+        saved_player_elevator_id = loc.d.exists("player_elevator_id") ? loc.read("player_elevator_id") : "";
+        saved_player_elevator_floor = loc.d.exists("player_elevator_floor") ? loc.read("player_elevator_floor") : "";
         if (loc.d.exists("kills")) kills = loc.readn("kills");
         if (loc.d.exists("discovered_maps"))
         {

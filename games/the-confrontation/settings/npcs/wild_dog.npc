@@ -1,0 +1,21 @@
+# The Confront NPC
+name=wild dog
+class=animal
+attack_speed=450
+min_damage=5500
+max_damage=6500
+detection_range=500
+attack_range=4
+walk_speed=420
+run_speed=210
+max_health=10000
+xp=20000
+use_platform_footsteps=1
+drop_items_on_death=1
+death_drops=life_potion:11
+voice_min_delay=1500
+voice_max_delay=3500
+sound_voice=npcs/big dog/bigdog_voice1.ogg;npcs/big dog/bigdog_voice2.ogg;npcs/big dog/bigdog_voice3.ogg;npcs/big dog/bigdog_voice4.ogg;npcs/big dog/bigdog_voice5.ogg;npcs/big dog/bigdog_voice6.ogg;npcs/big dog/bigdog_voice7.ogg
+sound_attack=npcs/big dog/bigdog_shoot1.ogg;npcs/big dog/bigdog_shoot2.ogg;npcs/big dog/bigdog_shoot3.ogg;npcs/big dog/bigdog_shoot4.ogg;npcs/big dog/bigdog_shoot5.ogg;npcs/big dog/bigdog_shoot6.ogg
+sound_hit=npcs/big dog/bigdog_hit1.ogg;npcs/big dog/bigdog_hit2.ogg;npcs/big dog/bigdog_hit3.ogg;npcs/big dog/bigdog_hit4.ogg;npcs/big dog/bigdog_hit5.ogg;npcs/big dog/bigdog_hit6.ogg;npcs/big dog/bigdog_hit7.ogg;npcs/big dog/bigdog_hit8.ogg
+sound_death=npcs/big dog/bigdog_kill1.ogg

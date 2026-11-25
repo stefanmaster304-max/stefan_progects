@@ -391,6 +391,11 @@ void store_main_menu(const string&in storefront_id)
 			else play("menuedge");
 			store_browse_announce_item(cat, item);
 		}
+		if (key_pressed(KEY_SPACE))
+		{
+			string description = get_item_description(s.item_names[item]);
+			if (description != "") speak(description);
+		}
 		if (key_pressed(KEY_RIGHT) || kb_pressed("menu_right"))
 		{
 			string currency = store_charge_currency(s);

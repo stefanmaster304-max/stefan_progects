@@ -1,0 +1,21 @@
+# The Confront NPC
+name=mortal
+class=robot
+attack_speed=2200
+min_damage=4300
+max_damage=5600
+detection_range=500
+attack_range=5
+walk_speed=950
+run_speed=260
+max_health=6400
+xp=6700
+use_platform_footsteps=1
+drop_items_on_death=1
+death_drops=life_potion:5
+voice_min_delay=1500
+voice_max_delay=3500
+sound_voice=npcs/mortal/mortal_voice1.ogg;npcs/mortal/mortal_voice2.ogg;npcs/mortal/mortal_voice3.ogg;npcs/mortal/mortal_voice4.ogg
+sound_attack=npcs/mortal/mortal_shoot.ogg
+sound_hit=npcs/mortal/mortal_hit.ogg
+sound_death=npcs/mortal/mortal_kill.ogg

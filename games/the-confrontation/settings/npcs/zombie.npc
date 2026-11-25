@@ -1,0 +1,21 @@
+# The Confront NPC
+name=zombie
+class=zombie
+attack_speed=750
+min_damage=4350
+max_damage=5000
+detection_range=400
+attack_range=4
+walk_speed=390
+run_speed=230
+max_health=7900
+xp=7500
+use_platform_footsteps=1
+drop_items_on_death=1
+death_drops=gold:1000
+voice_min_delay=4500
+voice_max_delay=5000
+sound_voice=npcs/zombie/zombievoice1.ogg;npcs/zombie/zombievoice2.ogg;npcs/zombie/zombievoice3.ogg;npcs/zombie/zombievoice4.ogg;npcs/zombie/zombievoice5.ogg
+sound_hit=npcs/zombie/zombiehit.ogg
+sound_pain=npcs/zombie/zombiehurt.ogg
+sound_death=npcs/zombie/zombiedie.ogg
