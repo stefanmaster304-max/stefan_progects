@@ -18,6 +18,7 @@
 #include "builder/misc/travelpoint_builder.nvgt"
 #include "builder/misc/elevator_builder.nvgt"
 #include "builder/misc/store_point_builder.nvgt"
+#include "builder/misc/door_builder.nvgt"
 
 void destroy_all_builder_objects()
 {
@@ -55,6 +56,7 @@ void buildmenu()
 		"place a store in this map",
 		"add a travel point to another map",
 		"add an elevator shaft with configurable floors and sounds",
+		"add a physical door with opening, closing and auto-close behavior",
 		"npc manager - create, edit and delete NPCs",
 		"npc spawner - place configured NPCs on this map",
 		"map manager and tools - manage maps, properties, backup and tools",
@@ -80,6 +82,7 @@ void buildmenu()
 		"store_point",
 		"travel_point",
 		"elevator",
+		"door",
 		"npc_manager",
 		"npc_spawner",
 		"map_manager_tools",
@@ -188,6 +191,11 @@ void buildmenu()
 				build_map_elevator();
 				return;
 			}
+			else if (picked == "door")
+			{
+				build_map_door();
+				return;
+			}
 			else if (picked == "map_manager_tools")
 			{
 				maptoolmenu();
@@ -222,6 +230,7 @@ void buildobj(string buildtype)
 	else if (buildtype == "store_point") build_store_point();
 	else if (buildtype == "travel_point") build_travel_point();
 	else if (buildtype == "elevator") build_map_elevator();
+	else if (buildtype == "door") build_map_door();
 }
 
 void save_to_map(string line)

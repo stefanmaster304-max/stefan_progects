@@ -1,3 +1,5 @@
+Build 4 | November 24, 2026 at 20:50 (America/Sao_Paulo) — Version 0.8`r`n- Doors: added offline map doors with a physical blocking volume, Alt+Enter interaction from either adjacent side, spatial opening/closing sounds, selectable wall material and bump sound, toggle cooldown, and optional auto-close that waits until the doorway is clear.
+
 Maps 0.7 build 1 | November 24, 2026 at 20:20 (America/Sao_Paulo)
 - Robots World map: added a working test elevator between the Ground Floor and Observation Deck, with a raised platform, a 3-second ride, and door and travel sounds.
 
@@ -66,4 +68,3 @@ Build 2 | November 24, 2026 at 12:29 (America/Sao_Paulo)
 Build 3 | November 24, 2026 at 20:32 (America/Sao_Paulo) — Version 0.7
 - Elevators: the door-close sound no longer repeats when selecting a destination; the travel sound starts immediately and loops throughout the ride.
 - Updates: published a new archive with the current sounds and a new encrypted `maps.dat` without the removed Robots World test elevator.
-

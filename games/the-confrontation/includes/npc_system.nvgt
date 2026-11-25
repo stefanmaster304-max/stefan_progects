@@ -426,6 +426,7 @@ bool npc_can_step_to(int tx, int ty, int tz)
 bool npc_tile_is_wall(int tx, int ty, int tz)
 {
 	if (tx < minx || tx > maxx || ty < miny || ty > maxy || tz < minz || tz > maxz) return true;
+	if (map_door_blocks(tx, ty, tz)) return true;
 	if (g_active_map.get_wall(tx, ty, tz) != "") return true;
 	return string_contains(string_to_lower_case(g_active_map.get_tile(tx, ty, tz)), "wall", 1) > -1;
 }

@@ -8,6 +8,7 @@ void update_game_world()
 {
 	if (!is_in_game || mapname == "" || map.length() == 0) return;
 	staircasecheckloop();
+	update_map_doors();
 	szloop();
 	checkloc();
 	text_square_check();
@@ -25,6 +26,7 @@ void update_game_world()
 	p.update_listener_3d(me.x, me.y, me.z, double(facing));
 	sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 	itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
+	map_door_audio.update_listener_3d(me.x, me.y, me.z, double(facing));
 	king_system_update();
 }
 

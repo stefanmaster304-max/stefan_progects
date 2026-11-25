@@ -12,6 +12,8 @@ bool is_underwater = false;
 sound underwater_ambient_sound;
 dictionary discovered_maps;
 
+#include "door_system.nvgt"
+
 class travel_point_definition
 {
 	int sx0, sx1, sy0, sy1, sz0, sz1;
@@ -563,6 +565,7 @@ void clear_map_data()
 	text_squares.resize(0);
 	map_travel_points.resize(0);
 	map_store_points.resize(0);
+	clear_map_doors();
 	clear_map_elevator_runtime();
 	destroy_all_staircases();
 	has_map_spawnpoint = false;
@@ -839,6 +842,10 @@ else if (cmd == "elevatorfloor" && parsed.length() >= 9)
 {
 	parse_map_elevator_floor(parsed);
 }
+else if (cmd == "door" && parsed.length() >= 13)
+{
+	parse_map_door(parsed);
+}
 else if (cmd == "storepoint" && parsed.length() >= 8)
 {
 	map_store_point_definition@ point = map_store_point_definition();
@@ -988,9 +995,22 @@ void playstep()
 string current_tile = gmt();
 string current_wall = g_active_map.get_wall(me.x, me.y, me.z);
 bool is_wall = (current_wall != "") || (string_contains(current_tile, "wall", 1) > -1) || g_active_map.wall_blocks(me.x, me.y, me.z);
-if (is_wall)
+bool door_collision = map_door_blocks(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
+if (is_wall || door_collision)
 {
 string wall_name = (current_wall != "") ? current_wall : current_tile;
+if (door_collision)
+{
+	for (uint di = 0; di < map_doors.length(); di++)
+	{
+		map_door_definition@ door = map_doors[di];
+		if (door !is null && !door.is_open && door.contains(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0))))
+		{
+			wall_name = door.wall_type;
+			break;
+		}
+	}
+}
 string snd = get_wall_sound(wall_name, "bump");
 if (snd != "")
 {

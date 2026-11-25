@@ -1,0 +1,102 @@
+bool door_builder_parse_integer(const string&in raw, int&out value)
+{
+	string text = raw.trim_whitespace();
+	if (text == "") return false;
+	uint offset = text.substr(0, 1) == "-" ? 1 : 0;
+	if (offset == text.length()) return false;
+	for (uint i = offset; i < text.length(); i++)
+		if ("0123456789".find(text.substr(i, 1)) < 0) return false;
+	value = int(string_to_number(text));
+	return true;
+}
+
+void build_map_door()
+{
+	if (SCRIPT_COMPILED || is_map_encrypted(mapname))
+	{
+		speak(tr("builder.cannot_build_encrypted"));
+		return;
+	}
+	string[] wall_types = get_map_sound_folders("builder/construction/walls/*");
+	if (wall_types.length() == 0)
+	{
+		speak(tr("door.no_wall_types"));
+		return;
+	}
+	audio_form f;
+	f.create_window(tr("door.builder_title"), false, true, false);
+	int id_field = f.create_input_box(tr("door.id"), "door_" + int(round(me.x, 0)) + "_" + int(round(me.y, 0)) + "_" + int(round(me.z, 0)));
+	int x0_field = f.create_input_box(tr("form.min_x"), "" + int(round(me.x, 0)));
+	int x1_field = f.create_input_box(tr("form.max_x"), "" + int(round(me.x, 0)));
+	int y0_field = f.create_input_box(tr("form.min_y"), "" + int(round(me.y, 0)));
+	int y1_field = f.create_input_box(tr("form.max_y"), "" + int(round(me.y, 0)));
+	int z0_field = f.create_input_box(tr("form.min_z"), "" + int(round(me.z, 0)));
+	int z1_field = f.create_input_box(tr("form.max_z"), "" + int(round(me.z, 0)));
+	int cooldown_field = f.create_input_box(tr("door.cooldown"), "500");
+	int autoclose_field = f.create_input_box(tr("door.auto_close"), "0");
+	int open_button = f.create_button(tr("door.open_sound"));
+	int close_button = f.create_button(tr("door.close_sound"));
+	int wall_list = f.create_list(tr("door.wall_type"));
+	for (uint i = 0; i < wall_types.length(); i++) f.add_list_item(wall_list, wall_types[i]);
+	int save_button = f.create_button("&" + tr("ui.save"), true);
+	int cancel_button = f.create_button("&" + tr("ui.cancel"), false, true);
+	f.set_default_controls(save_button, cancel_button);
+	f.focus(id_field);
+	int[] number_fields = {x0_field, x1_field, y0_field, y1_field, z0_field, z1_field, cooldown_field, autoclose_field};
+	for (uint i = 0; i < number_fields.length(); i++) f.set_disallowed_chars(number_fields[i], "0123456789-", true, tr("door.whole_numbers"));
+	string open_sound, close_sound;
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		f.monitor();
+		if (key_pressed(KEY_ESCAPE) || f.is_pressed(cancel_button)) { speak(tr("ui.cancel")); return; }
+		if (f.is_pressed(open_button))
+		{
+			open_sound = select_sound_by_category_dialog(tr("door.open_sound"), open_sound, "doors", false);
+			f.set_caption(open_button, tr("door.open_sound") + (open_sound == "" ? "" : ": " + open_sound));
+			f.focus(id_field);
+		}
+		else if (f.is_pressed(close_button))
+		{
+			close_sound = select_sound_by_category_dialog(tr("door.close_sound"), close_sound, "doors", false);
+			f.set_caption(close_button, tr("door.close_sound") + (close_sound == "" ? "" : ": " + close_sound));
+			f.focus(id_field);
+		}
+		if (!f.is_pressed(save_button)) continue;
+		string id = string_to_lower_case(f.get_text(id_field).trim_whitespace());
+		if (id == "" || find_map_door(id) !is null)
+		{
+			speak(tr("door.invalid_id"));
+			continue;
+		}
+		for (uint ci = 0; ci < id.length(); ci++)
+			if ("abcdefghijklmnopqrstuvwxyz0123456789_-".find(id.substr(ci, 1)) < 0) { id = ""; break; }
+		if (id == "") { speak(tr("door.invalid_id")); continue; }
+		int x0, x1, y0, y1, z0, z1, cooldown, auto_close;
+		if (!door_builder_parse_integer(f.get_text(x0_field), x0) || !door_builder_parse_integer(f.get_text(x1_field), x1) ||
+			!door_builder_parse_integer(f.get_text(y0_field), y0) || !door_builder_parse_integer(f.get_text(y1_field), y1) ||
+			!door_builder_parse_integer(f.get_text(z0_field), z0) || !door_builder_parse_integer(f.get_text(z1_field), z1) ||
+			!door_builder_parse_integer(f.get_text(cooldown_field), cooldown) || !door_builder_parse_integer(f.get_text(autoclose_field), auto_close) || cooldown < 0 || auto_close < 0)
+		{
+			speak(tr("door.whole_numbers"));
+			continue;
+		}
+		if (x0 < minx || x1 > maxx || y0 < miny || y1 > maxy || z0 < minz || z1 > maxz || x0 > x1 || y0 > y1 || z0 > z1)
+		{
+			speak(tr("door.invalid_bounds"));
+			continue;
+		}
+		int wall_pos = f.get_list_position(wall_list);
+		if (wall_pos < 0 || wall_pos >= int(wall_types.length()) || get_sound_path(open_sound) == "" || get_sound_path(close_sound) == "" ||
+			string_contains(open_sound + close_sound, ":", 1) >= 0)
+		{
+			speak(tr("door.sounds_required"));
+			continue;
+		}
+		string wall_type = wall_types[uint(wall_pos)];
+		string line = "door:" + id + ":" + x0 + ":" + x1 + ":" + y0 + ":" + y1 + ":" + z0 + ":" + z1 + ":" + wall_type + ":" + open_sound + ":" + close_sound + ":" + cooldown + ":" + auto_close;
+		save_to_map(line);
+		return;
+	}
+}

@@ -133,7 +133,8 @@
       "delete_map": "excluir mapa atual - excluir permanentemente o arquivo de mapa ativo",
       "store_point": "Adicionar uma loja a este mapa",
       "travel_point": "Adicionar um ponto de viagem a outro mapa",
-      "elevator": "Adicionar um elevador a este mapa"
+      "elevator": "Adicionar um elevador a este mapa",
+      "door": "Adicionar uma porta ao mapa"
     }
   },
   "form": {
@@ -583,5 +584,22 @@
   "currency": {
     "gold": "Ouro",
     "golden_crystal": "Cristal Dourado"
+  },
+  "door": {
+    "wall_type": "Material da porta e som ao bloquear passagem",
+    "closed": "A porta &1 foi fechada.",
+    "cooldown": "Tempo mínimo entre interações (milissegundos)",
+    "opened": "A porta &1 foi aberta.",
+    "invalid_bounds": "Os limites da porta devem estar em ordem e dentro deste mapa.",
+    "blocked": "A passagem está ocupada. A porta não pode fechar.",
+    "id": "ID da porta",
+    "invalid_id": "Use um ID único com letras minúsculas, números, sublinhados ou hífens.",
+    "title": "Adicionar uma porta a este mapa",
+    "open_sound": "Selecionar som de abertura da porta",
+    "auto_close": "Tempo para fechar automaticamente em milissegundos (0 mantém aberta)",
+    "whole_numbers": "Digite somente números inteiros.",
+    "close_sound": "Selecionar som de fechamento da porta",
+    "sounds_required": "Selecione sons existentes para abrir e fechar e um material de porta.",
+    "no_wall_types": "Não foram encontrados materiais de porta com som de bloqueio configurado."
   }
 }

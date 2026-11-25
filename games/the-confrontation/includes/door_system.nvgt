@@ -1,0 +1,158 @@
+// Offline, map-authored doors. The barrier is a real movement blocker; both
+// sides use the same interaction volume and every door starts closed on load.
+class map_door_definition
+{
+	string id;
+	int x0, x1, y0, y1, z0, z1;
+	string wall_type;
+	string open_sound;
+	string close_sound;
+	int cooldown_ms;
+	int auto_close_ms;
+	bool is_open = false;
+	bool has_toggled = false;
+	timer cooldown_timer;
+	timer open_timer;
+
+	bool contains(int x, int y, int z) const
+	{
+		return x >= x0 && x <= x1 && y >= y0 && y <= y1 && z >= z0 && z <= z1;
+	}
+	bool can_interact(int x, int y, int z) const
+	{
+		if (z < z0 || z > z1) return false;
+		// Interact from the two faces perpendicular to the door's wider horizontal axis.
+		if (x1 - x0 >= y1 - y0)
+			return x >= x0 - 1 && x <= x1 + 1 && (y == y0 - 1 || y == y1 + 1);
+		return y >= y0 - 1 && y <= y1 + 1 && (x == x0 - 1 || x == x1 + 1);
+	}
+}
+
+map_door_definition@[] map_doors(0);
+sound_pool map_door_audio(16);
+
+map_door_definition@ find_map_door(const string&in id)
+{
+	string wanted = string_to_lower_case(id.trim_whitespace());
+	for (uint i = 0; i < map_doors.length(); i++)
+	{
+		map_door_definition@ door = map_doors[i];
+		if (door !is null && string_to_lower_case(door.id) == wanted) return door;
+	}
+	return null;
+}
+
+void parse_map_door(string[]@ fields)
+{
+	if (fields is null || fields.length() < 13) return;
+	string id = string_to_lower_case(fields[1].trim_whitespace());
+	if (id == "" || find_map_door(id) !is null) return;
+	map_door_definition@ door = map_door_definition();
+	door.id = id;
+	door.x0 = int(string_to_number(fields[2])); door.x1 = int(string_to_number(fields[3]));
+	door.y0 = int(string_to_number(fields[4])); door.y1 = int(string_to_number(fields[5]));
+	door.z0 = int(string_to_number(fields[6])); door.z1 = int(string_to_number(fields[7]));
+	door.wall_type = fields[8].trim_whitespace();
+	door.open_sound = fields[9].trim_whitespace();
+	door.close_sound = fields[10].trim_whitespace();
+	door.cooldown_ms = int(string_to_number(fields[11]));
+	door.auto_close_ms = int(string_to_number(fields[12]));
+	if (door.x0 > door.x1) { int t = door.x0; door.x0 = door.x1; door.x1 = t; }
+	if (door.y0 > door.y1) { int t = door.y0; door.y0 = door.y1; door.y1 = t; }
+	if (door.z0 > door.z1) { int t = door.z0; door.z0 = door.z1; door.z1 = t; }
+	if (door.wall_type == "" || door.open_sound == "" || door.close_sound == "" || door.cooldown_ms < 0 || door.auto_close_ms < 0) return;
+	door.cooldown_timer.restart();
+	door.open_timer.restart();
+	map_doors.insert_last(door);
+}
+
+void clear_map_doors()
+{
+	map_door_audio.destroy_all();
+	map_doors.resize(0);
+}
+
+bool door_player_or_npc_inside(map_door_definition@ door)
+{
+	if (door is null) return false;
+	if (door.contains(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)))) return true;
+	for (uint i = 0; i < npc_instances.length(); i++)
+	{
+		npc_instance@ npc = npc_instances[i];
+		if (npc !is null && !npc.dead && door.contains(npc.x, npc.y, npc.z)) return true;
+	}
+	return false;
+}
+
+void play_map_door_sound(map_door_definition@ door, const string&in configured_path)
+{
+	if (door is null) return;
+	string path = get_sound_path(configured_path);
+	if (path == "") return;
+	map_door_audio.play_3d(path, me.x, me.y, me.z,
+		(double(door.x0) + double(door.x1)) / 2.0,
+		(double(door.y0) + double(door.y1)) / 2.0,
+		(double(door.z0) + double(door.z1)) / 2.0, double(facing), false);
+}
+
+bool set_map_door_state(map_door_definition@ door, bool open, bool announce_block = true)
+{
+	if (door is null || door.is_open == open) return false;
+	if (!open && door_player_or_npc_inside(door))
+	{
+		if (announce_block) speak(tr("door.blocked"));
+		return true;
+	}
+	door.is_open = open;
+	if (open)
+	{
+		door.open_timer.restart();
+		play_map_door_sound(door, door.open_sound);
+		speak(tr("door.opened", {door.id}));
+	}
+	else
+	{
+		play_map_door_sound(door, door.close_sound);
+		speak(tr("door.closed", {door.id}));
+	}
+	return true;
+}
+
+bool map_door_blocks(int x, int y, int z)
+{
+	for (uint i = 0; i < map_doors.length(); i++)
+	{
+		map_door_definition@ door = map_doors[i];
+		if (door !is null && !door.is_open && door.contains(x, y, z)) return true;
+	}
+	return false;
+}
+
+bool try_interact_map_door()
+{
+	int px = int(round(me.x, 0));
+	int py = int(round(me.y, 0));
+	int pz = int(round(me.z, 0));
+	for (uint i = 0; i < map_doors.length(); i++)
+	{
+		map_door_definition@ door = map_doors[i];
+		if (door is null || !door.can_interact(px, py, pz)) continue;
+		if (door.has_toggled && door.cooldown_timer.elapsed < door.cooldown_ms) return true;
+		door.has_toggled = true;
+		door.cooldown_timer.restart();
+		set_map_door_state(door, !door.is_open);
+		return true;
+	}
+	return false;
+}
+
+void update_map_doors()
+{
+	for (uint i = 0; i < map_doors.length(); i++)
+	{
+		map_door_definition@ door = map_doors[i];
+		if (door is null || !door.is_open || door.auto_close_ms <= 0 || door.open_timer.elapsed < door.auto_close_ms) continue;
+		// Retrying every world tick closes the door immediately once the doorway clears.
+		set_map_door_state(door, false, false);
+	}
+}

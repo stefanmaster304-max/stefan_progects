@@ -133,7 +133,8 @@
       "delete_map": "delete current map - permanently delete the active map file",
       "store_point": "Place a storefront in this map",
       "travel_point": "Add a travel point to another map",
-      "elevator": "Add an elevator to this map"
+      "elevator": "Add an elevator to this map",
+      "door": "Add a door to this map"
     }
   },
   "form": {
@@ -583,5 +584,22 @@
   "currency": {
     "gold": "Gold",
     "golden_crystal": "Golden Crystal"
+  },
+  "door": {
+    "wall_type": "Door material and blocked-step sound",
+    "closed": "Door &1 closed.",
+    "cooldown": "Minimum time between toggles (milliseconds)",
+    "opened": "Door &1 opened.",
+    "invalid_bounds": "The door bounds must be ordered and stay inside this map.",
+    "blocked": "The doorway is occupied. The door cannot close.",
+    "id": "Door ID",
+    "invalid_id": "Use a unique ID with lowercase letters, numbers, underscores or hyphens.",
+    "title": "Add a door to this map",
+    "open_sound": "Choose door opening sound",
+    "auto_close": "Auto-close delay in milliseconds (0 keeps it open)",
+    "whole_numbers": "Enter whole numbers only.",
+    "close_sound": "Choose door closing sound",
+    "sounds_required": "Choose existing opening and closing sounds and a door material.",
+    "no_wall_types": "No door materials with configured bump sounds were found."
   }
 }

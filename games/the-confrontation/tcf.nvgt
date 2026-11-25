@@ -8,7 +8,7 @@
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
-string ver = "0.7";
+string ver = "0.8";
 
 #include "includes/bgt_compat.nvgt"
 #include "includes/player_character.nvgt"
@@ -664,7 +664,7 @@ if (key_pressed(KEY_S) or kb_pressed("sit_stand"))
 bool enter_pressed = key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER);
 if (altisdown() && enter_pressed)
 {
-	if (!try_use_elevator_at_player()) use_travel_point_at_player();
+	if (!try_interact_map_door() && !try_use_elevator_at_player()) use_travel_point_at_player();
 }
 else if (player_inside_elevator && enter_pressed && !shiftisdown())
 {
