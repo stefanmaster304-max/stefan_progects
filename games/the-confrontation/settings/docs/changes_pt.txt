@@ -1,3 +1,8 @@
+Build 5 | 25 de novembro de 2026 às 16:50 (America/Sao_Paulo) — Versão 0.1.0
+- Salto: o deslocamento horizontal durante o salto usa o mesmo intervalo de caminhada, impedindo a aceleração no ar que fazia o personagem atravessar plataformas enquanto ainda subia ou descia.
+- Inventário: Enter fecha o inventário preservando o item em foco; o Enter seguinte no jogo equipa ou usa o item e limpa a seleção pendente. Shift+1 a Shift+0 só atribui favoritos enquanto o inventário está aberto e há um item em foco.
+- Documentação: controles atualizados em português, inglês e espanhol.
+
 Build 4 | 25 de novembro de 2026 às 13:03 (America/Sao_Paulo) — Versão 0.1.0
 - Inventário: adicionado menu próprio com categorias de inventário completo, armas e munições, itens médicos e moedas; navegação por setas, Home/End e Tab/Shift+Tab, leitura de descrições com Espaço e sons de abertura, fechamento e troca de categoria.
 - Favoritos: removida a navegação do inventário rápido com Tab. Shift+1 a Shift+0 atribui o item em foco no inventário a um espaço favorito livre; as teclas 1 a 0 usam o item salvo. Cada espaço aceita apenas um item, e os favoritos são salvos por personagem.

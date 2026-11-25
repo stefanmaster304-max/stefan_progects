@@ -1,4 +1,9 @@
-Build 4 | 25/11/2026 de noviembre de novembro de 2026 a las 13:03 (America/Sao_Paulo) — Versión 0.1.0
+Build 5 | 25 de noviembre de 2026 a las 16:50 (America/Sao_Paulo) — Versión 0.1.0
+- Salto: el movimiento horizontal durante el salto usa ahora el intervalo normal de caminata; se elimina la aceleración en el aire que permitía cruzar plataformas mientras el personaje todavía subía o bajaba.
+- Inventario: Enter cierra el inventario y conserva el objeto enfocado; el siguiente Enter durante la partida lo equipa o lo usa y limpia la selección pendiente. Mayús+1 a Mayús+0 asigna favoritos solo con el inventario abierto y un objeto enfocado.
+- Documentación: se actualizaron los controles en portugués, inglés y español.
+
+Build 4 | 25 de noviembre de 2026 a las 13:03 (America/Sao_Paulo) — Versión 0.1.0
 - Inventario: se añadió un menú propio con las categorías Inventario completo, Armas y munición, Objetos médicos y Monedas; navegación con flechas, Inicio/Fin y Tab/Mayús+Tab; Espacio lee las descripciones disponibles; sonidos de apertura, cierre y cambio de categoría.
 - Favoritos: se eliminó la navegación del inventario rápido con Tab. Mayús+1 a Mayús+0 asigna el objeto enfocado en el inventario a una ranura vacía; las teclas 1 a 0 usan el objeto guardado. Cada ranura admite un solo objeto y los favoritos se guardan por personaje.
 - Ascensor y tienda: se guardan y restauran el estado dentro del ascensor y el piso de destino. Al salir, ahora suenan la apertura y el cierre de la puerta. Espacio en la tienda lee la descripción del producto seleccionado.

@@ -7,6 +7,8 @@ dictionary inv;
 
 string[] player_favorite_items(10);
 string inventory_selected_item = "";
+bool inventory_use_pending = false;
+bool inventory_closed_by_enter_this_frame = false;
 int inventory_category_index = 0;
 string[] inventory_categories = {"all", "weapons_ammo", "medical", "currency"};
 int inventory_move_sound_index = 0;
@@ -432,6 +434,8 @@ void inventory_menu()
 	load_all_weapons_wpm();
 	load_all_packages();
 	play_inventory_effect("inv open.ogg");
+	inventory_use_pending = false;
+	inventory_closed_by_enter_this_frame = false;
 	int position = 0;
 	inventory_selected_item = "";
 	string[] items = inventory_items_for_category(inventory_categories[uint(inventory_category_index)]);
@@ -445,6 +449,19 @@ void inventory_menu()
 		{
 			play_inventory_effect("inv close.ogg");
 			inventory_selected_item = "";
+			inventory_use_pending = false;
+			return;
+		}
+		if (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER))
+		{
+			if (inventory_selected_item == "")
+			{
+				speak(tr("inventory.favorite_select_item"));
+				continue;
+			}
+			inventory_use_pending = true;
+			inventory_closed_by_enter_this_frame = true;
+			play_inventory_effect("inv close.ogg");
 			return;
 		}
 		if (key_pressed(KEY_TAB))
@@ -501,6 +518,7 @@ void inventory_menu()
 			if (key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT))
 			{
 				if (inventory_selected_item != "") assign_inventory_favorite(slot, inventory_selected_item);
+				else speak(tr("inventory.favorite_select_item"));
 			}
 			else use_inventory_favorite(slot);
 			break;

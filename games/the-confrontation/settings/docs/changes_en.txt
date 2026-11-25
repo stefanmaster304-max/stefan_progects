@@ -1,4 +1,9 @@
-Build 4 | novembro 25, 2026 at 13:03 (America/Sao_Paulo) — Version 0.1.0
+Build 5 | November 25, 2026 at 16:50 (America/Sao_Paulo) — Version 0.1.0
+- Jumping: horizontal movement during a jump now uses the normal walking interval, removing the midair speed increase that let the character cross platforms while still ascending or descending.
+- Inventory: Enter closes the inventory while preserving the focused item; the next Enter in gameplay equips or uses it and clears the pending selection. Shift+1 through Shift+0 assign favorites only while the inventory is open and an item is focused.
+- Documentation: updated controls in Portuguese, English, and Spanish.
+
+Build 4 | November 25, 2026 at 13:03 (America/Sao_Paulo) — Version 0.1.0
 - Inventory: added a dedicated menu with All Inventory, Weapons and Ammunition, Medical Items, and Currencies categories; arrow, Home/End, and Tab/Shift+Tab navigation; Space reads available item descriptions; added open, close, and category-change cues.
 - Favorites: removed Tab quick-inventory cycling. Shift+1 through Shift+0 assigns the focused inventory item to an empty favorite slot; number keys 1 through 0 use the saved item. Each slot holds one item, and favorites persist per character.
 - Elevator and store: elevator occupancy and destination floor are saved and restored. Leaving the elevator now plays both door-open and door-close sounds. Space in the store reads the focused product description.
