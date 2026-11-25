@@ -1,3 +1,6 @@
+Build 6 | 25 de noviembre de 2026 a las 17:15 (America/Sao_Paulo) — Versión 0.1.0
+- Salto: el impulso vertical comienza antes del movimiento horizontal; se restaura la velocidad aérea original y se silencian los pasos de plataforma mientras el personaje está en el aire. Así se elimina la pausa aparente en el suelo y el retraso al despegar mientras corre y salta.
+
 Build 5 | 25 de noviembre de 2026 a las 16:50 (America/Sao_Paulo) — Versión 0.1.0
 - Salto: el movimiento horizontal durante el salto usa ahora el intervalo normal de caminata; se elimina la aceleración en el aire que permitía cruzar plataformas mientras el personaje todavía subía o bajaba.
 - Inventario: Enter cierra el inventario y conserva el objeto enfocado; el siguiente Enter durante la partida lo equipa o lo usa y limpia la selección pendiente. Mayús+1 a Mayús+0 asigna favoritos solo con el inventario abierto y un objeto enfocado.

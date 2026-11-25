@@ -1,3 +1,6 @@
+Build 6 | 25 de novembro de 2026 às 17:15 (America/Sao_Paulo) — Versão 0.1.0
+- Salto: a impulsão vertical começa antes do deslocamento horizontal; o personagem conserva o movimento aéreo original e não reproduz passos da plataforma durante o salto. Isso remove a pausa aparente no chão e o atraso de subida quando corre e pula.
+
 Build 5 | 25 de novembro de 2026 às 16:50 (America/Sao_Paulo) — Versão 0.1.0
 - Salto: o deslocamento horizontal durante o salto usa o mesmo intervalo de caminhada, impedindo a aceleração no ar que fazia o personagem atravessar plataformas enquanto ainda subia ou descia.
 - Inventário: Enter fecha o inventário preservando o item em foco; o Enter seguinte no jogo equipa ou usa o item e limpa a seleção pendente. Shift+1 a Shift+0 só atribui favoritos enquanto o inventário está aberto e há um item em foco.

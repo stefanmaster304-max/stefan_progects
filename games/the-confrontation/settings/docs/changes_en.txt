@@ -1,3 +1,6 @@
+Build 6 | November 25, 2026 at 17:15 (America/Sao_Paulo) — Version 0.1.0
+- Jumping: vertical takeoff now begins before horizontal movement; the original air movement speed is restored, and platform footsteps are suppressed while airborne. This removes the apparent ground pause and delayed lift when running and jumping.
+
 Build 5 | November 25, 2026 at 16:50 (America/Sao_Paulo) — Version 0.1.0
 - Jumping: horizontal movement during a jump now uses the normal walking interval, removing the midair speed increase that let the character cross platforms while still ascending or descending.
 - Inventory: Enter closes the inventory while preserving the focused item; the next Enter in gameplay equips or uses it and clears the pending selection. Shift+1 through Shift+0 assign favorites only while the inventory is open and an item is focused.

@@ -123,7 +123,7 @@ int jumptime2=140;
 bool ascending;
 int jumpheight=5;
 int jumping;
-int ty1, ty2;
+int ty2;
 int jumpable=1;
 timer falltimer;
 int fallspeed=120;
@@ -132,6 +132,7 @@ int health;
 int maxhealth=5000;
 int movetime;
 int walktime=160;
+int airtime=90;
 int fallcounter;
 bool safe=false;
 bool szstate=false;
@@ -579,8 +580,44 @@ if (kb_pressed("coordinates") or key_pressed(KEY_C))
 		speak(int(round(me.x, 0)) + ", " + int(round(me.y, 0)) + ", " + int(round(me.z, 0)));
 	}
 }
+// Start the jump before processing this frame's horizontal movement. This
+// keeps the takeoff step in the air state instead of treating it as a floor
+// step and delaying the first vertical movement until after running.
+if (!player_inside_elevator && jump_pressed_this_frame && !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
+{
+	if (is_sitting)
+	{
+		if (sitting_speech_debounce.elapsed >= 1500)
+		{
+			sitting_speech_debounce.restart();
+			speak(tr("game.sitting_hint"));
+		}
+	}
+	else
+	{
+		sjumpcheck();
+		if (abletojump2>0)
+		{
+			p.play_stationary(get_player_sound("jump"),false);
+			ty2=me.z+jumpheight;
+			jumping=1;
+			falling=false;
+			ascending=true;
+			atapex=false;
+			me.z++;
+			checkforplatforms();
+			if (me.z>=ty2 && jumping==1)
+			{
+				ascending=false;
+				atapex=true;
+			}
+			jumptimer.restart();
+		}
+	}
+}
 walktime = get_current_walktime();
-movetime=walktime;
+if (jumping==1) movetime=airtime;
+else movetime=walktime;
 if (!player_inside_elevator && dmoving==false and movetimer.elapsed>=movetime)
 {
 	if (is_sitting)
@@ -619,32 +656,6 @@ if (!player_inside_elevator && dmoving==false and movetimer.elapsed>=movetime)
 	}
 }
 if (me.z < minz) me.z = minz;
-// Jump is triggered by the Spacebar alone. Ctrl + Space does nothing at
-// all, and Control alone only fires.
-if (!player_inside_elevator && jump_pressed_this_frame && !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
-{
-	if (is_sitting)
-	{
-		if (sitting_speech_debounce.elapsed >= 1500)
-		{
-			sitting_speech_debounce.restart();
-			speak(tr("game.sitting_hint"));
-		}
-	}
-	else
-	{
-		sjumpcheck();
-		if (abletojump2>0)
-		{
-			p.play_stationary(get_player_sound("jump"),false);
-			ty1=me.z;
-			ty2=me.z+jumpheight;
-			jumping=1;
-			ascending=true;
-			jumptimer.restart();
-		}
-	}
-}
 if (jumping==1 && !player_inside_elevator)
 {
 if (atapex==true and jumptimer.elapsed>=apextime)

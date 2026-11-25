@@ -1010,7 +1010,7 @@ me = old;
 else
 {
 old = me;
-if (current_tile != "")
+if (current_tile != "" && jumping == 0 && !falling)
 {
 string snd = get_platform_sound(current_tile, "step");
 if (snd != "") play_player_footstep(snd);
