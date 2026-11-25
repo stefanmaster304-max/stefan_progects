@@ -1,3 +1,6 @@
+Build 7 | 25 de noviembre de 2026 a las 17:27 (America/Sao_Paulo) — Versión 0.1.0
+- Entrada del salto: ahora se consulta Espacio después del ciclo de entrada de NVGT, junto con el movimiento. Se eliminó la captura anticipada que podía perder el evento del cuadro de movimiento y retrasar el salto mientras se corre.
+
 Build 6 | 25 de noviembre de 2026 a las 17:15 (America/Sao_Paulo) — Versión 0.1.0
 - Salto: el impulso vertical comienza antes del movimiento horizontal; se restaura la velocidad aérea original y se silencian los pasos de plataforma mientras el personaje está en el aire. Así se elimina la pausa aparente en el suelo y el retraso al despegar mientras corre y salta.
 

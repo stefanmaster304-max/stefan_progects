@@ -1,3 +1,6 @@
+Build 7 | 25 de novembro de 2026 às 17:27 (America/Sao_Paulo) — Versão 0.1.0
+- Entrada do salto: a tecla Espaço agora é consultada depois do ciclo de entrada do NVGT, junto da lógica de movimento. Removida a captura antecipada que podia desencontrar o evento do quadro de movimento e adiar o salto durante a corrida.
+
 Build 6 | 25 de novembro de 2026 às 17:15 (America/Sao_Paulo) — Versão 0.1.0
 - Salto: a impulsão vertical começa antes do deslocamento horizontal; o personagem conserva o movimento aéreo original e não reproduz passos da plataforma durante o salto. Isso remove a pausa aparente no chão e o atraso de subida quando corre e pula.
 

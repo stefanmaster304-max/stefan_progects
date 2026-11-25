@@ -296,13 +296,12 @@ is_in_game = true;
 while(true)
 {
 inventory_closed_by_enter_this_frame = false;
-bool jump_pressed_this_frame = kb_pressed("jump");
 weapon_system_loop();
 // Fire is hold-to-fire for automatic weapons and one press per shot for
 // semi-automatic ones. Only Left Control (or configured fire key) fires;
 // Right Control, Spacebar and jumping never fire.
 bool fire_k_active = (kb_down("fire") or kb_pressed("fire") or key_down(KEY_LCONTROL) or key_pressed(KEY_LCONTROL)) and !key_down(KEY_RCONTROL) and !key_pressed(KEY_RCONTROL);
-if (fire_k_active and !key_down(KEY_SPACE) and !jump_pressed_this_frame and jumping == 0 and falling == false)
+if (fire_k_active and !key_down(KEY_SPACE) and jumping == 0 and falling == false)
 {
 	string active_w = current_weapon_id;
 	if (active_w == "" || find_weapon_data(active_w) is null)
@@ -583,7 +582,7 @@ if (kb_pressed("coordinates") or key_pressed(KEY_C))
 // Start the jump before processing this frame's horizontal movement. This
 // keeps the takeoff step in the air state instead of treating it as a floor
 // step and delaying the first vertical movement until after running.
-if (!player_inside_elevator && jump_pressed_this_frame && !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
+if (!player_inside_elevator && key_pressed(KEY_SPACE) && !key_down(KEY_LCONTROL) and !key_down(KEY_RCONTROL) and jumping==0 and falling==false and dmoving==false)
 {
 	if (is_sitting)
 	{

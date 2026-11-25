@@ -1,3 +1,6 @@
+Build 7 | November 25, 2026 at 17:27 (America/Sao_Paulo) — Version 0.1.0
+- Jump input: Space is now checked after NVGT processes the input cycle, alongside movement. Removed the early key snapshot that could miss the movement frame and delay takeoff while running.
+
 Build 6 | November 25, 2026 at 17:15 (America/Sao_Paulo) — Version 0.1.0
 - Jumping: vertical takeoff now begins before horizontal movement; the original air movement speed is restored, and platform footsteps are suppressed while airborne. This removes the apparent ground pause and delayed lift when running and jumping.
 
