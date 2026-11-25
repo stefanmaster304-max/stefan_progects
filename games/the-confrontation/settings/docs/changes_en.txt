@@ -1,20 +1,7 @@
-Build 10 | November 25, 2026 at 17:50 (America/Sao_Paulo) — Version 0.1.0
-- Jumping: platform collisions during ascent are now treated as an underside impact without ending the jump inside the platform volume. Landing remains checked during descent, preventing the player from becoming suspended without gravity while running and jumping.
-
-Build 9 | November 25, 2026 at 17:45 (America/Sao_Paulo) — Version 0.1.0
-- Jumping: Space is captured at the start of each loop and held until the jump stage. The request is consumed once, without requiring the character to stop running and without repeating while the key remains held.
-
-Build 8 | November 25, 2026 at 17:38 (America/Sao_Paulo) — Version 0.1.0
-- Jump restored: activation is back in its original post-horizontal-movement stage and no longer changes height in the same frame. Space is read directly there; air speed and timer-based vertical movement are preserved. Platform footsteps remain silent while airborne.
-
-Build 7 | November 25, 2026 at 17:27 (America/Sao_Paulo) — Version 0.1.0
-- Jump input: Space is now checked after NVGT processes the input cycle, alongside movement. Removed the early key snapshot that could miss the movement frame and delay takeoff while running.
-
-Build 6 | November 25, 2026 at 17:15 (America/Sao_Paulo) — Version 0.1.0
-- Jumping: vertical takeoff now begins before horizontal movement; the original air movement speed is restored, and platform footsteps are suppressed while airborne. This removes the apparent ground pause and delayed lift when running and jumping.
+Build 11 | November 25, 2026 at 18:08 (America/Sao_Paulo) — Version 0.1.0
+- Jumping: restored the activation and vertical movement flow from the older reference copy. Removed the pending request and alternate ascent collision introduced by previous attempts.
 
 Build 5 | November 25, 2026 at 16:50 (America/Sao_Paulo) — Version 0.1.0
-- Jumping: horizontal movement during a jump now uses the normal walking interval, removing the midair speed increase that let the character cross platforms while still ascending or descending.
 - Inventory: Enter closes the inventory while preserving the focused item; the next Enter in gameplay equips or uses it and clears the pending selection. Shift+1 through Shift+0 assign favorites only while the inventory is open and an item is focused.
 - Documentation: updated controls in Portuguese, English, and Spanish.
 
