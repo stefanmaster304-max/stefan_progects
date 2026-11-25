@@ -1,106 +1,20 @@
-Build 11 | November 25, 2026 at 18:08 (America/Sao_Paulo) — Version 0.1.0
-- Jumping: restored the activation and vertical movement flow from the older reference copy. Removed the pending request and alternate ascent collision introduced by previous attempts.
+The Confront - Changelog (English)
 
-Build 5 | November 25, 2026 at 16:50 (America/Sao_Paulo) — Version 0.1.0
-- Inventory: Enter closes the inventory while preserving the focused item; the next Enter in gameplay equips or uses it and clears the pending selection. Shift+1 through Shift+0 assign favorites only while the inventory is open and an item is focused.
-- Documentation: updated controls in Portuguese, English, and Spanish.
+New in version 0.1.1 (2026-11-25 - 19:02 -03:00)
 
-Build 4 | November 25, 2026 at 13:03 (America/Sao_Paulo) — Version 0.1.0
-- Inventory: added a dedicated menu with All Inventory, Weapons and Ammunition, Medical Items, and Currencies categories; arrow, Home/End, and Tab/Shift+Tab navigation; Space reads available item descriptions; added open, close, and category-change cues.
-- Favorites: removed Tab quick-inventory cycling. Shift+1 through Shift+0 assigns the focused inventory item to an empty favorite slot; number keys 1 through 0 use the saved item. Each slot holds one item, and favorites persist per character.
-- Elevator and store: elevator occupancy and destination floor are saved and restored. Leaving the elevator now plays both door-open and door-close sounds. Space in the store reads the focused product description.
-- Localization and audio: added inventory text in all three languages plus translations for existing item names and map zones. The menu close cue now starts immediately when Escape exits the menu.
-
-Build 3 | November 25, 2026 at 11:41 (America/Sao_Paulo) — Version 0.9
-- Map cleanup: removed the temporary second-floor stairs, elevator, platform and store entrance from the Safe Zone; removed the obsolete text-square feature from the builder and map loader.
-- Tracking: N reports each living NPC within 30 tiles in nearest-first order with its current distance and direction. X lists accessible travel points; selecting one plays a spatial beacon until the player reaches its area, then plays an arrival cue. Added English, Portuguese and Spanish text.
-- Audio and maps: the main-menu exit plays its close cue. Door sounds are positioned at the nearest point on the full door area. Rebuilt the encrypted maps bundle for the Safe Zone and packaged the project's complete local sounds folder without merging the older archive.
-
-Build 2 | November 25, 2026 at 10:48 (America/Sao_Paulo) — Version 0.9
-- Safe Zone: set as the default map for new games and respawns; added stairs and an elevator between Z=0 and Z=100, an upper floor and a wide door at the future store entrance. Zone labels and floor names are localized in Portuguese, English and Spanish.
-- Vertical movement: removed Page Down diving, underwater audio and the underwater low-pass filter. Page Up and Page Down now move the player vertically only within a staircase; the elevator still travels between floors.
-- Door audio: opening and closing sounds no longer receive the room exterior acoustic filter.
-Build 1 | November 25, 2026 at 09:57 (America/Sao_Paulo) — Version 0.9
-- Acoustics and doors: documented the exterior low-pass filter in XANGE.LOG; removed spoken notices when doors open/close and when filtering toggles; removed the test door from Forest.
-- Updater: removed the option to view what is new; Enter or Y starts the download and Escape cancels. Beeps are clearer at lower volume.
-- Version: updated to 0.9.
-Build 5 | November 25, 2026 at 09:50 (America/Sao_Paulo) — Version 0.8
-- Indoor acoustics: doors can define an interior room volume and exterior low-pass cutoff. While the player is inside and every door assigned to that room is closed, exterior spatial effects and ambient sources are low-pass filtered; sounds placed inside the room remain clear. Opening a room door or leaving the room removes the filter.
-
-Build 4 | November 24, 2026 at 20:50 (America/Sao_Paulo) — Version 0.8
-- Doors: added offline map doors with a physical blocking volume, Alt+Enter interaction from either adjacent side, spatial opening/closing sounds, selectable wall material and bump sound, toggle cooldown, and optional auto-close that waits until the doorway is clear.
-
-Maps 0.7 build 1 | November 24, 2026 at 20:20 (America/Sao_Paulo)
-- Robots World map: added a working test elevator between the Ground Floor and Observation Deck, with a raised platform, a 3-second ride, and door and travel sounds.
-
-Build 2 | November 24, 2026 at 19:39 (America/Sao_Paulo) — Version 0.7
-- Updater: when moving between game versions, the saved build number now resets to the compiled build so later updates for the new version are detected correctly.
-
-Build 1 | November 24, 2026 at 19:29 (America/Sao_Paulo) — Version 0.7
-- Stores: removed the welcome sound; entering a store now speaks a greeting and asks the player to choose a category without announcing or selecting the first one automatically.
-- Sound installation: the game now downloads a ZIP containing only the `sounds/` folder, keeps it inside `update_temp`, and removes temporary files after extraction and installation.
-
-Build 8 | November 24, 2026 at 19:01 (America/Sao_Paulo)
-- Elevators: fixed typing in elevator IDs and floor names; door and travel audio now use the game's existing folder and sound selectors.
-- Travel: when only one destination other than the current floor exists, Enter starts the ride without opening the panel; multiple destinations still open the panel. The interaction key also opens the doors for automatic exit at the configured landing.
-- First sound install: the installer extracts only `sounds/` entries from the complete ZIP, reducing temporary work; sound staging is validated and the folder swap restores the previous installation on failure.
-
-Build 7 | November 24, 2026 at 18:41 (America/Sao_Paulo)
-- Elevators: the builder configures a vertical shaft with two or more floors, door and cabin positions, travel time in milliseconds, and opening, closing, and travel sounds.
-- Gameplay: Alt+Enter enters the cabin, opens the floor panel, and opens the doors for exit at the selected destination after the timed ride; movement and falling are disabled inside the cabin.
-
-Build 6 | November 24, 2026 at 17:50 (America/Sao_Paulo)
-- Controls: Shift+Enter interacts with stores placed on the map; Enter uses the selected quick-inventory item, and Alt+Enter still checks travel points.
-
-Build 5 | November 24, 2026 at 12:31 (America/Sao_Paulo)
-- Weapons: shots now hit the nearest visible NPC within the configured radius, without cardinal or diagonal alignment; walls still block line of sight.
-- Distribution: the with-sounds and no-sounds packages contain no empty directories; the release keeps only these two ZIP files.
-- Sound installation: the updater extracts only the sounds folder from the full package and does not replace the executable or settings.
-
-Build 4 | November 24, 2026 at 12:09 (America/Sao_Paulo)
-- Stores: selecting a store to edit now opens that store directly and exits the general manager when done; stores without categories can also be edited.
-- Currencies: Gold and Golden Crystal are the only currencies; Diamond and Silver, their drops, and old saved balances were removed.
-- Interface and documentation: currency names are localized in all three languages, balances were adjusted, and the READMEs were updated.
-
-Build 3 | November 24, 2026 at 12:44 (America/Sao_Paulo)
-- Developer map menu: persistent default-map selection is available only in source runs; new compiled-release games start in the forest.
-- Weapons: removed distant-fire sound from runtime, editor, and all 77 WPM files; primary fire, impact, and ricochet sounds remain.
-- Updater: removed music and slightly lowered beep volume without changing frequencies; removed obsolete download-choice translations.
-
-The Confront — Changelog
-Version 0.6 | November 24, 2026 at 11:16 (America/Sao_Paulo)
-
-- Stores: each storefront now contains its own categories; Enter opens a placed store, arrow keys move through its categories, and Tab opens the selected category's items.
-- TravelPoint: Alt+Enter checks the current position silently when no valid travel point is present.
-- Updater: before confirmation, it displays this version's changes in a native multiline field; game, content, map, and sound packages use separate files and validation.
-- Installation: encrypted content and map files are validated and staged before replacement; the previous file is restored if installation fails.
-- Website: refreshed the home and projects pages and added a The Confront overview and manual with version 0.6 downloads.
-- Distribution: full packages are prepared without source code or player save data.
-Build 1 | November 24, 2026 at 12:05 (America/Sao_Paulo)
-- Game updates now use a separate ZIP with the executable, libraries, and encrypted content/map bundles; the sounds folder is preserved and remains a separate automatic download when missing.
-- Increased updater progress beep volume without changing pitch.
-- Fixed storefront and TravelPoint builder labels and localized ammunition status speech in all three languages.
-
-
-Build 1 | November 24, 2026 at 12:05 (America/Sao_Paulo)
-- Game updates now use a separate ZIP with the executable, libraries, and encrypted content/map bundles. The existing sounds folder is preserved; if it is missing, the game still offers its separate automatic sound download.
-- Increased updater progress beep volume without changing pitch.
-- Fixed storefront and TravelPoint builder labels and localized ammunition status speech in all three languages.
-
-
-
-Build 2 | November 24, 2026 at 12:29 (America/Sao_Paulo)
-- Fixed game update extraction and validation for the published package layout.
-- Game updates now extract and install through hidden background processes; no command window is opened, and the existing sounds folder is left untouched.
-- Update confirmation now separates View what is new, Update now, and Cancel.
-- The store manager includes storefront creation/editing and category assignment to existing storefronts.
-
-Build 3 | November 24, 2026 at 20:32 (America/Sao_Paulo) — Version 0.7
-- Elevators: the door-close sound no longer repeats when selecting a destination; the travel sound starts immediately and loops throughout the ride.
-- Updates: published a new archive with the current sounds and a new encrypted `maps.dat` without the removed Robots World test elevator.
-
-
-
-
-
-
+Gameplay, Physics & Audio Fixes:
+- Complete jump fix (Stefan and Annie):
+  * Fixed the issue where the character only moved 1 coordinate up on the Z axis and remained stuck walking in mid-air when jumping while running.
+  * Removed the premature checkforplatforms() call during the ascending phase, which was cancelling the jump 1 unit above platforms with Z thickness or staircases.
+  * Removed premature maxz clamping during jumping and mid-air horizontal movement, ensuring the character properly ascends from 0 up to 5 (jumpheight = 5), holds at the apex, and descends smoothly to the ground or platform.
+  * Structured the jump state machine to prevent same-frame conflicts and state leakage across consecutive jumps or elevators.
+- Unknown area announcement on zoneless maps:
+  * Fixed the location system so that when a map has no zones defined, the game properly announces "Unknown area" on map load and when checking location (Z key).
+- Free-fall fix:
+  * Properly reset the fall timer and fall counter when entering free-fall outside a jump or stepping off a platform.
+- Jump keybind, inventory & staircases:
+  * Jumping now honors the remappable jump keybind in addition to Spacebar.
+  * Fixed inventory open (invopen.ogg), close (invclose.ogg), and navigation (invmove.ogg to invmove5.ogg) sound paths.
+  * Fixed staircase jump checking and localized the sitting hint when attempting to climb stairs while seated.
+- Dead-code cleanup:
+  * Removed unreferenced functions and variables across modules and deduplicated integrity checks.

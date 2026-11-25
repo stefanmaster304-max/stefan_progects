@@ -30,9 +30,3 @@ void update_game_world()
 	update_travel_point_tracking();
 	king_system_update();
 }
-
-void world_wait(int ms = 5)
-{
-	wait(ms);
-	update_game_world();
-}

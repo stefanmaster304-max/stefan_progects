@@ -215,6 +215,8 @@ bool try_use_elevator_at_player()
 			player_inside_elevator = false;
 			elevator_arrived_waiting_for_exit = false;
 			jumping = 0;
+			ascending = false;
+			atapex = false;
 			falling = false;
 			player_elevator_id = "";
 			player_elevator_floor = "";
@@ -272,6 +274,8 @@ bool try_use_elevator_at_player()
 		me.y = floor.cabin_y;
 		me.z = floor.cabin_z;
 		jumping = 0;
+		ascending = false;
+		atapex = false;
 		falling = false;
 		player_inside_elevator = true;
 		elevator_arrived_waiting_for_exit = false;

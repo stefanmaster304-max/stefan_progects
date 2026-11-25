@@ -128,22 +128,6 @@ int get_player_modified_walktime(int base_walk)
 	return base_walk;
 }
 
-string get_character_name(const string&in char_id)
-{
-	string c = string_to_lower_case(char_id.trim_whitespace());
-	if (c == "annie" || c == "ilana" || c == "ylana" || c == "hane") return tr("options.character_annie");
-	if (c == "stefan") return tr("options.character_stefan");
-	return "";
-}
-
-string get_character_description(const string&in char_id)
-{
-	string c = string_to_lower_case(char_id.trim_whitespace());
-	if (c == "annie" || c == "ilana" || c == "ylana" || c == "hane") return tr("options.character_annie_desc");
-	if (c == "stefan") return tr("options.character_stefan_desc");
-	return "";
-}
-
 void set_player_character(const string&in char_id, bool update_vitals = true)
 {
 	string c = string_to_lower_case(char_id.trim_whitespace());

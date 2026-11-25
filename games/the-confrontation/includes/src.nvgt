@@ -4,15 +4,7 @@ dictionary source_playback_offsets;
 dictionary source_resolved_path_cache;
 dictionary source_is_music_cache;
 
-string[] cached_source_maps;
-const uint MAX_CACHED_SOURCE_MAPS = 6;
 dictionary registered_source_maps;
-
-void save_current_map_source_positions()
-{
-	if (mapname == "") return;
-	save_map_source_positions(mapname);
-}
 
 void save_map_source_positions(const string&in mname)
 {
@@ -52,11 +44,6 @@ bool has_map_sources(const string&in mname)
 void mark_map_sources_registered(const string&in mname)
 {
 	if (mname != "") registered_source_maps.set(mname, true);
-}
-
-void pause_map_sources(const string&in mname)
-{
-	// Non-muting spatial architecture keeps active neighbor streams running
 }
 
 void resume_map_sources(const string&in mname)
@@ -690,16 +677,10 @@ void apply_music_volume()
 	}
 }
 
-void clear_all_source_saved_positions()
-{
-	source_playback_offsets.delete_all();
-}
-
 void killsrcs()
 {
 	sp.destroy_all();
 	src.resize(0);
-	cached_source_maps.resize(0);
 	registered_source_maps.delete_all();
 	source_playback_offsets.delete_all();
 }

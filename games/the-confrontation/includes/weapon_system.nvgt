@@ -5,7 +5,6 @@
 string current_weapon_id = "";
 timer weapon_fire_timer;
 int weapon_next_fire_interval = 500;
-bool is_firing_weapon = false;
 
 void play_weapon_fire_sounds(weapon_data@ w)
 {
@@ -26,14 +25,6 @@ int get_current_walktime()
 		if (w !is null && w.walktime > 0) base_walk = w.walktime;
 	}
 	return get_player_modified_walktime(base_walk);
-}
-
-void unequip_weapon(bool silent = false)
-{
-	if (is_reloading) cancel_reload();
-	current_weapon_id = "";
-	walktime = get_current_walktime();
-	if (!silent) speak(tr("weapon.unequipped"));
 }
 
 void equip_weapon(const string&in wid, bool silent = false)

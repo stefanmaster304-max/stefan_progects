@@ -1,110 +1,20 @@
-Build 11 | 25 de noviembre de 2026 a las 18:08 (America/Sao_Paulo) — Versión 0.1.0
-- Salto: se restauró el flujo de activación y movimiento vertical de la copia antigua de referencia. Se eliminaron la solicitud pendiente y la colisión alternativa durante el ascenso introducidas en los intentos anteriores.
+The Confront - Registro de Cambios (Español)
 
-Build 5 | 25 de noviembre de 2026 a las 16:50 (America/Sao_Paulo) — Versión 0.1.0
-- Inventario: Enter cierra el inventario y conserva el objeto enfocado; el siguiente Enter durante la partida lo equipa o lo usa y limpia la selección pendiente. Mayús+1 a Mayús+0 asigna favoritos solo con el inventario abierto y un objeto enfocado.
-- Documentación: se actualizaron los controles en portugués, inglés y español.
+Nuevo en la versión 0.1.1 (25/11/2026 - 19:02 -03:00)
 
-Build 4 | 25 de noviembre de 2026 a las 13:03 (America/Sao_Paulo) — Versión 0.1.0
-- Inventario: se añadió un menú propio con las categorías Inventario completo, Armas y munición, Objetos médicos y Monedas; navegación con flechas, Inicio/Fin y Tab/Mayús+Tab; Espacio lee las descripciones disponibles; sonidos de apertura, cierre y cambio de categoría.
-- Favoritos: se eliminó la navegación del inventario rápido con Tab. Mayús+1 a Mayús+0 asigna el objeto enfocado en el inventario a una ranura vacía; las teclas 1 a 0 usan el objeto guardado. Cada ranura admite un solo objeto y los favoritos se guardan por personaje.
-- Ascensor y tienda: se guardan y restauran el estado dentro del ascensor y el piso de destino. Al salir, ahora suenan la apertura y el cierre de la puerta. Espacio en la tienda lee la descripción del producto seleccionado.
-- Traducción y audio: se añadieron textos del inventario en los tres idiomas y traducciones de los nombres de objetos y zonas existentes. El sonido de cierre del menú comienza inmediatamente al salir con Escape.
-
-Build 3 | 25 de noviembre de 2026 a las 11:41 (America/Sao_Paulo) — Versión 0.9
-- Limpieza del mapa: se eliminaron de la Zona Segura las escaleras temporales, el ascensor, la plataforma y la entrada de la tienda del segundo piso; se eliminó del constructor y del cargador de mapas la función obsoleta de cuadrado de texto.
-- Rastreo: N informa cada NPC vivo a una distancia de hasta 30 casillas, del más cercano al más lejano, con su distancia y dirección actuales. X muestra los puntos de viaje accesibles; al seleccionar uno, una señal espacial suena en bucle hasta que el jugador llega al área, donde se reproduce un sonido de llegada distinto. Textos añadidos en español, portugués e inglés.
-- Audio y mapas: al salir del menú principal se reproduce el sonido de cierre. Los sonidos de la puerta se posicionan en el punto más cercano al jugador a lo largo de toda la pared. Se actualizó el paquete cifrado de mapas y el paquete de sonidos contiene la carpeta local completa del proyecto, sin fusionarla con el paquete anterior.
-
-Build 2 | 25 de noviembre de 2026 a las 10:48 (America/Sao_Paulo) — Versión 0.9
-- Zona Segura: establecida como mapa predeterminado para partidas nuevas y reapariciones; se añadieron una escalera y un ascensor entre Z=0 y Z=100, un piso superior y una puerta ancha en la futura entrada de la tienda. Las zonas y los nombres de los pisos están traducidos al portugués, inglés y español.
-- Movimiento vertical: se eliminaron la inmersión con Page Down, el audio submarino y el filtro paso bajo submarino. Page Up y Page Down ahora mueven al jugador verticalmente solo dentro de una escalera; el ascensor sigue viajando entre pisos.
-- Audio de puertas: los sonidos de apertura y cierre ya no reciben el filtro acústico exterior de las habitaciones.
-Build 1 | 25 de noviembre de 2026 a las 09:57 (America/Sao_Paulo) — Versión 0.9
-- Acústica y puertas: documentado el filtro paso bajo de sonidos exteriores en XANGE.LOG; se eliminaron los avisos hablados al abrir/cerrar puertas y al alternar el filtro; se quitó la puerta de prueba del Bosque.
-- Actualizador: se eliminó la opción para ver novedades; Enter o Y inicia la descarga y Escape la cancela. Los pitidos son más nítidos y tienen menos volumen.
-- Versión: actualizada a 0.9.
-Build 5 | 25 de noviembre de 2026 a las 09:50 (America/Sao_Paulo) — Versión 0.8
-- Acústica interior: las puertas pueden definir el volumen de una habitación y la frecuencia de corte paso bajo de los sonidos exteriores. Cuando el jugador está dentro y todas las puertas asociadas a la habitación están cerradas, los efectos espaciales y ambientales exteriores se filtran; los sonidos colocados dentro permanecen nítidos. Al abrir una puerta de la habitación o salir, se quita el filtro.
-
-Build 4 | 24 de noviembre de 2026 a las 20:50 (America/Sao_Paulo) — Versión 0.8
-- Puertas: se añadieron puertas offline configuradas en el mapa, con bloqueo físico, interacción con Alt+Enter desde ambos lados, sonidos espaciales de apertura y cierre, selección del material y sonido de bloqueo, intervalo entre interacciones y cierre automático opcional cuando el paso queda libre.
-
-Mapas 0.7 build 1 | 24 de noviembre de 2026 a las 20:20 (America/Sao_Paulo)
-- Mapa Robots World: se añadió un ascensor de prueba funcional entre la Planta Baja y la Terraza de Observación, con plataforma elevada, trayecto de 3 segundos y sonidos de apertura, cierre y movimiento.
-
-Build 2 | 24 de noviembre de 2026 a las 19:39 (America/Sao_Paulo) — Versión 0.7
-- Actualizador: al pasar a otra versión del juego, el número de compilación guardado ahora se restablece al de la versión compilada para detectar correctamente futuras actualizaciones.
-
-Build 1 | 24 de noviembre de 2026 a las 19:29 (America/Sao_Paulo) — Versión 0.7
-- Tiendas: se eliminó el sonido de bienvenida; al entrar, el juego saluda y pide elegir una categoría, sin anunciar ni seleccionar automáticamente la primera.
-- Instalación de sonidos: el juego descarga ahora un ZIP que contiene solo la carpeta `sounds/`, conserva el paquete dentro de `update_temp` y elimina los archivos temporales tras extraer e instalar los sonidos.
-
-Build 8 | 24 de noviembre de 2026 a las 19:01 (America/Sao_Paulo)
-- Ascensores: se corrigió la escritura del identificador y los nombres de los pisos; los sonidos de puertas y viaje ahora se eligen con los selectores de carpetas y archivos del juego.
-- Viaje: si solo existe un destino distinto del piso actual, Enter inicia el trayecto sin abrir el panel; con varios destinos, el panel sigue disponible. La tecla de interacción también abre las puertas para salir automáticamente en el punto configurado.
-- Primera instalación de sonidos: el instalador extrae solo las entradas `sounds/` del ZIP completo, reduciendo el trabajo temporal; valida la copia y restaura la carpeta anterior si falla el reemplazo.
-
-Build 7 | 24 de noviembre de 2026 a las 18:41 (America/Sao_Paulo)
-- Ascensores: el constructor configura una columna vertical con dos o más pisos, posiciones de la puerta y la cabina, duración en milisegundos y sonidos de apertura, cierre y viaje.
-- Juego: Alt+Enter permite entrar en la cabina, abrir el panel de pisos y, tras el viaje temporizado, abrir las puertas para salir en el destino elegido; el movimiento y las caídas se bloquean dentro de la cabina.
-
-Build 6 | 24 de noviembre de 2026 a las 17:50 (America/Sao_Paulo)
-- Controles: Mayús+Enter interactúa con las tiendas colocadas en el mapa; Enter usa el objeto seleccionado del inventario rápido y Alt+Enter sigue comprobando los puntos de viaje.
-
-Build 5 | 24 de noviembre de 2026 a las 12:31 (America/Sao_Paulo)
-- Armas: los disparos ahora alcanzan al NPC visible más cercano dentro del radio configurado, sin exigir alineación cardinal ni diagonal; las paredes siguen bloqueando la línea de visión.
-- Distribución: los paquetes con y sin sonidos no contienen directorios vacíos; la publicación conserva únicamente estos dos ZIP.
-- Instalación de sonidos: el actualizador extrae solo la carpeta de sonidos del paquete completo, sin reemplazar el ejecutable ni la configuración.
-
-Build 4 | 24 de noviembre de 2026 a las 12:09 (America/Sao_Paulo)
-- Tiendas: al elegir una tienda para editarla se abre directamente su edición y se cierra el administrador general al terminar; también se pueden editar tiendas sin categorías.
-- Monedas: Gold y Golden Crystal son las únicas monedas; se eliminaron Diamond y Silver, sus recompensas y los saldos antiguos guardados.
-- Interfaz y documentación: los nombres de las monedas se traducen en los tres idiomas, se ajustaron los saldos y se actualizaron los READMEs.
-
-Build 3 | 24 de noviembre de 2026 a las 12:44 (America/Sao_Paulo)
-- Menú de mapas para desarrolladores: selección persistente del mapa predeterminado solo al ejecutar desde el código fuente; las partidas nuevas de la versión compilada comienzan en el bosque.
-- Armas: se eliminó el sonido de disparo lejano del sistema, del editor y de los 77 archivos WPM; se mantienen los sonidos de disparo principal, impacto y rebote.
-- Actualizador: se eliminó la música y se redujo ligeramente el volumen de los pitidos sin cambiar sus frecuencias; se eliminaron traducciones obsoletas de opciones de descarga.
-
-The Confront — Historial de cambios
-Versión 0.6 | 24 de noviembre de 2026 a las 11:16 (America/Sao_Paulo)
-
-- Tiendas: cada tienda ahora agrupa sus propias categorías; Enter abre una tienda colocada en el mapa, las flechas recorren sus categorías y Tab abre los artículos de la categoría seleccionada.
-- TravelPoint: Alt+Enter comprueba la posición en silencio cuando no hay un punto de viaje válido.
-- Actualizador: antes de confirmar, muestra los cambios de esta versión en un campo multilínea nativo; los paquetes del juego, contenido, mapas y sonidos usan archivos y validaciones separados.
-- Instalación: los archivos cifrados de contenido y mapas se validan y preparan antes de reemplazarlos; si falla la instalación, se restaura el archivo anterior.
-- Sitio web: actualizadas las páginas de inicio y proyectos y añadida una página de presentación y manual de The Confront con descargas de la versión 0.6.
-- Distribución: los paquetes completos se preparan sin código fuente ni datos guardados de los jugadores.
-Compilación 1 | 24 de noviembre de 2026 a las 12:05 (America/Sao_Paulo)
-- Las actualizaciones del juego ahora usan un ZIP separado con el ejecutable, las bibliotecas y los paquetes cifrados de contenido y mapas; la carpeta de sonidos se conserva y sigue descargándose automáticamente cuando falta.
-- Se aumentó el volumen de los pitidos de progreso del actualizador sin cambiar la frecuencia.
-- Se corrigieron las etiquetas de tienda y punto de viaje del constructor y se tradujo el aviso de munición a los tres idiomas.
-
-
-Compilación 1 | 24 de noviembre de 2026 a las 12:05 (America/Sao_Paulo)
-- Las actualizaciones del juego ahora usan un ZIP separado con el ejecutable, las bibliotecas y los paquetes cifrados de contenido y mapas. Se conserva la carpeta de sonidos existente; si falta, el juego sigue ofreciendo la descarga automática por separado.
-- Se aumentó el volumen de los pitidos de progreso del actualizador sin cambiar la frecuencia.
-- Se corrigieron las etiquetas de tiendas y puntos de viaje del constructor y se tradujo el aviso de munición a los tres idiomas.
-
-
-
-Compilación 2 | 24 de noviembre de 2026 a las 12:29 (America/Sao_Paulo)
-- Se corrigieron la extracción y la validación del paquete publicado de actualización del juego.
-- Las actualizaciones ahora se extraen e instalan mediante procesos ocultos; no se abre ninguna ventana de terminal y se conserva la carpeta de sonidos existente.
-- La confirmación ahora separa Ver novedades, Actualizar ahora y Cancelar.
-- El administrador permite crear y editar tiendas y asignar categorías a tiendas existentes.
-
-Build 1 | 24 de noviembre de 2026 a las 19:22 (America/Sao_Paulo) — Versión 0.7
-- Tiendas: se eliminó el sonido de bienvenida; al entrar, el juego saluda y pide elegir una categoría, sin anunciar ni seleccionar automáticamente la primera.
-- Instalación de sonidos: el juego descarga ahora un ZIP que contiene solo la carpeta `sounds/`, conserva el paquete dentro de `update_temp` y elimina los archivos temporales tras extraer e instalar los sonidos.
-
-Build 3 | 24 de noviembre de 2026 a las 20:32 (America/Sao_Paulo) — Versión 0.7
-- Ascensores: el sonido de cierre ya no se repite al elegir el destino; el sonido de movimiento comienza de inmediato y se repite durante el trayecto.
-- Actualizaciones: se publicó un nuevo paquete con los sonidos actuales y un nuevo `maps.dat` cifrado, sin el ascensor de prueba eliminado de Robots World.
-
-
-
-
-
-
+Correcciones de Jugabilidad, Física y Audio:
+- Corrección completa del salto (Stefan y Annie):
+  * Se corrigió el problema por el cual el personaje solo subía 1 coordenada en el eje Z y quedaba atrapado caminando en el aire al saltar mientras corría.
+  * Se eliminó la llamada prematura a checkforplatforms() durante la fase de ascenso, que interrumpía el salto 1 unidad por encima de plataformas con grosor en Z o escaleras.
+  * Se eliminó el recorte prematuro de la altura del salto por maxz tanto en el salto como en el movimiento horizontal aéreo, asegurando que el personaje suba de 0 hasta 5 (jumpheight = 5), pase por el ápice y descienda hasta el suelo o plataforma.
+  * Se organizó la máquina de estados del salto para evitar conflictos en el mismo frame y fugas de estado entre saltos consecutivos o al usar ascensores.
+- Anuncio de área desconocida en mapas sin zonas:
+  * Se corrigió el sistema de ubicación para que, cuando un mapa no tenga zonas definidas, el juego anuncie correctamente "Área desconocida" al cargar el mapa y al consultar la ubicación (tecla Z).
+- Corrección de caída libre:
+  * Reinicio correcto del temporizador y del contador de caída al iniciar una caída fuera del salto o al salir de una plataforma.
+- Tecla de salto, inventario y escaleras:
+  * El salto ahora respeta la tecla configurable de salto además de la Barra Espaciadora.
+  * Se corrigieron las rutas de sonido al abrir (invopen.ogg), cerrar (invclose.ogg) y navegar (invmove.ogg a invmove5.ogg) en el inventario.
+  * Se corrigió la comprobación de salto en escaleras y se tradujo el aviso al intentar subir escaleras estando sentado.
+- Limpieza de código muerto:
+  * Se eliminaron funciones y variables sin referencia en varios módulos y se unificó la comprobación de integridad.

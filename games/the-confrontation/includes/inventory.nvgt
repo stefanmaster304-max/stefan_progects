@@ -402,7 +402,7 @@ void play_inventory_effect(const string&in filename)
 
 void play_inventory_navigation_sound()
 {
-	string[] names = {"inv move1.ogg", "inv move2.ogg", "inv move3.ogg"};
+	string[] names = {"invmove.ogg", "invmove2.ogg", "invmove3.ogg", "invmove4.ogg", "invmove5.ogg"};
 	string name = names[uint(inventory_move_sound_index % int(names.length()))];
 	string path = "sounds/players/" + current_player_character + "/" + name;
 	if (!file_exists(path)) path = "sounds/players/hane/" + name;
@@ -433,7 +433,7 @@ void inventory_menu()
 	load_all_items_config();
 	load_all_weapons_wpm();
 	load_all_packages();
-	play_inventory_effect("inv open.ogg");
+	play_inventory_effect("invopen.ogg");
 	inventory_use_pending = false;
 	inventory_closed_by_enter_this_frame = false;
 	int position = 0;
@@ -447,7 +447,7 @@ void inventory_menu()
 		update_game_world();
 		if (key_pressed(KEY_ESCAPE) || kb_pressed("menu_back"))
 		{
-			play_inventory_effect("inv close.ogg");
+			play_inventory_effect("invclose.ogg");
 			inventory_selected_item = "";
 			inventory_use_pending = false;
 			return;
@@ -461,7 +461,7 @@ void inventory_menu()
 			}
 			inventory_use_pending = true;
 			inventory_closed_by_enter_this_frame = true;
-			play_inventory_effect("inv close.ogg");
+			play_inventory_effect("invclose.ogg");
 			return;
 		}
 		if (key_pressed(KEY_TAB))

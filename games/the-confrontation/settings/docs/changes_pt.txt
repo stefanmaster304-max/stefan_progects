@@ -1,106 +1,20 @@
-Build 11 | 25 de novembro de 2026 às 18:08 (America/Sao_Paulo) — Versão 0.1.0
-- Salto: restaurado o fluxo de ativação e movimento vertical da cópia antiga de referência. Removidas a solicitação pendente e a colisão alternativa durante a subida introduzidas nas tentativas anteriores.
+The Confront - Registro de Alterações (Português)
 
-Build 5 | 25 de novembro de 2026 às 16:50 (America/Sao_Paulo) — Versão 0.1.0
-- Inventário: Enter fecha o inventário preservando o item em foco; o Enter seguinte no jogo equipa ou usa o item e limpa a seleção pendente. Shift+1 a Shift+0 só atribui favoritos enquanto o inventário está aberto e há um item em foco.
-- Documentação: controles atualizados em português, inglês e espanhol.
+Novo na versão 0.1.1 (25/11/2026 - 19:02 -03:00)
 
-Build 4 | 25 de novembro de 2026 às 13:03 (America/Sao_Paulo) — Versão 0.1.0
-- Inventário: adicionado menu próprio com categorias de inventário completo, armas e munições, itens médicos e moedas; navegação por setas, Home/End e Tab/Shift+Tab, leitura de descrições com Espaço e sons de abertura, fechamento e troca de categoria.
-- Favoritos: removida a navegação do inventário rápido com Tab. Shift+1 a Shift+0 atribui o item em foco no inventário a um espaço favorito livre; as teclas 1 a 0 usam o item salvo. Cada espaço aceita apenas um item, e os favoritos são salvos por personagem.
-- Elevador e loja: o estado de dentro do elevador e o andar de destino agora são salvos e restaurados. Ao sair, o elevador toca abertura e fechamento da porta. Espaço na loja lê a descrição do produto em foco.
-- Tradução e áudio: adicionados textos do inventário nos três idiomas e traduções dos nomes de itens e zonas existentes. O som de fechamento do menu é acionado imediatamente ao sair com Escape.
-
-Build 3 | 25 de novembro de 2026 às 11:41 (America/Sao_Paulo) — Versão 0.9
-- Limpeza do mapa: removidos da Zona Segura a escada temporária, o elevador, a plataforma e a entrada da loja no segundo andar; removido o recurso obsoleto de quadrado de texto do construtor e do carregador de mapas.
-- Rastreamento: N informa cada NPC vivo em até 30 ladrilhos, do mais próximo ao mais distante, com a distância e a direção atuais. X lista os pontos de viagem acessíveis; ao selecionar um, um sinal espacial toca em loop até o jogador chegar à área, quando um som diferente é reproduzido. Textos adicionados em português, inglês e espanhol.
-- Áudio e mapas: a saída do menu principal reproduz o som de fechamento. Os sons da porta ficam posicionados no ponto mais próximo ao jogador em toda a área da parede. O pacote criptografado de mapas foi atualizado, e o pacote de sons contém a pasta local completa do projeto, sem mesclar o pacote antigo.
-
-Build 2 | 25 de novembro de 2026 às 10:48 (America/Sao_Paulo) — Versão 0.9
-- Zona Segura: definida como mapa padrão para novas partidas e reaparecimento; adicionados escada e elevador entre Z=0 e Z=100, piso superior e porta larga na entrada da futura loja. Zonas e nomes dos andares são localizados em português, inglês e espanhol.
-- Movimento vertical: removidos o mergulho por Page Down, o áudio e o filtro passa-baixa debaixo d’água. Page Up e Page Down continuam movendo o jogador apenas dentro de uma escada; o elevador mantém sua viagem entre os andares.
-- Áudio de portas: abertura e fechamento não recebem mais o filtro acústico externo das salas.
-Build 1 | 25 de novembro de 2026 às 09:57 (America/Sao_Paulo) — Versão 0.9
-- Acústica e portas: documentado o filtro passa-baixa de sons externos no XANGE.LOG; removidos avisos falados ao abrir/fechar portas e ao alternar a filtragem; retirada a porta de teste da Floresta.
-- Atualizador: removida a opção para ver novidades; Enter ou Y inicia o download e Escape cancela. Bips mais definidos com volume reduzido.
-- Versão: atualizada para 0.9.
-Build 5 | 25 de novembro de 2026 às 09:50 (America/Sao_Paulo) — Versão 0.8
-- Acústica interna: as portas podem definir o volume de um ambiente e a frequência de corte passa-baixa dos sons externos. Quando o jogador está dentro e todas as portas associadas ao ambiente estão fechadas, os efeitos espaciais e ambientes externos são filtrados; os sons posicionados no interior permanecem nítidos. Abrir uma porta do ambiente ou sair dele remove o filtro.
-
-Build 4 | 24 de novembro de 2026 às 20:50 (America/Sao_Paulo) — Versão 0.8
-- Portas: adicionadas portas offline configuradas no mapa, com bloqueio físico, interação por Alt+Enter dos dois lados, sons espaciais de abertura e fechamento, seleção do material e som de bloqueio, intervalo entre interações e fechamento automático opcional após desocupar a passagem.
-
-Maps 0.7 build 1 | 24 de novembro de 2026 às 20:20 (America/Sao_Paulo)
-- Mapa Robots World: adicionado um elevador de teste funcional entre o Térreo e o Deck de Observação, com plataforma elevada, viagem de 3 segundos e sons de abrir, fechar e movimento.
-
-Build 2 | 24 de novembro de 2026 às 19:39 (America/Sao_Paulo) — Versão 0.7
-- Atualizador: ao migrar de uma versão do jogo para outra, o número de build agora é reiniciado para o build compilado, permitindo detectar corretamente as próximas atualizações da nova versão.
-
-Build 1 | 24 de novembro de 2026 às 19:29 (America/Sao_Paulo) — Versão 0.7
-- Lojas: removido o som de boas-vindas; ao entrar, o jogo fala uma saudação e pede que o jogador escolha uma categoria, sem anunciar nem selecionar automaticamente a primeira.
-- Instalação de sons: o jogo baixa agora um ZIP exclusivo da pasta `sounds/`, guarda o pacote dentro de `update_temp` e limpa os arquivos temporários após extração e instalação.
-
-Build 8 | 24 de novembro de 2026 às 19:01 (America/Sao_Paulo)
-- Elevadores: corrigida a digitação do ID e do nome dos andares; sons de porta e viagem agora são escolhidos pelos seletores de pasta e arquivo já usados pelo jogo.
-- Viagem: ao existir apenas um destino diferente do andar atual, Enter inicia a viagem sem abrir o painel; com vários destinos, o painel continua disponível. O atalho também abre as portas para a saída automática no ponto configurado.
-- Sons do primeiro uso: o instalador extrai somente os arquivos de `sounds/` do ZIP completo, reduzindo o trabalho temporário; cópia validada e troca da pasta com restauração segura em caso de falha.
-
-Build 7 | 24 de novembro de 2026 às 18:41 (America/Sao_Paulo)
-- Elevadores: o construtor permite configurar uma coluna vertical com dois ou mais andares, posições da porta e da cabine, duração em milissegundos e sons de abrir, fechar e viagem.
-- Jogo: Alt+Enter entra na cabine, abre o painel para escolher o destino e, após a viagem sonora, abre as portas para sair no andar selecionado; movimento e queda ficam bloqueados dentro da cabine.
-
-Build 6 | 24 de novembro de 2026 às 17:50 (America/Sao_Paulo)
-- Controles: Shift+Enter interage com lojas posicionadas no mapa; Enter usa o item selecionado no inventário rápido e Alt+Enter continua verificando pontos de viagem.
-
-Build 5 | 24 de novembro de 2026 às 12:31 (America/Sao_Paulo)
-- Armas: os disparos agora acertam o NPC visível mais próximo dentro do raio de alcance configurado, sem depender de alinhamento cardinal ou diagonal; paredes continuam bloqueando a linha de visão.
-- Distribuição: os pacotes sem sons e com sons não incluem diretórios vazios; a release mantém somente esses dois ZIPs.
-- Instalação dos sons: o atualizador extrai somente a pasta de sons do pacote completo, sem sobrescrever o executável ou as configurações.
-
-Build 4 | 24 de novembro de 2026 às 12:09 (America/Sao_Paulo)
-- Lojas: selecionar uma loja para editar agora abre diretamente a edição daquela loja e encerra o menu geral após sair; lojas sem categorias também podem ser editadas.
-- Moedas: Gold e Golden Crystal são as únicas moedas; retiradas Diamond e Silver, seus drops e saldos antigos dos saves.
-- Interface e documentação: nomes de moeda traduzidos nos três idiomas, saldos ajustados e READMEs atualizados.
-
-Build 3 | 24 de noviembre de 2026 às 12:44 (America/Sao_Paulo)
-- Menu de mapas para desenvolvedores: seleção persistente do mapa padrão somente ao executar pelo código-fonte; novas partidas da versão compilada começam na floresta.
-- Armas: removido o som de disparo distante do runtime, do editor e dos 77 arquivos WPM; mantidos disparo principal, impacto e ricochete.
-- Atualizador: removida a música e reduzido levemente o volume dos bipes, sem mudar suas frequências; removidas opções antigas de download que não eram mais usadas.
-
-The Confront — Histórico de alterações
-Versão 0.6 | 24 de novembro de 2026 às 11:16 (America/Sao_Paulo)
-
-- Lojas: cada loja agora reúne categorias próprias; no mapa, Enter abre a loja posicionada, as setas percorrem suas categorias e Tab abre os itens da categoria.
-- TravelPoint: Alt+Enter verifica a posição sem emitir mensagens quando não há um ponto de viagem válido.
-- Atualizador: antes da confirmação, exibe as alterações da versão em um campo multilinha nativo; pacotes de jogo, conteúdo, mapas e sons usam arquivos e validações separados.
-- Instalação: arquivos criptografados de conteúdo e mapas são validados e preparados antes da substituição; em falha, o arquivo anterior é restaurado.
-- Site: atualizadas as páginas inicial e de projetos e adicionada uma página de apresentação e manual de The Confront com downloads da versão 0.6.
-- Distribuição: pacotes completos são preparados sem código-fonte nem dados salvos de jogadores.
-Build 1 | 24 de novembro de 2026 às 12:05 (America/Sao_Paulo)
-- As atualizações do jogo agora usam um ZIP separado com o executável, as bibliotecas e os bundles criptografados de conteúdo e mapas; a pasta de sons é preservada e continua sendo baixada automaticamente quando estiver ausente.
-- Aumentado o volume dos bipes de progresso do atualizador, sem alterar a frequência.
-- Corrigidos os rótulos de loja e ponto de viagem no construtor e traduzida a fala de munição nos três idiomas.
-
-
-Build 1 | 24 de novembro de 2026 às 12:05 (America/Sao_Paulo)
-- As atualizações do jogo agora usam um ZIP separado com executável, bibliotecas e bundles criptografados de conteúdo e mapas. A pasta de sons existente é preservada; se estiver ausente, o jogo continua oferecendo o download automático separado dos sons.
-- Aumentado o volume dos bipes de progresso do atualizador, sem alterar a frequência.
-- Corrigidos os rótulos de lojas e TravelPoints no construtor e traduzida a fala de munição nos três idiomas.
-
-
-
-Build 2 | 24 de novembro de 2026 às 12:29 (America/Sao_Paulo)
-- Corrigida a extração e validação do pacote de atualização do jogo publicado.
-- As atualizações agora são extraídas e instaladas em processos ocultos; nenhuma janela de terminal é aberta e a pasta de sons existente é preservada.
-- A confirmação da atualização agora separa Ver o que há de novo, Atualizar agora e Cancelar.
-- O gerenciador permite criar e editar lojas e associar categorias a lojas existentes.
-
-Build 3 | 24 de novembro de 2026 às 20:32 (America/Sao_Paulo) — Versão 0.7
-- Elevadores: o som de fechamento não se repete ao escolher o destino; o som de movimento começa imediatamente e continua em loop durante o trajeto.
-- Atualizações: publicado um novo pacote com os sons atuais e um novo `maps.dat` criptografado, sem o elevador de teste removido de Robots World.
-
-
-
-
-
-
+Correções de Jogabilidade, Física e Áudio:
+- Correção completa do pulo (Stefan e Annie):
+  * Corrigido o problema em que o personagem subia apenas 1 coordenada no eixo Z e ficava preso andando no ar ao pular enquanto corria.
+  * Removida a chamada prematura de checkforplatforms() durante a fase de subida, que interrompia o pulo na primeira unidade acima de plataformas com espessura em Z ou escadas.
+  * Removido o corte prematuro da altura do pulo pelo maxz do mapa tanto no pulo quanto na movimentação horizontal aérea, garantindo que o personagem suba corretamente de 0 até 5 (jumpheight = 5), passe pelo ápice e desça até o solo ou plataforma.
+  * Organizada a máquina de estados do pulo para evitar conflitos no mesmo frame e vazamento de estado entre pulos consecutivos ou ao usar elevadores.
+- Anúncio de área desconhecida em mapas sem zona:
+  * Corrigido o sistema de localização para que, quando um mapa não possuir zonas definidas, o jogo anuncie corretamente "Área desconhecida" ao carregar o mapa e ao consultar a localização (tecla Z).
+- Correção da queda livre:
+  * Reinicialização correta do temporizador e do contador de queda ao iniciar uma queda fora do pulo ou ao sair de uma plataforma.
+- Atalho de pulo, inventário e escadas:
+  * O comando de pulo agora respeita a tecla configurada para pular (além da Barra de Espaço).
+  * Corrigidos os sons de abertura (invopen.ogg), fechamento (invclose.ogg) e movimentação (invmove.ogg a invmove5.ogg) do inventário.
+  * Corrigida a verificação de pulo em escadas e traduzida a mensagem de aviso ao tentar subir escadas sentado.
+- Limpeza de código morto:
+  * Removidas funções e variáveis não referenciadas em diversos módulos e unificada a verificação de integridade.

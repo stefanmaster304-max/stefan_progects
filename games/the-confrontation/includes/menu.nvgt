@@ -1,10 +1,3 @@
-void push_playing_music_volume(sound@ snd)
-{
-	if (@snd == null) return;
-	if (!snd.active) return;
-	snd.set_position(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-}
-
 string menu_music_choice = "random";
 
 string[] get_menu_music_list()
@@ -43,18 +36,6 @@ string get_active_menu_music()
 	string[] tracks = get_menu_music_list();
 	if (tracks.length() > 0) return "sounds/menu sounds/" + tracks[0];
 	return "";
-}
-
-void play_main_menu_music()
-{
-	string mpath = get_active_menu_music();
-	m.add_music(mpath);
-	m.play_music();
-}
-
-void fade_main_menu_music(double delay = 15)
-{
-	m.fade_music(int(delay));
 }
 
 void stop_main_menu_music()
