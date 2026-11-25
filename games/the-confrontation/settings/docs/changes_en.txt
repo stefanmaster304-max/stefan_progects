@@ -1,3 +1,6 @@
+Build 8 | November 25, 2026 at 17:38 (America/Sao_Paulo) — Version 0.1.0
+- Jump restored: activation is back in its original post-horizontal-movement stage and no longer changes height in the same frame. Space is read directly there; air speed and timer-based vertical movement are preserved. Platform footsteps remain silent while airborne.
+
 Build 7 | November 25, 2026 at 17:27 (America/Sao_Paulo) — Version 0.1.0
 - Jump input: Space is now checked after NVGT processes the input cycle, alongside movement. Removed the early key snapshot that could miss the movement frame and delay takeoff while running.
 

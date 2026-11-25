@@ -1,3 +1,6 @@
+Build 8 | 25 de noviembre de 2026 a las 17:38 (America/Sao_Paulo) — Versión 0.1.0
+- Salto restaurado: la activación vuelve a su etapa original, después del desplazamiento horizontal, sin cambiar la altura en el mismo cuadro. Espacio se consulta directamente en esa etapa; se conservan la velocidad aérea y el movimiento vertical por temporizador. Los pasos de plataforma permanecen silenciados mientras el personaje está en el aire.
+
 Build 7 | 25 de noviembre de 2026 a las 17:27 (America/Sao_Paulo) — Versión 0.1.0
 - Entrada del salto: ahora se consulta Espacio después del ciclo de entrada de NVGT, junto con el movimiento. Se eliminó la captura anticipada que podía perder el evento del cuadro de movimiento y retrasar el salto mientras se corre.
 
