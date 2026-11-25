@@ -72,7 +72,6 @@
     "wall_title": "Add Wall",
     "safe_zone_title": "Add Safe Zone",
     "text_zone_title": "Add Text Zone",
-    "text_square_title": "Add Text Square",
     "staircase_title": "Add Staircase",
     "zone_name_prompt": "Zone Name / Announcement Text",
     "sound_ambience_title": "sound ambience",
@@ -97,7 +96,6 @@
     "add_staircase": "Add Staircase",
     "add_safe_zone": "Add Safe Zone",
     "add_text_zone": "Add Zone",
-    "add_text_square": "Add Text Square",
     "create_map_button": "Create Map",
     "coords_empty": "Coordinates cannot be empty.",
     "name_required": "Name is required.",
@@ -121,7 +119,6 @@
       "safe_zone": "safe zone - add safe zones where combat damage is disabled",
       "text_zone": "text zone - add trigger zones that display or speak text when entered",
       "spawnpoint": "spawnpoint - set the default player spawn coordinates on this map",
-      "text_square": "text square - add text zones that speak text on specific coordinates",
       "items_manager": "items manager - add, edit, remove and create new items",
       "package_manager": "package manager - create, edit, view and delete packages",
       "item_spawner": "item spawner - configure item drops and map pickup spawners",
@@ -136,6 +133,27 @@
       "elevator": "Add an elevator to this map",
       "door": "Add a door to this map"
     }
+  },
+  "tracker": {
+    "no_npcs": "There are no NPCs around you.",
+    "npc_entry": "&1 is &2 tiles away, &3",
+    "direction_ahead": "straight ahead",
+    "direction_ahead_right": "ahead and to the right",
+    "direction_right": "to the right",
+    "direction_behind_right": "behind and to the right",
+    "direction_behind": "behind you",
+    "direction_behind_left": "behind and to the left",
+    "direction_left": "to the left",
+    "direction_ahead_left": "ahead and to the left",
+    "choose_travel_point": "Which travel point do you want to track?",
+    "no_travel_points": "There are no accessible travel points on this map.",
+    "travel_point_item": "&1, at &2, &3, &4, destination &5",
+    "unnamed_point": "Unnamed travel point",
+    "stop_tracking": "Stop tracking",
+    "tracking_started": "Tracking &1.",
+    "tracking_stopped": "Travel point tracking stopped.",
+    "arrived": "You have reached &1.",
+    "sound_unavailable": "The travel point beacon could not be loaded."
   },
   "form": {
     "min_x": "Minimum X",
@@ -558,7 +576,9 @@
     "panel_intro": "Elevator panel. Choose a destination floor.",
     "moving": "The elevator is traveling to &1.",
     "arrived": "The elevator arrived at floor &1. Press Enter to open the doors and exit.",
-    "exited": "You exited the elevator on floor &1."
+    "exited": "You exited the elevator on floor &1.",
+    "ground_floor": "Ground floor",
+    "second_floor": "Second floor"
   },
   "sound_picker": {
     "no_folders": "No sound folders were found.",

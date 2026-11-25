@@ -61,6 +61,13 @@ map_elevator_floor@ find_map_elevator_floor(const string&in elevator_id, const s
 	return null;
 }
 
+string localize_elevator_floor_name(const string&in floor_name)
+{
+	if (floor_name == "@elevator.ground_floor") return tr("elevator.ground_floor");
+	if (floor_name == "@elevator.second_floor") return tr("elevator.second_floor");
+	return floor_name;
+}
+
 void parse_map_elevator(string[]@ fields)
 {
 	if (fields is null || fields.length() < 6) return;
@@ -151,13 +158,13 @@ void move_elevator_car(map_elevator_definition@ elevator, map_elevator_floor@ de
 	update_elevator_audio_listeners();
 	player_elevator_floor = destination.name;
 	elevator_arrived_waiting_for_exit = true;
-	speak(tr("elevator.arrived", {destination.name}));
+	speak(tr("elevator.arrived", {localize_elevator_floor_name(destination.name)}));
 }
 
 void start_elevator_trip(map_elevator_definition@ elevator, map_elevator_floor@ destination)
 {
 	if (elevator is null || destination is null) return;
-	speak(tr("elevator.moving", {destination.name}));
+	speak(tr("elevator.moving", {localize_elevator_floor_name(destination.name)}));
 	move_elevator_car(elevator, destination);
 }
 
@@ -191,7 +198,7 @@ bool try_use_elevator_at_player()
 			check_map_exploration(mapname, int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)));
 			save_location();
 			update_elevator_audio_listeners();
-			speak(tr("elevator.exited", {current_floor.name}));
+			speak(tr("elevator.exited", {localize_elevator_floor_name(current_floor.name)}));
 			return true;
 		}
 
@@ -216,7 +223,7 @@ bool try_use_elevator_at_player()
 
 		setupmenu(false);
 		for (uint i = 0; i < destinations.length(); i++)
-			m.add_item_tts(destinations[i].name, destinations[i].name);
+			m.add_item_tts(localize_elevator_floor_name(destinations[i].name), destinations[i].name);
 		int selected = m.run(tr("elevator.panel_intro"), true);
 		if (selected <= 0 || selected > int(destinations.length())) return true;
 		start_elevator_trip(elevator, destinations[uint(selected - 1)]);

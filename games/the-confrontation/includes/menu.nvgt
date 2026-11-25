@@ -211,6 +211,8 @@ void mainmenu()
 		if (mres <= 0 or menuitem=="exit")
 		{
 			m.fade_music(15);
+			sound menu_close_effect;
+			if (menu_close_effect.load("sounds/menu sounds/close.ogg")) menu_close_effect.play_wait();
 			exit();
 			return;
 		}

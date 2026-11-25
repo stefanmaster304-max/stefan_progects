@@ -72,7 +72,6 @@
     "wall_title": "Adicionar Parede",
     "safe_zone_title": "Adicionar Zona Segura",
     "text_zone_title": "Adicionar Zona de Texto",
-    "text_square_title": "Adicionar Quadrado de Texto",
     "staircase_title": "Adicionar Escada",
     "zone_name_prompt": "Nome da Zona / Texto de Anúncio",
     "sound_ambience_title": "ambiente sonoro",
@@ -97,7 +96,6 @@
     "add_staircase": "Adicionar escada",
     "add_safe_zone": "Adicionar zona segura",
     "add_text_zone": "Adicionar zona",
-    "add_text_square": "Adicionar quadrado de texto",
     "create_map_button": "Criar mapa",
     "coords_empty": "As coordenadas não podem ficar vazias.",
     "name_required": "O nome é obrigatório.",
@@ -121,7 +119,6 @@
       "safe_zone": "zona segura - adicionar zonas seguras onde o dano de combate é desativado",
       "text_zone": "zona de texto - adicionar zonas de gatilho que exibem ou falam texto ao entrar",
       "spawnpoint": "ponto de spawn - definir as coordenadas padrão de spawn do jogador neste mapa",
-      "text_square": "quadrado de texto - adicionar zonas de texto que falam texto em coordenadas específicas",
       "items_manager": "gerenciador de itens - adicionar, editar, remover e criar novos itens",
       "package_manager": "gerenciador de pacotes - criar, editar, visualizar e excluir pacotes",
       "item_spawner": "gerador de itens - configurar drops de itens e geradores de coleta no mapa",
@@ -136,6 +133,27 @@
       "elevator": "Adicionar um elevador a este mapa",
       "door": "Adicionar uma porta ao mapa"
     }
+  },
+  "tracker": {
+    "no_npcs": "Não há NPCs ao seu redor.",
+    "npc_entry": "&1 está a &2 quadrados, &3",
+    "direction_ahead": "logo à frente",
+    "direction_ahead_right": "à frente e à direita",
+    "direction_right": "à direita",
+    "direction_behind_right": "atrás e à direita",
+    "direction_behind": "logo atrás",
+    "direction_behind_left": "atrás e à esquerda",
+    "direction_left": "à esquerda",
+    "direction_ahead_left": "à frente e à esquerda",
+    "choose_travel_point": "O que você deseja rastrear?",
+    "no_travel_points": "Não há pontos de viagem acessíveis neste mapa.",
+    "travel_point_item": "&1, nas coordenadas &2, &3, &4, destino &5",
+    "unnamed_point": "Ponto de viagem sem nome",
+    "stop_tracking": "Parar rastreamento",
+    "tracking_started": "Rastreando &1.",
+    "tracking_stopped": "Rastreamento do ponto de viagem encerrado.",
+    "arrived": "Você chegou a &1.",
+    "sound_unavailable": "Não foi possível carregar o sinal sonoro do ponto de viagem."
   },
   "form": {
     "min_x": "Mínimo X",
@@ -558,7 +576,9 @@
     "panel_intro": "Painel do elevador. Escolha o andar de destino.",
     "moving": "O elevador está indo para &1.",
     "arrived": "O elevador chegou ao andar &1. Pressione Enter para abrir as portas e sair.",
-    "exited": "Você saiu do elevador no andar &1."
+    "exited": "Você saiu do elevador no andar &1.",
+    "ground_floor": "Térreo",
+    "second_floor": "Segundo andar"
   },
   "sound_picker": {
     "no_folders": "Nenhuma pasta de sons foi encontrada.",

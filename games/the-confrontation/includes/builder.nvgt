@@ -13,7 +13,6 @@
 #include "builder/misc/spawnpoint.nvgt"
 
 // Interaction Builders & Runtime
-#include "builder/interaction/text_square.nvgt"
 #include "builder/misc/npc_spawner_builder.nvgt"
 #include "builder/misc/travelpoint_builder.nvgt"
 #include "builder/misc/elevator_builder.nvgt"
@@ -22,7 +21,6 @@
 
 void destroy_all_builder_objects()
 {
-	text_squares.resize(0);
 	destroy_all_ground_items();
 	destroy_all_map_spawners();
 	destroy_all_projectiles();
@@ -47,7 +45,6 @@ void buildmenu()
 		"safe zone - add safe zones where combat damage is disabled",
 		"text zone - add trigger zones that display or speak text when entered",
 		"spawnpoint - set the default player spawn coordinates on this map",
-		"text square - add text zones that speak text on specific coordinates",
 		"items manager - add, edit, remove and create new items",
 		"package manager - create, edit, view and delete packages",
 		"item spawner - configure item drops and map pickup spawners",
@@ -73,7 +70,6 @@ void buildmenu()
 		"safe_zone",
 		"text_zone",
 		"spawnpoint",
-		"text_square",
 		"items_manager",
 		"package_manager",
 		"item_spawner",
@@ -220,7 +216,6 @@ void buildobj(string buildtype)
 	else if (buildtype == "safe_zone") build_safe_zone();
 	else if (buildtype == "text_zone") build_text_zone();
 	else if (buildtype == "spawnpoint") build_spawnpoint();
-	else if (buildtype == "text_square") build_text_square();
 	else if (buildtype == "items_manager") item_chooser();
 	else if (buildtype == "package_manager") package_manager_menu();
 	else if (buildtype == "item_spawner") build_item_spawner();

@@ -41,6 +41,7 @@ string ver = "0.9";
 #include"includes/shield_system.nvgt"
 #include"includes/message_system.nvgt"
 #include"includes/npc_system.nvgt"
+#include "includes/tracking_system.nvgt"
 #include"includes/npc_manager.nvgt"
 #include"includes/verify_files.nvgt"
 #include "includes/world_runtime.nvgt"
@@ -201,40 +202,6 @@ void load_player_vital_sounds()
 	if (hpath != "") heartbeat.load(hpath);
 }
 
-void dive_underwater()
-{
-	if (is_underwater) return;
-	is_underwater = true;
-	string dive_snd = get_platform_sound("deepwater", "fall");
-	if (dive_snd == "") dive_snd = get_platform_sound("underwater", "fall");
-	if (dive_snd != "") p.play_stationary(dive_snd, false);
-
-	underwater_ambient_sound.stop();
-	string uw_amb = get_sound_path("anbients/underwater.ogg;underwater.ogg");
-	if (uw_amb != "" && underwater_ambient_sound.load(uw_amb))
-	{
-		underwater_ambient_sound.volume = ambient_volume - 100.0;
-		underwater_ambient_sound.play_looped();
-	}
-
-	sp.set_lowpass(450.0, 1.2);
-	p.set_lowpass(450.0, 1.2);
-	itempool.set_lowpass(450.0, 1.2);
-}
-
-void surface_from_underwater()
-{
-	if (!is_underwater) return;
-	is_underwater = false;
-	underwater_ambient_sound.stop();
-	string surf_snd = get_platform_sound("deepwater", "land");
-	if (surf_snd == "") surf_snd = get_platform_sound("underwater", "land");
-	if (surf_snd != "") p.play_stationary(surf_snd, false);
-
-	sp.set_lowpass(0);
-	p.set_lowpass(0);
-	itempool.set_lowpass(0);
-}
 timer movetimer, jumptimer, hittimer, healtimer;
 timer idle_scuff_timer;
 bool idle_scuff_primed=false;
@@ -371,7 +338,6 @@ if (!altisdown() && (kb_pressed("reload") or key_pressed(KEY_R)))
 staircasecheckloop();
 szloop();
 checkloc();
-text_square_check();
 ground_item_loop();
 map_item_spawner_loop();
 bodyfallloop();
@@ -408,6 +374,8 @@ if (kb_pressed("kills"))
 {
 speak("" + kills + " kills");
 }
+if (kb_pressed("track_npcs")) track_nearby_npcs();
+if (kb_pressed("track_travel_point")) show_travel_point_tracker_menu();
 if (healtimer.elapsed>=15000 and health<maxhealth)
 {
 healtimer.restart();
@@ -532,91 +500,6 @@ if (vol_up_pressed || vol_down_pressed || music_up_pressed || music_down_pressed
 	}
 }
 
-// Diving & Surfacing (Page Down to descend/dive, Page Up to climb/surface)
-if (!player_inside_elevator && !onstaircase)
-{
-	if (kb_pressed("stairs_down") || key_pressed(KEY_NEXT) || key_pressed(KEY_PAGEDOWN))
-	{
-		if (is_deep_water(int(round(me.x,0)), int(round(me.y,0)), int(round(me.z,0))) || is_deep_water_tile_name(gmt()))
-		{
-			if (!is_underwater)
-			{
-				dive_underwater();
-			}
-			else if (me.z > minz)
-			{
-				movetimer.restart();
-				me.z -= 1;
-				string swim_snd = get_platform_sound("underwater", "step");
-				if (swim_snd == "") swim_snd = get_platform_sound("deepwater", "step");
-				if (swim_snd != "") p.play_stationary(swim_snd, false);
-			}
-		}
-		else if (is_underwater && me.z > minz)
-		{
-			movetimer.restart();
-			me.z -= 1;
-			string swim_snd = get_platform_sound("underwater", "step");
-			if (swim_snd == "") swim_snd = get_platform_sound("deepwater", "step");
-			if (swim_snd != "") p.play_stationary(swim_snd, false);
-		}
-	}
-	else if (is_underwater && (kb_down("stairs_down") || key_down(KEY_NEXT) || key_down(KEY_PAGEDOWN)))
-	{
-		if (movetimer.elapsed >= movetime && me.z > minz)
-		{
-			movetimer.restart();
-			me.z -= 1;
-			string swim_snd = get_platform_sound("underwater", "step");
-			if (swim_snd == "") swim_snd = get_platform_sound("deepwater", "step");
-			if (swim_snd != "") p.play_stationary(swim_snd, false);
-		}
-	}
-	else if (kb_pressed("stairs_up") || key_pressed(KEY_PRIOR) || key_pressed(KEY_PAGEUP))
-	{
-		if (is_underwater)
-		{
-			if (me.z < 0 && me.z < maxz)
-			{
-				movetimer.restart();
-				me.z += 1;
-				string swim_snd = get_platform_sound("underwater", "step");
-				if (swim_snd == "") swim_snd = get_platform_sound("deepwater", "step");
-				if (swim_snd != "") p.play_stationary(swim_snd, false);
-				if (me.z >= 0)
-				{
-					surface_from_underwater();
-				}
-			}
-			else
-			{
-				surface_from_underwater();
-			}
-		}
-	}
-	else if (is_underwater && (kb_down("stairs_up") || key_down(KEY_PRIOR) || key_down(KEY_PAGEUP)))
-	{
-		if (movetimer.elapsed >= movetime)
-		{
-			movetimer.restart();
-			if (me.z < 0 && me.z < maxz)
-			{
-				me.z += 1;
-				string swim_snd = get_platform_sound("underwater", "step");
-				if (swim_snd == "") swim_snd = get_platform_sound("deepwater", "step");
-				if (swim_snd != "") p.play_stationary(swim_snd, false);
-				if (me.z >= 0)
-				{
-					surface_from_underwater();
-				}
-			}
-			else
-			{
-				surface_from_underwater();
-			}
-		}
-	}
-}
 if (kb_pressed("location") or key_pressed(KEY_Z))
 {
 	if (key_down(KEY_LSHIFT) or key_down(KEY_RSHIFT))
@@ -790,7 +673,7 @@ atapex=true;
 }
 }
 }
-if(!player_inside_elevator && jumping==0 && !falling && !is_underwater && me.z > minz && gmt()=="" and dmoving==false)
+if(!player_inside_elevator && jumping==0 && !falling && me.z > minz && gmt()=="" and dmoving==false)
 {
 falling=true;
 fallcounter=0;
@@ -890,11 +773,6 @@ if (target.z > maxz) { target.z = maxz; hit_boundary = true; }
 
 me = target;
 
-if (is_underwater && !is_water_tile(int(me.x), int(me.y), int(me.z)))
-{
-	surface_from_underwater();
-}
-
 if (hit_boundary && target.x == old.x && target.y == old.y && target.z == old.z)
 {
 	return;
@@ -926,7 +804,7 @@ if (lnd != "") p.play_stationary(lnd, false);
 jumping = 0;
 falling = false;
 }
-else if(jumping==0&&!falling&&!is_underwater&&me.z>minz&&gmt()=="" and dmoving==false)
+else if(jumping==0&&!falling&&me.z>minz&&gmt()=="" and dmoving==false)
 {
 falling=true;
 p.play_stationary(get_player_sound("fall"), false);
@@ -1230,7 +1108,7 @@ void reset_location_on_death()
     string save_path = get_game_save_path(current_player_character);
     savedata loc(save_path, GAME_SAVE_KEY);
     loc.load();
-    string default_spawn_map = "florest";
+    string default_spawn_map = "safe_zone";
     string[] available = get_available_maps();
     if (!map_exists_on_disk(default_spawn_map) && available.length() > 0) default_spawn_map = available[0];
     loc.add("mapname", default_spawn_map);
@@ -1262,7 +1140,7 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
 {
     if (current_player_character != "stefan" && current_player_character != "annie" && current_player_character != "ilana")
     {
-        saved_map = "florest";
+        saved_map = "safe_zone";
         string[] available = get_available_maps();
         if (!map_exists_on_disk(saved_map) && available.length() > 0) saved_map = available[0];
         deserialize_discovered_maps("");
@@ -1351,7 +1229,7 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
     }
     else
     {
-        string default_spawn_map = "florest";
+        string default_spawn_map = "safe_zone";
         string[] available = get_available_maps();
         if (!map_exists_on_disk(default_spawn_map) && available.length() > 0) default_spawn_map = available[0];
         saved_map = default_spawn_map;
@@ -1374,14 +1252,7 @@ void load_location(string &out saved_map, int &out lx, int &out ly, int &out lz,
 void tempreset_internal(bool save_state)
 {
     if (save_state) save_current_map_state();
-    else clear_saved_map_state(mapname);
-    if (is_underwater)
-    {
-        underwater_ambient_sound.stop();
-        underwater_ambient_sound.close();
-        is_underwater = false;
-    }
-    killsrcs();
+    else clear_saved_map_state(mapname);killsrcs();
     sp.update_listener_3d(me.x, me.y, me.z, double(facing));
     clear_map_data();
     destroy_all_projectiles();
@@ -1413,7 +1284,6 @@ void tempreset()
     p.destroy_all();
     p.update_listener_3d(0, 0, 0, 0);
     killsrcs();
-    surface_from_underwater();
     tempreset_internal(false);
 }
 bool initial_session_welcome_played = false;
@@ -1455,10 +1325,16 @@ void play_initial_session_welcome_sound()
 	}
 }
 
+string localize_map_zone_label(const string&in label)
+{
+	if (string_starts_with(label, "@")) return tr(label.substr(1));
+	return label;
+}
+
 void announce_zone_on_load()
 {
 	play_initial_session_welcome_sound();
-	string locate=get_zone_at(int(round(me.x,0)),int(round(me.y,0)),int(round(me.z,0)));
+	string locate=localize_map_zone_label(get_zone_at(int(round(me.x,0)),int(round(me.y,0)),int(round(me.z,0))));
 	if (locate!="")
 	{
 		speak(locate);
@@ -1478,7 +1354,7 @@ void announce_zone_on_load()
 void checkloc(bool force_announce=false)
 {
 	if (!is_in_game || mapname == "" || map.length() == 0 || zones.length() == 0) return;
-	string locate=get_zone_at(int(round(me.x,0)),int(round(me.y,0)),int(round(me.z,0)));
+	string locate=localize_map_zone_label(get_zone_at(int(round(me.x,0)),int(round(me.y,0)),int(round(me.z,0))));
 	string loc_text="";
 	if (locate!="")
 	{

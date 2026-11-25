@@ -668,11 +668,7 @@ void update_sources()
 
 void apply_ambient_volume()
 {
-	if (underwater_ambient_sound.active)
-	{
-		underwater_ambient_sound.volume = ambient_volume - 100.0;
-	}
-	for (uint i = 0; i < src.length(); i++)
+for (uint i = 0; i < src.length(); i++)
 	{
 		if (src[i].is_music || src[i].paused) continue;
 		float final_vol = float((ambient_volume - 100) + src[i].volume);

@@ -1,11 +1,11 @@
 {
   "game": {
     "version": "0.9",
-    "build": 1,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.9/the_confront_v0.9_no_sounds_build1.zip",
-    "zip_url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.9/the_confront_v0.9_no_sounds_build1.zip",
-    "size": 38187966,
-    "zip_size": 38187966
+    "build": 3,
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.9-build3/the_confront_v0.9_no_sounds_build3.zip",
+    "zip_url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.9-build3/the_confront_v0.9_no_sounds_build3.zip",
+    "size": 32412762,
+    "zip_size": 32412762
   },
   "content": {
     "version": "0.6",
@@ -15,15 +15,15 @@
   },
   "sounds": {
     "version": "0.7",
-    "build": 2,
-    "new_count": 3,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.7/the_confront_v0.7_sounds_build2.zip",
-    "size": 1141579263
+    "build": 3,
+    "new_count": 2,
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.7-build3/the_confront_v0.7_sounds_build3.zip",
+    "size": 841041074
   },
   "maps": {
     "version": "0.7",
-    "build": 2,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.7/the_confront_v0.7_maps_build2.dat",
-    "size": 2480
+    "build": 3,
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.7-build3/the_confront_v0.7_maps_build3.dat",
+    "size": 2640
   }
 }

@@ -1,0 +1,186 @@
+// Accessible point and NPC tracking. NPC positions are sampled at the moment N
+// is pressed; a selected travel point is spatially updated by the world tick.
+class travel_tracking_target
+{
+	int x0, x1, y0, y1, z0, z1;
+	float x, y, z;
+	string destination;
+	string label;
+}
+
+class npc_tracking_result
+{
+	double distance;
+	string text;
+}
+
+sound_pool travel_tracker_audio(4);
+bool travel_tracker_active = false;
+int travel_tracker_slot = -1;
+string travel_tracker_map = "";
+string travel_tracker_label = "";
+float travel_tracker_x = 0, travel_tracker_y = 0, travel_tracker_z = 0;
+int travel_tracker_x0 = 0, travel_tracker_x1 = 0, travel_tracker_y0 = 0, travel_tracker_y1 = 0, travel_tracker_z0 = 0, travel_tracker_z1 = 0;
+
+string tracker_direction(double relative_angle)
+{
+	int sector = int(floor((relative_angle + 22.5) / 45.0)) % 8;
+	if (sector == 0) return tr("tracker.direction_ahead");
+	if (sector == 1) return tr("tracker.direction_ahead_right");
+	if (sector == 2) return tr("tracker.direction_right");
+	if (sector == 3) return tr("tracker.direction_behind_right");
+	if (sector == 4) return tr("tracker.direction_behind");
+	if (sector == 5) return tr("tracker.direction_behind_left");
+	if (sector == 6) return tr("tracker.direction_left");
+	return tr("tracker.direction_ahead_left");
+}
+
+void track_nearby_npcs()
+{
+	if (!is_in_game || mapname == "") return;
+	npc_tracking_result@[] found;
+	for (uint i = 0; i < npc_instances.length(); i++)
+	{
+		npc_instance@ npc = npc_instances[i];
+		if (npc is null || npc.data is null || npc.dead) continue;
+		double distance = get_3d_distance(me.x, me.y, me.z, npc.x, npc.y, npc.z);
+		if (distance > 30.0) continue;
+		string npc_name = npc.data.name;
+		if (npc_name.trim_whitespace() == "") npc_name = npc.data.id;
+		string direction = tracker_direction(calculate_x_y_angle(me.x, me.y, npc.x, npc.y, double(facing), false, false));
+		string[] args = {npc_name, "" + int(round(distance, 0)), direction};
+		npc_tracking_result@ entry = npc_tracking_result();
+		entry.distance = distance;
+		entry.text = tr("tracker.npc_entry", args);
+		found.insert_last(entry);
+	}
+	if (found.length() == 0)
+	{
+		speak(tr("tracker.no_npcs"));
+		return;
+	}
+	for (uint i = 1; i < found.length(); i++)
+	{
+		npc_tracking_result@ value = found[i];
+		int j = int(i) - 1;
+		while (j >= 0 && found[uint(j)].distance > value.distance)
+		{
+			@found[uint(j + 1)] = found[uint(j)];
+			j--;
+		}
+		@found[uint(j + 1)] = value;
+	}
+	string report = "";
+	for (uint i = 0; i < found.length(); i++)
+	{
+		if (i > 0) report += ". ";
+		report += found[i].text;
+	}
+	speak(report);
+}
+
+void stop_travel_point_tracking(bool arrived = false)
+{
+	if (travel_tracker_slot >= 0) travel_tracker_audio.destroy_sound(travel_tracker_slot);
+	travel_tracker_slot = -1;
+	travel_tracker_active = false;
+	if (arrived)
+	{
+		travel_tracker_audio.play_stationary("sounds/tracking/arrival.ogg", false, true);
+		string[] args = {travel_tracker_label};
+		speak(tr("tracker.arrived", args));
+	}
+	travel_tracker_label = "";
+	travel_tracker_map = "";
+}
+
+void update_travel_point_tracking()
+{
+	if (!travel_tracker_active) return;
+	if (!is_in_game || mapname != travel_tracker_map)
+	{
+		stop_travel_point_tracking();
+		return;
+	}
+	travel_tracker_audio.update_listener_3d(me.x, me.y, me.z, double(facing));
+	int px = int(round(me.x, 0)), py = int(round(me.y, 0)), pz = int(round(me.z, 0));
+	if (px >= travel_tracker_x0 && px <= travel_tracker_x1 && py >= travel_tracker_y0 && py <= travel_tracker_y1 && pz >= travel_tracker_z0 && pz <= travel_tracker_z1)
+	{
+		stop_travel_point_tracking(true);
+	}
+}
+
+travel_tracking_target@[] collect_valid_travel_points()
+{
+	travel_tracking_target@[] targets;
+	for (uint i = 0; i < map_travel_points.length(); i++)
+	{
+		travel_point_definition@ point = map_travel_points[i];
+		if (point is null || point.destination == "" || !can_enter_map(point.destination, false)) continue;
+		travel_tracking_target@ target = travel_tracking_target();
+		target.x0 = point.sx0; target.x1 = point.sx1;
+		target.y0 = point.sy0; target.y1 = point.sy1;
+		target.z0 = point.sz0; target.z1 = point.sz1;
+		target.x = float(point.sx0 + (point.sx1 - point.sx0) / 2);
+		target.y = float(point.sy0 + (point.sy1 - point.sy0) / 2);
+		target.z = float(point.sz0 + (point.sz1 - point.sz0) / 2);
+		target.destination = point.destination;
+		string zone = get_zone_at(int(target.x), int(target.y), int(target.z));
+		if (zone != "") zone = localize_map_zone_label(zone);
+		if (zone == "") zone = tr("tracker.unnamed_point");
+		target.label = zone;
+		targets.insert_last(target);
+	}
+	return targets;
+}
+
+void show_travel_point_tracker_menu()
+{
+	if (!is_in_game || mapname == "") return;
+	travel_tracking_target@[] targets = collect_valid_travel_points();
+	if (targets.length() == 0)
+	{
+		speak(tr("tracker.no_travel_points"));
+		return;
+	}
+	setupmenu(false);
+	if (travel_tracker_active) m.add_item_tts(tr("tracker.stop_tracking"), "stop");
+	for (uint i = 0; i < targets.length(); i++)
+	{
+		string[] args = {targets[i].label, "" + int(targets[i].x), "" + int(targets[i].y), "" + int(targets[i].z), targets[i].destination};
+		m.add_item_tts(tr("tracker.travel_point_item", args), "point:" + i);
+	}
+	int result = m.run(tr("tracker.choose_travel_point"), true);
+	if (result <= 0) return;
+	string selected = m.get_item_name(result);
+	if (selected == "stop")
+	{
+		stop_travel_point_tracking();
+		speak(tr("tracker.tracking_stopped"));
+		return;
+	}
+	if (!selected.starts_with("point:")) return;
+	int index = int(string_to_number(selected.substr(6)));
+	if (index < 0 || uint(index) >= targets.length()) return;
+	stop_travel_point_tracking();
+	travel_tracking_target@ target = targets[uint(index)];
+	travel_tracker_map = mapname;
+	travel_tracker_label = target.label;
+	travel_tracker_x = target.x; travel_tracker_y = target.y; travel_tracker_z = target.z;
+	travel_tracker_x0 = target.x0; travel_tracker_x1 = target.x1;
+	travel_tracker_y0 = target.y0; travel_tracker_y1 = target.y1;
+	travel_tracker_z0 = target.z0; travel_tracker_z1 = target.z1;
+	travel_tracker_active = true;
+	travel_tracker_audio.max_distance = 250.0;
+	travel_tracker_audio.room_filter_enabled = false;
+	travel_tracker_slot = travel_tracker_audio.play_3d("sounds/tracking/beacon.ogg", me.x, me.y, me.z,
+		travel_tracker_x, travel_tracker_y, travel_tracker_z, double(facing), true, true);
+	if (travel_tracker_slot < 0)
+	{
+		travel_tracker_active = false;
+		speak(tr("tracker.sound_unavailable"));
+		return;
+	}
+	string[] args = {travel_tracker_label};
+	speak(tr("tracker.tracking_started", args));
+}

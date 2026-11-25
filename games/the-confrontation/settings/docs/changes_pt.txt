@@ -1,3 +1,12 @@
+Build 3 | 25 de novembro de 2026 às 11:41 (America/Sao_Paulo) — Versão 0.9
+- Limpeza do mapa: removidos da Zona Segura a escada temporária, o elevador, a plataforma e a entrada da loja no segundo andar; removido o recurso obsoleto de quadrado de texto do construtor e do carregador de mapas.
+- Rastreamento: N informa cada NPC vivo em até 30 ladrilhos, do mais próximo ao mais distante, com a distância e a direção atuais. X lista os pontos de viagem acessíveis; ao selecionar um, um sinal espacial toca em loop até o jogador chegar à área, quando um som diferente é reproduzido. Textos adicionados em português, inglês e espanhol.
+- Áudio e mapas: a saída do menu principal reproduz o som de fechamento. Os sons da porta ficam posicionados no ponto mais próximo ao jogador em toda a área da parede. O pacote criptografado de mapas foi atualizado, e o pacote de sons contém a pasta local completa do projeto, sem mesclar o pacote antigo.
+
+Build 2 | 25 de novembro de 2026 às 10:48 (America/Sao_Paulo) — Versão 0.9
+- Zona Segura: definida como mapa padrão para novas partidas e reaparecimento; adicionados escada e elevador entre Z=0 e Z=100, piso superior e porta larga na entrada da futura loja. Zonas e nomes dos andares são localizados em português, inglês e espanhol.
+- Movimento vertical: removidos o mergulho por Page Down, o áudio e o filtro passa-baixa debaixo d’água. Page Up e Page Down continuam movendo o jogador apenas dentro de uma escada; o elevador mantém sua viagem entre os andares.
+- Áudio de portas: abertura e fechamento não recebem mais o filtro acústico externo das salas.
 Build 1 | 25 de novembro de 2026 às 09:57 (America/Sao_Paulo) — Versão 0.9
 - Acústica e portas: documentado o filtro passa-baixa de sons externos no XANGE.LOG; removidos avisos falados ao abrir/fechar portas e ao alternar a filtragem; retirada a porta de teste da Floresta.
 - Atualizador: removida a opção para ver novidades; Enter ou Y inicia o download e Escape cancela. Bips mais definidos com volume reduzido.

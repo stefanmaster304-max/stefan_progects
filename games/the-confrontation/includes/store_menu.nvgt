@@ -154,7 +154,7 @@ void save_player_store_inventory()
 	}
 	else
 	{
-		loc.add("mapname", "florest");
+		loc.add("mapname", "safe_zone");
 		loc.add("pos_x", 1);
 		loc.add("pos_y", 0);
 		loc.add("pos_z", 0);

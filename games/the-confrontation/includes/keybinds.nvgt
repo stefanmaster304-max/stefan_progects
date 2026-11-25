@@ -13,7 +13,7 @@ string[] KB_ACTIONS = {
     "facing", "builder", "reload", "ammo_status",
     "volume_up", "volume_down", "stairs_up", "stairs_down", "exit_game",
     "mod_shift", "menu_up", "menu_down", "menu_left", "menu_right",
-    "menu_activate", "menu_back", "menu_home", "menu_end"
+    "menu_activate", "menu_back", "menu_home", "menu_end", "track_npcs", "track_travel_point"
 };
 int[] KB_DEFAULT_KEYS = {
     KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE,
@@ -25,7 +25,7 @@ int[] KB_DEFAULT_KEYS = {
     KEY_HOME, KEY_END, KEY_PRIOR, KEY_NEXT, KEY_ESCAPE,
     KEY_LSHIFT,
     KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_RETURN, KEY_ESCAPE,
-    KEY_HOME, KEY_END
+    KEY_HOME, KEY_END, KEY_N, KEY_X
 };
 dictionary kb_bindings;
 // name -> key code map, built from kb_key_name() so a hand-edited text file
@@ -355,6 +355,8 @@ string kb_action_name(string action)
     if (action == "menu_back") return "Back / cancel";
     if (action == "menu_home") return "Menu first item";
     if (action == "menu_end") return "Menu last item";
+    if (action == "track_npcs") return "Track nearby NPCs";
+    if (action == "track_travel_point") return "Track a travel point";
     return action;
 }
 

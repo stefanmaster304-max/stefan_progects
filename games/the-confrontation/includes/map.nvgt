@@ -8,8 +8,6 @@ int map_max_resurrection = 0;
 string[] map;
 string[] zones;
 string[] safezones;
-bool is_underwater = false;
-sound underwater_ambient_sound;
 dictionary discovered_maps;
 
 #include "door_system.nvgt"
@@ -562,7 +560,6 @@ void clear_map_data()
 	map.resize(0);
 	zones.resize(0);
 	safezones.resize(0);
-	text_squares.resize(0);
 	map_travel_points.resize(0);
 	map_store_points.resize(0);
 	clear_map_doors();
@@ -573,7 +570,6 @@ void clear_map_data()
 	map_spawn_y = 0;
 	map_spawn_z = 0;
 	currentloc = "";
-	is_underwater = false;
 	map_min_level = 1;
 	map_max_level = 0;
 	map_min_resurrection = 0;
@@ -774,13 +770,6 @@ if (parsed.length() >= 8)
 {
 string stile = (parsed.length() >= 9) ? parsed[8] : parsed[7];
 spawn_staircase(int(string_to_number(parsed[1])), int(string_to_number(parsed[2])), int(string_to_number(parsed[3])), int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])), stile);
-}
-}
-else if (cmd == "text_square")
-{
-if (parsed.length() >= 8)
-{
-spawn_text_square(int(string_to_number(parsed[1])), int(string_to_number(parsed[2])), int(string_to_number(parsed[3])), int(string_to_number(parsed[4])), int(string_to_number(parsed[5])), int(string_to_number(parsed[6])), parsed[7]);
 }
 }
 else if (cmd == "spawnpoint")
@@ -1021,13 +1010,7 @@ me = old;
 else
 {
 old = me;
-if (is_underwater)
-{
-	string snd = get_platform_sound("underwater", "step");
-	if (snd == "") snd = get_platform_sound("deepwater", "step");
-	if (snd != "") play_player_footstep(snd);
-}
-else if (current_tile != "")
+if (current_tile != "")
 {
 string snd = get_platform_sound(current_tile, "step");
 if (snd != "") play_player_footstep(snd);
@@ -1063,56 +1046,6 @@ string get_tile_at(int x, int y, int z)
 	return final;
 }
 
-bool is_deep_water_tile_name(const string&in name)
-{
-	string t = string_to_lower_case(name);
-	if (t == "") return false;
-	if (string_contains(t, "deepwater", 1) > -1 || string_contains(t, "deep_water", 1) > -1
-		|| string_contains(t, "deep water", 1) > -1 || string_contains(t, "deep_ocean", 1) > -1
-		|| string_contains(t, "deep ocean", 1) > -1 || string_contains(t, "ocean_deep", 1) > -1
-		|| string_contains(t, "oceano_profundo", 1) > -1 || string_contains(t, "oceano profundo", 1) > -1
-		|| string_contains(t, "aguas_profundas", 1) > -1 || string_contains(t, "agua_profunda", 1) > -1
-		|| string_contains(t, "aguas profundas", 1) > -1 || string_contains(t, "agua profunda", 1) > -1
-		|| string_contains(t, "underwater", 1) > -1)
-	{
-		return true;
-	}
-	return false;
-}
-
-bool is_shallow_water_tile_name(const string&in name)
-{
-	string t = string_to_lower_case(name);
-	if (t == "") return false;
-	if (is_deep_water_tile_name(t)) return false;
-	if (string_contains(t, "shallow", 1) > -1 || string_contains(t, "rasa", 1) > -1
-		|| string_contains(t, "water", 1) > -1 || string_contains(t, "agua", 1) > -1
-		|| string_contains(t, "puddle", 1) > -1 || string_contains(t, "swim", 1) > -1
-		|| string_contains(t, "swimming", 1) > -1 || string_contains(t, "river", 1) > -1
-		|| string_contains(t, "rio", 1) > -1 || string_contains(t, "marsh", 1) > -1
-		|| string_contains(t, "swamp", 1) > -1)
-	{
-		return true;
-	}
-	return false;
-}
-
-bool is_deep_water(int x, int y, int z)
-{
-	string t = string_to_lower_case(get_tile_at(x, y, z));
-	return is_deep_water_tile_name(t);
-}
-
-bool is_shallow_water(int x, int y, int z)
-{
-	string t = string_to_lower_case(get_tile_at(x, y, z));
-	return is_shallow_water_tile_name(t);
-}
-
-bool is_water_tile(int x, int y, int z)
-{
-	return is_deep_water(x, y, z) || is_shallow_water(x, y, z);
-}
 void encrypt_maps()
 {
 	encrypt_all_maps();
@@ -1311,12 +1244,7 @@ void build_platform()
 	for (uint i = 0; i < platform_dirs.length(); i++)
 	{
 		string p_name = platform_dirs[i];
-		string display_name = p_name;
-		if (is_deep_water_tile_name(p_name))
-			display_name += " [Deep Water - Dive Only]";
-		else if (is_shallow_water_tile_name(p_name))
-			display_name += " [Shallow Water - Walkable]";
-		f.add_list_item(tile_ctrl, display_name);
+		f.add_list_item(tile_ctrl, p_name);
 	}
 
 	// Preview controls, the same pair the sound source and ambience builders use.

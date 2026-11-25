@@ -11,7 +11,6 @@ void update_game_world()
 	update_map_doors();
 	szloop();
 	checkloc();
-	text_square_check();
 	ground_item_loop();
 	map_item_spawner_loop();
 	bodyfallloop();
@@ -28,6 +27,7 @@ void update_game_world()
 	sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 	itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
 	map_door_audio.update_listener_3d(me.x, me.y, me.z, double(facing));
+	update_travel_point_tracking();
 	king_system_update();
 }
 

@@ -32,7 +32,7 @@ class map_door_definition
 }
 
 map_door_definition@[] map_doors(0);
-sound_pool map_door_audio(16);
+sound_pool map_door_audio(16, false);
 
 bool door_room_id_is_valid(const string&in id)
 {
@@ -210,10 +210,13 @@ void play_map_door_sound(map_door_definition@ door, const string&in configured_p
 	if (door is null) return;
 	string path = get_sound_path(configured_path);
 	if (path == "") return;
-	map_door_audio.play_3d(path, me.x, me.y, me.z,
-		(double(door.x0) + double(door.x1)) / 2.0,
-		(double(door.y0) + double(door.y1)) / 2.0,
-		(double(door.z0) + double(door.z1)) / 2.0, double(facing), false);
+	// Place the sound at the closest point on the full door volume so a wide
+	// doorway is heard from the section the player is standing beside.
+	double sx = me.x, sy = me.y, sz = me.z;
+	if (sx < door.x0) sx = door.x0; else if (sx > door.x1) sx = door.x1;
+	if (sy < door.y0) sy = door.y0; else if (sy > door.y1) sy = door.y1;
+	if (sz < door.z0) sz = door.z0; else if (sz > door.z1) sz = door.z1;
+	map_door_audio.play_3d(path, me.x, me.y, me.z, sx, sy, sz, double(facing), false);
 }
 
 bool set_map_door_state(map_door_definition@ door, bool open, bool announce_block = true)

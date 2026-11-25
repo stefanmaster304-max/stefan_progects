@@ -1,3 +1,12 @@
+Build 3 | 25 de noviembre de 2026 a las 11:41 (America/Sao_Paulo) — Versión 0.9
+- Limpieza del mapa: se eliminaron de la Zona Segura las escaleras temporales, el ascensor, la plataforma y la entrada de la tienda del segundo piso; se eliminó del constructor y del cargador de mapas la función obsoleta de cuadrado de texto.
+- Rastreo: N informa cada NPC vivo a una distancia de hasta 30 casillas, del más cercano al más lejano, con su distancia y dirección actuales. X muestra los puntos de viaje accesibles; al seleccionar uno, una señal espacial suena en bucle hasta que el jugador llega al área, donde se reproduce un sonido de llegada distinto. Textos añadidos en español, portugués e inglés.
+- Audio y mapas: al salir del menú principal se reproduce el sonido de cierre. Los sonidos de la puerta se posicionan en el punto más cercano al jugador a lo largo de toda la pared. Se actualizó el paquete cifrado de mapas y el paquete de sonidos contiene la carpeta local completa del proyecto, sin fusionarla con el paquete anterior.
+
+Build 2 | 25 de noviembre de 2026 a las 10:48 (America/Sao_Paulo) — Versión 0.9
+- Zona Segura: establecida como mapa predeterminado para partidas nuevas y reapariciones; se añadieron una escalera y un ascensor entre Z=0 y Z=100, un piso superior y una puerta ancha en la futura entrada de la tienda. Las zonas y los nombres de los pisos están traducidos al portugués, inglés y español.
+- Movimiento vertical: se eliminaron la inmersión con Page Down, el audio submarino y el filtro paso bajo submarino. Page Up y Page Down ahora mueven al jugador verticalmente solo dentro de una escalera; el ascensor sigue viajando entre pisos.
+- Audio de puertas: los sonidos de apertura y cierre ya no reciben el filtro acústico exterior de las habitaciones.
 Build 1 | 25 de noviembre de 2026 a las 09:57 (America/Sao_Paulo) — Versión 0.9
 - Acústica y puertas: documentado el filtro paso bajo de sonidos exteriores en XANGE.LOG; se eliminaron los avisos hablados al abrir/cerrar puertas y al alternar el filtro; se quitó la puerta de prueba del Bosque.
 - Actualizador: se eliminó la opción para ver novedades; Enter o Y inicia la descarga y Escape la cancela. Los pitidos son más nítidos y tienen menos volumen.

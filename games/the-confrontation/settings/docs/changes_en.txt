@@ -1,3 +1,12 @@
+Build 3 | November 25, 2026 at 11:41 (America/Sao_Paulo) — Version 0.9
+- Map cleanup: removed the temporary second-floor stairs, elevator, platform and store entrance from the Safe Zone; removed the obsolete text-square feature from the builder and map loader.
+- Tracking: N reports each living NPC within 30 tiles in nearest-first order with its current distance and direction. X lists accessible travel points; selecting one plays a spatial beacon until the player reaches its area, then plays an arrival cue. Added English, Portuguese and Spanish text.
+- Audio and maps: the main-menu exit plays its close cue. Door sounds are positioned at the nearest point on the full door area. Rebuilt the encrypted maps bundle for the Safe Zone and packaged the project's complete local sounds folder without merging the older archive.
+
+Build 2 | November 25, 2026 at 10:48 (America/Sao_Paulo) — Version 0.9
+- Safe Zone: set as the default map for new games and respawns; added stairs and an elevator between Z=0 and Z=100, an upper floor and a wide door at the future store entrance. Zone labels and floor names are localized in Portuguese, English and Spanish.
+- Vertical movement: removed Page Down diving, underwater audio and the underwater low-pass filter. Page Up and Page Down now move the player vertically only within a staircase; the elevator still travels between floors.
+- Door audio: opening and closing sounds no longer receive the room exterior acoustic filter.
 Build 1 | November 25, 2026 at 09:57 (America/Sao_Paulo) — Version 0.9
 - Acoustics and doors: documented the exterior low-pass filter in XANGE.LOG; removed spoken notices when doors open/close and when filtering toggles; removed the test door from Forest.
 - Updater: removed the option to view what is new; Enter or Y starts the download and Escape cancels. Beeps are clearer at lower volume.
