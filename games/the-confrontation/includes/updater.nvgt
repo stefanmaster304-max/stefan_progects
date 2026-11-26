@@ -670,43 +670,25 @@ void remove_legacy_content_bundles()
 bool apply_game_update(update_item@ item)
 {
 	if (item is null) return false;
-	if (item.zip_url == "" || item.zip_size <= 0)
+	string exe_url = (item.url != "") ? item.url : item.zip_url;
+	int64 exe_size = (item.size > 0) ? item.size : item.zip_size;
+	if (exe_url == "" || exe_size <= 0)
 	{
 		speak(tr("updater.game_zip_missing"));
 		return false;
 	}
-	string temp_payload = UPDATE_TEMP_DIR + "/game_update_payload.zip";
+	string temp_exe = UPDATE_TEMP_DIR + "/tcf.exe.new";
 	string error_message = "";
-	if (!download_update_file(item.zip_url, temp_payload, item.zip_size, error_message))
+	if (!download_update_file(exe_url, temp_exe, exe_size, error_message))
 	{
 		speak(error_message);
 		cleanup_update_temp();
 		return false;
 	}
 
-	if (!validate_sound_archive(temp_payload))
+	if (!validate_game_executable(temp_exe))
 	{
-		speak(tr("updater.corrupt_game_zip"));
-		cleanup_update_temp();
-		return false;
-	}
-
-	string staged_game = UPDATE_TEMP_DIR + "/game_staged";
-	if (directory_exists(staged_game)) directory_delete(staged_game, true);
-	if (!directory_create(staged_game) || !extract_update_archive(temp_payload, staged_game, true))
-	{
-		speak(tr("updater.game_archive_extract_failed"));
-		cleanup_update_temp();
-		return false;
-	}
-	string validation_error = "";
-	if (!validate_game_executable(staged_game + "/tcf.exe")) validation_error = tr("updater.game_archive_exe_invalid");
-	else if (!validate_contents_file(staged_game + "/settings/contents.dat")) validation_error = tr("updater.game_archive_contents_invalid");
-	else if (!validate_maps_file(staged_game + "/settings/maps.dat")) validation_error = tr("updater.game_archive_maps_invalid");
-	else if (!directory_exists(staged_game + "/lib")) validation_error = tr("updater.game_archive_library_missing");
-	if (validation_error != "")
-	{
-		speak(tr("updater.game_install_failed") + " " + validation_error);
+		speak(tr("updater.game_install_failed") + " " + tr("updater.game_archive_exe_invalid"));
 		cleanup_update_temp();
 		return false;
 	}
@@ -718,8 +700,13 @@ bool apply_game_update(update_item@ item)
 		cleanup_update_temp();
 		return false;
 	}
-	installer.write("$ErrorActionPreference='Stop'\r\n$root=(Get-Location).Path\r\n$stage=Join-Path $root 'update_temp\\game_staged'\r\n$backup=Join-Path $root 'update_temp\\game_backup'\r\nwhile(Get-Process -Name 'tcf' -ErrorAction SilentlyContinue){Start-Sleep -Milliseconds 250}\r\nNew-Item -ItemType Directory -Force -Path $backup | Out-Null\r\n$paths=@('tcf.exe','lib','settings\\contents.dat','settings\\maps.dat','settings\\versions.cfg','settings\\languages','settings\\docs')\r\n$installed=New-Object System.Collections.Generic.List[string]\r\ntry { foreach($rel in $paths) { $src=Join-Path $stage $rel; if(!(Test-Path -LiteralPath $src)) { continue }; $dst=Join-Path $root $rel; $bak=Join-Path $backup $rel; $parent=Split-Path -Parent $dst; if(!(Test-Path -LiteralPath $parent)){New-Item -ItemType Directory -Force -Path $parent | Out-Null}; if(Test-Path -LiteralPath $dst){$bp=Split-Path -Parent $bak; if(!(Test-Path -LiteralPath $bp)){New-Item -ItemType Directory -Force -Path $bp | Out-Null}; Move-Item -LiteralPath $dst -Destination $bak -Force}; $installed.Add($rel); Move-Item -LiteralPath $src -Destination $dst -Force }; if(!(Test-Path -LiteralPath (Join-Path $root 'tcf.exe'))){throw 'Missing installed executable'}; New-Item -ItemType File -Force -Path (Join-Path $root 'game_update_done.flag') | Out-Null; Start-Process -FilePath (Join-Path $root 'tcf.exe') -WorkingDirectory $root } catch { $rollback=$installed.ToArray(); [array]::Reverse($rollback); foreach($rel in $rollback) { $dst=Join-Path $root $rel; $bak=Join-Path $backup $rel; if(Test-Path -LiteralPath $dst){Remove-Item -LiteralPath $dst -Recurse -Force}; if(Test-Path -LiteralPath $bak){$parent=Split-Path -Parent $dst; if(!(Test-Path -LiteralPath $parent)){New-Item -ItemType Directory -Force -Path $parent | Out-Null}; Move-Item -LiteralPath $bak -Destination $dst -Force} }; if(Test-Path -LiteralPath (Join-Path $root 'tcf.exe')){Start-Process -FilePath (Join-Path $root 'tcf.exe') -WorkingDirectory $root}; New-Item -ItemType File -Force -Path (Join-Path $root 'game_update_failed.flag') | Out-Null; exit 1 }\r\n");
+	installer.write("$ErrorActionPreference='Stop'\r\n$root=(Get-Location).Path\r\n$newExe=Join-Path $root 'update_temp\\tcf.exe.new'\r\n$dstExe=Join-Path $root 'tcf.exe'\r\n$bakDir=Join-Path $root 'update_temp\\game_backup'\r\n$bakExe=Join-Path $bakDir 'tcf.exe'\r\nwhile(Get-Process -Name 'tcf' -ErrorAction SilentlyContinue){Start-Sleep -Milliseconds 250}\r\nNew-Item -ItemType Directory -Force -Path $bakDir | Out-Null\r\ntry { if(!(Test-Path -LiteralPath $newExe)){throw 'Missing downloaded executable'}; if(Test-Path -LiteralPath $dstExe){Move-Item -LiteralPath $dstExe -Destination $bakExe -Force}; Move-Item -LiteralPath $newExe -Destination $dstExe -Force; New-Item -ItemType File -Force -Path (Join-Path $root 'game_update_done.flag') | Out-Null; Start-Process -FilePath $dstExe -WorkingDirectory $root } catch { if(Test-Path -LiteralPath $bakExe){Move-Item -LiteralPath $bakExe -Destination $dstExe -Force}; if(Test-Path -LiteralPath $dstExe){Start-Process -FilePath $dstExe -WorkingDirectory $root}; New-Item -ItemType File -Force -Path (Join-Path $root 'game_update_failed.flag') | Out-Null; exit 1 }\r\n");
 	installer.close();
+
+	current_game_version = item.new_version;
+	current_game_build = item.new_build;
+	save_updater_settings();
+
 	play_update_complete_sound();
 	speak(tr("updater.game_restart"));
 	wait_for_update_complete_sound();

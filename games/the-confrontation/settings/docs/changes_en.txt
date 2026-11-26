@@ -1,8 +1,10 @@
 The Confront - Changelog (English)
 
-New in version 0.1.6 (2026-11-26 - 12:53 -03:00)
+New in version 0.1.6 (2026-11-26 - 16:23 -03:00)
 
-Updater, Contents & Sound Pack:
+Updater, NPC Tracking, Contents & Sound Pack:
+- Game updater (`apply_game_update` in `includes/updater.nvgt`) now downloads only the `tcf.exe` executable directly from the GitHub release, validates its integrity (PE `MZ` header and minimum size), and replaces it safely with backup/rollback instead of downloading a full `.zip`.
+- NPC tracking (`track_nearby_npcs` in `includes/tracking_system.nvgt` and EN/PT/ES translations) now announces the NPC's current health (`npc.hp`) along with real-time distance and direction.
 - Encrypted and updated `settings/contents.dat` and `settings/maps.dat` bundles with all newly added NPCs and recent map updates.
 - Fixed the internal version string (`ver = "0.1.6"`) in `tcf.nvgt` so the compiled executable properly displays and saves version `0.1.6` after updating.
 - Added automatic spoken download progress announcements every 10% in `dl_file` (`includes/updater.nvgt`), while keeping `Spacebar` progress checks active.

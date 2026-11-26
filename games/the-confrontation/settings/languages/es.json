@@ -165,7 +165,7 @@
   },
   "tracker": {
     "no_npcs": "No hay NPCs a tu alrededor.",
-    "npc_entry": "&1 está a &2 casillas, &3",
+    "npc_entry": "&1 con &2 de vida está a &3 casillas, &4",
     "direction_ahead": "justo delante",
     "direction_ahead_right": "delante y a la derecha",
     "direction_right": "a la derecha",

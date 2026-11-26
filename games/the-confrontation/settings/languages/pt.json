@@ -165,7 +165,7 @@
   },
   "tracker": {
     "no_npcs": "Não há NPCs ao seu redor.",
-    "npc_entry": "&1 está a &2 quadrados, &3",
+    "npc_entry": "&1 com &2 de vida está a &3 quadrados, &4",
     "direction_ahead": "logo à frente",
     "direction_ahead_right": "à frente e à direita",
     "direction_right": "à direita",

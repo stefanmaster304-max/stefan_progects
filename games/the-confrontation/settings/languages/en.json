@@ -165,7 +165,7 @@
   },
   "tracker": {
     "no_npcs": "There are no NPCs around you.",
-    "npc_entry": "&1 is &2 tiles away, &3",
+    "npc_entry": "&1 with &2 health is &3 tiles away, &4",
     "direction_ahead": "straight ahead",
     "direction_ahead_right": "ahead and to the right",
     "direction_right": "to the right",

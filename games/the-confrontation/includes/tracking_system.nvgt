@@ -48,7 +48,7 @@ void track_nearby_npcs()
 		string npc_name = npc.data.name;
 		if (npc_name.trim_whitespace() == "") npc_name = npc.data.id;
 		string direction = tracker_direction(calculate_x_y_angle(me.x, me.y, npc.x, npc.y, double(facing), false, false));
-		string[] args = {npc_name, "" + int(round(distance, 0)), direction};
+		string[] args = {npc_name, "" + npc.hp, "" + int(round(distance, 0)), direction};
 		npc_tracking_result@ entry = npc_tracking_result();
 		entry.distance = distance;
 		entry.text = tr("tracker.npc_entry", args);
