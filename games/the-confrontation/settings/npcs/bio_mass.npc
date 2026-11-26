@@ -1,0 +1,20 @@
+# The Confront NPC
+name=bio_mass
+class=robot
+attack_speed=3500
+min_damage=5980
+max_damage=6600
+detection_range=500
+attack_range=10
+walk_speed=420
+run_speed=260
+max_health=10000
+xp=20000
+use_platform_footsteps=0
+drop_items_on_death=0
+voice_min_delay=1
+voice_max_delay=2
+sound_voice=npcs/bio_mass/bio_mass_loop.ogg;npcs/bio_mass/bio_mass_voice.ogg
+sound_attack=npcs/bio_mass/bio_mass_shoot.ogg
+sound_hit=npcs/bio_mass/bio_mass_hit.ogg
+sound_death=npcs/bio_mass/bio_mass_kill.ogg

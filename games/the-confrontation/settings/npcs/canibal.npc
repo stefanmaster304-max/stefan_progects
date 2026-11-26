@@ -1,0 +1,20 @@
+# The Confront NPC
+name=canibal
+class=robot
+attack_speed=3300
+min_damage=5500
+max_damage=11000
+detection_range=500
+attack_range=4
+walk_speed=660
+run_speed=150
+max_health=6450
+xp=10900
+use_platform_footsteps=1
+drop_items_on_death=0
+voice_min_delay=1500
+voice_max_delay=3500
+sound_voice=npcs/canibal/cannibal_voice.ogg
+sound_attack=npcs/canibal/cannibal_shoot.ogg
+sound_hit=npcs/canibal/cannibal_hit1.ogg;npcs/canibal/cannibal_hit2.ogg;npcs/canibal/cannibal_hit3.ogg;npcs/canibal/cannibal_hit4.ogg;npcs/canibal/cannibal_hit5.ogg
+sound_death=npcs/canibal/cannibal_kill.ogg

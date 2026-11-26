@@ -1,0 +1,21 @@
+# The Confront NPC
+name=laser
+class=robot
+attack_speed=4000
+min_damage=3000
+max_damage=4000
+detection_range=500
+attack_range=5
+walk_speed=590
+run_speed=500
+max_health=5000
+xp=2200
+use_platform_footsteps=0
+drop_items_on_death=0
+sound_footsteps=npcs/laser/laser_step1.ogg;npcs/laser/laser_step2.ogg
+voice_min_delay=4000
+voice_max_delay=4400
+sound_voice=npcs/laser/laser_voice.ogg
+sound_attack=npcs/laser/laser_shoot.ogg
+sound_hit=npcs/laser/laser_hit.ogg
+sound_death=npcs/laser/laser_kill.ogg

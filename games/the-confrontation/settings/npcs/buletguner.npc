@@ -1,0 +1,20 @@
+# The Confront NPC
+name=buletguner
+class=robot
+attack_speed=900
+min_damage=3000
+max_damage=4400
+detection_range=500
+attack_range=4
+walk_speed=440
+run_speed=230
+max_health=3000
+xp=2200
+use_platform_footsteps=0
+drop_items_on_death=0
+sound_footsteps=npcs/buletguner/bullet_gunner_step1.ogg;npcs/buletguner/bullet_gunner_step2.ogg
+voice_min_delay=300
+voice_max_delay=350
+sound_voice=npcs/buletguner/bullet_gunner_voice.ogg
+sound_attack=npcs/buletguner/bulletgunner_shoot.ogg
+sound_death=npcs/buletguner/bullet_gunner_kill.ogg

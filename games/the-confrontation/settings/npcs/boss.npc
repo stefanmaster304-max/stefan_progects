@@ -1,0 +1,21 @@
+# The Confront NPC
+name=boss
+class=robot
+attack_speed=1000
+min_damage=5500
+max_damage=10000
+detection_range=500
+attack_range=10
+walk_speed=550
+run_speed=210
+max_health=10000
+xp=20000
+use_platform_footsteps=1
+drop_items_on_death=0
+voice_min_delay=3300
+voice_max_delay=4300
+sound_voice=npcs/boss/boss_voice.ogg
+sound_attack=npcs/boss/boss_shoot.ogg
+sound_hit=npcs/boss/boss_hit1.ogg;npcs/boss/boss_hit10.ogg;npcs/boss/boss_hit11.ogg;npcs/boss/boss_hit12.ogg;npcs/boss/boss_hit13.ogg;npcs/boss/boss_hit14.ogg;npcs/boss/boss_hit15.ogg;npcs/boss/boss_hit16.ogg;npcs/boss/boss_hit17.ogg;npcs/boss/boss_hit18.ogg;npcs/boss/boss_hit19.ogg;npcs/boss/boss_hit2.ogg;npcs/boss/boss_hit20.ogg;npcs/boss/boss_hit21.ogg;npcs/boss/boss_hit22.ogg;npcs/boss/boss_hit23.ogg;npcs/boss/boss_hit24.ogg;npcs/boss/boss_hit25.ogg;npcs/boss/boss_hit26.ogg;npcs/boss/boss_hit3.ogg;npcs/boss/boss_hit4.ogg;npcs/boss/boss_hit5.ogg;npcs/boss/boss_hit6.ogg;npcs/boss/boss_hit7.ogg;npcs/boss/boss_hit8.ogg;npcs/boss/boss_hit9.ogg
+sound_pain=npcs/boss/boss_pain1.ogg;npcs/boss/boss_pain2.ogg;npcs/boss/boss_pain3.ogg;npcs/boss/boss_pain4.ogg;npcs/boss/boss_pain5.ogg;npcs/boss/boss_pain6.ogg;npcs/boss/boss_pain7.ogg;npcs/boss/boss_pain8.ogg
+sound_death=npcs/boss/boss_kill.ogg

@@ -1,8 +1,9 @@
 The Confront - Changelog (English)
 
-New in version 0.1.6 (2026-11-26 - 11:22 -03:00)
+New in version 0.1.6 (2026-11-26 - 12:53 -03:00)
 
-Updater & Sound Pack:
+Updater, Contents & Sound Pack:
+- Encrypted and updated `settings/contents.dat` and `settings/maps.dat` bundles with all newly added NPCs and recent map updates.
 - Fixed the internal version string (`ver = "0.1.6"`) in `tcf.nvgt` so the compiled executable properly displays and saves version `0.1.6` after updating.
 - Added automatic spoken download progress announcements every 10% in `dl_file` (`includes/updater.nvgt`), while keeping `Spacebar` progress checks active.
 - Removed all updater progress and notification beeps (`beep_percentage`, `updater_beep`, and mute key `M` in `includes/updater.nvgt`).

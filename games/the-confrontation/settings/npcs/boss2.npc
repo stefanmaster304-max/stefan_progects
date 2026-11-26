@@ -1,0 +1,21 @@
+# The Confront NPC
+name=boss2
+class=robot
+attack_speed=900
+min_damage=7000
+max_damage=10000
+detection_range=500
+attack_range=5
+walk_speed=550
+run_speed=300
+max_health=10000
+xp=40000
+use_platform_footsteps=0
+drop_items_on_death=0
+sound_footsteps=npcs/boss2/boss2_step1.ogg;npcs/boss2/boss2_step2.ogg;npcs/boss2/boss2_step3.ogg;npcs/boss2/boss2_step4.ogg
+voice_min_delay=2200
+voice_max_delay=3500
+sound_voice=npcs/boss2/boss2_voice.ogg
+sound_attack=npcs/boss2/boss2_shoot.ogg
+sound_pain=npcs/boss2/boss2_pain1.ogg;npcs/boss2/boss2_pain2.ogg
+sound_death=npcs/boss2/boss2_kill.ogg

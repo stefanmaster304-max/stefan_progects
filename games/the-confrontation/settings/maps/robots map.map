@@ -13,3 +13,4 @@ source:0:100:0:100:0:100:sources/city day:0:100
 zone:0:100:0:100:0:100:@map.zone_robots
 platform:0:400:0:400:0:0:concrete32
 source:0:400:0:400:0:40:musics/Instrumental de Caminhos do Coração, OS MUTANTES Cobra música da novela Os Mutantes Caminhos do Coração Promessas de amor Rede Record YouTube:0:100
+npcspawner:boxer,buletguner,laser,mine_robocop,patrol,robocop:1:7600:0:0:0:400:400:0:1

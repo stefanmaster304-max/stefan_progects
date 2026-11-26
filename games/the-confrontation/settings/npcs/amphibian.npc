@@ -1,0 +1,21 @@
+# The Confront NPC
+name=amphibian
+class=robot
+attack_speed=490
+min_damage=3400
+max_damage=6000
+detection_range=500
+attack_range=5
+walk_speed=300
+run_speed=260
+max_health=7000
+xp=5000
+use_platform_footsteps=0
+drop_items_on_death=1
+death_drops=9x19mm_30_round_magazine:20
+voice_min_delay=40
+voice_max_delay=45
+sound_voice=npcs/amphibian/amphibian_loop.ogg;npcs/amphibian/amphibian_voice.ogg
+sound_attack=npcs/amphibian/amphibian_shoot.ogg
+sound_hit=npcs/amphibian/amphibian_hit.ogg
+sound_death=npcs/amphibian/amphibian_kill.ogg
