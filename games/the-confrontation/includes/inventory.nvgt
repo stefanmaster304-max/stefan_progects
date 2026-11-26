@@ -413,9 +413,11 @@ void play_inventory_navigation_sound()
 
 void speak_inventory_category(const string&in category, const string[]&in items)
 {
-	int quantity = 0;
-	for (uint i = 0; i < items.length(); i++) quantity += get_item_count(items[i]);
-	speak(tr("inventory.category_" + category) + ". " + tr("inventory.total_items", {"" + quantity}) + ".");
+	int total_unique = int(items.length());
+	string total_text = (total_unique == 1)
+		? tr("inventory.total_item_singular", {"" + total_unique})
+		: tr("inventory.total_items", {"" + total_unique});
+	speak(tr("inventory.category_" + category) + ". " + total_text + ".");
 }
 
 void speak_inventory_item(const string[]&in items, int position)

@@ -1,5 +1,12 @@
 The Confront - Registro de Alterações (Português)
 
+Novo na versão 0.1.3 (26/11/2026 - 09:51 -03:00)
+
+Correções no Inventário:
+- Corrigida a contagem total de itens exibida nas categorias do inventário (`speak_inventory_category`):
+  * Antes, o inventário somava as quantidades acumuladas de todos os itens (ex.: 55 poções + 55 escudos apareciam como 110 itens no total).
+  * Agora, a contagem total considera apenas os itens únicos presentes na categoria (ex.: 50 poções = 1 item no total; revólver + espada + escudo + faca = 4 itens no total), mantendo a quantidade individual falada ao focar cada item.
+
 Novo na versão 0.1.2 (26/11/2026 - 09:29 -03:00)
 
 Sistema de Reverberação Nativa (King Audio Engine):

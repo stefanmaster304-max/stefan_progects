@@ -390,6 +390,7 @@
     "of": "de",
     "category_medical": "Itens médicos",
     "total_items": "&1 itens no total",
+    "total_item_singular": "&1 item no total",
     "category_all": "Inventário completo",
     "category_weapons_ammo": "Armas e munições",
     "empty_category": "Esta categoria do inventário está vazia.",

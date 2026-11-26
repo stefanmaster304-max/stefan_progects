@@ -1,5 +1,12 @@
 The Confront - Changelog (English)
 
+New in version 0.1.3 (2026-11-26 - 09:51 -03:00)
+
+Inventory Fixes:
+- Fixed the total item count announced for inventory categories (`speak_inventory_category`):
+  * Previously, the inventory summed up the stack quantities of all items (e.g., 55 potions + 55 shields were announced as 110 items total).
+  * Now, the total count reflects only the unique item types in the category (e.g., 50 potions = 1 item total; revolver + sword + shield + knife = 4 items total), while individual stack quantities continue to be spoken when focusing each item.
+
 New in version 0.1.2 (2026-11-26 - 09:29 -03:00)
 
 Native King Audio Engine Reverberation System:
