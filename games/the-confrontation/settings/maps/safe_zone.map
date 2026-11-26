@@ -1,16 +1,16 @@
 map: safe_zone
 minx: 0
-maxx: 200
+maxx: 30
 miny: 0
-maxy: 200
+maxy: 30
 minz: 0
-maxz: 0
+maxz: 30
 minlevel: 1
 maxlevel: 0
 minresurrection: 0
 maxresurrection: 0
-spawnpoint:1:0:0
-platform:0:200:0:200:0:0:carpet1
 safezone:0:200:0:200:0:0
 zone:0:200:0:200:0:100:safe zone
-source:0:200:0:200:0:0:musics/Music18:0:90
+platform:0:30:0:30:0:0:concrete11
+source:0:30:0:30:0:30:musics/Music11:0:90
+reverb:0:30:0:30:0:30:custom:1591:-10:0:100:100:0:0:20000:80:250:0:6050:100

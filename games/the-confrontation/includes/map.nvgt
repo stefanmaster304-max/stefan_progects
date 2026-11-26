@@ -779,12 +779,17 @@ else if (cmd == "reverb")
 			r_hicut = float(string_to_number(parsed[19]));
 			r_elmix = float(string_to_number(parsed[20]));
 		}
+		bool r_affect_sources = true;
+		if (parsed.length() >= 22)
+		{
+			r_affect_sources = (int(string_to_number(parsed[21])) != 0);
+		}
 		spawn_reverb_zone(
 			int(string_to_number(parsed[1])), int(string_to_number(parsed[2])),
 			int(string_to_number(parsed[3])), int(string_to_number(parsed[4])),
 			int(string_to_number(parsed[5])), int(string_to_number(parsed[6])),
 			r_preset, r_decay, r_wet, r_dry, r_diff, r_dens,
-			r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix
+			r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix, r_affect_sources
 		);
 	}
 }

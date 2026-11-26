@@ -1,9 +1,10 @@
 The Confront - Registro de Alterações (Português)
 
-Novo na versão 1.0 (26/11/2026 - 16:55 -03:00)
+Novo na versão 1.0 (26/11/2026 - 18:50 -03:00)
 
 Lançamento Oficial 1.0 e Nova Classe de NPC:
 - Lançamento oficial da versão `1.0` (removido o status de beta pública / em desenvolvimento).
+- Adicionada na configuração de zonas de reverberação (`reverb_builder.nvgt` e `reverb_system.nvgt`) a caixa de seleção "Afetar fontes sonoras e som ambiente", permitindo isolar fontes sonoras 3D e sons ambientes (`sp`) do reverb quando desmarcada.
 - Adicionada a nova classe de NPCs `boss` (`Chefe` em português, `Boss` em inglês, `Jefe` em espanhol) em `includes/npc_data.nvgt`, `includes/npc_manager.nvgt` e arquivos de idioma.
 - Disponibilizados na página oficial os downloads da versão `1.0` sem sons, com sons completos e acesso ao código-fonte no GitHub.
 

@@ -91,6 +91,7 @@
     "reverb_low_shelf_gain": "Ganancia Low Shelf (dB)",
     "reverb_high_cut": "Corte de agudos (Hz)",
     "reverb_early_late_mix": "Mezcla Inicial/Tardío (%)",
+    "reverb_affect_sources": "Afectar fuentes sonoras y sonido ambiente",
     "add_reverb_zone": "Añadir zona de reverberación",
     "title": "menú de construcción",
     "cannot_build_encrypted": "No se puede construir en un mapa cifrado.",

@@ -88,6 +88,7 @@ void build_reverb_zone()
 	int s_lsgain = f.create_slider(tr("builder.reverb_low_shelf_gain"), int(d_lsgain), -36, 12, "", 1);
 	int s_hicut = f.create_slider(tr("builder.reverb_high_cut"), int(d_hicut), 20, 20000, "", 250);
 	int s_elmix = f.create_slider(tr("builder.reverb_early_late_mix"), int(d_elmix), 0, 100, "", 5);
+	int chk_sources = f.create_checkbox(tr("builder.reverb_affect_sources"), false);
 
 	int btn_ok = f.create_button("&" + tr("builder.add_reverb_zone"), true);
 	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
@@ -258,7 +259,7 @@ void build_reverb_zone()
 			string line = "reverb:" + tx1 + ":" + tx2 + ":" + ty1 + ":" + ty2 + ":" + tz1 + ":" + tz2 + ":" +
 				active_preset + ":" + v_decay + ":" + v_wet + ":" + v_dry + ":" + v_diff + ":" + v_dens + ":" +
 				v_early + ":" + v_late + ":" + v_hfref + ":" + v_hfratio + ":" + v_lsfreq + ":" + v_lsgain + ":" +
-				v_hicut + ":" + v_elmix;
+				v_hicut + ":" + v_elmix + ":" + (f.is_checked(chk_sources) ? 1 : 0);
 			save_to_map(line);
 			return;
 		}

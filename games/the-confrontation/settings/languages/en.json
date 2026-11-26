@@ -91,6 +91,7 @@
     "reverb_low_shelf_gain": "Low shelf gain (dB)",
     "reverb_high_cut": "High cut (Hz)",
     "reverb_early_late_mix": "Early/Late mix (%)",
+    "reverb_affect_sources": "Affect sound sources and ambient sounds",
     "add_reverb_zone": "Add reverb zone",
     "title": "build menu",
     "cannot_build_encrypted": "Cannot build on an encrypted map.",

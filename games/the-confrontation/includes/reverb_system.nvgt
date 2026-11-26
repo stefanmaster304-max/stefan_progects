@@ -3,6 +3,7 @@
 // with no high-pass, low-pass, or MiniAudio fallback effects.
 
 mixer world_reverb_mixer;
+mixer world_sources_reverb_mixer;
 bool world_reverb_mixer_initialized = false;
 int active_reverb_zone_index = -1;
 
@@ -36,6 +37,7 @@ class map_reverb_zone
 	float low_shelf_gain;
 	float high_cut;
 	float early_late_mix;
+	bool affect_sources;
 
 	bool contains(int x, int y, int z)
 	{
@@ -146,11 +148,15 @@ void init_world_reverb_mixer()
 	{
 		world_reverb_mixer_initialized = true;
 		@p.mixer = @world_reverb_mixer;
-		@sp.mixer = @world_reverb_mixer;
+		@sp.mixer = @world_sources_reverb_mixer;
 		@itempool.mixer = @world_reverb_mixer;
 		@bulletpool.mixer = @world_reverb_mixer;
 		@map_door_audio.mixer = @world_reverb_mixer;
 		@elevator_audio.mixer = @world_reverb_mixer;
+	}
+	if (sp.mixer !is world_sources_reverb_mixer)
+	{
+		@sp.mixer = @world_sources_reverb_mixer;
 	}
 	if (itempool.mixer !is world_reverb_mixer)
 	{
@@ -212,6 +218,7 @@ void clear_map_reverbs()
 	if (world_reverb_mixer_initialized)
 	{
 		world_reverb_mixer.remove_reverb();
+		world_sources_reverb_mixer.remove_reverb();
 	}
 }
 
@@ -230,7 +237,8 @@ void spawn_reverb_zone(
 	float low_shelf_freq = 250.0f,
 	float low_shelf_gain = 0.0f,
 	float high_cut = 8000.0f,
-	float early_late_mix = 60.0f)
+	float early_late_mix = 60.0f,
+	bool affect_sources = true)
 {
 	string p_name = string_to_lower_case(preset.trim_whitespace());
 	if (!is_valid_king_reverb_preset(p_name)) p_name = "room";
@@ -256,6 +264,7 @@ void spawn_reverb_zone(
 	rz.low_shelf_gain = low_shelf_gain;
 	rz.high_cut = high_cut;
 	rz.early_late_mix = early_late_mix;
+	rz.affect_sources = affect_sources;
 	map_reverb_zones.insert_last(rz);
 }
 
@@ -268,6 +277,7 @@ void update_map_reverb()
 		{
 			active_reverb_zone_index = -1;
 			world_reverb_mixer.remove_reverb();
+			world_sources_reverb_mixer.remove_reverb();
 		}
 		return;
 	}
@@ -291,6 +301,7 @@ void update_map_reverb()
 	if (matched_idx == -1)
 	{
 		world_reverb_mixer.remove_reverb();
+		world_sources_reverb_mixer.remove_reverb();
 		return;
 	}
 
@@ -312,4 +323,29 @@ void update_map_reverb()
 		rz.high_cut,
 		rz.early_late_mix
 	);
+
+	if (rz.affect_sources)
+	{
+		apply_king_reverb_to_mixer(
+			world_sources_reverb_mixer,
+			rz.preset,
+			rz.decay_ms,
+			rz.wet_db,
+			rz.dry_db,
+			rz.diffusion,
+			rz.density,
+			rz.early_delay,
+			rz.late_delay,
+			rz.hf_reference,
+			rz.hf_decay_ratio,
+			rz.low_shelf_freq,
+			rz.low_shelf_gain,
+			rz.high_cut,
+			rz.early_late_mix
+		);
+	}
+	else
+	{
+		world_sources_reverb_mixer.remove_reverb();
+	}
 }
