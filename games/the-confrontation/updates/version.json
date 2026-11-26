@@ -22,8 +22,8 @@
   },
   "maps": {
     "version": "0.7",
-    "build": 4,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1.6/maps.dat",
-    "size": 3712
+    "build": 5,
+    "url": "https://raw.githubusercontent.com/stefanmaster304-max/stefan_progects/main/games/the-confrontation/settings/maps.dat",
+    "size": 3792
   }
 }
