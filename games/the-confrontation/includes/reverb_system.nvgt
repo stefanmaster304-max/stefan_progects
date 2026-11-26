@@ -142,15 +142,20 @@ void get_king_reverb_preset_defaults(
 
 void init_world_reverb_mixer()
 {
-	if (world_reverb_mixer_initialized) return;
-	world_reverb_mixer_initialized = true;
-	@p.mixer = @world_reverb_mixer;
-	@sp.mixer = @world_reverb_mixer;
-	@itempool.mixer = @world_reverb_mixer;
-	@bulletpool.mixer = @world_reverb_mixer;
-	@npcp.mixer = @world_reverb_mixer;
-	@map_door_audio.mixer = @world_reverb_mixer;
-	@elevator_audio.mixer = @world_reverb_mixer;
+	if (!world_reverb_mixer_initialized)
+	{
+		world_reverb_mixer_initialized = true;
+		@p.mixer = @world_reverb_mixer;
+		@sp.mixer = @world_reverb_mixer;
+		@itempool.mixer = @world_reverb_mixer;
+		@bulletpool.mixer = @world_reverb_mixer;
+		@map_door_audio.mixer = @world_reverb_mixer;
+		@elevator_audio.mixer = @world_reverb_mixer;
+	}
+	if (npcp !is null && npcp.mixer is null)
+	{
+		@npcp.mixer = @world_reverb_mixer;
+	}
 }
 
 void apply_king_reverb_to_mixer(
@@ -252,7 +257,7 @@ void spawn_reverb_zone(
 
 void update_map_reverb()
 {
-	if (!world_reverb_mixer_initialized) init_world_reverb_mixer();
+	init_world_reverb_mixer();
 	if (!is_in_game || mapname == "" || map_reverb_zones.length() == 0)
 	{
 		if (active_reverb_zone_index != -1)
