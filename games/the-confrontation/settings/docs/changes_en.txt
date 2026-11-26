@@ -1,9 +1,11 @@
 The Confront - Changelog (English)
 
-New in version 0.1.2 (2026-11-26 - 09:19 -03:00)
+New in version 0.1.2 (2026-11-26 - 09:29 -03:00)
 
 Native King Audio Engine Reverberation System:
 - Added a full reverberation zone system using strictly King Audio Engine's native mixer reverb (no high-pass, no low-pass, no extra DSP effects, and no MiniAudio fallback).
+- Fixed a null pointer access crash in `init_world_reverb_mixer()` at startup before `npcp` is instantiated, routing the NPC pool to the reverb mixer once the map loads.
+- Translated the entire Reverb Zone Builder menu (`reverb zone`) into English, Portuguese, and Spanish via `tr()`.
 - Added XYZ-bounded reverb zones (`minx`, `maxx`, `miny`, `maxy`, `minz`, `maxz`) saved and loaded in map files (`reverb:...`), automatically applying and clearing reverb in real time as the player enters or leaves a zone.
 - Added a Reverb Zone Builder (`reverb zone`) in the builder menu featuring:
   * A list with only valid King Audio presets (`room`, `hall`, `cave`, `bathroom`, `arena`, `hangar`, `forest`, `tunnel`, `underwater`, and `custom`).

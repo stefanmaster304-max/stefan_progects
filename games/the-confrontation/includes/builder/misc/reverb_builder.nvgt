@@ -39,7 +39,7 @@ void build_reverb_zone()
 	string[] platform_dirs = get_map_sound_folders("builder/construction/platforms/*");
 
 	audio_form f;
-	f.create_window("Reverb Zone Builder (King Audio)", false, true, false);
+	f.create_window(tr("builder.reverb_title"), false, true, false);
 
 	int i_minx = f.create_input_box(tr("form.min_x"), "" + minx);
 	int i_maxx = f.create_input_box(tr("form.max_x"), "" + maxx);
@@ -47,21 +47,21 @@ void build_reverb_zone()
 	int i_maxy = f.create_input_box(tr("form.max_y"), "" + maxy);
 	int i_minz = f.create_input_box(tr("form.min_z"), "" + minz);
 	int i_maxz = f.create_input_box(tr("form.max_z"), "" + maxz);
-	f.set_disallowed_chars(i_minx, "0123456789-", true, "Numbers only.");
-	f.set_disallowed_chars(i_maxx, "0123456789-", true, "Numbers only.");
-	f.set_disallowed_chars(i_miny, "0123456789-", true, "Numbers only.");
-	f.set_disallowed_chars(i_maxy, "0123456789-", true, "Numbers only.");
-	f.set_disallowed_chars(i_minz, "0123456789-", true, "Numbers only.");
-	f.set_disallowed_chars(i_maxz, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_minx, "0123456789-", true, tr("builder.numbers_only"));
+	f.set_disallowed_chars(i_maxx, "0123456789-", true, tr("builder.numbers_only"));
+	f.set_disallowed_chars(i_miny, "0123456789-", true, tr("builder.numbers_only"));
+	f.set_disallowed_chars(i_maxy, "0123456789-", true, tr("builder.numbers_only"));
+	f.set_disallowed_chars(i_minz, "0123456789-", true, tr("builder.numbers_only"));
+	f.set_disallowed_chars(i_maxz, "0123456789-", true, tr("builder.numbers_only"));
 
-	int l_presets = f.create_list("Reverb preset", 0, false, false);
+	int l_presets = f.create_list(tr("builder.reverb_preset"), 0, false, false);
 	for (uint i = 0; i < KING_REVERB_PRESETS.length(); i++)
 	{
 		f.add_list_item(l_presets, KING_REVERB_PRESETS[i]);
 	}
 	f.set_list_position(l_presets, 0);
 
-	int l_platforms = f.create_list("Preview platform sound", 0, false, false);
+	int l_platforms = f.create_list(tr("builder.reverb_platform"), 0, false, false);
 	for (uint i = 0; i < platform_dirs.length(); i++)
 	{
 		f.add_list_item(l_platforms, platform_dirs[i]);
@@ -75,21 +75,21 @@ void build_reverb_zone()
 		d_hfref, d_hfratio, d_lsfreq, d_lsgain, d_hicut, d_elmix
 	);
 
-	int s_wet = f.create_slider("Wet level (dB)", int(d_wet), -80, 20, "", 2);
-	int s_dry = f.create_slider("Dry level (dB)", int(d_dry), -80, 20, "", 2);
-	int s_decay = f.create_slider("Decay time (ms)", int(d_decay), 100, 20000, "", 100);
-	int s_diff = f.create_slider("Diffusion (%)", int(d_diff), 0, 100, "", 5);
-	int s_dens = f.create_slider("Density (%)", int(d_dens), 0, 100, "", 5);
-	int s_early = f.create_slider("Early delay (ms)", int(d_early), 0, 300, "", 5);
-	int s_late = f.create_slider("Late delay (ms)", int(d_late), 0, 100, "", 5);
-	int s_hfref = f.create_slider("HF reference (Hz)", int(d_hfref), 20, 20000, "", 250);
-	int s_hfratio = f.create_slider("HF decay ratio (%)", int(d_hfratio), 10, 100, "", 5);
-	int s_lsfreq = f.create_slider("Low shelf freq (Hz)", int(d_lsfreq), 20, 1000, "", 20);
-	int s_lsgain = f.create_slider("Low shelf gain (dB)", int(d_lsgain), -36, 12, "", 1);
-	int s_hicut = f.create_slider("High cut (Hz)", int(d_hicut), 20, 20000, "", 250);
-	int s_elmix = f.create_slider("Early/Late mix (%)", int(d_elmix), 0, 100, "", 5);
+	int s_wet = f.create_slider(tr("builder.reverb_wet"), int(d_wet), -80, 20, "", 2);
+	int s_dry = f.create_slider(tr("builder.reverb_dry"), int(d_dry), -80, 20, "", 2);
+	int s_decay = f.create_slider(tr("builder.reverb_decay"), int(d_decay), 100, 20000, "", 100);
+	int s_diff = f.create_slider(tr("builder.reverb_diffusion"), int(d_diff), 0, 100, "", 5);
+	int s_dens = f.create_slider(tr("builder.reverb_density"), int(d_dens), 0, 100, "", 5);
+	int s_early = f.create_slider(tr("builder.reverb_early_delay"), int(d_early), 0, 300, "", 5);
+	int s_late = f.create_slider(tr("builder.reverb_late_delay"), int(d_late), 0, 100, "", 5);
+	int s_hfref = f.create_slider(tr("builder.reverb_hf_ref"), int(d_hfref), 20, 20000, "", 250);
+	int s_hfratio = f.create_slider(tr("builder.reverb_hf_decay"), int(d_hfratio), 10, 100, "", 5);
+	int s_lsfreq = f.create_slider(tr("builder.reverb_low_shelf_freq"), int(d_lsfreq), 20, 1000, "", 20);
+	int s_lsgain = f.create_slider(tr("builder.reverb_low_shelf_gain"), int(d_lsgain), -36, 12, "", 1);
+	int s_hicut = f.create_slider(tr("builder.reverb_high_cut"), int(d_hicut), 20, 20000, "", 250);
+	int s_elmix = f.create_slider(tr("builder.reverb_early_late_mix"), int(d_elmix), 0, 100, "", 5);
 
-	int btn_ok = f.create_button("&Add reverb zone", true);
+	int btn_ok = f.create_button("&" + tr("builder.add_reverb_zone"), true);
 	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(btn_ok, btn_cancel);
 	f.focus_silently(l_presets);
