@@ -10,7 +10,7 @@ string inventory_selected_item = "";
 bool inventory_use_pending = false;
 bool inventory_closed_by_enter_this_frame = false;
 int inventory_category_index = 0;
-string[] inventory_categories = {"all", "weapons_ammo", "medical", "currency"};
+string[] inventory_categories = {"all", "weapons_ammo", "equipment", "medical", "currency"};
 int inventory_move_sound_index = 0;
 
 void give(string item, int amount)
@@ -289,6 +289,7 @@ bool inventory_item_matches_category(const string&in id, const string&in categor
 		return find_weapon_data(id) !is null || (ammo_item !is null && (ammo_item.category == "ammo" || ammo_item.category == "ammunition")) || id.find("ammo") >= 0 || id.find("bullet") >= 0 || id.find("shell") >= 0 || id.find("round") >= 0 || id.find("cell") >= 0;
 	}
 	item_data@ it = get_item_data(id);
+	if (category == "equipment") return is_equipment_item(id) || (it !is null && (it.category == "equipment" || it.category == "shield"));
 	if (category == "medical") return it !is null && (it.restores_health || it.heal_amount > 0 || it.category == "medical");
 	if (category == "currency") return id == "gold" || id == "golden_crystal" || (it !is null && it.category == "currency");
 	return false;

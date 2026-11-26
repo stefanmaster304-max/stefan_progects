@@ -389,6 +389,7 @@
     "empty": "Tu inventario está vacío.",
     "of": "de",
     "category_medical": "Objetos médicos",
+    "category_equipment": "Equipamiento",
     "total_items": "&1 objetos en total",
     "total_item_singular": "&1 artículo en total",
     "category_all": "Inventario completo",

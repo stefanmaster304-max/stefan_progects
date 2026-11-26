@@ -389,6 +389,7 @@
     "empty": "Your inventory is empty.",
     "of": "of",
     "category_medical": "Medical items",
+    "category_equipment": "Equipment",
     "total_items": "&1 items total",
     "total_item_singular": "&1 item total",
     "category_all": "All inventory",

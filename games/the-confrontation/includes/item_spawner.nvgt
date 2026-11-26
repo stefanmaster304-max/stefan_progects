@@ -11,7 +11,7 @@ void ensure_item_pool()
 {
 	if (!item_pool_initialized)
 	{
-		@itempool.mixer = mixer();
+		@itempool.mixer = @world_reverb_mixer;
 		itempool.max_distance = 25.0;
 		itempool.pan_step = 1.0;
 		itempool.volume_step = SOUND_VOLUME_STEP;

@@ -1,5 +1,12 @@
 The Confront - Registro de Alterações (Português)
 
+Novo na versão 0.1.4 (26/11/2026 - 10:02 -03:00)
+
+Inventário, Áudio e Atualizador:
+- Adicionada a categoria `Equipamentos` (`equipment`) no menu do inventário (`includes/inventory.nvgt` e traduções EN/PT/ES), exibindo escudos e demais itens de equipamento em sua própria categoria.
+- Aplicado o mixer de reverberação nativa da King Audio também ao pool de itens no chão (`itempool` em `includes/item_spawner.nvgt`), corrigindo o problema em que itens no chão não recebiam o reverb do mapa.
+- Ajustados os beeps de progresso e notificação do atualizador (`includes/updater.nvgt`) para um volume mais baixo (`0.08`) e timbre mais nítido (onda triangular com base de `220 Hz`).
+
 Novo na versão 0.1.3 (26/11/2026 - 09:51 -03:00)
 
 Correções no Inventário:

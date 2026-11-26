@@ -152,6 +152,10 @@ void init_world_reverb_mixer()
 		@map_door_audio.mixer = @world_reverb_mixer;
 		@elevator_audio.mixer = @world_reverb_mixer;
 	}
+	if (itempool.mixer !is world_reverb_mixer)
+	{
+		@itempool.mixer = @world_reverb_mixer;
+	}
 	if (npcp !is null && npcp.mixer is null)
 	{
 		@npcp.mixer = @world_reverb_mixer;

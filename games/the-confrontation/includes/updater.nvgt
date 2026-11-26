@@ -313,15 +313,15 @@ void cleanup_update_temp()
 }
 
 /* NVDA-style rising pitch progress bar tone */
-void beep_percentage(double val, double volume = 0.20)
+void beep_percentage(double val, double volume = 0.08)
 {
 	val = round(val, 0);
 	if (val < 0) val = 0;
 	if (val > 100) val = 100;
-	/* NVDA progress bar formula: 110 Hz base doubling every 25% (A2 110Hz to A6 1760Hz) */
-	double freq = 110.0 * (2.0 ** (val / 25.0));
+	/* Crisp, low-volume progress tone (220 Hz base scaling smoothly upward) */
+	double freq = 220.0 * (2.0 ** (val / 35.0));
 	tone_synth sy;
-	sy.waveform_type = 0; /* Pure sine wave */
+	sy.waveform_type = 1;
 	sy.volume = volume;
 	sy.set_edge_fades(2, 2);
 	sy.freq_ms(freq, 40);
@@ -570,8 +570,8 @@ bool check_and_prompt_missing_sounds()
 void updater_beep(int frequency, int duration)
 {
 	tone_synth tone;
-	tone.waveform_type = 1; /* Soft sine wave */
-	tone.volume = 0.20;
+	tone.waveform_type = 1;
+	tone.volume = 0.08;
 	tone.set_edge_fades(4, 4);
 	tone.freq_ms(frequency, duration);
 	tone.write_wave_sound().play_wait();
