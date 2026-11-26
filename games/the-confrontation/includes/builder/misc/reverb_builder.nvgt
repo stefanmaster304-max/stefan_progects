@@ -256,10 +256,22 @@ void build_reverb_zone()
 				continue;
 			}
 			stop_reverb_preview(preview_snd, preview_mix);
-			string line = "reverb:" + tx1 + ":" + tx2 + ":" + ty1 + ":" + ty2 + ":" + tz1 + ":" + tz2 + ":" +
-				active_preset + ":" + v_decay + ":" + v_wet + ":" + v_dry + ":" + v_diff + ":" + v_dens + ":" +
-				v_early + ":" + v_late + ":" + v_hfref + ":" + v_hfratio + ":" + v_lsfreq + ":" + v_lsgain + ":" +
-				v_hicut + ":" + v_elmix + ":" + (f.is_checked(chk_sources) ? 1 : 0);
+			string line = "reverb:x1=" + tx1 + ":x2=" + tx2 + ":y1=" + ty1 + ":y2=" + ty2 + ":z1=" + tz1 + ":z2=" + tz2 +
+				":preset=" + active_preset +
+				":decay_ms=" + v_decay +
+				":wet_db=" + v_wet +
+				":dry_db=" + v_dry +
+				":diffusion=" + v_diff +
+				":density=" + v_dens +
+				":early_delay=" + v_early +
+				":late_delay=" + v_late +
+				":hf_reference=" + v_hfref +
+				":hf_decay_ratio=" + v_hfratio +
+				":low_shelf_freq=" + v_lsfreq +
+				":low_shelf_gain=" + v_lsgain +
+				":high_cut=" + v_hicut +
+				":early_late_mix=" + v_elmix +
+				":affect_sources=" + (f.is_checked(chk_sources) ? 1 : 0);
 			save_to_map(line);
 			return;
 		}

@@ -1,9 +1,10 @@
 The Confront - Changelog (English)
 
-New in version 1.0 (2026-11-26 - 18:50 -03:00)
+New in version 1.0 (2026-11-26 - 19:08 -03:00)
 
 Official 1.0 Release & New NPC Class:
 - Official `1.0` release (removed public beta / in-development status).
+- Map `reverb:` lines now save and parse named `key=value` parameters (`x1=...:preset=...:decay_ms=...:wet_db=...:affect_sources=...`) for clear readability and editing in the map editor (with backward compatibility for positional lines).
 - Added the "Affect sound sources and ambient sounds" checkbox to the Reverb Zone Builder (`reverb_builder.nvgt` and `reverb_system.nvgt`), keeping 3D sound sources and ambient sounds (`sp`) dry when unchecked.
 - Added the new `boss` NPC class (`Boss` in English, `Chefe` in Portuguese, `Jefe` in Spanish) in `includes/npc_data.nvgt`, `includes/npc_manager.nvgt`, and language files.
 - Updated the official website with `1.0` downloads without sounds, with full sounds, and link to the GitHub source code.

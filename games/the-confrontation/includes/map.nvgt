@@ -758,39 +758,99 @@ else if (cmd == "reverb")
 {
 	if (parsed.length() >= 8)
 	{
-		string r_preset = parsed[7];
-		float r_decay = 1500.0f, r_wet = -6.0f, r_dry = 0.0f, r_diff = 80.0f, r_dens = 60.0f;
-		float r_early = 5.0f, r_late = 10.0f, r_hfref = 5000.0f, r_hfratio = 50.0f;
-		float r_lsfreq = 250.0f, r_lsgain = 0.0f, r_hicut = 8000.0f, r_elmix = 60.0f;
-		get_king_reverb_preset_defaults(r_preset, r_decay, r_wet, r_dry, r_diff, r_dens, r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix);
-		if (parsed.length() >= 21)
+		if (parsed[1].find("=") >= 0)
 		{
-			r_decay = float(string_to_number(parsed[8]));
-			r_wet = float(string_to_number(parsed[9]));
-			r_dry = float(string_to_number(parsed[10]));
-			r_diff = float(string_to_number(parsed[11]));
-			r_dens = float(string_to_number(parsed[12]));
-			r_early = float(string_to_number(parsed[13]));
-			r_late = float(string_to_number(parsed[14]));
-			r_hfref = float(string_to_number(parsed[15]));
-			r_hfratio = float(string_to_number(parsed[16]));
-			r_lsfreq = float(string_to_number(parsed[17]));
-			r_lsgain = float(string_to_number(parsed[18]));
-			r_hicut = float(string_to_number(parsed[19]));
-			r_elmix = float(string_to_number(parsed[20]));
+			int rx1 = 0, rx2 = 0, ry1 = 0, ry2 = 0, rz1 = 0, rz2 = 0;
+			string r_preset = "room";
+			float r_decay = 1500.0f, r_wet = -6.0f, r_dry = 0.0f, r_diff = 80.0f, r_dens = 60.0f;
+			float r_early = 5.0f, r_late = 10.0f, r_hfref = 5000.0f, r_hfratio = 50.0f;
+			float r_lsfreq = 250.0f, r_lsgain = 0.0f, r_hicut = 8000.0f, r_elmix = 60.0f;
+			bool r_affect_sources = true;
+
+			for (uint pi = 1; pi < parsed.length(); pi++)
+			{
+				int eq = parsed[pi].find("=");
+				if (eq <= 0) continue;
+				string k = string_to_lower_case(parsed[pi].substr(0, eq).trim_whitespace());
+				string v = parsed[pi].substr(eq + 1).trim_whitespace();
+				if (k == "preset")
+				{
+					r_preset = v;
+					get_king_reverb_preset_defaults(r_preset, r_decay, r_wet, r_dry, r_diff, r_dens, r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix);
+					break;
+				}
+			}
+
+			for (uint pi = 1; pi < parsed.length(); pi++)
+			{
+				int eq = parsed[pi].find("=");
+				if (eq <= 0) continue;
+				string k = string_to_lower_case(parsed[pi].substr(0, eq).trim_whitespace());
+				string v = parsed[pi].substr(eq + 1).trim_whitespace();
+				if (k == "x1") rx1 = int(string_to_number(v));
+				else if (k == "x2") rx2 = int(string_to_number(v));
+				else if (k == "y1") ry1 = int(string_to_number(v));
+				else if (k == "y2") ry2 = int(string_to_number(v));
+				else if (k == "z1") rz1 = int(string_to_number(v));
+				else if (k == "z2") rz2 = int(string_to_number(v));
+				else if (k == "decay_ms") r_decay = float(string_to_number(v));
+				else if (k == "wet_db") r_wet = float(string_to_number(v));
+				else if (k == "dry_db") r_dry = float(string_to_number(v));
+				else if (k == "diffusion") r_diff = float(string_to_number(v));
+				else if (k == "density") r_dens = float(string_to_number(v));
+				else if (k == "early_delay") r_early = float(string_to_number(v));
+				else if (k == "late_delay") r_late = float(string_to_number(v));
+				else if (k == "hf_reference") r_hfref = float(string_to_number(v));
+				else if (k == "hf_decay_ratio") r_hfratio = float(string_to_number(v));
+				else if (k == "low_shelf_freq") r_lsfreq = float(string_to_number(v));
+				else if (k == "low_shelf_gain") r_lsgain = float(string_to_number(v));
+				else if (k == "high_cut") r_hicut = float(string_to_number(v));
+				else if (k == "early_late_mix") r_elmix = float(string_to_number(v));
+				else if (k == "affect_sources") r_affect_sources = (int(string_to_number(v)) != 0);
+			}
+
+			spawn_reverb_zone(
+				rx1, rx2, ry1, ry2, rz1, rz2,
+				r_preset, r_decay, r_wet, r_dry, r_diff, r_dens,
+				r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix, r_affect_sources
+			);
 		}
-		bool r_affect_sources = true;
-		if (parsed.length() >= 22)
+		else
 		{
-			r_affect_sources = (int(string_to_number(parsed[21])) != 0);
+			string r_preset = parsed[7];
+			float r_decay = 1500.0f, r_wet = -6.0f, r_dry = 0.0f, r_diff = 80.0f, r_dens = 60.0f;
+			float r_early = 5.0f, r_late = 10.0f, r_hfref = 5000.0f, r_hfratio = 50.0f;
+			float r_lsfreq = 250.0f, r_lsgain = 0.0f, r_hicut = 8000.0f, r_elmix = 60.0f;
+			get_king_reverb_preset_defaults(r_preset, r_decay, r_wet, r_dry, r_diff, r_dens, r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix);
+			if (parsed.length() >= 21)
+			{
+				r_decay = float(string_to_number(parsed[8]));
+				r_wet = float(string_to_number(parsed[9]));
+				r_dry = float(string_to_number(parsed[10]));
+				r_diff = float(string_to_number(parsed[11]));
+				r_dens = float(string_to_number(parsed[12]));
+				r_early = float(string_to_number(parsed[13]));
+				r_late = float(string_to_number(parsed[14]));
+				r_hfref = float(string_to_number(parsed[15]));
+				r_hfratio = float(string_to_number(parsed[16]));
+				r_lsfreq = float(string_to_number(parsed[17]));
+				r_lsgain = float(string_to_number(parsed[18]));
+				r_hicut = float(string_to_number(parsed[19]));
+				r_elmix = float(string_to_number(parsed[20]));
+			}
+			bool r_affect_sources = true;
+			if (parsed.length() >= 22)
+			{
+				r_affect_sources = (int(string_to_number(parsed[21])) != 0);
+			}
+			spawn_reverb_zone(
+				int(string_to_number(parsed[1])), int(string_to_number(parsed[2])),
+				int(string_to_number(parsed[3])), int(string_to_number(parsed[4])),
+				int(string_to_number(parsed[5])), int(string_to_number(parsed[6])),
+				r_preset, r_decay, r_wet, r_dry, r_diff, r_dens,
+				r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix, r_affect_sources
+			);
 		}
-		spawn_reverb_zone(
-			int(string_to_number(parsed[1])), int(string_to_number(parsed[2])),
-			int(string_to_number(parsed[3])), int(string_to_number(parsed[4])),
-			int(string_to_number(parsed[5])), int(string_to_number(parsed[6])),
-			r_preset, r_decay, r_wet, r_dry, r_diff, r_dens,
-			r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix, r_affect_sources
-		);
 	}
 }
 else if (cmd == "source")
