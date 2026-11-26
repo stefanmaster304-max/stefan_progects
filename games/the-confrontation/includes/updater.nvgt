@@ -188,7 +188,28 @@ string format_byte_size(int64 bytes)
 }
 
 sound updater_audio;
+sound updater_music;
 bool bypass_missing_sounds_check = false;
+
+void start_updater_music()
+{
+	if (updater_music.playing) return;
+	string snd = "sounds/updater/update_music.ogg";
+	if (!file_exists(snd)) snd = get_sound_path("updater/update_music.ogg;sounds/updater/update_music.ogg");
+	if (snd != "" && updater_music.load(snd))
+	{
+		updater_music.play_looped();
+	}
+}
+
+void stop_updater_music()
+{
+	if (updater_music.active || updater_music.playing)
+	{
+		updater_music.stop();
+		updater_music.close();
+	}
+}
 
 void play_update_found_sound()
 {
@@ -199,23 +220,16 @@ void play_update_found_sound()
 	{
 		updater_audio.play();
 	}
-	else
-	{
-		updater_beep(950, 120);
-	}
 }
 
 void play_update_complete_sound()
 {
+	stop_updater_music();
 	string snd = "sounds/updater/updatecomplete.ogg";
 	if (!file_exists(snd)) snd = get_sound_path("updater/updatecomplete.ogg;sounds/updater/updatecomplete.ogg");
 	if (snd != "" && updater_audio.load(snd))
 	{
 		updater_audio.play();
-	}
-	else
-	{
-		updater_beep(1400, 120);
 	}
 }
 
@@ -227,8 +241,6 @@ void wait_for_update_complete_sound()
 	}
 	wait(200);
 }
-
-upcoming::sound@ progress_sound;
 
 string powershell_literal(const string&in value)
 {
@@ -251,24 +263,15 @@ process@ start_hidden_powershell(const string&in command, const string&in script
 	return run(args, PROCESS_BACKGROUND, cwdir());
 }
 
-bool wait_for_hidden_process(process@ child, bool progress_beeps = false)
+bool wait_for_hidden_process(process@ child, bool unused_flag = false)
 {
 	if (child is null || !child.valid) return false;
-	double progress = 5.0;
-	timer beep_timer;
 	while (child.running)
 	{
 		wait(25);
 		update_game_world();
-		if (progress_beeps && beep_timer.elapsed >= 350)
-		{
-			beep_timer.restart();
-			beep_percentage(progress);
-			if (progress < 95.0) progress += 3.0;
-		}
 	}
 	int exit_code = child.wait();
-	if (progress_beeps && exit_code == 0) beep_percentage(100.0);
 	return exit_code == 0;
 }
 
@@ -292,6 +295,7 @@ bool extract_sound_archive(const string&in archive_path, const string&in destina
 
 void cleanup_update_temp()
 {
+	stop_updater_music();
 	for (int attempt = 0; attempt < 4 && directory_exists(UPDATE_TEMP_DIR); attempt++)
 	{
 		directory_delete(UPDATE_TEMP_DIR, true);
@@ -312,40 +316,15 @@ void cleanup_update_temp()
 	if (file_exists("game_update_failed.flag")) file_delete("game_update_failed.flag");
 }
 
-/* NVDA-style rising pitch progress bar tone */
-void beep_percentage(double val, double volume = 0.08)
-{
-	val = round(val, 0);
-	if (val < 0) val = 0;
-	if (val > 100) val = 100;
-	/* Crisp, low-volume progress tone (220 Hz base scaling smoothly upward) */
-	double freq = 220.0 * (2.0 ** (val / 35.0));
-	tone_synth sy;
-	sy.waveform_type = 1;
-	sy.volume = volume;
-	sy.set_edge_fades(2, 2);
-	sy.freq_ms(freq, 40);
-	@progress_sound = sy.write_wave_sound();
-	sy.reset();
-	if (progress_sound !is null) progress_sound.play();
-}
-
 string dl_file(string url, string disk_file, bool quiet = false, string msg = "")
 {
 	if (msg == "") msg = tr("updater.download_help");
 	internet_request r(url, disk_file);
 	if (!quiet) speak(msg);
-	double last_percentage = 0;
-	int progbeeps = 1;
 	string status = "";
 	while (r.complete != true)
 	{
 		wait(5);
-		if (r.download_percent == r.download_percent && r.download_percent >= 0 && (r.download_percent - last_percentage) >= 1)
-		{
-			if (progbeeps == 1 && r.download_percent > 0) beep_percentage(r.download_percent);
-			last_percentage = r.download_percent;
-		}
 		if (key_pressed(KEY_ESCAPE))
 		{
 			status = "canceled";
@@ -370,19 +349,6 @@ string dl_file(string url, string disk_file, bool quiet = false, string msg = ""
 		if (key_pressed(KEY_H))
 		{
 			speak(msg);
-		}
-		if (key_pressed(KEY_M))
-		{
-			if (progbeeps == 1)
-			{
-				progbeeps = 0;
-				speak(tr("updater.beeps_muted"));
-			}
-			else if (progbeeps == 0)
-			{
-				progbeeps = 1;
-				speak(tr("updater.beeps_unmuted"));
-			}
 		}
 		if (key_pressed(KEY_SPACE))
 		{
@@ -500,6 +466,7 @@ bool check_and_prompt_missing_sounds()
 	}
 
 	ensure_clean_update_temp();
+	start_updater_music();
 	string sound_file = UPDATE_TEMP_DIR + "/sounds.zip";
 	if (file_exists(sound_file) && file_get_size(sound_file) > 1048576 && validate_sound_archive(sound_file))
 	{
@@ -539,8 +506,10 @@ bool check_and_prompt_missing_sounds()
 		bypass_missing_sounds_check = true;
 		return false;
 	}
+	stop_updater_music();
 	if (!install_sound_directory(extract_dir + "/sounds"))
 	{
+		stop_updater_music();
 		speak(tr("updater.sound_install_failed", "The sound files could not be installed. Existing sounds were kept."));
 		if (file_exists(sound_file)) file_delete(sound_file);
 		cleanup_update_temp();
@@ -566,17 +535,6 @@ bool check_and_prompt_missing_sounds()
 	return false;
 }
 
-/* Native NVGT tone generator with smooth sine waveform and gentle edge fades */
-void updater_beep(int frequency, int duration)
-{
-	tone_synth tone;
-	tone.waveform_type = 1;
-	tone.volume = 0.08;
-	tone.set_edge_fades(4, 4);
-	tone.freq_ms(frequency, duration);
-	tone.write_wave_sound().play_wait();
-}
-
 void ensure_clean_update_temp()
 {
 	cleanup_update_temp();
@@ -591,6 +549,7 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 	if (url == "") { error_message = "The update entry has no download address."; return false; }
 	if (dest == "") { error_message = "The update has no destination file."; return false; }
 
+	start_updater_music();
 	for (int attempt = 1; attempt <= UPDATE_MAX_ATTEMPTS; attempt++)
 	{
 		if (file_exists(dest)) file_delete(dest);
@@ -598,6 +557,7 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 		if (result == "canceled")
 		{
 			if (file_exists(dest)) file_delete(dest);
+			stop_updater_music();
 			error_message = "Update cancelled.";
 			return false;
 		}
@@ -605,7 +565,6 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 		int64 size = file_exists(dest) ? file_get_size(dest) : 0;
 		if (result == "finished" && size > 0 && (expected_size <= 0 || size == expected_size))
 		{
-			updater_beep(1250, 90);
 			return true;
 		}
 
@@ -615,8 +574,8 @@ bool download_update_file(const string&in url, const string&in dest, int64 expec
 			wait(500);
 		}
 	}
+	stop_updater_music();
 	error_message = "Download failed after multiple attempts.";
-	updater_beep(220, 300);
 	return false;
 }
 
@@ -873,6 +832,7 @@ bool apply_sounds_update(update_item@ item)
 		return false;
 	}
 
+	stop_updater_music();
 	if (!install_sound_directory(source_dir))
 	{
 		speak(tr("updater.sound_install_failed", "The new sound files could not be installed. Existing sounds were kept."));

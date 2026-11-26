@@ -1,5 +1,12 @@
 The Confront - Registro de Alterações (Português)
 
+Novo na versão 0.1.6 (26/11/2026 - 11:09 -03:00)
+
+Atualizador e Pacote de Sons:
+- Removidos todos os beeps do sistema de atualização (`beep_percentage`, `updater_beep` e tecla de mudo `M` em `includes/updater.nvgt`).
+- Adicionada reprodução em loop da música `sounds/updater/update_music.ogg` durante todo o processo de atualização (jogo, conteúdos, mapas e sons), encerrando automaticamente antes da troca de pastas ou ao concluir/cancelar.
+- Atualizado o pacote de sons (`0.1.6`) seguindo a mesma numeração de versão do jogo, substituindo o pacote antigo tanto para atualizações quanto para o download inicial quando o jogo não detecta sons.
+
 Novo na versão 0.1.5 (26/11/2026 - 10:15 -03:00)
 
 Sistema de Armas e Alinhamento:

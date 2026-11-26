@@ -2,8 +2,8 @@
 name=zombie
 class=zombie
 attack_speed=750
-min_damage=10
-max_damage=20
+min_damage=3500
+max_damage=6500
 detection_range=400
 attack_range=4
 walk_speed=390
