@@ -1,8 +1,9 @@
 The Confront - Changelog (English)
 
-New in version 0.1.4 (2026-11-26 - 10:02 -03:00)
+New in version 0.1.4 (2026-11-26 - 10:07 -03:00)
 
-Inventory, Audio & Updater:
+Compiled Bundles, Inventory, Audio & Updater:
+- Rebuilt and updated the encrypted `settings/maps.dat` and `settings/contents.dat` bundles from the latest files in `settings/maps/`, `settings/npcs/`, items, weapons, stores, and packages, fixing the issue where recently edited maps (such as Lion's Cave, with native reverb zones and updated platforms) did not reflect in the compiled executable (`tcf.exe`).
 - Added the `Equipment` (`equipment`) category to the inventory menu (`includes/inventory.nvgt` and EN/PT/ES translations), listing shields and other equipment items in their own category.
 - Routed the ground item audio pool (`itempool` in `includes/item_spawner.nvgt`) through the King Audio native reverb mixer so ground items properly receive map reverb.
 - Tuned the updater progress and notification beeps (`includes/updater.nvgt`) for lower volume (`0.08`) and crisper clarity (triangle waveform starting at `220 Hz`).

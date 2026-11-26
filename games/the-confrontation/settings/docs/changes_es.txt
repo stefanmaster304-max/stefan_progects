@@ -1,8 +1,9 @@
 The Confront - Registro de Cambios (Español)
 
-Nuevo en la versión 0.1.4 (26/11/2026 - 10:02 -03:00)
+Nuevo en la versión 0.1.4 (26/11/2026 - 10:07 -03:00)
 
-Inventario, Audio y Actualizador:
+Paquetes Compilados, Inventario, Audio y Actualizador:
+- Recompilados y actualizados los paquetes cifrados `settings/maps.dat` y `settings/contents.dat` a partir de los archivos más recientes en `settings/maps/`, `settings/npcs/`, objetos, armas, tiendas y paquetes, corrigiendo el problema por el cual los mapas editados recientemente (como la Cueva de los Leones, con zonas de reverberación nativa y plataformas actualizadas) no se reflejaban en el ejecutable compilado (`tcf.exe`).
 - Añadida la categoría `Equipamiento` (`equipment`) en el menú del inventario (`includes/inventory.nvgt` y traducciones EN/PT/ES), mostrando escudos y otros objetos de equipamiento en su propia categoría.
 - Conectado el pool de audio de objetos en el suelo (`itempool` en `includes/item_spawner.nvgt`) al mixer de reverberación nativa de King Audio para que reciban correctamente el reverb del mapa.
 - Ajustados los pitidos de progreso y notificación del actualizador (`includes/updater.nvgt`) a un volumen más bajo (`0.08`) y un tono más nítido (onda triangular desde `220 Hz`).
