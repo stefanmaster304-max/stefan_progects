@@ -191,11 +191,13 @@ void npc_edit_form(npc_data@ n, bool is_new)
 	if (n.npc_class == NPC_CLASS_ROBOT) def_class = 1;
 	else if (n.npc_class == NPC_CLASS_ZOMBIE) def_class = 2;
 	else if (n.npc_class == NPC_CLASS_SPIRIT) def_class = 3;
+	else if (n.npc_class == NPC_CLASS_BOSS) def_class = 4;
 	int in_class = form.create_list(tr("npc_manager.npc_class"), 0, false, false);
 	form.add_list_item(in_class, tr("npc_manager.class_animal"), NPC_CLASS_ANIMAL, -1, false, (def_class == 0));
 	form.add_list_item(in_class, tr("npc_manager.class_robot"), NPC_CLASS_ROBOT, -1, false, (def_class == 1));
 	form.add_list_item(in_class, tr("npc_manager.class_zombie"), NPC_CLASS_ZOMBIE, -1, false, (def_class == 2));
 	form.add_list_item(in_class, tr("npc_manager.class_spirit"), NPC_CLASS_SPIRIT, -1, false, (def_class == 3));
+	form.add_list_item(in_class, tr("npc_manager.class_boss"), NPC_CLASS_BOSS, -1, false, (def_class == 4));
 	form.set_list_position(in_class, def_class, false);
 
 	int in_attack_speed = form.create_input_box(tr("npc_manager.attack_speed"), "" + n.attack_speed);
@@ -339,6 +341,7 @@ void npc_edit_form(npc_data@ n, bool is_new)
 			if (class_pos == 1) n.npc_class = NPC_CLASS_ROBOT;
 			else if (class_pos == 2) n.npc_class = NPC_CLASS_ZOMBIE;
 			else if (class_pos == 3) n.npc_class = NPC_CLASS_SPIRIT;
+			else if (class_pos == 4) n.npc_class = NPC_CLASS_BOSS;
 			else n.npc_class = NPC_CLASS_ANIMAL;
 
 			n.attack_speed = int(string_to_number(form.get_text(in_attack_speed)));

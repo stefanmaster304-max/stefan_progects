@@ -15,12 +15,13 @@ const string NPC_CLASS_ANIMAL = "animal";
 const string NPC_CLASS_ROBOT = "robot";
 const string NPC_CLASS_ZOMBIE = "zombie";
 const string NPC_CLASS_SPIRIT = "spirit";
+const string NPC_CLASS_BOSS = "boss";
 
 class npc_data
 {
 	string id;
 	string name;
-	string npc_class; // animal, robot, zombie or spirit
+	string npc_class; // animal, robot, zombie, spirit or boss
 
 	int attack_speed; // milliseconds between two attacks
 	int min_damage;
@@ -94,6 +95,7 @@ string npc_class_of(const string&in value)
 	if (c == NPC_CLASS_ROBOT) return NPC_CLASS_ROBOT;
 	if (c == NPC_CLASS_ZOMBIE) return NPC_CLASS_ZOMBIE;
 	if (c == NPC_CLASS_SPIRIT || c == "spirits") return NPC_CLASS_SPIRIT;
+	if (c == NPC_CLASS_BOSS || c == "chefe" || c == "jefe") return NPC_CLASS_BOSS;
 	return NPC_CLASS_ANIMAL;
 }
 

@@ -258,7 +258,8 @@
     "class_animal": "Animal",
     "class_robot": "Robô",
     "class_zombie": "Zumbi",
-    "class_spirit": "Espíritos"
+    "class_spirit": "Espíritos",
+    "class_boss": "Chefe"
   },
   "store_manager": {
     "title": "Gerenciador de Lojas e Categorias",
