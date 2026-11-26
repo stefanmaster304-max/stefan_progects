@@ -1,8 +1,10 @@
 The Confront - Registro de Alterações (Português)
 
-Novo na versão 0.1.6 (26/11/2026 - 11:09 -03:00)
+Novo na versão 0.1.6 (26/11/2026 - 11:22 -03:00)
 
 Atualizador e Pacote de Sons:
+- Corrigida a string de versão interna (`ver = "0.1.6"`) em `tcf.nvgt` para que o executável compilado exiba e registre corretamente a versão `0.1.6` após atualizar.
+- Adicionado anúncio automático de progresso falado a cada 10% durante os downloads no atualizador (`dl_file` em `includes/updater.nvgt`), mantendo a barra/atalho `Espaço` funcionando normalmente.
 - Removidos todos os beeps do sistema de atualização (`beep_percentage`, `updater_beep` e tecla de mudo `M` em `includes/updater.nvgt`).
 - Adicionada reprodução em loop da música `sounds/updater/update_music.ogg` durante todo o processo de atualização (jogo, conteúdos, mapas e sons), encerrando automaticamente antes da troca de pastas ou ao concluir/cancelar.
 - Atualizado o pacote de sons (`0.1.6`) seguindo a mesma numeração de versão do jogo, substituindo o pacote antigo tanto para atualizações quanto para o download inicial quando o jogo não detecta sons.

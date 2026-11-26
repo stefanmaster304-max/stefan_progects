@@ -321,10 +321,18 @@ string dl_file(string url, string disk_file, bool quiet = false, string msg = ""
 	if (msg == "") msg = tr("updater.download_help");
 	internet_request r(url, disk_file);
 	if (!quiet) speak(msg);
+	int next_announce_pct = 10;
 	string status = "";
 	while (r.complete != true)
 	{
 		wait(5);
+		if (!quiet && r.download_percent == r.download_percent && r.download_percent >= double(next_announce_pct) && next_announce_pct <= 100)
+		{
+			int pct_now = int(round(r.download_percent, 0));
+			if (pct_now > 100) pct_now = 100;
+			speak(pct_now + " " + tr("updater.percent_downloaded"));
+			while (next_announce_pct <= pct_now) next_announce_pct += 10;
+		}
 		if (key_pressed(KEY_ESCAPE))
 		{
 			status = "canceled";
