@@ -1,0 +1,266 @@
+// reverb_builder.nvgt - Interactive King Audio Reverb Zone Builder with real-time looping preview.
+
+void stop_reverb_preview(sound@ preview_snd, mixer@ preview_mix)
+{
+	if (preview_snd !is null && preview_snd.active)
+	{
+		preview_snd.stop();
+		preview_snd.close();
+	}
+	if (preview_mix !is null)
+	{
+		preview_mix.remove_reverb();
+	}
+}
+
+bool start_reverb_preview_sound(sound@ preview_snd, mixer@ preview_mix, const string&in tile)
+{
+	if (preview_snd is null || preview_mix is null || tile == "") return false;
+	if (preview_snd.active)
+	{
+		preview_snd.stop();
+		preview_snd.close();
+	}
+	string snd_path = get_platform_sound(tile, "step");
+	if (snd_path == "")
+	{
+		string[] any_files = find_all_sounds_in_disk("sounds/map platforms/" + tile + "/*.ogg");
+		if (any_files.length() > 0) snd_path = any_files[0];
+	}
+	if (snd_path == "") return false;
+	if (!preview_snd.load(snd_path)) return false;
+	preview_snd.set_mixer(preview_mix);
+	preview_snd.play_looped();
+	return true;
+}
+
+void build_reverb_zone()
+{
+	string[] platform_dirs = get_map_sound_folders("builder/construction/platforms/*");
+
+	audio_form f;
+	f.create_window("Reverb Zone Builder (King Audio)", false, true, false);
+
+	int i_minx = f.create_input_box(tr("form.min_x"), "" + minx);
+	int i_maxx = f.create_input_box(tr("form.max_x"), "" + maxx);
+	int i_miny = f.create_input_box(tr("form.min_y"), "" + miny);
+	int i_maxy = f.create_input_box(tr("form.max_y"), "" + maxy);
+	int i_minz = f.create_input_box(tr("form.min_z"), "" + minz);
+	int i_maxz = f.create_input_box(tr("form.max_z"), "" + maxz);
+	f.set_disallowed_chars(i_minx, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_maxx, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_miny, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_maxy, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_minz, "0123456789-", true, "Numbers only.");
+	f.set_disallowed_chars(i_maxz, "0123456789-", true, "Numbers only.");
+
+	int l_presets = f.create_list("Reverb preset", 0, false, false);
+	for (uint i = 0; i < KING_REVERB_PRESETS.length(); i++)
+	{
+		f.add_list_item(l_presets, KING_REVERB_PRESETS[i]);
+	}
+	f.set_list_position(l_presets, 0);
+
+	int l_platforms = f.create_list("Preview platform sound", 0, false, false);
+	for (uint i = 0; i < platform_dirs.length(); i++)
+	{
+		f.add_list_item(l_platforms, platform_dirs[i]);
+	}
+	if (platform_dirs.length() > 0) f.set_list_position(l_platforms, 0);
+
+	float d_decay, d_wet, d_dry, d_diff, d_dens, d_early, d_late, d_hfref, d_hfratio, d_lsfreq, d_lsgain, d_hicut, d_elmix;
+	get_king_reverb_preset_defaults(
+		KING_REVERB_PRESETS[0],
+		d_decay, d_wet, d_dry, d_diff, d_dens, d_early, d_late,
+		d_hfref, d_hfratio, d_lsfreq, d_lsgain, d_hicut, d_elmix
+	);
+
+	int s_wet = f.create_slider("Wet level (dB)", int(d_wet), -80, 20, "", 2);
+	int s_dry = f.create_slider("Dry level (dB)", int(d_dry), -80, 20, "", 2);
+	int s_decay = f.create_slider("Decay time (ms)", int(d_decay), 100, 20000, "", 100);
+	int s_diff = f.create_slider("Diffusion (%)", int(d_diff), 0, 100, "", 5);
+	int s_dens = f.create_slider("Density (%)", int(d_dens), 0, 100, "", 5);
+	int s_early = f.create_slider("Early delay (ms)", int(d_early), 0, 300, "", 5);
+	int s_late = f.create_slider("Late delay (ms)", int(d_late), 0, 100, "", 5);
+	int s_hfref = f.create_slider("HF reference (Hz)", int(d_hfref), 20, 20000, "", 250);
+	int s_hfratio = f.create_slider("HF decay ratio (%)", int(d_hfratio), 10, 100, "", 5);
+	int s_lsfreq = f.create_slider("Low shelf freq (Hz)", int(d_lsfreq), 20, 1000, "", 20);
+	int s_lsgain = f.create_slider("Low shelf gain (dB)", int(d_lsgain), -36, 12, "", 1);
+	int s_hicut = f.create_slider("High cut (Hz)", int(d_hicut), 20, 20000, "", 250);
+	int s_elmix = f.create_slider("Early/Late mix (%)", int(d_elmix), 0, 100, "", 5);
+
+	int btn_ok = f.create_button("&Add reverb zone", true);
+	int btn_cancel = f.create_button("&" + tr("ui.cancel"), false, true);
+	f.set_default_controls(btn_ok, btn_cancel);
+	f.focus_silently(l_presets);
+
+	mixer preview_mix;
+	sound preview_snd;
+	int last_preset_idx = f.get_list_position(l_presets);
+	int last_plat_idx = f.get_list_position(l_platforms);
+	string active_preset = (last_preset_idx >= 0 && last_preset_idx < int(KING_REVERB_PRESETS.length())) ? KING_REVERB_PRESETS[uint(last_preset_idx)] : "room";
+
+	if (last_plat_idx >= 0 && last_plat_idx < int(platform_dirs.length()))
+	{
+		start_reverb_preview_sound(preview_snd, preview_mix, platform_dirs[uint(last_plat_idx)]);
+	}
+	apply_king_reverb_to_mixer(
+		preview_mix, active_preset,
+		float(f.get_slider(s_decay)), float(f.get_slider(s_wet)), float(f.get_slider(s_dry)),
+		float(f.get_slider(s_diff)), float(f.get_slider(s_dens)), float(f.get_slider(s_early)),
+		float(f.get_slider(s_late)), float(f.get_slider(s_hfref)), float(f.get_slider(s_hfratio)),
+		float(f.get_slider(s_lsfreq)), float(f.get_slider(s_lsgain)), float(f.get_slider(s_hicut)),
+		float(f.get_slider(s_elmix))
+	);
+
+	int last_wet = f.get_slider(s_wet);
+	int last_dry = f.get_slider(s_dry);
+	int last_decay = f.get_slider(s_decay);
+	int last_diff = f.get_slider(s_diff);
+	int last_dens = f.get_slider(s_dens);
+	int last_early = f.get_slider(s_early);
+	int last_late = f.get_slider(s_late);
+	int last_hfref = f.get_slider(s_hfref);
+	int last_hfratio = f.get_slider(s_hfratio);
+	int last_lsfreq = f.get_slider(s_lsfreq);
+	int last_lsgain = f.get_slider(s_lsgain);
+	int last_hicut = f.get_slider(s_hicut);
+	int last_elmix = f.get_slider(s_elmix);
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		f.monitor();
+
+		if (key_pressed(KEY_ESCAPE) || f.is_pressed(btn_cancel))
+		{
+			stop_reverb_preview(preview_snd, preview_mix);
+			speak(tr("ui.cancel"));
+			return;
+		}
+
+		int cur_plat = f.get_list_position(l_platforms);
+		if (cur_plat != last_plat_idx)
+		{
+			last_plat_idx = cur_plat;
+			if (cur_plat >= 0 && cur_plat < int(platform_dirs.length()))
+			{
+				start_reverb_preview_sound(preview_snd, preview_mix, platform_dirs[uint(cur_plat)]);
+			}
+		}
+
+		int cur_preset = f.get_list_position(l_presets);
+		if (cur_preset != last_preset_idx)
+		{
+			last_preset_idx = cur_preset;
+			if (cur_preset >= 0 && cur_preset < int(KING_REVERB_PRESETS.length()))
+			{
+				active_preset = KING_REVERB_PRESETS[uint(cur_preset)];
+				if (active_preset != "custom")
+				{
+					get_king_reverb_preset_defaults(
+						active_preset,
+						d_decay, d_wet, d_dry, d_diff, d_dens, d_early, d_late,
+						d_hfref, d_hfratio, d_lsfreq, d_lsgain, d_hicut, d_elmix
+					);
+					f.set_slider(s_wet, int(d_wet));
+					f.set_slider(s_dry, int(d_dry));
+					f.set_slider(s_decay, int(d_decay));
+					f.set_slider(s_diff, int(d_diff));
+					f.set_slider(s_dens, int(d_dens));
+					f.set_slider(s_early, int(d_early));
+					f.set_slider(s_late, int(d_late));
+					f.set_slider(s_hfref, int(d_hfref));
+					f.set_slider(s_hfratio, int(d_hfratio));
+					f.set_slider(s_lsfreq, int(d_lsfreq));
+					f.set_slider(s_lsgain, int(d_lsgain));
+					f.set_slider(s_hicut, int(d_hicut));
+					f.set_slider(s_elmix, int(d_elmix));
+					last_wet = int(d_wet); last_dry = int(d_dry); last_decay = int(d_decay);
+					last_diff = int(d_diff); last_dens = int(d_dens); last_early = int(d_early);
+					last_late = int(d_late); last_hfref = int(d_hfref); last_hfratio = int(d_hfratio);
+					last_lsfreq = int(d_lsfreq); last_lsgain = int(d_lsgain); last_hicut = int(d_hicut);
+					last_elmix = int(d_elmix);
+				}
+				apply_king_reverb_to_mixer(
+					preview_mix, active_preset,
+					float(f.get_slider(s_decay)), float(f.get_slider(s_wet)), float(f.get_slider(s_dry)),
+					float(f.get_slider(s_diff)), float(f.get_slider(s_dens)), float(f.get_slider(s_early)),
+					float(f.get_slider(s_late)), float(f.get_slider(s_hfref)), float(f.get_slider(s_hfratio)),
+					float(f.get_slider(s_lsfreq)), float(f.get_slider(s_lsgain)), float(f.get_slider(s_hicut)),
+					float(f.get_slider(s_elmix))
+				);
+			}
+		}
+
+		int v_wet = f.get_slider(s_wet);
+		int v_dry = f.get_slider(s_dry);
+		int v_decay = f.get_slider(s_decay);
+		int v_diff = f.get_slider(s_diff);
+		int v_dens = f.get_slider(s_dens);
+		int v_early = f.get_slider(s_early);
+		int v_late = f.get_slider(s_late);
+		int v_hfref = f.get_slider(s_hfref);
+		int v_hfratio = f.get_slider(s_hfratio);
+		int v_lsfreq = f.get_slider(s_lsfreq);
+		int v_lsgain = f.get_slider(s_lsgain);
+		int v_hicut = f.get_slider(s_hicut);
+		int v_elmix = f.get_slider(s_elmix);
+
+		bool detail_changed = (
+			v_decay != last_decay || v_diff != last_diff || v_dens != last_dens ||
+			v_early != last_early || v_late != last_late || v_hfref != last_hfref ||
+			v_hfratio != last_hfratio || v_lsfreq != last_lsfreq || v_lsgain != last_lsgain ||
+			v_hicut != last_hicut || v_elmix != last_elmix
+		);
+		bool mix_changed = (v_wet != last_wet || v_dry != last_dry);
+
+		if (detail_changed || mix_changed)
+		{
+			if (detail_changed && active_preset != "custom")
+			{
+				active_preset = "custom";
+				int custom_idx = int(KING_REVERB_PRESETS.length()) - 1;
+				f.set_list_position(l_presets, custom_idx);
+				last_preset_idx = custom_idx;
+			}
+			last_wet = v_wet; last_dry = v_dry; last_decay = v_decay;
+			last_diff = v_diff; last_dens = v_dens; last_early = v_early;
+			last_late = v_late; last_hfref = v_hfref; last_hfratio = v_hfratio;
+			last_lsfreq = v_lsfreq; last_lsgain = v_lsgain; last_hicut = v_hicut;
+			last_elmix = v_elmix;
+
+			apply_king_reverb_to_mixer(
+				preview_mix, active_preset,
+				float(v_decay), float(v_wet), float(v_dry),
+				float(v_diff), float(v_dens), float(v_early),
+				float(v_late), float(v_hfref), float(v_hfratio),
+				float(v_lsfreq), float(v_lsgain), float(v_hicut),
+				float(v_elmix)
+			);
+		}
+
+		if (f.is_pressed(btn_ok))
+		{
+			string tx1 = f.get_text(i_minx);
+			string tx2 = f.get_text(i_maxx);
+			string ty1 = f.get_text(i_miny);
+			string ty2 = f.get_text(i_maxy);
+			string tz1 = f.get_text(i_minz);
+			string tz2 = f.get_text(i_maxz);
+			if (tx1 == "" || tx2 == "" || ty1 == "" || ty2 == "" || tz1 == "" || tz2 == "")
+			{
+				speak(tr("builder.coords_empty"));
+				continue;
+			}
+			stop_reverb_preview(preview_snd, preview_mix);
+			string line = "reverb:" + tx1 + ":" + tx2 + ":" + ty1 + ":" + ty2 + ":" + tz1 + ":" + tz2 + ":" +
+				active_preset + ":" + v_decay + ":" + v_wet + ":" + v_dry + ":" + v_diff + ":" + v_dens + ":" +
+				v_early + ":" + v_late + ":" + v_hfref + ":" + v_hfratio + ":" + v_lsfreq + ":" + v_lsgain + ":" +
+				v_hicut + ":" + v_elmix;
+			save_to_map(line);
+			return;
+		}
+	}
+}

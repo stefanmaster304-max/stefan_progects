@@ -1,11 +1,11 @@
 {
   "game": {
-    "version": "0.1.1",
+    "version": "0.1.2",
     "build": 1,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1.1/the_confront_v0.1.1_no_sounds_build1.zip",
-    "zip_url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1.1/the_confront_v0.1.1_no_sounds_build1.zip",
-    "size": 31648944,
-    "zip_size": 31648944
+    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1.2/the_confront_v0.1.2_no_sounds_build1.zip",
+    "zip_url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v0.1.2/the_confront_v0.1.2_no_sounds_build1.zip",
+    "size": 31660240,
+    "zip_size": 31660240
   },
   "content": {
     "version": "0.6",

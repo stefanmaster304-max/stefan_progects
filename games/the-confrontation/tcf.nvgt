@@ -8,7 +8,7 @@
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
-string ver = "0.1.1";
+string ver = "0.1.2";
 
 #include "includes/bgt_compat.nvgt"
 #include "includes/player_character.nvgt"
@@ -44,6 +44,7 @@ string ver = "0.1.1";
 #include "includes/tracking_system.nvgt"
 #include"includes/npc_manager.nvgt"
 #include"includes/verify_files.nvgt"
+#include "includes/reverb_system.nvgt"
 #include "includes/world_runtime.nvgt"
 int x, y, z;
 int minx = 0, maxx = 250, miny = 0, maxy = 250, minz = 0, maxz = 50;
@@ -252,6 +253,7 @@ dlg("Settings file not found, creating a new settings file...");
 // King Audio uses Steam Audio HRTF for spatial rendering.
 king_global_hrtf = true;
 king_realistic_distance = false;
+init_world_reverb_mixer();
 
 	p.volume_step = SOUND_VOLUME_STEP;
 	sp.volume_step = SOUND_VOLUME_STEP;
@@ -724,6 +726,7 @@ update_idle_scuff();
 	p.update_listener_3d(me.x, me.y, me.z, double(facing));
 	sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 	itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
+	update_map_reverb();
 	king_system_update();
 if (kb_pressed("exit_game") and jumping==0 and falling==false)
 {

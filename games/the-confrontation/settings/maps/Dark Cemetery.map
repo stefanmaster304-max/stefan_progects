@@ -14,3 +14,4 @@ source:0:350:0:350:0:35:musics/Decomposer Instrumental de OS MUTANTES YouTube:0:
 source:0:350:0:350:0:35:sources/forest:0:90
 source:0:350:0:350:0:350:sources/birds11:0:90
 zone:0:350:0:350:0:350:@map.zone_dark_cemetery
+npcspawner:zombie:1:3000:0:0:0:35:35:0:1

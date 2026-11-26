@@ -563,6 +563,7 @@ void clear_map_data()
 	map_travel_points.resize(0);
 	map_store_points.resize(0);
 	clear_map_doors();
+	clear_map_reverbs();
 	clear_map_elevator_runtime();
 	destroy_all_staircases();
 	has_map_spawnpoint = false;
@@ -752,6 +753,40 @@ if (parsed.length() >= 8)
 {
 spawn_zone(string_to_number(parsed[1]), string_to_number(parsed[2]), string_to_number(parsed[3]), string_to_number(parsed[4]), string_to_number(parsed[5]), string_to_number(parsed[6]), parsed[7]);
 }
+}
+else if (cmd == "reverb")
+{
+	if (parsed.length() >= 8)
+	{
+		string r_preset = parsed[7];
+		float r_decay = 1500.0f, r_wet = -6.0f, r_dry = 0.0f, r_diff = 80.0f, r_dens = 60.0f;
+		float r_early = 5.0f, r_late = 10.0f, r_hfref = 5000.0f, r_hfratio = 50.0f;
+		float r_lsfreq = 250.0f, r_lsgain = 0.0f, r_hicut = 8000.0f, r_elmix = 60.0f;
+		get_king_reverb_preset_defaults(r_preset, r_decay, r_wet, r_dry, r_diff, r_dens, r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix);
+		if (parsed.length() >= 21)
+		{
+			r_decay = float(string_to_number(parsed[8]));
+			r_wet = float(string_to_number(parsed[9]));
+			r_dry = float(string_to_number(parsed[10]));
+			r_diff = float(string_to_number(parsed[11]));
+			r_dens = float(string_to_number(parsed[12]));
+			r_early = float(string_to_number(parsed[13]));
+			r_late = float(string_to_number(parsed[14]));
+			r_hfref = float(string_to_number(parsed[15]));
+			r_hfratio = float(string_to_number(parsed[16]));
+			r_lsfreq = float(string_to_number(parsed[17]));
+			r_lsgain = float(string_to_number(parsed[18]));
+			r_hicut = float(string_to_number(parsed[19]));
+			r_elmix = float(string_to_number(parsed[20]));
+		}
+		spawn_reverb_zone(
+			int(string_to_number(parsed[1])), int(string_to_number(parsed[2])),
+			int(string_to_number(parsed[3])), int(string_to_number(parsed[4])),
+			int(string_to_number(parsed[5])), int(string_to_number(parsed[6])),
+			r_preset, r_decay, r_wet, r_dry, r_diff, r_dens,
+			r_early, r_late, r_hfref, r_hfratio, r_lsfreq, r_lsgain, r_hicut, r_elmix
+		);
+	}
 }
 else if (cmd == "source")
 {

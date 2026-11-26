@@ -18,6 +18,7 @@
 #include "builder/misc/elevator_builder.nvgt"
 #include "builder/misc/store_point_builder.nvgt"
 #include "builder/misc/door_builder.nvgt"
+#include "builder/misc/reverb_builder.nvgt"
 
 void destroy_all_builder_objects()
 {
@@ -44,6 +45,7 @@ void buildmenu()
 		"wall - add solid blocking walls to your map",
 		"safe zone - add safe zones where combat damage is disabled",
 		"text zone - add trigger zones that display or speak text when entered",
+		"reverb zone - add a native King Audio reverberation zone to your map",
 		"spawnpoint - set the default player spawn coordinates on this map",
 		"items manager - add, edit, remove and create new items",
 		"package manager - create, edit, view and delete packages",
@@ -69,6 +71,7 @@ void buildmenu()
 		"wall",
 		"safe_zone",
 		"text_zone",
+		"reverb_zone",
 		"spawnpoint",
 		"items_manager",
 		"package_manager",
@@ -190,6 +193,11 @@ void buildmenu()
 			else if (picked == "door")
 			{
 				build_map_door();
+				return;
+			}
+			else if (picked == "reverb_zone")
+			{
+				build_reverb_zone();
 				return;
 			}
 			else if (picked == "map_manager_tools")

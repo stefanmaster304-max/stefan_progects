@@ -1,5 +1,15 @@
 The Confront - Registro de Cambios (Español)
 
+Nuevo en la versión 0.1.2 (26/11/2026 - 09:19 -03:00)
+
+Sistema de Reverberación Nativa (King Audio Engine):
+- Añadido un sistema completo de zonas de reverberación usando exclusivamente la reverberación nativa de King Audio Engine (vía mixer, sin filtro paso alto, paso bajo ni efectos adicionales, y sin usar MiniAudio).
+- Soporte para zonas con coordenadas XYZ (`minx`, `maxx`, `miny`, `maxy`, `minz`, `maxz`) guardadas y cargadas en los mapas (`reverb:...`), aplicando y quitando el efecto automáticamente en tiempo real al entrar o salir de la zona.
+- Añadido un constructor de zonas de reverberación (`reverb zone`) en el menú de construcción con:
+  * Lista que contiene únicamente los presets válidos de King Audio (`room`, `hall`, `cave`, `bathroom`, `arena`, `hangar`, `forest`, `tunnel`, `underwater` y `custom`).
+  * Lista de sonidos de plataformas disponibles reproducidos en bucle continuo mientras se configura la zona.
+  * Controles deslizantes (sliders) manejables con las flechas del teclado para todos los parámetros nativos de reverberación (`Wet level`, `Dry level`, `Decay time`, `Diffusion`, `Density`, `Early delay`, `Late delay`, `HF reference`, `HF decay ratio`, `Low shelf freq`, `Low shelf gain`, `High cut` y `Early/Late mix`) con actualización de audio en tiempo real.
+
 Nuevo en la versión 0.1.1 (25/11/2026 - 19:02 -03:00)
 
 Correcciones de Jugabilidad, Física y Audio:

@@ -1,5 +1,15 @@
 The Confront - Changelog (English)
 
+New in version 0.1.2 (2026-11-26 - 09:19 -03:00)
+
+Native King Audio Engine Reverberation System:
+- Added a full reverberation zone system using strictly King Audio Engine's native mixer reverb (no high-pass, no low-pass, no extra DSP effects, and no MiniAudio fallback).
+- Added XYZ-bounded reverb zones (`minx`, `maxx`, `miny`, `maxy`, `minz`, `maxz`) saved and loaded in map files (`reverb:...`), automatically applying and clearing reverb in real time as the player enters or leaves a zone.
+- Added a Reverb Zone Builder (`reverb zone`) in the builder menu featuring:
+  * A list with only valid King Audio presets (`room`, `hall`, `cave`, `bathroom`, `arena`, `hangar`, `forest`, `tunnel`, `underwater`, and `custom`).
+  * A list of available platform sounds played in a continuous loop while configuring the zone.
+  * Arrow-key sliders for all native King Audio reverb parameters (`Wet level`, `Dry level`, `Decay time`, `Diffusion`, `Density`, `Early delay`, `Late delay`, `HF reference`, `HF decay ratio`, `Low shelf freq`, `Low shelf gain`, `High cut`, and `Early/Late mix`) with live real-time audio updates.
+
 New in version 0.1.1 (2026-11-25 - 19:02 -03:00)
 
 Gameplay, Physics & Audio Fixes:

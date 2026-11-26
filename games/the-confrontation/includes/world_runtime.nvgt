@@ -18,6 +18,7 @@ void update_game_world()
 	broadcast_loop();
 	update_sources();
 	update_map_room_acoustics();
+	update_map_reverb();
 	if (autosave_timer.elapsed >= 30000)
 	{
 		autosave_timer.restart();
