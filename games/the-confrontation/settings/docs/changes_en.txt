@@ -1,5 +1,11 @@
 The Confront - Changelog (English)
 
+New in version 0.1.5 (2026-11-26 - 10:15 -03:00)
+
+Weapon System & Alignment:
+- Updated weapon target acquisition (`get_weapon_target_in_range` in `includes/npc_system.nvgt`) to require exact cardinal alignment with the player (`npc.x == px` or `npc.y == py`).
+- Weapons now hit NPCs within their configured WPM range (with unobstructed line of sight) only when the target is aligned straight ahead, straight behind, straight left, or straight right.
+
 New in version 0.1.4 (2026-11-26 - 10:07 -03:00)
 
 Compiled Bundles, Inventory, Audio & Updater:

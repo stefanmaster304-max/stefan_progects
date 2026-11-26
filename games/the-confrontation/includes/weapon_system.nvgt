@@ -166,8 +166,8 @@ void fire_current_weapon()
 
 	if (target_npc !is null)
 	{
-		// Targets inside the weapon's range and unobstructed radius are hits
-		// regardless of which side or angle they are on.
+		// Targets inside the weapon's range, unobstructed, and cardinally aligned
+		// (straight ahead, behind, left, or right) are hit.
 		if (w.sound_hit != "") npc_play_positional(target_npc, w.sound_hit);
 		npc_take_damage(target_npc, dmg, "Player", (w.name != "") ? w.name : w.id);
 	}

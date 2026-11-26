@@ -1,5 +1,11 @@
 The Confront - Registro de Cambios (Español)
 
+Nuevo en la versión 0.1.5 (26/11/2026 - 10:15 -03:00)
+
+Sistema de Armas y Alineación:
+- Ajustada la detección de objetivos de las armas (`get_weapon_target_in_range` en `includes/npc_system.nvgt`) para exigir alineación cardinal exacta con el jugador (`npc.x == px` o `npc.y == py`).
+- Ahora las armas impactan a los NPCs dentro del alcance configurado en su archivo WPM (sin paredes bloqueando) únicamente cuando el objetivo está alineado recto adelante, recto atrás, recto a la izquierda o recto a la derecha.
+
 Nuevo en la versión 0.1.4 (26/11/2026 - 10:07 -03:00)
 
 Paquetes Compilados, Inventario, Audio y Actualizador:

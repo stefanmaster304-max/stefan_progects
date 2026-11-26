@@ -1113,9 +1113,9 @@ bool npc_projectile_aims_at(double fx, double fy, double fz, double tx, double t
 	        (ifx == npc.x && ify == npc.y && ifz == npc.z));
 }
 
-// Selects the nearest living NPC in the weapon's Euclidean range. Weapon hits
-// are radial rather than tied to facing or cardinal alignment, with map walls
-// still blocking line of sight.
+// Selects the nearest living NPC in the weapon's range that is cardinally
+// aligned (straight forward, backward, left, or right: same X or same Y),
+// with map walls still blocking line of sight.
 npc_instance@ get_weapon_target_in_range(weapon_data@ w, int&out out_dir)
 {
 	out_dir = facing;
@@ -1134,6 +1134,7 @@ npc_instance@ get_weapon_target_in_range(weapon_data@ w, int&out out_dir)
 		npc_instance@ npc = npc_instances[i];
 		if (npc is null || npc.dead) continue;
 		if (npc.z != pz) continue;
+		if (npc.x != px && npc.y != py) continue;
 
 		double dist = get_3d_distance(me.x, me.y, me.z, double(npc.x), double(npc.y), double(npc.z));
 		if (dist > double(w.range)) continue;
