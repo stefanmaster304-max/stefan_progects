@@ -155,13 +155,11 @@ string explosive_pick_sound_dialog(const string&in label, const string&in curren
 
 void explosive_update_field_visibility(audio_form@ form, const string&in etype, bool view_only,
 	int in_dmg, int in_rad, int in_trig, int in_fuse, int in_throw, int in_stun, int in_active, int in_beep, int in_speed,
-	int btn_plant, int btn_arm, int btn_beep, int btn_det, int btn_travel, int btn_bounce, int btn_land, int btn_hit, int btn_exp, int btn_dist)
+	int btn_plant, int btn_beep, int btn_det, int btn_travel, int btn_bounce, int btn_land, int btn_hit, int btn_exp, int btn_dist)
 {
 	bool is_smoke_g = (etype == "smoke_grenade");
 	bool is_smoke_b = (etype == "smoke_bomb");
 	bool is_smoke = (is_smoke_g || is_smoke_b);
-	bool is_c4 = (etype == "remote_c4");
-	bool is_semtex = (etype == "sticky_semtex");
 	bool is_timed = (etype == "timed_bomb");
 	bool is_frag = (etype == "frag_grenade");
 	bool is_mine = (etype == "landmine");
@@ -179,7 +177,6 @@ void explosive_update_field_visibility(audio_form@ form, const string&in etype, 
 	bool show_speed = is_missile;
 
 	bool show_plant = !is_detonator;
-	bool show_arm = (is_c4 || is_timed || is_mine || is_smoke_b || is_missile);
 	bool show_det = is_detonator;
 	bool show_travel = (is_missile || is_smoke_b);
 	bool show_bounce = (is_frag || is_smoke_g);
@@ -199,7 +196,6 @@ void explosive_update_field_visibility(audio_form@ form, const string&in etype, 
 	form.set_state(in_speed, show_speed, show_speed);
 
 	form.set_state(btn_plant, show_plant, show_plant && !view_only);
-	form.set_state(btn_arm, show_arm, show_arm && !view_only);
 	form.set_state(btn_beep, show_beep, show_beep && !view_only);
 	form.set_state(btn_det, show_det, show_det && !view_only);
 	form.set_state(btn_travel, show_travel, show_travel && !view_only);
@@ -257,7 +253,6 @@ bool explosive_edit_form(explosive_data@ ex, bool is_new, bool view_only)
 
 	int btn_get = form.create_button(tr("explosive_manager.btn_pickup_sound") + get_snd_count_label(ex.sound_get));
 	int btn_plant = form.create_button(tr((ex.etype == "frag_grenade" || ex.etype == "smoke_grenade") ? "explosive_manager.btn_throw_sound" : "explosive_manager.btn_plant_only_sound") + get_snd_count_label(ex.sound_plant));
-	int btn_arm = form.create_button(tr("explosive_manager.btn_arm_sound") + get_snd_count_label(ex.sound_arm));
 	int btn_beep = form.create_button(tr("explosive_manager.btn_beep_sound") + get_snd_count_label(ex.sound_beep));
 	int btn_det = form.create_button(tr("explosive_manager.btn_det_sound") + get_snd_count_label(ex.sound_detonator));
 	int btn_travel = form.create_button(tr("explosive_manager.btn_travel_sound") + get_snd_count_label(ex.sound_travel));
@@ -279,7 +274,7 @@ bool explosive_edit_form(explosive_data@ ex, bool is_new, bool view_only)
 	string last_type = ex.etype;
 	explosive_update_field_visibility(form, last_type, view_only,
 		in_dmg, in_rad, in_trig, in_fuse, in_throw, in_stun, in_active, in_beep, in_speed,
-		btn_plant, btn_arm, btn_beep, btn_det, btn_travel, btn_bounce, btn_land, btn_hit, btn_exp, btn_dist);
+		btn_plant, btn_beep, btn_det, btn_travel, btn_bounce, btn_land, btn_hit, btn_exp, btn_dist);
 	form.focus(is_new ? in_id : in_name);
 
 	while (true)
@@ -296,7 +291,7 @@ bool explosive_edit_form(explosive_data@ ex, bool is_new, bool view_only)
 			form.set_text(btn_plant, tr((cur_type == "frag_grenade" || cur_type == "smoke_grenade") ? "explosive_manager.btn_throw_sound" : "explosive_manager.btn_plant_only_sound") + get_snd_count_label(ex.sound_plant));
 			explosive_update_field_visibility(form, cur_type, view_only,
 				in_dmg, in_rad, in_trig, in_fuse, in_throw, in_stun, in_active, in_beep, in_speed,
-				btn_plant, btn_arm, btn_beep, btn_det, btn_travel, btn_bounce, btn_land, btn_hit, btn_exp, btn_dist);
+				btn_plant, btn_beep, btn_det, btn_travel, btn_bounce, btn_land, btn_hit, btn_exp, btn_dist);
 		}
 
 		if (key_pressed(KEY_ESCAPE) || form.is_pressed(b_cancel))
@@ -316,11 +311,6 @@ bool explosive_edit_form(explosive_data@ ex, bool is_new, bool view_only)
 			{
 				ex.sound_plant = explosive_pick_sound_dialog("sound_plant", ex.sound_plant);
 				form.set_text(btn_plant, tr((cur_type == "frag_grenade" || cur_type == "smoke_grenade") ? "explosive_manager.btn_throw_sound" : "explosive_manager.btn_plant_only_sound") + get_snd_count_label(ex.sound_plant));
-			}
-			if (form.is_pressed(btn_arm))
-			{
-				ex.sound_arm = explosive_pick_sound_dialog("sound_arm", ex.sound_arm);
-				form.set_text(btn_arm, tr("explosive_manager.btn_arm_sound") + get_snd_count_label(ex.sound_arm));
 			}
 			if (form.is_pressed(btn_beep))
 			{

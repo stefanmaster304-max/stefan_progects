@@ -283,11 +283,6 @@ void plant_or_throw_explosive(explosive_data@ ex, int custom_fuse_ms = -1)
 	exp.move_timer.restart();
 
 	play_explosive_3d(ex.sound_plant, exp.x, exp.y, exp.z);
-	bool uses_arm = (ex.etype == "remote_c4" || ex.etype == "timed_bomb" || ex.etype == "landmine" || ex.etype == "smoke_bomb");
-	if (uses_arm && ex.sound_arm != "" && ex.sound_arm != ex.sound_plant)
-	{
-		play_explosive_3d(ex.sound_arm, exp.x, exp.y, exp.z);
-	}
 	active_explosives.insert_last(exp);
 }
 
@@ -319,10 +314,6 @@ void launch_guided_missile(explosive_data@ ex, int tx, int ty, int tz, npc_insta
 	}
 
 	play_explosive_3d(ex.sound_plant, exp.x, exp.y, exp.z);
-	if (ex.sound_arm != "" && ex.sound_arm != ex.sound_plant)
-	{
-		play_explosive_3d(ex.sound_arm, exp.x, exp.y, exp.z);
-	}
 	if (ex.sound_travel != "")
 	{
 		string tpath = get_sound_path(ex.sound_travel);

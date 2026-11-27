@@ -181,7 +181,6 @@ string serialize_explosive_config(explosive_data@ ex)
 
 	if (ex.sound_get != "") s += "sound_get=" + ex.sound_get + "\n";
 	if (!is_detonator && ex.sound_plant != "") s += "sound_plant=" + ex.sound_plant + "\n";
-	if ((is_c4 || is_timed || is_mine || is_smoke_b || is_missile) && ex.sound_arm != "") s += "sound_arm=" + ex.sound_arm + "\n";
 	if ((is_timed || is_mine) && ex.sound_beep != "") s += "sound_beep=" + ex.sound_beep + "\n";
 	if (is_detonator && ex.sound_detonator != "") s += "sound_detonator=" + ex.sound_detonator + "\n";
 	if ((is_missile || is_smoke_b) && ex.sound_travel != "") s += "sound_travel=" + ex.sound_travel + "\n";
