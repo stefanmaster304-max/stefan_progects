@@ -1081,7 +1081,8 @@ if (door_collision)
 string snd = get_wall_sound(wall_name, "bump");
 if (snd != "")
 {
-p.play_3d(snd, old.x, old.y, old.z, me.x, me.y, me.z, double(facing), false);
+if (door_collision) map_door_audio.play_3d(snd, old.x, old.y, old.z, me.x, me.y, me.z, double(facing), false);
+else p.play_3d(snd, old.x, old.y, old.z, me.x, me.y, me.z, double(facing), false);
 }
 me = old;
 }
