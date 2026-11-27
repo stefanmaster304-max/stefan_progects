@@ -257,7 +257,7 @@ void use(string item)
 
 	if (health >= maxhealth)
 	{
-		speak("Your health is already at maximum.");
+		speak(tr("inventory.health_already_full"));
 		return;
 	}
 

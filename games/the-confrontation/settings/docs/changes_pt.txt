@@ -1,5 +1,13 @@
 The Confront - Registro de Alterações (Português)
 
+Novo na versão 1.1 (27/11/2026 - 09:40 -03:00)
+
+Combate, Rastreamento, Áudio e Traduções:
+- Corrigido o áudio de impacto de NPCs em `npc_attack_player()` (`includes/npc_system.nvgt`): quando o jogador (Stefan ou Annie) está com um escudo equipado, o som de impacto do NPC no jogador não é reproduzido (tocando apenas o ataque do NPC e o som de impacto do próprio escudo); o som de impacto do NPC volta a tocar normalmente quando o jogador está sem escudo.
+- Adicionada a tecla `W` (`track_travel_status` em `includes/keybinds.nvgt` e `includes/tracking_system.nvgt`) para consultar em tempo real a distância e direção do ponto de viagem atualmente rastreado.
+- Implementado filtro acústico bidirecional em portas (`includes/door_system.nvgt` e `includes/sound_pool.nvgt`), abafando sons internos enquanto a porta está fechada pelo lado de fora e restaurando a nitidez ao abrir a porta.
+- Traduzida a mensagem `"Sua saúde já está no máximo."` (`inventory.health_already_full` em `includes/inventory.nvgt` e arquivos EN/PT/ES).
+
 Novo na versão 1.0 (26/11/2026 - 19:08 -03:00)
 
 Lançamento Oficial 1.0 e Nova Classe de NPC:

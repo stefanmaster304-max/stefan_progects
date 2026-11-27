@@ -1,5 +1,13 @@
 The Confront - Changelog (English)
 
+New in version 1.1 (2026-11-27 - 09:40 -03:00)
+
+Combat, Tracking, Audio & Localization:
+- Fixed NPC impact sound playback in `npc_attack_player()` (`includes/npc_system.nvgt`): while the player (Stefan or Annie) has a shield equipped, the NPC's player-hit sound is suppressed so only the NPC's attack sound and the shield's own impact sound play; the NPC hit sound plays normally when unshielded.
+- Added the `W` hotkey (`track_travel_status` in `includes/keybinds.nvgt` and `includes/tracking_system.nvgt`) to query the real-time distance and direction of the currently tracked travel point.
+- Added bidirectional room acoustic filtering on doors (`includes/door_system.nvgt` and `includes/sound_pool.nvgt`), muffling interior sounds from outside while the door is closed and restoring full clarity when opened.
+- Localized the `"Your health is already at maximum."` message (`inventory.health_already_full` in `includes/inventory.nvgt` and EN/PT/ES language files).
+
 New in version 1.0 (2026-11-26 - 19:08 -03:00)
 
 Official 1.0 Release & New NPC Class:

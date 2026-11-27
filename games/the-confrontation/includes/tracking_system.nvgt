@@ -184,3 +184,17 @@ void show_travel_point_tracker_menu()
 	string[] args = {travel_tracker_label};
 	speak(tr("tracker.tracking_started", args));
 }
+
+void speak_travel_point_status()
+{
+	if (!is_in_game || mapname == "") return;
+	if (!travel_tracker_active)
+	{
+		speak(tr("tracker.no_active_travel_point"));
+		return;
+	}
+	double dist = get_3d_distance(me.x, me.y, me.z, travel_tracker_x, travel_tracker_y, travel_tracker_z);
+	string direction = tracker_direction(calculate_x_y_angle(me.x, me.y, travel_tracker_x, travel_tracker_y, double(facing), false, false));
+	string[] args = {travel_tracker_label, "" + int(round(dist, 0)), direction};
+	speak(tr("tracker.travel_point_status", args));
+}

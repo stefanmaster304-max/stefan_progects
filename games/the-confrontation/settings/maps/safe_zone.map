@@ -1,16 +1,22 @@
 map: safe_zone
 minx: 0
-maxx: 30
+maxx: 100
 miny: 0
-maxy: 30
+maxy: 100
 minz: 0
-maxz: 30
+maxz: 100
 minlevel: 1
 maxlevel: 0
 minresurrection: 0
 maxresurrection: 0
-safezone:0:200:0:200:0:0
-zone:0:200:0:200:0:100:safe zone
-platform:0:30:0:30:0:0:concrete11
-source:0:30:0:30:0:30:musics/Music11:0:90
-reverb:0:30:0:30:0:30:custom:1591:-10:0:100:100:0:0:20000:80:250:0:6050:100
+platform:0:100:0:100:0:0:concrete11
+safezone:0:100:0:100:0:100
+zone:0:100:0:49:0:100:@map.zone_safe
+zone:0:100:50:50:0:100:@map.zone_store_door
+zone:0:100:51:100:0:100:@map.zone_store_area
+door:store_door:0:100:50:50:0:100:walldoor:Doors/Door01Open.ogg:Doors/Door01Close.ogg:500:5000:store_room:0:100:51:100:0:100:1500
+source:0:100:51:100:0:100:musics/Music9:0:90
+source:0:100:51:100:0:100:sources/walking_people2:0:100
+storepoint:general:0:0:51:100:0:0
+travelpoint:10:10:10:10:0:0:florest:0:0:0:0:0:0
+zone:10:10:10:10:0:0:@map.zone_to_forest

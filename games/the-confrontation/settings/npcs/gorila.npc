@@ -1,0 +1,19 @@
+# The Confront NPC
+name=gorila
+class=animal
+attack_speed=850
+min_damage=3300
+max_damage=4000
+detection_range=500
+attack_range=4
+walk_speed=490
+run_speed=220
+max_health=7000
+xp=2200
+use_platform_footsteps=1
+drop_items_on_death=0
+voice_min_delay=3300
+voice_max_delay=3500
+sound_voice=npcs/gorilla/taunt.ogg
+sound_hit=npcs/gorilla/hit1.ogg;npcs/gorilla/hit2.ogg
+sound_death=npcs/gorilla/death.ogg

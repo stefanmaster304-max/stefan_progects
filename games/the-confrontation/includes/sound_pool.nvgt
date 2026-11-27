@@ -13,6 +13,7 @@
 #pragma plugin king_audio_engine
 bool sound_pool_default_y_elevation = false;
 bool room_exterior_filter_active = false;
+bool room_filter_invert = false;
 int room_exterior_min_x = 0, room_exterior_max_x = 0;
 int room_exterior_min_y = 0, room_exterior_max_y = 0;
 int room_exterior_min_z = 0, room_exterior_max_z = 0;
@@ -24,6 +25,12 @@ bool sound_position_is_outside_interior(float sx, float sy, float sz)
 	return sx < room_exterior_min_x || sx > room_exterior_max_x ||
 		sy < room_exterior_min_y || sy > room_exterior_max_y ||
 		sz < room_exterior_min_z || sz > room_exterior_max_z;
+}
+
+bool sound_position_should_muffle(float sx, float sy, float sz)
+{
+	bool outside = sound_position_is_outside_interior(sx, sy, sz);
+	return room_filter_invert ? !outside : outside;
 }
 
 // One attenuation for the whole game. Every pool - the player's own sounds, the
@@ -351,7 +358,7 @@ void refresh_room_exterior_filter()
 		for (uint i = 0; i <= highest_slot && i < items.length(); i++)
 		{
 			bool filter_sound = room_filter_enabled && room_exterior_filter_active && !items[i].stationary &&
-				sound_position_is_outside_interior(items[i].x, items[i].y, items[i].z);
+				sound_position_should_muffle(items[i].x, items[i].y, items[i].z);
 			items[i].set_room_exterior_filter(filter_sound, room_exterior_filter_cutoff);
 		}
 	}
@@ -466,7 +473,7 @@ void refresh_room_exterior_filter()
 		}
 		for (uint i = 0; i < items[slot].fx_list.length(); i++)
 			items[slot].handle.set_fx(items[slot].fx_list[i]);
-		bool room_filter = room_filter_enabled && room_exterior_filter_active && dimension > 0 && sound_position_is_outside_interior(sound_x, sound_y, sound_z);
+		bool room_filter = room_filter_enabled && room_exterior_filter_active && dimension > 0 && sound_position_should_muffle(sound_x, sound_y, sound_z);
 		items[slot].set_room_exterior_filter(room_filter, room_exterior_filter_cutoff);
 		if (dimension > 0)
 			last_listener_x = listener_x;

@@ -146,6 +146,7 @@ void update_map_room_acoustics()
 {
 	int px = int(round(me.x, 0)), py = int(round(me.y, 0)), pz = int(round(me.z, 0));
 	map_door_definition@ room = null;
+	bool invert = false;
 	for (uint i = 0; i < map_doors.length(); i++)
 	{
 		map_door_definition@ candidate = map_doors[i];
@@ -153,6 +154,32 @@ void update_map_room_acoustics()
 		if (px < candidate.room_x0 || px > candidate.room_x1 || py < candidate.room_y0 || py > candidate.room_y1 || pz < candidate.room_z0 || pz > candidate.room_z1) continue;
 		@room = candidate;
 		break;
+	}
+	if (room is null)
+	{
+		double best_dist = 1.0e30;
+		for (uint i = 0; i < map_doors.length(); i++)
+		{
+			map_door_definition@ candidate = map_doors[i];
+			if (candidate is null || candidate.room_id == "") continue;
+			bool any_open = false;
+			for (uint j = 0; j < map_doors.length(); j++)
+			{
+				map_door_definition@ portal = map_doors[j];
+				if (portal !is null && portal.room_id == candidate.room_id && portal.is_open) { any_open = true; break; }
+			}
+			if (any_open) continue;
+			double cx = (candidate.x0 + candidate.x1) * 0.5;
+			double cy = (candidate.y0 + candidate.y1) * 0.5;
+			double cz = (candidate.z0 + candidate.z1) * 0.5;
+			double d = get_3d_distance(me.x, me.y, me.z, cx, cy, cz);
+			if (d < best_dist)
+			{
+				best_dist = d;
+				@room = candidate;
+				invert = true;
+			}
+		}
 	}
 	bool active = room !is null;
 	if (active)
@@ -163,7 +190,7 @@ void update_map_room_acoustics()
 			if (portal !is null && portal.room_id == room.room_id && portal.is_open) { active = false; break; }
 		}
 	}
-	bool changed = room_exterior_filter_active != active;
+	bool changed = (room_exterior_filter_active != active) || (room_filter_invert != invert);
 	if (active)
 	{
 		changed = changed || room_exterior_min_x != room.room_x0 || room_exterior_max_x != room.room_x1 ||
@@ -178,13 +205,15 @@ void update_map_room_acoustics()
 	if (changed)
 	{
 		room_exterior_filter_active = active;
+		room_filter_invert = invert;
 		refresh_room_acoustic_pools();
 	}
 	for (uint si = 0; si < src.length(); si++)
 	{
 		source@ ambience = src[si];
 		if (ambience is null || !ambience.is_ambience || ambience.sound < 0) continue;
-		bool muffle_ambience = active && !source_ambience_is_inside_room(ambience, room);
+		bool inside_room = source_ambience_is_inside_room(ambience, room);
+		bool muffle_ambience = active && (invert ? inside_room : !inside_room);
 		if (ambience.interior_muffled != muffle_ambience)
 		{
 			sp.set_sound_room_exterior_filter(ambience.sound, muffle_ambience, room_exterior_filter_cutoff);

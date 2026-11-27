@@ -8,7 +8,7 @@
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
-string ver = "1.0";
+string ver = "1.1";
 
 #include "includes/bgt_compat.nvgt"
 #include "includes/player_character.nvgt"
@@ -367,6 +367,7 @@ speak("" + kills + " kills");
 }
 if (kb_pressed("track_npcs")) track_nearby_npcs();
 if (kb_pressed("track_travel_point")) show_travel_point_tracker_menu();
+if (kb_pressed("track_travel_status") || key_pressed(KEY_W)) speak_travel_point_status();
 if (healtimer.elapsed>=15000 and health<maxhealth)
 {
 healtimer.restart();
