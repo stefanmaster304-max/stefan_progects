@@ -686,6 +686,29 @@ bool apply_game_update(update_item@ item)
 		return false;
 	}
 
+	// If the downloaded payload is a .zip archive (PK header), extract tcf.exe from it first
+	if (validate_sound_archive(temp_exe))
+	{
+		string zip_path = UPDATE_TEMP_DIR + "/game_pkg.zip";
+		string extract_dir = UPDATE_TEMP_DIR + "/game_extract";
+		if (file_exists(zip_path)) file_delete(zip_path);
+		if (!file_copy(temp_exe, zip_path, true))
+		{
+			speak(tr("updater.game_install_failed"));
+			cleanup_update_temp();
+			return false;
+		}
+		string ps_cmd = "if (Test-Path '" + extract_dir + "') { Remove-Item '" + extract_dir + "' -Recurse -Force }; Expand-Archive -LiteralPath '" + zip_path + "' -DestinationPath '" + extract_dir + "' -Force";
+		process@ extract_proc = start_hidden_powershell(ps_cmd);
+		if (!wait_for_hidden_process(extract_proc, true) || !file_exists(extract_dir + "/tcf.exe"))
+		{
+			speak(tr("updater.game_install_failed") + " " + tr("updater.game_archive_exe_invalid"));
+			cleanup_update_temp();
+			return false;
+		}
+		file_copy(extract_dir + "/tcf.exe", temp_exe, true);
+	}
+
 	if (!validate_game_executable(temp_exe))
 	{
 		speak(tr("updater.game_install_failed") + " " + tr("updater.game_archive_exe_invalid"));
@@ -1202,7 +1225,7 @@ bool check_for_updates(bool interactive = true)
 	{
 		if (available_update.type == UPDATE_GAME)
 		{
-			if (available_update.zip_url != "")
+			if (available_update.url == "" && available_update.zip_url != "")
 			{
 				available_update.url = available_update.zip_url;
 				available_update.size = available_update.zip_size;
