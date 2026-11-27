@@ -190,7 +190,7 @@ string serialize_explosive_config(explosive_data@ ex)
 	if (is_smoke && ex.sound_smoke != "") s += "sound_smoke=" + ex.sound_smoke + "\n";
 	if ((is_frag || is_smoke_g) && ex.sound_bounce != "") s += "sound_bounce=" + ex.sound_bounce + "\n";
 	if ((is_frag || is_smoke_g) && ex.sound_land != "") s += "sound_land=" + ex.sound_land + "\n";
-	if (!is_smoke && !is_detonator && ex.sound_hit != "") s += "sound_hit=" + ex.sound_hit + "\n";
+	if (!is_detonator && ex.sound_hit != "") s += "sound_hit=" + ex.sound_hit + "\n";
 	if (!is_detonator && ex.sound_explode != "") s += "sound_explode=" + ex.sound_explode + "\n";
 	if (!is_detonator && ex.sound_dist != "") s += "sound_dist=" + ex.sound_dist + "\n";
 	return s;

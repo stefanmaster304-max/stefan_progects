@@ -182,7 +182,7 @@ void explosive_update_field_visibility(audio_form@ form, const string&in etype, 
 	bool show_smoke = is_smoke;
 	bool show_bounce = (is_frag || is_smoke_g);
 	bool show_land = (is_frag || is_smoke_g);
-	bool show_hit = (!is_smoke && !is_detonator);
+	bool show_hit = !is_detonator;
 	bool show_exp = !is_detonator;
 	bool show_dist = !is_detonator;
 
