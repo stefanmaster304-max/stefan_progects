@@ -251,6 +251,9 @@ class npc_instance
 	// Bearing used to walk a circle around the player inside a safe zone.
 	double patrol_angle;
 	int last_sound_x, last_sound_y, last_sound_z;
+	bool blinded;
+	timer blind_timer;
+	int blind_duration_ms;
 
 	npc_instance()
 	{
@@ -278,6 +281,8 @@ class npc_instance
 		voice_waiting_delay = false;
 		patrol_angle = 0.0;
 		sound_owner = "";
+		blinded = false;
+		blind_duration_ms = 0;
 		path_index = 0;
 		path_goal_x = -1;
 		path_goal_y = -1;
@@ -1069,6 +1074,15 @@ void npc_die(npc_instance@ npc, const string&in killer, const string&in weapon_n
 	}
 }
 
+void npc_apply_blind(npc_instance@ npc, int duration_ms)
+{
+	if (npc is null || npc.dead) return;
+	npc.blinded = true;
+	npc.blind_duration_ms = (duration_ms > 0 ? duration_ms : 10000);
+	npc.blind_timer.restart();
+	npc.aware = false;
+}
+
 void npc_take_damage(npc_instance@ npc, int dmg, const string&in killer, const string&in weapon_name)
 {
 	if (npc is null || npc.dead || dmg <= 0) return;
@@ -1388,6 +1402,21 @@ void npc_instance_tick(npc_instance@ npc)
 		npc.aware = false;
 		npc_circle_patrol(npc, px, py);
 		return;
+	}
+
+	if (npc.blinded)
+	{
+		if (npc.blind_timer.elapsed >= npc.blind_duration_ms)
+		{
+			npc.blinded = false;
+			npc.blind_duration_ms = 0;
+		}
+		else
+		{
+			npc.aware = false;
+			npc_patrol_tick(npc);
+			return;
+		}
 	}
 
 	int gap = npc_step_gap(npc, px, py, pz);

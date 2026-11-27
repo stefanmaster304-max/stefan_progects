@@ -1,0 +1,691 @@
+// explosive_system.nvgt - Runtime simulation for C4, Semtex, timed bombs, grenades, smoke grenades/bombs, landmines and guided missiles.
+
+sound_pool explosive_pool(32);
+sound_pool explosive_dist_pool(16);
+
+class active_explosive
+{
+	explosive_data@ data;
+	string map_name;
+	string owner_name;
+	double x, y, z;
+	int target_x, target_y, target_z;
+	npc_instance@ target_npc;
+	bool is_missile;
+	bool missile_has_npc_target;
+	bool is_moving;
+	bool smoke_active;
+	int dir;
+	int remaining_throw_tiles;
+	int custom_fuse_ms;
+	timer fuse_timer;
+	timer active_timer;
+	timer beep_timer;
+	timer move_timer;
+	int loop_sound_slot;
+
+	active_explosive()
+	{
+		@data = null;
+		map_name = "";
+		owner_name = "";
+		x = 0; y = 0; z = 0;
+		target_x = 0; target_y = 0; target_z = 0;
+		@target_npc = null;
+		is_missile = false;
+		missile_has_npc_target = false;
+		is_moving = false;
+		smoke_active = false;
+		dir = north;
+		remaining_throw_tiles = 0;
+		custom_fuse_ms = 0;
+		loop_sound_slot = -1;
+	}
+}
+
+active_explosive@[] active_explosives(0);
+
+void reset_explosives()
+{
+	for (uint i = 0; i < active_explosives.length(); i++)
+	{
+		if (active_explosives[i].loop_sound_slot >= 0)
+			explosive_pool.destroy_sound(active_explosives[i].loop_sound_slot);
+	}
+	active_explosives.resize(0);
+	explosive_pool.destroy_all();
+	explosive_dist_pool.destroy_all();
+}
+
+void play_explosive_3d(const string&in sound_key, double sx, double sy, double sz)
+{
+	if (sound_key == "") return;
+	string path = get_sound_path(sound_key);
+	if (path == "") return;
+	explosive_pool.play_3d(path, me.x, me.y, me.z, float(sx), float(sy), float(sz), double(facing), false);
+}
+
+void play_explosive_loud_and_distant(explosive_data@ ex, double sx, double sy, double sz)
+{
+	if (ex is null) return;
+	if (ex.sound_explode != "")
+	{
+		string epath = get_sound_path(ex.sound_explode);
+		if (epath != "")
+		{
+			explosive_pool.max_distance = 0;
+			explosive_pool.pan_step = 1.0;
+			explosive_pool.volume_step = 2.0;
+			explosive_pool.play_extended_3d(epath, null, me.x, me.y, me.z, float(sx), float(sy), float(sz), double(facing), 0, 0, 0, 0, 0, 0, false, 0, 0.0, -3.0, 100.0);
+		}
+	}
+	if (ex.sound_dist != "")
+	{
+		string dpath = get_sound_path(ex.sound_dist);
+		if (dpath != "")
+		{
+			float span_x = float(maxx - minx);
+			float span_y = float(maxy - miny);
+			float map_span = (span_x > span_y) ? span_x : span_y;
+			if (map_span < 100.0) map_span = 100.0;
+			explosive_dist_pool.max_distance = 0;
+			explosive_dist_pool.pan_step = 0.25;
+			explosive_dist_pool.volume_step = 18.0 / map_span;
+			explosive_dist_pool.play_extended_3d(dpath, null, me.x, me.y, me.z, float(sx), float(sy), float(sz), double(facing), 0, 0, 0, 0, 0, 0, false, 0, 0.0, 0.0, 100.0);
+		}
+	}
+}
+
+bool explosive_tile_blocked(int tx, int ty, int tz)
+{
+	if (tx < minx || tx > maxx || ty < miny || ty > maxy || tz < minz || tz > maxz) return true;
+	return g_active_map.wall_blocks(tx, ty, tz) || map_door_blocks(tx, ty, tz);
+}
+
+int explosive_chebyshev_distance(double x1, double y1, double z1, double x2, double y2, double z2)
+{
+	int dx = int(abs(round(x1, 0) - round(x2, 0)));
+	int dy = int(abs(round(y1, 0) - round(y2, 0)));
+	int dz = int(abs(round(z1, 0) - round(z2, 0)));
+	int m = (dx > dy) ? dx : dy;
+	if (dz > m) m = dz;
+	return m;
+}
+
+void apply_explosive_player_damage(active_explosive@ exp)
+{
+	if (exp is null || exp.data is null || exp.data.damage <= 0) return;
+	if (is_safe(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0)))) return;
+	int dist = explosive_chebyshev_distance(exp.x, exp.y, exp.z, me.x, me.y, me.z);
+	if (dist > exp.data.radius) return;
+
+	double factor = 1.0 - (double(dist) / double(exp.data.radius + 1)) * 0.6;
+	int pdmg = int(round(double(exp.data.damage) * factor, 0));
+	if (pdmg <= 0) return;
+
+	if (exp.data.sound_hit != "") play_explosive_3d(exp.data.sound_hit, me.x, me.y, me.z);
+	if (has_shield_equipped())
+	{
+		int remaining = shield_process_damage(pdmg, "explosive");
+		if (remaining > 0)
+		{
+			health -= remaining;
+		}
+		else
+		{
+			int splash = int(round(double(pdmg) * 0.2, 0));
+			if (splash > 0) health -= splash;
+		}
+	}
+	else
+	{
+		health -= pdmg;
+	}
+	if (health > 0 && enable_player_pain_sounds == 1)
+	{
+		string psnd = get_player_sound("hurt");
+		if (sound_file_exists(psnd)) p.play_stationary(psnd, false);
+	}
+}
+
+void detonate_explosive(active_explosive@ exp)
+{
+	if (exp is null || exp.data is null) return;
+	if (exp.loop_sound_slot >= 0)
+	{
+		explosive_pool.destroy_sound(exp.loop_sound_slot);
+		exp.loop_sound_slot = -1;
+	}
+	if (is_safe(int(round(exp.x, 0)), int(round(exp.y, 0)), int(round(exp.z, 0)))) return;
+
+	if (exp.map_name == mapname)
+	{
+		play_explosive_loud_and_distant(exp.data, exp.x, exp.y, exp.z);
+	}
+
+	if (exp.data.etype == "smoke_grenade")
+	{
+		// Only NPCs are blinded/stunned by smoke grenades; the player is unaffected.
+		int stun_ms = (exp.data.stun_duration_ms > 0) ? exp.data.stun_duration_ms : 5000;
+		for (uint i = 0; i < npc_instances.length(); i++)
+		{
+			npc_instance@ npc = npc_instances[i];
+			if (npc is null || npc.dead) continue;
+			if (explosive_chebyshev_distance(exp.x, exp.y, exp.z, npc.x, npc.y, npc.z) <= exp.data.radius)
+			{
+				npc_apply_blind(npc, stun_ms);
+			}
+		}
+		return;
+	}
+
+	if (exp.data.etype == "smoke_bomb")
+	{
+		// Smoke bomb stays active and blinds NPCs while active; the player is unaffected.
+		exp.smoke_active = true;
+		exp.active_timer.restart();
+		if (exp.data.sound_travel != "" && exp.map_name == mapname)
+		{
+			string spath = get_sound_path(exp.data.sound_travel);
+			if (spath != "")
+				exp.loop_sound_slot = explosive_pool.play_3d(spath, me.x, me.y, me.z, float(exp.x), float(exp.y), float(exp.z), double(facing), true);
+		}
+		return;
+	}
+
+	// Damage explosives (C4, Semtex, timed bomb, frag grenade, landmine, guided missile)
+	int dmg = exp.data.damage;
+	if (dmg <= 0) return;
+
+	bool hit_target_npc = false;
+	for (int i = int(npc_instances.length()) - 1; i >= 0; i--)
+	{
+		npc_instance@ npc = npc_instances[uint(i)];
+		if (npc is null || npc.dead) continue;
+		bool in_radius = (explosive_chebyshev_distance(exp.x, exp.y, exp.z, npc.x, npc.y, npc.z) <= exp.data.radius);
+		bool is_direct_target = (exp.is_missile && exp.missile_has_npc_target && exp.target_npc is npc);
+		if (in_radius || is_direct_target)
+		{
+			if (is_direct_target) hit_target_npc = true;
+			if (exp.data.sound_hit != "" && exp.map_name == mapname) play_explosive_3d(exp.data.sound_hit, npc.x, npc.y, npc.z);
+			npc_take_damage(npc, dmg, exp.owner_name, exp.data.name);
+		}
+	}
+	if (exp.is_missile && exp.missile_has_npc_target && !hit_target_npc && exp.target_npc !is null && !exp.target_npc.dead)
+	{
+		if (exp.data.sound_hit != "" && exp.map_name == mapname) play_explosive_3d(exp.data.sound_hit, exp.target_npc.x, exp.target_npc.y, exp.target_npc.z);
+		npc_take_damage(exp.target_npc, dmg, exp.owner_name, exp.data.name);
+	}
+
+	apply_explosive_player_damage(exp);
+}
+
+void detonate_remote_explosives(explosive_data@ det = null)
+{
+	if (!is_in_game || mapname == "") return;
+	if (is_safe(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0))))
+	{
+		speak(tr("explosives.safe_zone_blocked"));
+		return;
+	}
+	string owner = (current_player_character != "" ? current_player_character : "Player");
+	string det_sound = (det !is null && det.sound_detonator != "") ? det.sound_detonator : "";
+	bool detonated_one = false;
+
+	for (uint i = 0; i < active_explosives.length(); i++)
+	{
+		active_explosive@ exp = active_explosives[i];
+		if (exp is null || exp.data is null) continue;
+		if ((exp.data.etype == "remote_c4" || exp.data.etype == "sticky_semtex") && exp.map_name == mapname && exp.owner_name == owner)
+		{
+			if (det_sound == "" && exp.data.sound_detonator != "") det_sound = exp.data.sound_detonator;
+			detonate_explosive(exp);
+			active_explosives.remove_at(i);
+			detonated_one = true;
+			break;
+		}
+	}
+
+	if (detonated_one)
+	{
+		if (det_sound != "")
+		{
+			string path = get_sound_path(det_sound);
+			if (path != "") p.play_stationary(path, false);
+		}
+	}
+	else
+	{
+		speak(tr("explosives.none_planted"));
+	}
+}
+
+void plant_or_throw_explosive(explosive_data@ ex, int custom_fuse_ms = -1)
+{
+	active_explosive@ exp = active_explosive();
+	@exp.data = @ex;
+	exp.map_name = mapname;
+	exp.owner_name = (current_player_character != "" ? current_player_character : "Player");
+	exp.x = round(me.x, 0);
+	exp.y = round(me.y, 0);
+	exp.z = round(me.z, 0);
+	exp.dir = facing;
+	exp.custom_fuse_ms = (custom_fuse_ms >= 0) ? custom_fuse_ms : ex.fuse_ms;
+
+	if (ex.etype == "frag_grenade" || ex.etype == "smoke_grenade")
+	{
+		exp.is_moving = true;
+		exp.remaining_throw_tiles = (ex.throw_range > 0) ? ex.throw_range : 10;
+	}
+
+	exp.fuse_timer.restart();
+	exp.beep_timer.restart();
+	exp.move_timer.restart();
+
+	play_explosive_3d(ex.sound_plant, exp.x, exp.y, exp.z);
+	bool uses_arm = (ex.etype == "remote_c4" || ex.etype == "timed_bomb" || ex.etype == "landmine" || ex.etype == "smoke_bomb");
+	if (uses_arm && ex.sound_arm != "" && ex.sound_arm != ex.sound_plant)
+	{
+		play_explosive_3d(ex.sound_arm, exp.x, exp.y, exp.z);
+	}
+	active_explosives.insert_last(exp);
+}
+
+void launch_guided_missile(explosive_data@ ex, int tx, int ty, int tz, npc_instance@ target_npc)
+{
+	active_explosive@ exp = active_explosive();
+	@exp.data = @ex;
+	exp.map_name = mapname;
+	exp.owner_name = (current_player_character != "" ? current_player_character : "Player");
+	exp.x = round(me.x, 0);
+	exp.y = round(me.y, 0);
+	exp.z = round(me.z, 0);
+	exp.is_missile = true;
+	exp.is_moving = true;
+	if (target_npc !is null)
+	{
+		@exp.target_npc = @target_npc;
+		exp.missile_has_npc_target = true;
+		exp.target_x = target_npc.x;
+		exp.target_y = target_npc.y;
+		exp.target_z = target_npc.z;
+	}
+	else
+	{
+		exp.missile_has_npc_target = false;
+		exp.target_x = tx;
+		exp.target_y = ty;
+		exp.target_z = tz;
+	}
+
+	play_explosive_3d(ex.sound_plant, exp.x, exp.y, exp.z);
+	if (ex.sound_arm != "" && ex.sound_arm != ex.sound_plant)
+	{
+		play_explosive_3d(ex.sound_arm, exp.x, exp.y, exp.z);
+	}
+	if (ex.sound_travel != "")
+	{
+		string tpath = get_sound_path(ex.sound_travel);
+		if (tpath != "")
+		{
+			exp.loop_sound_slot = explosive_pool.play_3d(tpath, me.x, me.y, me.z, float(exp.x), float(exp.y), float(exp.z), double(facing), true);
+		}
+	}
+	exp.move_timer.restart();
+	active_explosives.insert_last(exp);
+}
+
+int prompt_timed_bomb_seconds(explosive_data@ ex)
+{
+	int default_sec = (ex.fuse_ms > 0) ? (ex.fuse_ms / 1000) : 5;
+	if (default_sec < 1) default_sec = 1;
+	audio_form f;
+	f.create_window(ex.name, false, true, false);
+	int in_sec = f.create_input_box(tr("explosives.enter_timer_seconds"), "" + default_sec);
+	f.set_disallowed_chars(in_sec, "0123456789", true, "Numbers only.");
+	int ok = f.create_button("&" + tr("ui.ok"), true);
+	int cancel = f.create_button("&" + tr("ui.cancel"), false, true);
+	f.set_default_controls(ok, cancel);
+	f.focus(in_sec);
+
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		f.monitor();
+		if (key_pressed(KEY_ESCAPE) || f.is_pressed(cancel)) return -1;
+		if (f.is_pressed(ok))
+		{
+			int sec = int(string_to_number(f.get_text(in_sec)));
+			if (sec < 1) sec = 1;
+			return sec;
+		}
+	}
+	return -1;
+}
+
+bool prompt_guided_missile_target(explosive_data@ ex)
+{
+	audio_form f;
+	f.create_window(ex.name, false, true, false);
+	int mode_list = f.create_list(tr("explosives.missile_mode_prompt"), 0, false, true);
+	f.add_list_item(mode_list, tr("explosives.missile_mode_coords"), "coords");
+	f.add_list_item(mode_list, tr("explosives.missile_mode_npc"), "npc");
+	int ok = f.create_button("&" + tr("ui.ok"), true);
+	int cancel = f.create_button("&" + tr("ui.cancel"), false, true);
+	f.set_default_controls(ok, cancel);
+	f.focus(mode_list);
+
+	string mode = "";
+	while (true)
+	{
+		wait(5);
+		update_game_world();
+		f.monitor();
+		if (key_pressed(KEY_ESCAPE) || f.is_pressed(cancel)) return false;
+		if (f.is_pressed(ok) || (f.get_current_focus() == mode_list && (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER))))
+		{
+			int pos = f.get_list_position(mode_list);
+			if (pos >= 0) mode = f.get_list_item_id(mode_list, pos);
+			break;
+		}
+	}
+
+	if (mode == "coords")
+	{
+		audio_form cf;
+		cf.create_window(tr("explosives.missile_mode_coords"), false, true, false);
+		int in_x = cf.create_input_box(tr("form.x"), "" + int(round(me.x, 0)));
+		int in_y = cf.create_input_box(tr("form.y"), "" + int(round(me.y, 0)));
+		int in_z = cf.create_input_box(tr("form.z"), "" + int(round(me.z, 0)));
+		cf.set_disallowed_chars(in_x, "0123456789-", true, "Numbers only.");
+		cf.set_disallowed_chars(in_y, "0123456789-", true, "Numbers only.");
+		cf.set_disallowed_chars(in_z, "0123456789-", true, "Numbers only.");
+		int cok = cf.create_button("&" + tr("ui.ok"), true);
+		int ccan = cf.create_button("&" + tr("ui.cancel"), false, true);
+		cf.set_default_controls(cok, ccan);
+		cf.focus(in_x);
+
+		while (true)
+		{
+			wait(5);
+			update_game_world();
+			cf.monitor();
+			if (key_pressed(KEY_ESCAPE) || cf.is_pressed(ccan)) return false;
+			if (cf.is_pressed(cok))
+			{
+				int tx = int(string_to_number(cf.get_text(in_x)));
+				int ty = int(string_to_number(cf.get_text(in_y)));
+				int tz = int(string_to_number(cf.get_text(in_z)));
+				if (tx < minx || tx > maxx || ty < miny || ty > maxy || tz < minz || tz > maxz)
+				{
+					speak(tr("explosives.invalid_coords"));
+					continue;
+				}
+				launch_guided_missile(ex, tx, ty, tz, null);
+				speak(tr("explosives.missile_launched_coords", {"" + tx, "" + ty, "" + tz}));
+				return true;
+			}
+		}
+	}
+	else if (mode == "npc")
+	{
+		npc_instance@[] live_npcs;
+		for (uint i = 0; i < npc_instances.length(); i++)
+		{
+			npc_instance@ n = npc_instances[i];
+			if (n !is null && !n.dead && n.data !is null) live_npcs.insert_last(n);
+		}
+		if (live_npcs.length() == 0)
+		{
+			speak(tr("explosives.no_active_npcs"));
+			return false;
+		}
+
+		audio_form nf;
+		nf.create_window(tr("explosives.missile_mode_npc"), false, true, false);
+		int npc_list = nf.create_list(tr("explosives.select_npc_target"), 0, false, true);
+		for (uint i = 0; i < live_npcs.length(); i++)
+		{
+			npc_instance@ n = live_npcs[i];
+			int dist = explosive_chebyshev_distance(me.x, me.y, me.z, n.x, n.y, n.z);
+			nf.add_list_item(npc_list, n.data.name + " (" + n.x + ", " + n.y + ", " + n.z + " - " + dist + ")", "" + i);
+		}
+		int nok = nf.create_button("&" + tr("ui.ok"), true);
+		int ncan = nf.create_button("&" + tr("ui.cancel"), false, true);
+		nf.set_default_controls(nok, ncan);
+		nf.focus(npc_list);
+
+		while (true)
+		{
+			wait(5);
+			update_game_world();
+			nf.monitor();
+			if (key_pressed(KEY_ESCAPE) || nf.is_pressed(ncan)) return false;
+			if (nf.is_pressed(nok) || (nf.get_current_focus() == npc_list && (key_pressed(KEY_RETURN) || key_pressed(KEY_NUMPAD_ENTER))))
+			{
+				int pos = nf.get_list_position(npc_list);
+				if (pos >= 0 && uint(pos) < live_npcs.length())
+				{
+					npc_instance@ chosen = live_npcs[uint(pos)];
+					launch_guided_missile(ex, chosen.x, chosen.y, chosen.z, chosen);
+					speak(tr("explosives.missile_launched_npc", {chosen.data.name}));
+					return true;
+				}
+				return false;
+			}
+		}
+	}
+	return false;
+}
+
+bool use_explosive(const string&in id)
+{
+	load_all_explosives_config();
+	explosive_data@ ex = find_explosive_data(id);
+	if (ex is null) return false;
+	if (!is_in_game || mapname == "") return false;
+	if (is_safe(int(round(me.x, 0)), int(round(me.y, 0)), int(round(me.z, 0))))
+	{
+		speak(tr("explosives.safe_zone_blocked"));
+		return true;
+	}
+
+	if (ex.etype == "remote_detonator")
+	{
+		detonate_remote_explosives(ex);
+		return true;
+	}
+	else if (ex.etype == "timed_bomb")
+	{
+		int sec = prompt_timed_bomb_seconds(ex);
+		if (sec < 0) return true;
+		plant_or_throw_explosive(ex, sec * 1000);
+		give(id, -1);
+		return true;
+	}
+	else if (ex.etype == "guided_missile")
+	{
+		if (prompt_guided_missile_target(ex))
+		{
+			give(id, -1);
+		}
+		return true;
+	}
+	else if (ex.etype == "remote_c4" || ex.etype == "sticky_semtex" || ex.etype == "landmine")
+	{
+		plant_or_throw_explosive(ex, 0);
+		give(id, -1);
+		return true;
+	}
+	else
+	{
+		plant_or_throw_explosive(ex, ex.fuse_ms);
+		give(id, -1);
+		return true;
+	}
+}
+
+void update_explosives()
+{
+	explosive_pool.update_listener_3d(me.x, me.y, me.z, double(facing));
+	explosive_dist_pool.update_listener_3d(me.x, me.y, me.z, double(facing));
+	if (active_explosives.length() == 0) return;
+
+	for (int i = int(active_explosives.length()) - 1; i >= 0; i--)
+	{
+		active_explosive@ exp = active_explosives[uint(i)];
+		if (exp is null || exp.data is null || exp.map_name != mapname)
+		{
+			if (exp !is null && exp.loop_sound_slot >= 0) explosive_pool.destroy_sound(exp.loop_sound_slot);
+			active_explosives.remove_at(uint(i));
+			continue;
+		}
+
+		if (exp.smoke_active)
+		{
+			int dur = (exp.data.active_duration_ms > 0) ? exp.data.active_duration_ms : 10000;
+			if (exp.active_timer.elapsed >= dur)
+			{
+				if (exp.loop_sound_slot >= 0) explosive_pool.destroy_sound(exp.loop_sound_slot);
+				active_explosives.remove_at(uint(i));
+				continue;
+			}
+			for (uint n = 0; n < npc_instances.length(); n++)
+			{
+				npc_instance@ npc = npc_instances[n];
+				if (npc is null || npc.dead) continue;
+				if (explosive_chebyshev_distance(exp.x, exp.y, exp.z, npc.x, npc.y, npc.z) <= exp.data.radius)
+				{
+					npc_apply_blind(npc, 400);
+				}
+			}
+			continue;
+		}
+
+		if (exp.is_missile)
+		{
+			if (exp.missile_has_npc_target && exp.target_npc !is null && !exp.target_npc.dead)
+			{
+				exp.target_x = exp.target_npc.x;
+				exp.target_y = exp.target_npc.y;
+				exp.target_z = exp.target_npc.z;
+			}
+
+			int step_ms = (exp.data.travel_speed_ms > 0) ? exp.data.travel_speed_ms : 60;
+			if (exp.move_timer.elapsed >= step_ms)
+			{
+				exp.move_timer.restart();
+				int ix = int(round(exp.x, 0));
+				int iy = int(round(exp.y, 0));
+				int iz = int(round(exp.z, 0));
+				if (ix < exp.target_x) exp.x += 1;
+				else if (ix > exp.target_x) exp.x -= 1;
+				if (iy < exp.target_y) exp.y += 1;
+				else if (iy > exp.target_y) exp.y -= 1;
+				if (iz < exp.target_z) exp.z += 1;
+				else if (iz > exp.target_z) exp.z -= 1;
+
+				if (exp.loop_sound_slot >= 0)
+					explosive_pool.update_sound_3d(exp.loop_sound_slot, int(round(exp.x, 0)), int(round(exp.y, 0)), int(round(exp.z, 0)));
+
+				if (int(round(exp.x, 0)) == exp.target_x && int(round(exp.y, 0)) == exp.target_y && int(round(exp.z, 0)) == exp.target_z)
+				{
+					detonate_explosive(exp);
+					active_explosives.remove_at(uint(i));
+					continue;
+				}
+			}
+			continue;
+		}
+
+		if (exp.data.etype == "landmine")
+		{
+			// Landmines never trigger on the player alone; only when an NPC steps within trigger_radius.
+			bool triggered = false;
+			int trig_r = (exp.data.trigger_radius >= 0) ? exp.data.trigger_radius : 1;
+			for (uint n = 0; n < npc_instances.length(); n++)
+			{
+				npc_instance@ npc = npc_instances[n];
+				if (npc is null || npc.dead) continue;
+				if (explosive_chebyshev_distance(exp.x, exp.y, exp.z, npc.x, npc.y, npc.z) <= trig_r)
+				{
+					triggered = true;
+					break;
+				}
+			}
+			if (triggered)
+			{
+				detonate_explosive(exp);
+				active_explosives.remove_at(uint(i));
+				continue;
+			}
+		}
+
+		if (exp.is_moving && exp.remaining_throw_tiles > 0 && exp.move_timer.elapsed >= 45)
+		{
+			exp.move_timer.restart();
+			int nx = int(round(exp.x, 0));
+			int ny = int(round(exp.y, 0));
+			int nz = int(round(exp.z, 0));
+			if (exp.dir == north) ny += 1;
+			else if (exp.dir == south) ny -= 1;
+			else if (exp.dir == east) nx += 1;
+			else if (exp.dir == west) nx -= 1;
+			else if (exp.dir == northeast) { nx += 1; ny += 1; }
+			else if (exp.dir == northwest) { nx -= 1; ny += 1; }
+			else if (exp.dir == southeast) { nx += 1; ny -= 1; }
+			else if (exp.dir == southwest) { nx -= 1; ny -= 1; }
+
+			if (explosive_tile_blocked(nx, ny, nz))
+			{
+				play_explosive_3d(exp.data.sound_bounce, exp.x, exp.y, exp.z);
+				if (exp.dir == north) exp.dir = south;
+				else if (exp.dir == south) exp.dir = north;
+				else if (exp.dir == east) exp.dir = west;
+				else if (exp.dir == west) exp.dir = east;
+				else if (exp.dir == northeast) exp.dir = southwest;
+				else if (exp.dir == southwest) exp.dir = northeast;
+				else if (exp.dir == northwest) exp.dir = southeast;
+				else if (exp.dir == southeast) exp.dir = northwest;
+				exp.remaining_throw_tiles--;
+				if (exp.remaining_throw_tiles <= 0)
+				{
+					exp.is_moving = false;
+					play_explosive_3d(exp.data.sound_land, exp.x, exp.y, exp.z);
+				}
+			}
+			else
+			{
+				exp.x = nx;
+				exp.y = ny;
+				exp.z = nz;
+				if (exp.z > minz && get_tile_at(int(round(exp.x, 0)), int(round(exp.y, 0)), int(round(exp.z, 0))) == "")
+				{
+					exp.z -= 1;
+				}
+				exp.remaining_throw_tiles--;
+				if (exp.remaining_throw_tiles <= 0)
+				{
+					exp.is_moving = false;
+					play_explosive_3d(exp.data.sound_land, exp.x, exp.y, exp.z);
+				}
+			}
+		}
+
+		if (exp.data.beep_interval_ms > 0 && exp.data.sound_beep != "" && exp.beep_timer.elapsed >= exp.data.beep_interval_ms)
+		{
+			exp.beep_timer.restart();
+			play_explosive_3d(exp.data.sound_beep, exp.x, exp.y, exp.z);
+		}
+
+		if (exp.data.etype != "remote_c4" && exp.data.etype != "sticky_semtex" && exp.data.etype != "landmine" && exp.custom_fuse_ms > 0 && exp.fuse_timer.elapsed >= exp.custom_fuse_ms)
+		{
+			detonate_explosive(exp);
+			if (!exp.smoke_active)
+			{
+				active_explosives.remove_at(uint(i));
+			}
+		}
+	}
+}

@@ -1,0 +1,319 @@
+// explosive_data_saver.nvgt - Data storage, file I/O, and persistence for explosives.
+// Distribution format: every explosive lives in the encrypted settings/contents.dat.
+// Loose .config files in settings/explosives/ are development-only formats.
+
+const string EXPLOSIVE_DIR = "settings/explosives";
+const string EXPLOSIVE_ENC_KEY = "ShooterExplosiveConfigKey2026_7k!R#mP9$xQ2&vL4";
+
+string[] explosive_types = {
+	"remote_c4",
+	"sticky_semtex",
+	"timed_bomb",
+	"frag_grenade",
+	"smoke_grenade",
+	"smoke_bomb",
+	"landmine",
+	"guided_missile",
+	"remote_detonator"
+};
+
+class explosive_data
+{
+	string id;
+	string name;
+	string description;
+	string etype; // remote_c4, sticky_semtex, timed_bomb, frag_grenade, smoke_grenade, smoke_bomb, landmine, guided_missile
+	int damage;
+	int radius;
+	int trigger_radius;
+	int fuse_ms;
+	int throw_range;
+	int stun_duration_ms;
+	int active_duration_ms;
+	int beep_interval_ms;
+	int travel_speed_ms;
+	int max_stack;
+
+	// Audio keys (all loaded from files configured in .config)
+	string sound_get;
+	string sound_plant;
+	string sound_arm;
+	string sound_beep;
+	string sound_detonator;
+	string sound_travel;
+	string sound_bounce;
+	string sound_land;
+	string sound_hit;
+	string sound_explode;
+	string sound_dist;
+
+	explosive_data()
+	{
+		id = "";
+		name = "";
+		description = "";
+		etype = "frag_grenade";
+		damage = 500;
+		radius = 10;
+		trigger_radius = 1;
+		fuse_ms = 3000;
+		throw_range = 12;
+		stun_duration_ms = 5000;
+		active_duration_ms = 10000;
+		beep_interval_ms = 1000;
+		travel_speed_ms = 60;
+		max_stack = 99;
+
+		sound_get = "";
+		sound_plant = "";
+		sound_arm = "";
+		sound_beep = "";
+		sound_detonator = "";
+		sound_travel = "";
+		sound_bounce = "";
+		sound_land = "";
+		sound_hit = "";
+		sound_explode = "";
+		sound_dist = "";
+	}
+}
+
+explosive_data@[] explosive_registry(0);
+
+void ensure_explosive_directories()
+{
+	if (!directory_exists("settings")) directory_create("settings");
+	if (!directory_exists(EXPLOSIVE_DIR)) directory_create(EXPLOSIVE_DIR);
+}
+
+explosive_data@ find_explosive_data(const string&in id)
+{
+	if (id == "") return null;
+	for (uint i = 0; i < explosive_registry.length(); i++)
+	{
+		if (explosive_registry[i].id == id) return explosive_registry[i];
+	}
+	return null;
+}
+
+bool is_explosive_encrypted(const string&in id)
+{
+	if (!SCRIPT_COMPILED) return false;
+	return file_exists(CONTENTS_DAT_PATH);
+}
+
+void parse_explosive_config(explosive_data@ ex, const string&in content)
+{
+	string[]@ lines = string_split(content, "\n", true);
+	if (lines is null) return;
+
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string line = lines[i].trim_whitespace();
+		if (line == "" || string_starts_with(line, "#") || string_starts_with(line, ";")) continue;
+		int eq = string_contains(line, "=", 1);
+		if (eq == -1) continue;
+
+		string key = string_left(line, eq).trim_whitespace();
+		string val = line.substr(eq + 1).trim_whitespace();
+
+		if (key == "name") ex.name = val;
+		else if (key == "description") ex.description = val;
+		else if (key == "etype" || key == "type") ex.etype = val;
+		else if (key == "damage") ex.damage = int(string_to_number(val));
+		else if (key == "radius") ex.radius = int(string_to_number(val));
+		else if (key == "trigger_radius") ex.trigger_radius = int(string_to_number(val));
+		else if (key == "fuse_ms") ex.fuse_ms = int(string_to_number(val));
+		else if (key == "throw_range") ex.throw_range = int(string_to_number(val));
+		else if (key == "stun_duration_ms") ex.stun_duration_ms = int(string_to_number(val));
+		else if (key == "active_duration_ms") ex.active_duration_ms = int(string_to_number(val));
+		else if (key == "beep_interval_ms") ex.beep_interval_ms = int(string_to_number(val));
+		else if (key == "travel_speed_ms") ex.travel_speed_ms = int(string_to_number(val));
+		else if (key == "max_stack") ex.max_stack = int(string_to_number(val));
+		else if (key == "sound_get" || key == "sound_loot" || key == "sound_pickup") ex.sound_get = val;
+		else if (key == "sound_plant" || key == "sound_throw") ex.sound_plant = val;
+		else if (key == "sound_arm") ex.sound_arm = val;
+		else if (key == "sound_beep") ex.sound_beep = val;
+		else if (key == "sound_detonator") ex.sound_detonator = val;
+		else if (key == "sound_travel" || key == "sound_loop") ex.sound_travel = val;
+		else if (key == "sound_bounce") ex.sound_bounce = val;
+		else if (key == "sound_land") ex.sound_land = val;
+		else if (key == "sound_hit") ex.sound_hit = val;
+		else if (key == "sound_explode") ex.sound_explode = val;
+		else if (key == "sound_dist" || key == "sound_distant") ex.sound_dist = val;
+	}
+
+	if (ex.radius < 1) ex.radius = 1;
+	if (ex.trigger_radius < 0) ex.trigger_radius = 0;
+	if (ex.max_stack < 1) ex.max_stack = 1;
+	if (ex.travel_speed_ms < 5) ex.travel_speed_ms = 5;
+	if (ex.etype == "smoke_grenade" && ex.stun_duration_ms <= 0) ex.stun_duration_ms = 5000;
+	if (ex.etype == "smoke_bomb" && ex.active_duration_ms <= 0) ex.active_duration_ms = 10000;
+}
+
+string serialize_explosive_config(explosive_data@ ex)
+{
+	string s = "";
+	s += "name=" + ex.name + "\n";
+	s += "description=" + ex.description + "\n";
+	s += "etype=" + ex.etype + "\n";
+	s += "damage=" + ex.damage + "\n";
+	s += "radius=" + ex.radius + "\n";
+	s += "trigger_radius=" + ex.trigger_radius + "\n";
+	s += "fuse_ms=" + ex.fuse_ms + "\n";
+	s += "throw_range=" + ex.throw_range + "\n";
+	s += "stun_duration_ms=" + ex.stun_duration_ms + "\n";
+	s += "active_duration_ms=" + ex.active_duration_ms + "\n";
+	s += "beep_interval_ms=" + ex.beep_interval_ms + "\n";
+	s += "travel_speed_ms=" + ex.travel_speed_ms + "\n";
+	s += "max_stack=" + ex.max_stack + "\n";
+	if (ex.sound_get != "") s += "sound_get=" + ex.sound_get + "\n";
+	if (ex.sound_plant != "") s += "sound_plant=" + ex.sound_plant + "\n";
+	if (ex.sound_arm != "") s += "sound_arm=" + ex.sound_arm + "\n";
+	if (ex.sound_beep != "") s += "sound_beep=" + ex.sound_beep + "\n";
+	if (ex.sound_detonator != "") s += "sound_detonator=" + ex.sound_detonator + "\n";
+	if (ex.sound_travel != "") s += "sound_travel=" + ex.sound_travel + "\n";
+	if (ex.sound_bounce != "") s += "sound_bounce=" + ex.sound_bounce + "\n";
+	if (ex.sound_land != "") s += "sound_land=" + ex.sound_land + "\n";
+	if (ex.sound_hit != "") s += "sound_hit=" + ex.sound_hit + "\n";
+	if (ex.sound_explode != "") s += "sound_explode=" + ex.sound_explode + "\n";
+	if (ex.sound_dist != "") s += "sound_dist=" + ex.sound_dist + "\n";
+	return s;
+}
+
+string serialize_all_explosives_bundle()
+{
+	string s = "# Shooter Unified Explosives Bundle v1.0\n\n";
+	for (uint i = 0; i < explosive_registry.length(); i++)
+	{
+		explosive_data@ ex = @explosive_registry[i];
+		s += "[explosive:" + ex.id + "]\n";
+		s += serialize_explosive_config(ex);
+		s += "\n";
+	}
+	return s;
+}
+
+void parse_explosives_bundle(const string&in content)
+{
+	string[]@ lines = string_split(content, "\n", true);
+	if (lines is null) return;
+	explosive_data@ current = null;
+
+	for (uint i = 0; i < lines.length(); i++)
+	{
+		string line = lines[i].trim_whitespace();
+		if (line == "" || string_starts_with(line, "#") || string_starts_with(line, ";")) continue;
+
+		if (string_starts_with(line, "[explosive:") && string_ends_with(line, "]"))
+		{
+			string id = line.substr(11, line.length() - 12);
+			@current = @find_explosive_data(id);
+			if (current is null)
+			{
+				@current = @explosive_data();
+				current.id = id;
+				explosive_registry.insert_last(current);
+			}
+			continue;
+		}
+
+		if (current is null) continue;
+		parse_explosive_config(current, line);
+	}
+}
+
+bool save_explosive_config(explosive_data@ ex)
+{
+	if (ex is null || ex.id == "" || is_explosive_encrypted(ex.id)) return false;
+	ensure_explosive_directories();
+	string path = EXPLOSIVE_DIR + "/" + ex.id + ".config";
+	file f;
+	if (!f.open(path, "wb")) return false;
+	f.write(serialize_explosive_config(ex));
+	f.close();
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
+	return true;
+}
+
+bool delete_explosive_config(const string&in id)
+{
+	if (id == "" || is_explosive_encrypted(id)) return false;
+	string path = EXPLOSIVE_DIR + "/" + id + ".config";
+	if (file_exists(path)) file_delete(path);
+	for (int i = int(explosive_registry.length()) - 1; i >= 0; i--)
+	{
+		if (explosive_registry[uint(i)].id == id)
+			explosive_registry.remove_at(uint(i));
+	}
+	if (file_exists(CONTENTS_DAT_PATH)) encrypt_all_contents_silent();
+	return true;
+}
+
+void load_all_explosives_config(bool force_reload = false)
+{
+	if (explosive_registry.length() > 0 && !force_reload) return;
+	explosive_registry.resize(0);
+
+	if (SCRIPT_COMPILED)
+	{
+		string cpath = get_contents_bundle_path();
+		if (cpath != "")
+		{
+			string text = "";
+			if (decrypt_contents_text(cpath, text))
+			{
+				int s_idx = text.find("[section:explosives]");
+				if (s_idx >= 0)
+				{
+					string rest = text.substr(s_idx + 20);
+					int next_sec = rest.find("[section:");
+					if (next_sec >= 0) rest = rest.substr(0, next_sec);
+					parse_explosives_bundle(rest);
+				}
+			}
+		}
+		return;
+	}
+
+	if (directory_exists(EXPLOSIVE_DIR))
+	{
+		string[]@ files = find_files(EXPLOSIVE_DIR + "/*.config");
+		if (files !is null)
+		{
+			for (uint i = 0; i < files.length(); i++)
+			{
+				string fname = files[i];
+				if (!string_ends_with(fname, ".config")) continue;
+				string id = string_left(fname, fname.length() - 7);
+				string content = file_get_contents(EXPLOSIVE_DIR + "/" + fname);
+				if (content == "") continue;
+				explosive_data@ ex = explosive_data();
+				ex.id = id;
+				parse_explosive_config(ex, content);
+				if (ex.name == "") ex.name = id;
+				explosive_registry.insert_last(ex);
+			}
+		}
+	}
+
+	if (explosive_registry.length() == 0)
+	{
+		string cpath = get_contents_bundle_path();
+		if (cpath != "")
+		{
+			string text = "";
+			if (decrypt_contents_text(cpath, text))
+			{
+				int s_idx = text.find("[section:explosives]");
+				if (s_idx >= 0)
+				{
+					string rest = text.substr(s_idx + 20);
+					int next_sec = rest.find("[section:");
+					if (next_sec >= 0) rest = rest.substr(0, next_sec);
+					parse_explosives_bundle(rest);
+				}
+			}
+		}
+	}
+}

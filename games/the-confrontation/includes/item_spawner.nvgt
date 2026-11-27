@@ -213,6 +213,11 @@ void collect_ground_item(int best_idx)
 		snd_file = get_sound_path(data.sound_pickup);
 		if (snd_file == "") snd_file = find_sound_in_disk("sounds/items/" + data.sound_pickup);
 	}
+	if (snd_file == "")
+	{
+		explosive_data@ ex = find_explosive_data(gi.item_id);
+		if (ex !is null && ex.sound_get != "") snd_file = get_sound_path(ex.sound_get);
+	}
 	if (snd_file == "") snd_file = find_sound_in_disk("sounds/items/get" + gi.item_id + ".ogg");
 	if (snd_file == "") snd_file = get_sound_path("items/itemget1.ogg");
 	if (snd_file == "") snd_file = get_sound_path("itemget1.ogg");

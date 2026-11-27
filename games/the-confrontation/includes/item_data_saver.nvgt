@@ -40,11 +40,8 @@ class item_data
 	string sound_use;
 	string sound_pickup;
 	string sound_loot;
-	string sound_draw;
 	string sound_open;
 	string sound_close;
-	string sound_plant;
-	string sound_loop;
 	string sound_hit;
 	string sound_break;
 	string sound_distant_hit;
@@ -68,7 +65,6 @@ class item_data
 		sound_use = "";
 		sound_pickup = "";
 		sound_loot = "";
-		sound_draw = "";
 		sound_open = "";
 		sound_close = "";
 		sound_hit = "";
@@ -109,7 +105,6 @@ void register_builtin_anti_death_card()
 		it.capacity = 1;
 		it.heal_amount = 0;
 		it.sound_use = "sounds/misc/deathfree.ogg";
-		it.sound_draw = "sounds/items/drawdeath_free_card.ogg";
 		item_registry.insert_last(it);
 	}
 }
@@ -166,7 +161,6 @@ void parse_item_config(item_data@ it, const string&in content)
 			it.sound_loot = val;
 			if (it.sound_pickup == "") it.sound_pickup = val;
 		}
-		else if (key == "sound_draw") it.sound_draw = val;
 		else if (key == "sound_open") it.sound_open = val;
 		else if (key == "sound_close") it.sound_close = val;
 		else if (key == "sound_hit") it.sound_hit = val;
@@ -198,7 +192,6 @@ string serialize_item_config(item_data@ it)
 		if (it.sound_use != "") s_out += "sound_use=" + it.sound_use + "\n";
 		if (it.sound_loot != "") s_out += "sound_loot=" + it.sound_loot + "\n";
 		if (it.sound_pickup != "") s_out += "sound_pickup=" + it.sound_pickup + "\n";
-		if (it.sound_draw != "") s_out += "sound_draw=" + it.sound_draw + "\n";
 		if (it.sound_hit != "") s_out += "sound_hit=" + it.sound_hit + "\n";
 		if (it.sound_break != "") s_out += "sound_break=" + it.sound_break + "\n";
 		if (it.sound_distant_hit != "") s_out += "sound_distant_hit=" + it.sound_distant_hit + "\n";
@@ -209,7 +202,6 @@ string serialize_item_config(item_data@ it)
 		s_out += "ammo_type=" + it.ammo_type + "\n";
 		if (it.sound_loot != "") s_out += "sound_loot=" + it.sound_loot + "\n";
 		if (it.sound_pickup != "") s_out += "sound_pickup=" + it.sound_pickup + "\n";
-		if (it.sound_draw != "") s_out += "sound_draw=" + it.sound_draw + "\n";
 	}
 	else if (it.category == "packages")
 	{
@@ -217,14 +209,12 @@ string serialize_item_config(item_data@ it)
 		if (it.sound_use != "") s_out += "sound_use=" + it.sound_use + "\n";
 		if (it.sound_loot != "") s_out += "sound_loot=" + it.sound_loot + "\n";
 		if (it.sound_pickup != "") s_out += "sound_pickup=" + it.sound_pickup + "\n";
-		if (it.sound_draw != "") s_out += "sound_draw=" + it.sound_draw + "\n";
 	}
 	else if (it.category == "currency")
 	{
 		s_out += "quantity=" + it.quantity + "\n";
 		if (it.sound_loot != "") s_out += "sound_loot=" + it.sound_loot + "\n";
 		if (it.sound_pickup != "") s_out += "sound_pickup=" + it.sound_pickup + "\n";
-		if (it.sound_draw != "") s_out += "sound_draw=" + it.sound_draw + "\n";
 	}
 	else if (it.category == "equipment")
 	{
@@ -236,9 +226,6 @@ string serialize_item_config(item_data@ it)
 		if (it.sound_distant_hit != "") s_out += "sound_distant_hit=" + it.sound_distant_hit + "\n";
 		if (it.sound_loot != "") s_out += "sound_loot=" + it.sound_loot + "\n";
 		if (it.sound_pickup != "") s_out += "sound_pickup=" + it.sound_pickup + "\n";
-		if (it.sound_draw != "") s_out += "sound_draw=" + it.sound_draw + "\n";
-		if (it.sound_plant != "") s_out += "sound_plant=" + it.sound_plant + "\n";
-		if (it.sound_loop != "") s_out += "sound_loop=" + it.sound_loop + "\n";
 	}
 	if (it.sound_open != "") s_out += "sound_open=" + it.sound_open + "\n";
 	if (it.sound_close != "") s_out += "sound_close=" + it.sound_close + "\n";
@@ -268,11 +255,8 @@ string serialize_all_items_bundle()
 		s += "sound_use=" + it.sound_use + "\n";
 		s += "sound_pickup=" + it.sound_pickup + "\n";
 		s += "sound_loot=" + (it.sound_loot != "" ? it.sound_loot : it.sound_pickup) + "\n";
-		s += "sound_draw=" + it.sound_draw + "\n";
 		s += "sound_open=" + it.sound_open + "\n";
 		s += "sound_close=" + it.sound_close + "\n";
-		s += "sound_plant=" + it.sound_plant + "\n";
-		s += "sound_loop=" + it.sound_loop + "\n";
 		s += "sound_hit=" + it.sound_hit + "\n";
 		s += "sound_break=" + it.sound_break + "\n";
 		s += "sound_distant_hit=" + it.sound_distant_hit + "\n";
@@ -325,11 +309,8 @@ void parse_items_bundle(const string&in content)
 		else if (key == "quantity") current.quantity = int(string_to_number(val));
 		else if (key == "sound_use") current.sound_use = val;
 		else if (key == "sound_pickup") current.sound_pickup = val;
-		else if (key == "sound_draw") current.sound_draw = val;
 		else if (key == "sound_open") current.sound_open = val;
 		else if (key == "sound_close") current.sound_close = val;
-		else if (key == "sound_plant") current.sound_plant = val;
-		else if (key == "sound_loop") current.sound_loop = val;
 		else if (key == "sound_hit") current.sound_hit = val;
 		else if (key == "sound_break") current.sound_break = val;
 		else if (key == "sound_distant_hit" || key == "sound_distant_break") current.sound_distant_hit = val;

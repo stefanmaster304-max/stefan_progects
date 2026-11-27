@@ -103,6 +103,14 @@ void pick_store_items_dialog(string[]@ items, string[]@ prices, audio_form@ f, i
 		all_labels.insert_last("[Package] " + package_registry[p].name + " (" + package_registry[p].id + ")");
 	}
 
+	// 4. Explosives from settings/explosives/
+	load_all_explosives_config();
+	for (uint e = 0; e < explosive_registry.length(); e++)
+	{
+		all_ids.insert_last(explosive_registry[e].id);
+		all_labels.insert_last("[Explosive - " + explosive_registry[e].etype + "] " + explosive_registry[e].name + " (" + explosive_registry[e].id + ")");
+	}
+
 	if (all_ids.length() == 0)
 	{
 		speak(tr("store_manager.no_items_found"));

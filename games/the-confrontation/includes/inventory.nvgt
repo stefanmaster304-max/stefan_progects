@@ -156,6 +156,9 @@ string get_item_display_name(const string&in item_id)
 	package_data@ pkg = find_package_data(item_id);
 	if (pkg !is null && pkg.name != "") return tr("item_names." + item_id, pkg.name);
 
+	explosive_data@ ex = find_explosive_data(item_id);
+	if (ex !is null && ex.name != "") return ex.name;
+
 	return string_replace(item_id, "_", " ", true);
 }
 
@@ -185,6 +188,9 @@ string get_item_description(const string&in item_id)
 	package_data@ pkg = find_package_data(item_id);
 	if (pkg !is null && pkg.description != "") return pkg.description;
 
+	explosive_data@ ex = find_explosive_data(item_id);
+	if (ex !is null && ex.description != "") return ex.description;
+
 	weapon_data@ w = find_weapon_data(item_id);
 	if (w !is null)
 	{
@@ -198,9 +204,16 @@ string get_item_description(const string&in item_id)
 
 // Uses one item. Health-restoring consumables heal only when health is missing;
 // shields and weapons are equipped. Nothing is ever dropped.
+const int ITEM_USE_COOLDOWN_MS = 450;
+timer item_use_cooldown_timer;
+bool item_use_cooldown_active = false;
+
 void use(string item)
 {
 	if (item == "") return;
+	if (item_use_cooldown_active && item_use_cooldown_timer.elapsed < ITEM_USE_COOLDOWN_MS) return;
+	item_use_cooldown_timer.restart();
+	item_use_cooldown_active = true;
 	load_all_items_config();
 	load_all_weapons_wpm();
 	load_all_packages();
@@ -223,6 +236,8 @@ void use(string item)
 		equip_equipment(item);
 		return;
 	}
+
+	if (use_explosive(item)) return;
 
 	item_data@ it = get_item_data(item);
 	if (it is null)
@@ -286,7 +301,7 @@ bool inventory_item_matches_category(const string&in id, const string&in categor
 	if (category == "weapons_ammo")
 	{
 		item_data@ ammo_item = get_item_data(id);
-		return find_weapon_data(id) !is null || (ammo_item !is null && (ammo_item.category == "ammo" || ammo_item.category == "ammunition")) || id.find("ammo") >= 0 || id.find("bullet") >= 0 || id.find("shell") >= 0 || id.find("round") >= 0 || id.find("cell") >= 0;
+		return find_weapon_data(id) !is null || find_explosive_data(id) !is null || (ammo_item !is null && (ammo_item.category == "ammo" || ammo_item.category == "ammunition")) || id.find("ammo") >= 0 || id.find("bullet") >= 0 || id.find("shell") >= 0 || id.find("round") >= 0 || id.find("cell") >= 0;
 	}
 	item_data@ it = get_item_data(id);
 	if (category == "equipment") return is_equipment_item(id) || (it !is null && (it.category == "equipment" || it.category == "shield"));

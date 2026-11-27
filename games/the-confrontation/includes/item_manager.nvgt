@@ -1,4 +1,4 @@
-﻿audio_form form;
+audio_form form;
 string string_trim_sides(string s) { return s.trim_whitespace(); }
 
 // item_manager.nvgt - Full GUI/Form management and creation interface for items
@@ -321,8 +321,6 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 
 	int btn_use = -1;
 	int btn_pickup = -1;
-	int btn_loot = -1;
-	int btn_draw = -1;
 	int btn_hit = -1;
 	int btn_break = -1;
 	int btn_dist_hit = -1;
@@ -336,15 +334,13 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 		btn_use = form.create_button("&use sound" + get_snd_count_label(it.sound_use));
 		btn_open = form.create_button("&open sound" + get_snd_count_label(it.sound_open));
 		btn_close = form.create_button("&close sound" + get_snd_count_label(it.sound_close));
-		btn_loot = form.create_button("&loot sound" + get_snd_count_label(it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
-		btn_draw = form.create_button("&draw sound" + get_snd_count_label(it.sound_draw));
+		btn_pickup = form.create_button("&pickup sound" + get_snd_count_label(it.sound_pickup != "" ? it.sound_pickup : it.sound_loot));
 	}
 	else if (it.category == "ammo")
 	{
 		in_cap = form.create_input_box("ammo capacity (rounds / capacity count)", string(it.capacity), "", 0, false, false, view_only);
 		in_atype = form.create_input_box("ammo type name", it.ammo_type, "", 0, false, false, view_only);
-		btn_loot = form.create_button("&loot sound" + get_snd_count_label(it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
-		btn_draw = form.create_button("&draw sound" + get_snd_count_label(it.sound_draw));
+		btn_pickup = form.create_button("&pickup sound" + get_snd_count_label(it.sound_pickup != "" ? it.sound_pickup : it.sound_loot));
 	}
 	else if (it.category == "packages")
 	{
@@ -354,8 +350,7 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 			btn_pick_package_items = form.create_button("&select package items");
 		}
 		btn_use = form.create_button("&open sound" + get_snd_count_label(it.sound_use));
-		btn_loot = form.create_button("&loot sound" + get_snd_count_label(it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
-		btn_draw = form.create_button("&draw sound" + get_snd_count_label(it.sound_draw));
+		btn_pickup = form.create_button("&pickup sound" + get_snd_count_label(it.sound_pickup != "" ? it.sound_pickup : it.sound_loot));
 	}
 	else if (it.category == "equipment")
 	{
@@ -364,8 +359,7 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 		btn_hit = form.create_button("&shield impact/deflect sound" + get_snd_count_label(it.sound_hit));
 		btn_break = form.create_button("&shield break sound" + get_snd_count_label(it.sound_break));
 		btn_dist_hit = form.create_button("&shield distant break/impact sound" + get_snd_count_label(it.sound_distant_hit));
-		btn_loot = form.create_button("&loot sound" + get_snd_count_label(it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
-		btn_draw = form.create_button("&draw sound" + get_snd_count_label(it.sound_draw));
+		btn_pickup = form.create_button("&pickup sound" + get_snd_count_label(it.sound_pickup != "" ? it.sound_pickup : it.sound_loot));
 	}
 	else if (it.category == "currency")
 	{
@@ -380,8 +374,7 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 		}
 		form.set_list_position(in_currency_type, cur_def, false);
 		in_cap = form.create_input_box("quantity per pickup", string(it.quantity > 0 ? it.quantity : (it.capacity > 0 ? it.capacity : 100)), "", 0, false, false, view_only);
-		btn_loot = form.create_button("&loot sound" + get_snd_count_label(it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
-		btn_draw = form.create_button("&draw sound" + get_snd_count_label(it.sound_draw));
+		btn_pickup = form.create_button("&pickup sound" + get_snd_count_label(it.sound_pickup != "" ? it.sound_pickup : it.sound_loot));
 	}
 
 	form.set_disallowed_chars(in_mstack, "0123456789", true, "Numbers only.");
@@ -457,16 +450,11 @@ bool item_edit_form(string item_id, bool is_new, bool view_only, string chosen_c
 				it.sound_pickup = item_pick_sound_immediate(it.id, "sound_pickup", it.sound_pickup);
 				form.set_text(btn_pickup, "&pickup sound" + get_snd_count_label(it.sound_pickup));
 			}
-			if (btn_loot != -1 && form.is_pressed(btn_loot))
+			if (btn_pickup != -1 && form.is_pressed(btn_pickup))
 			{
-				it.sound_loot = item_pick_sound_immediate(it.id, "sound_loot", (it.sound_loot != "" ? it.sound_loot : it.sound_pickup));
+				it.sound_loot = item_pick_sound_immediate(it.id, "sound_loot", (it.sound_pickup != "" ? it.sound_pickup : it.sound_loot));
 				it.sound_pickup = it.sound_loot;
-				form.set_text(btn_loot, "&loot sound" + get_snd_count_label(it.sound_loot));
-			}
-			if (btn_draw != -1 && form.is_pressed(btn_draw))
-			{
-				it.sound_draw = item_pick_sound_immediate(it.id, "sound_draw", it.sound_draw);
-				form.set_text(btn_draw, "&draw sound" + get_snd_count_label(it.sound_draw));
+				form.set_text(btn_pickup, "&loot sound" + get_snd_count_label(it.sound_loot));
 			}
 			if (btn_open != -1 && form.is_pressed(btn_open))
 			{

@@ -51,6 +51,7 @@ void buildmenu()
 		"package manager - create, edit, view and delete packages",
 		"item spawner - configure item drops and map pickup spawners",
 		"weapon manager - add, edit, remove and create new weapons",
+		"explosive manager - create, edit, view and delete explosives",
 		"store categories - add, edit and remove store categories and choose their items",
 		"place a store in this map",
 		"add a travel point to another map",
@@ -77,6 +78,7 @@ void buildmenu()
 		"package_manager",
 		"item_spawner",
 		"weapon_manager",
+		"explosive_manager",
 		"store_manager",
 		"store_point",
 		"travel_point",
@@ -228,6 +230,7 @@ void buildobj(string buildtype)
 	else if (buildtype == "package_manager") package_manager_menu();
 	else if (buildtype == "item_spawner") build_item_spawner();
 	else if (buildtype == "weapon_manager") weapon_chooser();
+	else if (buildtype == "explosive_manager") explosive_chooser();
 	else if (buildtype == "npc_manager") npc_manager_menu();
 	else if (buildtype == "npc_spawner") build_npc_spawner();
 	else if (buildtype == "store_point") build_store_point();

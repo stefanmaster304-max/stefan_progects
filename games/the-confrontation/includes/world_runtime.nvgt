@@ -15,6 +15,7 @@ void update_game_world()
 	map_item_spawner_loop();
 	bodyfallloop();
 	npc_loop();
+	update_explosives();
 	broadcast_loop();
 	update_sources();
 	update_map_room_acoustics();

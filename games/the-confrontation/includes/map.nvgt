@@ -241,19 +241,22 @@ string get_map_content_by_name(const string&in name)
 {
 	if (name == "") return "";
 
-	// Loose map files take strict priority when present on disk so edits take effect immediately
-	string filename = MAP_DIR + "/" + name + ".map";
-	if (file_exists(filename))
+	// In source mode, loose map files take strict priority; compiled executable uses maps.dat
+	if (!SCRIPT_COMPILED)
 	{
-		string content = file_get_contents(filename);
-		if (content != "") return content;
-	}
+		string filename = MAP_DIR + "/" + name + ".map";
+		if (file_exists(filename))
+		{
+			string content = file_get_contents(filename);
+			if (content != "") return content;
+		}
 
-	string legacy_filename = "maps/" + name + ".map";
-	if (file_exists(legacy_filename))
-	{
-		string content = file_get_contents(legacy_filename);
-		if (content != "") return content;
+		string legacy_filename = "maps/" + name + ".map";
+		if (file_exists(legacy_filename))
+		{
+			string content = file_get_contents(legacy_filename);
+			if (content != "") return content;
+		}
 	}
 
 	load_maps_bundle();
@@ -1251,15 +1254,8 @@ bool remove_map_from_disk_and_memory(const string&in name)
 
 bool is_map_encrypted(const string&in name)
 {
-	if (SCRIPT_COMPILED) return true;
-	if (name != "" && (file_exists(MAP_DIR + "/" + name + ".map") || file_exists("maps/" + name + ".map"))) return false;
-	if (file_exists(MAPS_DAT_PATH) || file_exists("data/maps.dat") || file_exists("maps.dat")) return true;
-	if (name != "")
-	{
-		if (file_exists(MAP_DIR + "/" + name + ".map.dat") || file_exists("data/maps/" + name + ".map.dat") || file_exists("maps/" + name + ".map.dat")) return true;
-		if (!file_exists(MAP_DIR + "/" + name + ".map") && !file_exists("maps/" + name + ".map")) return true;
-	}
-	return false;
+	if (!SCRIPT_COMPILED) return false;
+	return true;
 }
 
 // Floor names are the folders that exist under "Map Platforms", and nothing

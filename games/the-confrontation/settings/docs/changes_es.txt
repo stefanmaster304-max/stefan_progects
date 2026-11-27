@@ -1,5 +1,20 @@
 The Confront - Registro de Cambios (Español)
 
+Nuevo en la versión 1.2 (27/11/2026 - 10:55 -03:00)
+
+Sistema de Explosivos, Misil Guiado y Correcciones:
+- Añadido un sistema completo de explosivos (`includes/explosive_data_saver.nvgt`, `includes/explosive_manager.nvgt` e `includes/explosive_system.nvgt`) mediante archivos `.config` en `settings/explosives/` integrados en `contents.dat` y gestionados desde el menú de desarrollo (`Gestor de Explosivos`), ocultando dinámicamente los campos que no corresponden al tipo seleccionado.
+- Soporte para múltiples tipos de explosivos: C4 remota, Semtex adhesiva, detonador remoto exclusivo (`remote_detonator`, detonando una carga a la vez sin consumirse), bomba de tiempo programable por el jugador, granada de fragmentación, granada de humo, bomba de humo, mina terrestre (`landmine`) y misil guiado.
+- Añadido enfriamiento global para usar o equipar objetos (`450 ms` en `includes/inventory.nvgt`) para evitar uso rápido mediante scripts, y eliminados los mensajes hablados al plantar o lanzar explosivos.
+- Las explosiones cercanas ahora también dañan el escudo equipado del jugador (`shield_process_damage`) además del daño residual, y no se pueden armar ni detonar explosivos dentro de zonas seguras.
+- Mina terrestre: no se activa solo con el jugador; detona cuando un NPC entra en el radio de activación, dañando y enfureciendo a los NPCs (y dañando al jugador si está dentro del radio de explosión).
+- Granada de humo vs. Bomba de humo: la granada aturde y ciega a los NPCs de cualquier clase durante 5 segundos (configurable), mientras que la bomba de humo mantiene aturdidos a los NPCs dentro del radio durante todo su tiempo activo; el jugador no sufre aturdimiento por humo, pero recibe daño atenuado si permanece cerca de explosiones dañinas.
+- Audio 3D completo de explosivos: soporte para sonido de impacto específico (`sound_hit`), explosión principal más fuerte y sonido distante (`sound_dist`) con atenuación proporcional al tamaño del mapa para propagarse por todo el mapa al detonar.
+- Misil guiado: permite elegir entre ingresar coordenadas manualmente o seleccionar un NPC activo mediante una lista (`audio_form`), viajando con sonido 3D posicional a la velocidad configurada y detonando al llegar al destino u objetivo.
+- Rastreo del autor: cuando cualquier explosivo o misil daña a un NPC, incluso a distancia, el NPC identifica al autor y comienza inmediatamente a correr hacia él.
+- Conservado únicamente `sound_pickup` en los objetos (`includes/item_data_saver.nvgt` e `includes/item_manager.nvgt`), eliminando `sound_draw`, `sound_plant` y `sound_loop`.
+- Corregida la lectura dinámica de mapas en `get_map_content_by_name()` (`includes/map.nvgt`) y la sincronización en `save_to_map()` (`includes/builder.nvgt`) para que las restricciones de resurrección/nivel surtan efecto de inmediato en los puntos de viaje de cualquier mapa.
+
 Nuevo en la versión 1.1 (27/11/2026 - 09:40 -03:00)
 
 Combate, Rastreo, Audio y Traducciones:

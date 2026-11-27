@@ -1,5 +1,20 @@
 The Confront - Changelog (English)
 
+New in version 1.2 (2026-11-27 - 10:55 -03:00)
+
+Explosives System, Guided Missile & Fixes:
+- Added a full explosives system (`includes/explosive_data_saver.nvgt`, `includes/explosive_manager.nvgt`, and `includes/explosive_system.nvgt`) using `.config` files in `settings/explosives/` bundled into `contents.dat` and managed via the development menu (`Explosive Manager`), dynamically hiding fields that do not apply to the selected explosive type.
+- Added support for multiple explosive types: remote C4, sticky Semtex, dedicated remote detonator item (`remote_detonator`, detonating one charge at a time without being consumed), player-programmable timed bombs, frag grenades, smoke grenades, smoke bombs, landmines, and guided missiles.
+- Added global item use/equip cooldown (`450 ms` in `includes/inventory.nvgt`) to prevent rapid scripted use, and removed verbose speech announcements when planting or throwing explosives.
+- Nearby explosions now also damage the player's equipped shield (`shield_process_damage`) in addition to splash damage, and explosives cannot be armed or detonated inside safe zones.
+- Landmines: ignore the player alone and detonate when an NPC enters the trigger radius, damaging and enraging NPCs (and damaging the player if standing within the blast radius).
+- Smoke grenade vs. Smoke bomb: smoke grenades blind and stun NPCs of any class for 5 seconds (configurable), whereas smoke bombs keep NPCs within the radius stunned for their entire active duration; players are unaffected by smoke, while taking attenuated blast damage if standing inside damaging explosions.
+- Full 3D explosive audio: added specific impact hit sound (`sound_hit`), louder blast playback, and distant explosion sound (`sound_dist`) with map-span attenuation so it propagates across the entire map upon detonation.
+- Guided missiles: allow choosing between entering manual coordinates or selecting an active NPC target from an `audio_form` list, flying with 3D positional audio at the configured travel speed and detonating on impact.
+- Owner aggro tracking: when any explosive or missile damages an NPC—even from afar—the NPC identifies the owner and immediately starts running toward the target.
+- Kept only `sound_pickup` in items (`includes/item_data_saver.nvgt` and `includes/item_manager.nvgt`), removing unused `sound_draw`, `sound_plant`, and `sound_loop` fields.
+- Fixed dynamic map loading in `get_map_content_by_name()` (`includes/map.nvgt`) and `save_to_map()` synchronization (`includes/builder.nvgt`) so resurrection/level restrictions take effect immediately on travel points for all maps.
+
 New in version 1.1 (2026-11-27 - 09:40 -03:00)
 
 Combat, Tracking, Audio & Localization:

@@ -8,7 +8,7 @@
 bool is_sitting = false;
 timer sitting_speech_debounce;
 
-string ver = "1.1";
+string ver = "1.2";
 
 #include "includes/bgt_compat.nvgt"
 #include "includes/player_character.nvgt"
@@ -31,6 +31,7 @@ string ver = "1.1";
 #include "includes/updater.nvgt"
 #include"includes/keybinds.nvgt"
 #include "includes/virtualizer.nvgt"
+#include "includes/explosive_data_saver.nvgt"
 #include "includes/builder.nvgt"
 #include"includes/inventory.nvgt"
 #include"includes/m_pro.nvgt"
@@ -41,6 +42,8 @@ string ver = "1.1";
 #include"includes/shield_system.nvgt"
 #include"includes/message_system.nvgt"
 #include"includes/npc_system.nvgt"
+#include "includes/explosive_system.nvgt"
+#include "includes/explosive_manager.nvgt"
 #include "includes/tracking_system.nvgt"
 #include"includes/npc_manager.nvgt"
 #include"includes/verify_files.nvgt"

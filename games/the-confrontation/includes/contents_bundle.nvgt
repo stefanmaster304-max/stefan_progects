@@ -32,6 +32,7 @@ string serialize_all_contents_bundle()
 	s += "[section:storefronts]\n" + serialize_all_storefronts_bundle() + "\n";
 	s += "[section:packages]\n" + serialize_all_packages_bundle() + "\n";
 	s += "[section:npcs]\n" + serialize_all_npcs_bundle() + "\n";
+	s += "[section:explosives]\n" + serialize_all_explosives_bundle() + "\n";
 	return s;
 }
 
@@ -43,6 +44,7 @@ void parse_contents_bundle(const string&in content)
 	string storefronts_sec = "";
 	string packages_sec = "";
 	string npcs_sec = "";
+	string explosives_sec = "";
 	string section = "";
 
 	string[]@ lines = string_split(content, "\n", true);
@@ -62,6 +64,7 @@ void parse_contents_bundle(const string&in content)
 		else if (section == "storefronts") storefronts_sec += lines[i] + "\n";
 		else if (section == "packages") packages_sec += lines[i] + "\n";
 		else if (section == "npcs") npcs_sec += lines[i] + "\n";
+		else if (section == "explosives") explosives_sec += lines[i] + "\n";
 	}
 
 	parse_items_bundle(items_sec);
@@ -71,6 +74,7 @@ void parse_contents_bundle(const string&in content)
 	init_storefronts();
 	parse_packages_bundle(packages_sec);
 	parse_npcs_bundle(npcs_sec);
+	parse_explosives_bundle(explosives_sec);
 }
 
 bool decrypt_contents_text(const string&in path, string&out text)
@@ -173,6 +177,7 @@ void encrypt_all_contents()
 	if (storefronts.length() == 0) init_storefronts();
 	if (package_registry.length() == 0) load_all_packages();
 	if (npc_registry.length() == 0) load_all_npcs();
+	if (explosive_registry.length() == 0) load_all_explosives_config();
 
 	if (item_registry.length() == 0 && weapon_registry.length() == 0 && store_configs.length() == 0 && package_registry.length() == 0 && npc_registry.length() == 0)
 	{
