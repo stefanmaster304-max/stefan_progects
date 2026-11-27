@@ -153,31 +153,43 @@ void parse_explosive_config(explosive_data@ ex, const string&in content)
 
 string serialize_explosive_config(explosive_data@ ex)
 {
+	string t = ex.etype;
+	bool is_detonator = (t == "remote_detonator");
+	bool is_smoke_g = (t == "smoke_grenade");
+	bool is_smoke_b = (t == "smoke_bomb");
+	bool is_smoke = (is_smoke_g || is_smoke_b);
+	bool is_c4 = (t == "remote_c4");
+	bool is_timed = (t == "timed_bomb");
+	bool is_frag = (t == "frag_grenade");
+	bool is_mine = (t == "landmine");
+	bool is_missile = (t == "guided_missile");
+
 	string s = "";
 	s += "name=" + ex.name + "\n";
-	s += "description=" + ex.description + "\n";
-	s += "etype=" + ex.etype + "\n";
-	s += "damage=" + ex.damage + "\n";
-	s += "radius=" + ex.radius + "\n";
-	s += "trigger_radius=" + ex.trigger_radius + "\n";
-	s += "fuse_ms=" + ex.fuse_ms + "\n";
-	s += "throw_range=" + ex.throw_range + "\n";
-	s += "stun_duration_ms=" + ex.stun_duration_ms + "\n";
-	s += "active_duration_ms=" + ex.active_duration_ms + "\n";
-	s += "beep_interval_ms=" + ex.beep_interval_ms + "\n";
-	s += "travel_speed_ms=" + ex.travel_speed_ms + "\n";
+	if (ex.description != "") s += "description=" + ex.description + "\n";
+	s += "etype=" + t + "\n";
+	if (!is_smoke && !is_detonator) s += "damage=" + ex.damage + "\n";
+	if (!is_detonator) s += "radius=" + ex.radius + "\n";
+	if (is_mine) s += "trigger_radius=" + ex.trigger_radius + "\n";
+	if (is_timed || is_frag || is_smoke_g || is_smoke_b) s += "fuse_ms=" + ex.fuse_ms + "\n";
+	if (is_frag || is_smoke_g) s += "throw_range=" + ex.throw_range + "\n";
+	if (is_smoke_g) s += "stun_duration_ms=" + ex.stun_duration_ms + "\n";
+	if (is_smoke_b) s += "active_duration_ms=" + ex.active_duration_ms + "\n";
+	if (is_timed || is_mine) s += "beep_interval_ms=" + ex.beep_interval_ms + "\n";
+	if (is_missile) s += "travel_speed_ms=" + ex.travel_speed_ms + "\n";
 	s += "max_stack=" + ex.max_stack + "\n";
+
 	if (ex.sound_get != "") s += "sound_get=" + ex.sound_get + "\n";
-	if (ex.sound_plant != "") s += "sound_plant=" + ex.sound_plant + "\n";
-	if (ex.sound_arm != "") s += "sound_arm=" + ex.sound_arm + "\n";
-	if (ex.sound_beep != "") s += "sound_beep=" + ex.sound_beep + "\n";
-	if (ex.sound_detonator != "") s += "sound_detonator=" + ex.sound_detonator + "\n";
-	if (ex.sound_travel != "") s += "sound_travel=" + ex.sound_travel + "\n";
-	if (ex.sound_bounce != "") s += "sound_bounce=" + ex.sound_bounce + "\n";
-	if (ex.sound_land != "") s += "sound_land=" + ex.sound_land + "\n";
-	if (ex.sound_hit != "") s += "sound_hit=" + ex.sound_hit + "\n";
-	if (ex.sound_explode != "") s += "sound_explode=" + ex.sound_explode + "\n";
-	if (ex.sound_dist != "") s += "sound_dist=" + ex.sound_dist + "\n";
+	if (!is_detonator && ex.sound_plant != "") s += "sound_plant=" + ex.sound_plant + "\n";
+	if ((is_c4 || is_timed || is_mine || is_smoke_b || is_missile) && ex.sound_arm != "") s += "sound_arm=" + ex.sound_arm + "\n";
+	if ((is_timed || is_mine) && ex.sound_beep != "") s += "sound_beep=" + ex.sound_beep + "\n";
+	if (is_detonator && ex.sound_detonator != "") s += "sound_detonator=" + ex.sound_detonator + "\n";
+	if ((is_missile || is_smoke_b) && ex.sound_travel != "") s += "sound_travel=" + ex.sound_travel + "\n";
+	if ((is_frag || is_smoke_g) && ex.sound_bounce != "") s += "sound_bounce=" + ex.sound_bounce + "\n";
+	if ((is_frag || is_smoke_g) && ex.sound_land != "") s += "sound_land=" + ex.sound_land + "\n";
+	if (!is_smoke && !is_detonator && ex.sound_hit != "") s += "sound_hit=" + ex.sound_hit + "\n";
+	if (!is_detonator && ex.sound_explode != "") s += "sound_explode=" + ex.sound_explode + "\n";
+	if (!is_detonator && ex.sound_dist != "") s += "sound_dist=" + ex.sound_dist + "\n";
 	return s;
 }
 
