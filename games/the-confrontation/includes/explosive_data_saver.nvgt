@@ -41,6 +41,7 @@ class explosive_data
 	string sound_beep;
 	string sound_detonator;
 	string sound_travel;
+	string sound_smoke;
 	string sound_bounce;
 	string sound_land;
 	string sound_hit;
@@ -70,6 +71,7 @@ class explosive_data
 		sound_beep = "";
 		sound_detonator = "";
 		sound_travel = "";
+		sound_smoke = "";
 		sound_bounce = "";
 		sound_land = "";
 		sound_hit = "";
@@ -136,6 +138,7 @@ void parse_explosive_config(explosive_data@ ex, const string&in content)
 		else if (key == "sound_beep") ex.sound_beep = val;
 		else if (key == "sound_detonator") ex.sound_detonator = val;
 		else if (key == "sound_travel" || key == "sound_loop") ex.sound_travel = val;
+		else if (key == "sound_smoke") ex.sound_smoke = val;
 		else if (key == "sound_bounce") ex.sound_bounce = val;
 		else if (key == "sound_land") ex.sound_land = val;
 		else if (key == "sound_hit") ex.sound_hit = val;
@@ -183,7 +186,8 @@ string serialize_explosive_config(explosive_data@ ex)
 	if (!is_detonator && ex.sound_plant != "") s += "sound_plant=" + ex.sound_plant + "\n";
 	if ((is_timed || is_mine) && ex.sound_beep != "") s += "sound_beep=" + ex.sound_beep + "\n";
 	if (is_detonator && ex.sound_detonator != "") s += "sound_detonator=" + ex.sound_detonator + "\n";
-	if ((is_missile || is_smoke_b) && ex.sound_travel != "") s += "sound_travel=" + ex.sound_travel + "\n";
+	if (is_missile && ex.sound_travel != "") s += "sound_travel=" + ex.sound_travel + "\n";
+	if (is_smoke && ex.sound_smoke != "") s += "sound_smoke=" + ex.sound_smoke + "\n";
 	if ((is_frag || is_smoke_g) && ex.sound_bounce != "") s += "sound_bounce=" + ex.sound_bounce + "\n";
 	if ((is_frag || is_smoke_g) && ex.sound_land != "") s += "sound_land=" + ex.sound_land + "\n";
 	if (!is_smoke && !is_detonator && ex.sound_hit != "") s += "sound_hit=" + ex.sound_hit + "\n";

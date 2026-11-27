@@ -163,30 +163,15 @@ void detonate_explosive(active_explosive@ exp)
 		play_explosive_loud_and_distant(exp.data, exp.x, exp.y, exp.z);
 	}
 
-	if (exp.data.etype == "smoke_grenade")
+	if (exp.data.etype == "smoke_grenade" || exp.data.etype == "smoke_bomb")
 	{
-		// Only NPCs are blinded/stunned by smoke grenades; the player is unaffected.
-		int stun_ms = (exp.data.stun_duration_ms > 0) ? exp.data.stun_duration_ms : 5000;
-		for (uint i = 0; i < npc_instances.length(); i++)
-		{
-			npc_instance@ npc = npc_instances[i];
-			if (npc is null || npc.dead) continue;
-			if (explosive_chebyshev_distance(exp.x, exp.y, exp.z, npc.x, npc.y, npc.z) <= exp.data.radius)
-			{
-				npc_apply_blind(npc, stun_ms);
-			}
-		}
-		return;
-	}
-
-	if (exp.data.etype == "smoke_bomb")
-	{
-		// Smoke bomb stays active and blinds NPCs while active; the player is unaffected.
+		// Generates a smoke cloud in the map that blinds/stuns NPCs while active; the player is unaffected.
 		exp.smoke_active = true;
 		exp.active_timer.restart();
-		if (exp.data.sound_travel != "" && exp.map_name == mapname)
+		string skey = (exp.data.sound_smoke != "") ? exp.data.sound_smoke : exp.data.sound_travel;
+		if (skey != "" && exp.map_name == mapname)
 		{
-			string spath = get_sound_path(exp.data.sound_travel);
+			string spath = get_sound_path(skey);
 			if (spath != "")
 				exp.loop_sound_slot = explosive_pool.play_3d(spath, me.x, me.y, me.z, float(exp.x), float(exp.y), float(exp.z), double(facing), true);
 		}
@@ -535,7 +520,9 @@ void update_explosives()
 
 		if (exp.smoke_active)
 		{
-			int dur = (exp.data.active_duration_ms > 0) ? exp.data.active_duration_ms : 10000;
+			int dur = (exp.data.etype == "smoke_grenade")
+				? ((exp.data.stun_duration_ms > 0) ? exp.data.stun_duration_ms : 5000)
+				: ((exp.data.active_duration_ms > 0) ? exp.data.active_duration_ms : 10000);
 			if (exp.active_timer.elapsed >= dur)
 			{
 				if (exp.loop_sound_slot >= 0) explosive_pool.destroy_sound(exp.loop_sound_slot);
