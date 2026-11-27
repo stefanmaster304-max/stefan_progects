@@ -42,7 +42,9 @@
     "zone_dark_cemetery": "Dark Cemetery",
     "zone_robots": "Robots World",
     "zone_stream": "A flowing stream",
-    "zone_bears_valley": "Bears Valley"
+    "zone_bears_valley": "Bears Valley",
+    "zone_to_bears_valley": "To go to Bears Valley, press Alt+Enter.",
+    "zone_to_dark_cemetery": "To go to the Dark Cemetery, press Alt+Enter."
   },
   "options": {
     "title": "Options",

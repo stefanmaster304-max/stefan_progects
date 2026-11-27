@@ -251,6 +251,7 @@ void save_to_map(string line)
 	file_put_contents(path, content);
 	map_bundle_cache[mapname] = content;
 	invalidate_map_lines_cache(mapname);
+	if (file_exists(MAPS_DAT_PATH) || file_exists("maps.dat")) encrypt_all_maps_silent();
 	speak("map updated");
 	tempreset();
 	draw_map(mapname);

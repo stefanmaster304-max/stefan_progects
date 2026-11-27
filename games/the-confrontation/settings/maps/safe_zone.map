@@ -12,7 +12,7 @@ maxresurrection: 0
 platform:0:100:0:100:0:0:concrete11
 safezone:0:100:0:100:0:100
 zone:0:100:0:49:0:100:@map.zone_safe
-zone:0:100:50:50:0:100:@map.zone_store_door
+zone:0:100:49:50:0:100:@map.zone_store_door
 zone:0:100:51:100:0:100:@map.zone_store_area
 door:store_door:0:100:50:50:0:100:walldoor:Doors/Door01Open.ogg:Doors/Door01Close.ogg:500:5000:store_room:0:100:51:100:0:100:1500
 source:0:100:51:100:0:100:musics/Music9:0:90
@@ -20,3 +20,7 @@ source:0:100:51:100:0:100:sources/walking_people2:0:100
 storepoint:general:0:0:51:100:0:0
 travelpoint:10:10:10:10:0:0:florest:0:0:0:0:0:0
 zone:10:10:10:10:0:0:@map.zone_to_forest
+zone:5:5:5:5:0:0:@map.zone_to_bears_valley
+travelpoint:4:4:4:4:0:0:Dark Cemetery:0:0:0:0:0:0
+zone:4:4:4:4:0:0:@map.zone_to_dark_cemetery
+travelpoint:5:5:5:5:0:0:bears valley:0:0:0:0:0:0

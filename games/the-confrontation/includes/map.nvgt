@@ -241,22 +241,19 @@ string get_map_content_by_name(const string&in name)
 {
 	if (name == "") return "";
 
-	// In source mode, loose map files take strict priority so developer edits work immediately
-	if (!SCRIPT_COMPILED)
+	// Loose map files take strict priority when present on disk so edits take effect immediately
+	string filename = MAP_DIR + "/" + name + ".map";
+	if (file_exists(filename))
 	{
-		string filename = MAP_DIR + "/" + name + ".map";
-		if (file_exists(filename))
-		{
-			string content = file_get_contents(filename);
-			if (content != "") return content;
-		}
+		string content = file_get_contents(filename);
+		if (content != "") return content;
+	}
 
-		string legacy_filename = "maps/" + name + ".map";
-		if (file_exists(legacy_filename))
-		{
-			string content = file_get_contents(legacy_filename);
-			if (content != "") return content;
-		}
+	string legacy_filename = "maps/" + name + ".map";
+	if (file_exists(legacy_filename))
+	{
+		string content = file_get_contents(legacy_filename);
+		if (content != "") return content;
 	}
 
 	load_maps_bundle();
@@ -267,28 +264,6 @@ string get_map_content_by_name(const string&in name)
 		map_bundle_cache.get(name, cached);
 		if (cached == "__NOT_FOUND__") return "";
 		if (cached != "") return cached;
-	}
-
-	string filename = MAP_DIR + "/" + name + ".map";
-	if (file_exists(filename))
-	{
-		string content = file_get_contents(filename);
-		if (content != "")
-		{
-			map_bundle_cache[name] = content;
-			return content;
-		}
-	}
-
-	string legacy_filename = "maps/" + name + ".map";
-	if (file_exists(legacy_filename))
-	{
-		string content = file_get_contents(legacy_filename);
-		if (content != "")
-		{
-			map_bundle_cache[name] = content;
-			return content;
-		}
 	}
 
 	string enc_filename = MAP_DIR + "/" + name + ".map.dat";

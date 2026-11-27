@@ -42,7 +42,9 @@
     "zone_dark_cemetery": "Cemitério Sombrio",
     "zone_robots": "Mundo dos Robôs",
     "zone_stream": "Um belo riacho de águas correntes",
-    "zone_bears_valley": "Vale dos Ursos"
+    "zone_bears_valley": "Vale dos Ursos",
+    "zone_to_bears_valley": "Para ir para o Vale dos Ursos, pressione Alt+Enter.",
+    "zone_to_dark_cemetery": "Para ir para o Cemitério Sombrio, pressione Alt+Enter."
   },
   "options": {
     "title": "Opções",

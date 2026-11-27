@@ -42,7 +42,9 @@
     "zone_dark_cemetery": "Cementerio Oscuro",
     "zone_robots": "Mundo de los Robots",
     "zone_stream": "Un hermoso arroyo de agua corriente",
-    "zone_bears_valley": "Valle de los Osos"
+    "zone_bears_valley": "Valle de los Osos",
+    "zone_to_bears_valley": "Para ir al Valle de los Osos, presiona Alt+Enter.",
+    "zone_to_dark_cemetery": "Para ir al Cementerio Oscuro, presiona Alt+Enter."
   },
   "options": {
     "title": "Opciones",
