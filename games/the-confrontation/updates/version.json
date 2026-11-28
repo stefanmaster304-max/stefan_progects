@@ -1,29 +1,29 @@
-{
-  "game": {
-    "version": "1.3",
-    "build": 1,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v1.3/tcf.exe",
-    "zip_url": "",
-    "size": 14566692,
-    "zip_size": 0
-  },
-  "content": {
-    "version": "0.7",
-    "build": 4,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v1.3/contents.dat",
-    "size": 132576
-  },
-  "sounds": {
-    "version": "1.2",
-    "build": 2,
-    "new_count": 3,
-    "url": "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v1.2/the_confront_v1.2_sounds.zip",
-    "size": 883170165
-  },
-  "maps": {
-    "version": "0.8",
-    "build": 7,
-    "url": "https://media.githubusercontent.com/media/stefanmaster304-max/stefan_progects/main/games/the-confrontation/settings/maps.dat",
-    "size": 5392
-  }
+﻿{
+    "game":  {
+                 "version":  "1.3",
+                 "build":  1,
+                 "url":  "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v1.3/tcf.exe",
+                 "zip_url":  "",
+                 "size":  14567012,
+                 "zip_size":  0
+             },
+    "content":  {
+                    "version":  "0.7",
+                    "build":  4,
+                    "url":  "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v1.3/contents.dat",
+                    "size":  132576
+                },
+    "sounds":  {
+                   "version":  "1.2",
+                   "build":  2,
+                   "new_count":  3,
+                   "url":  "https://github.com/stefanmaster304-max/stefan_progects/releases/download/v1.2/the_confront_v1.2_sounds.zip",
+                   "size":  883170165
+               },
+    "maps":  {
+                 "version":  "0.8",
+                 "build":  7,
+                 "url":  "https://media.githubusercontent.com/media/stefanmaster304-max/stefan_progects/main/games/the-confrontation/settings/maps.dat",
+                 "size":  5392
+             }
 }
