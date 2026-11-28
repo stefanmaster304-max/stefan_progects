@@ -157,7 +157,7 @@ string get_item_display_name(const string&in item_id)
 	if (pkg !is null && pkg.name != "") return tr("item_names." + item_id, pkg.name);
 
 	explosive_data@ ex = find_explosive_data(item_id);
-	if (ex !is null && ex.name != "") return ex.name;
+	if (ex !is null && ex.name != "") return tr("item_names." + item_id, ex.name);
 
 	return string_replace(item_id, "_", " ", true);
 }

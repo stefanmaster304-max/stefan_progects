@@ -717,7 +717,26 @@
     "gold": "Ouro",
     "golden_crystal": "Cristal Dourado",
     "metal_shield": "Escudo de Metal",
-    "life_potion": "Poção de Vida"
+    "life_potion": "Poção de Vida",
+    "ammo pack": "Pacote de Munição",
+    "anti_death_card": "Carta Anti-Morte",
+    "c4": "C4",
+    "detonator": "Detonador Remoto",
+    "granade": "Granada de Fragmentação",
+    "mine": "Mina Terrestre",
+    "guided missile": "Míssil Guiado",
+    "smoqe bomb": "Bomba de Fumaça",
+    "smoqe grenade": "Granada de Fumaça"
+  },
+  "store_category_names": {
+    "ammo": "Munições",
+    "jeneral items": "Itens Gerais",
+    "medical items": "Itens Médicos",
+    "weapons": "Armas",
+    "explosives": "Explosivos"
+  },
+  "storefront_names": {
+    "general": "Loja Geral"
   },
   "weapon_terms": {
     "combat_rifle": "Fuzil de Combate",

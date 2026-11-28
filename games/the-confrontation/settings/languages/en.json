@@ -717,7 +717,26 @@
     "gold": "Gold",
     "golden_crystal": "Golden Crystal",
     "metal_shield": "Metal Shield",
-    "life_potion": "Health Potion"
+    "life_potion": "Health Potion",
+    "ammo pack": "Ammo Pack",
+    "anti_death_card": "Anti-Death Card",
+    "c4": "C4",
+    "detonator": "Remote Detonator",
+    "granade": "Frag Grenade",
+    "mine": "Landmine",
+    "guided missile": "Guided Missile",
+    "smoqe bomb": "Smoke Bomb",
+    "smoqe grenade": "Smoke Grenade"
+  },
+  "store_category_names": {
+    "ammo": "Ammunition",
+    "jeneral items": "General Items",
+    "medical items": "Medical Items",
+    "weapons": "Weapons",
+    "explosives": "Explosives"
+  },
+  "storefront_names": {
+    "general": "General Store"
   },
   "weapon_terms": {
     "combat_rifle": "Combat Rifle",

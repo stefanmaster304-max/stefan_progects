@@ -332,8 +332,6 @@ void store_create_form()
 		f.add_list_item(l_currency, currency_display_name(store_currencies[c]), store_currencies[c]);
 	}
 	f.set_list_position(l_currency, 0, false);
-	int l_payments = f.create_list(tr("store_manager.accepted_payments"), 0, true, true);
-	store_populate_payment_list(f, l_payments, null);
 	int list_items = f.create_list(tr("store_manager.store_items"), 0, false, false);
 	int btn_add = f.create_button("&" + tr("store_manager.select_items_to_sell"), false);
 	int btn_edit = f.create_button("&" + tr("store_manager.edit_price"), false);
@@ -371,11 +369,8 @@ void store_create_form()
 			if (s.display_name == "") s.display_name = name;
 			int cur_pos = f.get_list_position(l_currency);
 			s.currency = (cur_pos >= 0 && cur_pos < int(store_currencies.length())) ? store_currencies[cur_pos] : CURRENCY_GOLD;
-			s.accepted_currencies = store_read_checked_payments(f, l_payments);
-			if (!store_payment_accepted(s.accepted_currencies, s.currency))
-			{
-				s.accepted_currencies.insert_last(s.currency);
-			}
+			s.accepted_currencies.resize(0);
+			s.accepted_currencies.insert_last(s.currency);
 			s.item_names = items;
 			s.item_prices = prices;
 			save_store_config(name, s);
@@ -484,8 +479,6 @@ void store_edit_form()
 		if (cur_norm == store_currencies[c]) cur_sel = int(c);
 	}
 	f2.set_list_position(l_currency, cur_sel, false);
-	int l_payments = f2.create_list(tr("store_manager.accepted_payments"), 0, true, true);
-	store_populate_payment_list(f2, l_payments, s.accepted_currencies);
 	int list_items = f2.create_list(tr("store_manager.store_items"), 0, false, false);
 	for (uint i = 0; i < items.length(); i++)
 	{
@@ -523,11 +516,8 @@ void store_edit_form()
 			if (s.display_name == "") s.display_name = new_id;
 			int cur_pos = f2.get_list_position(l_currency);
 			s.currency = (cur_pos >= 0 && cur_pos < int(store_currencies.length())) ? store_currencies[cur_pos] : CURRENCY_GOLD;
-			s.accepted_currencies = store_read_checked_payments(f2, l_payments);
-			if (!store_payment_accepted(s.accepted_currencies, s.currency))
-			{
-				s.accepted_currencies.insert_last(s.currency);
-			}
+			s.accepted_currencies.resize(0);
+			s.accepted_currencies.insert_last(s.currency);
 			s.item_names = items;
 			s.item_prices = prices;
 

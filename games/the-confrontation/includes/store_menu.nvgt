@@ -99,7 +99,7 @@ void store_browse_announce_category(int cat)
 {
 	store_cfg@ s = store_configs[cat];
 	store_browse_resize_cart(cat);
-	speak(s.display_name);
+	speak(tr("store_category_names." + s.name, s.display_name));
 }
 
 void store_browse_announce_item(int cat, int item)
@@ -277,7 +277,7 @@ void store_main_menu(const string&in storefront_id)
 		wait(5);
 	}
 
-	speak(store_welcome_text(storefront.display_name));
+	speak(store_welcome_text(tr("storefront_names." + storefront.name, storefront.display_name)));
 
 	int category_position = 0;
 	int cat = visible_categories[category_position];
