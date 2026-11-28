@@ -146,7 +146,8 @@ class sound_pool_item {
 				if (handle.active == true) {
 					if (start_offset > 0)
 						handle.seek(start_offset);
-					hrtf_enabled = !stationary && king_global_hrtf;
+					// NÃO sobrescrever hrtf_enabled — já foi definido corretamente pelo play_extended com a flag do pool.
+					// Sobrescrever aqui com king_global_hrtf ignoraria sp.hrtf=false e causaria mono.
 					last_hrtf_active = hrtf_enabled;
 					handle.set_hrtf(hrtf_enabled);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
@@ -432,7 +433,9 @@ class sound_pool {
 		items[slot].persistent = persistent;
 		items[slot].stream = stream;
 		items[slot].theta = theta;
-		items[slot].hrtf_enabled = (dimension > 0) ? (hrtf || king_global_hrtf) : false;
+		// hrtf flag do pool (this.hrtf) deve prevalecer: se o pool tem hrtf=false, o item nunca usa HRTF.
+		// Usar && (E lógico) garante que king_global_hrtf NÃO sobrescreva a flag do pool.
+		items[slot].hrtf_enabled = (dimension > 0) ? (hrtf && king_global_hrtf) : false;
 		items[slot].last_hrtf_active = items[slot].hrtf_enabled;
 		items[slot].handle.set_hrtf(items[slot].hrtf_enabled);
 		if (@mix != null)
