@@ -34,14 +34,6 @@ void build_map_door()
 	int z1_field = f.create_input_box(tr("form.max_z"), "" + int(round(me.z, 0)));
 	int cooldown_field = f.create_input_box(tr("door.cooldown"), "500");
 	int autoclose_field = f.create_input_box(tr("door.auto_close"), "0");
-	int room_id_field = f.create_input_box(tr("door.room_id"), "");
-	int room_x0_field = f.create_input_box(tr("door.room_min_x"), "" + int(round(me.x, 0)));
-	int room_x1_field = f.create_input_box(tr("door.room_max_x"), "" + int(round(me.x, 0)));
-	int room_y0_field = f.create_input_box(tr("door.room_min_y"), "" + int(round(me.y, 0)));
-	int room_y1_field = f.create_input_box(tr("door.room_max_y"), "" + int(round(me.y, 0)));
-	int room_z0_field = f.create_input_box(tr("door.room_min_z"), "" + int(round(me.z, 0)));
-	int room_z1_field = f.create_input_box(tr("door.room_max_z"), "" + int(round(me.z, 0)));
-	int cutoff_field = f.create_input_box(tr("door.room_cutoff"), "1200");
 	int open_button = f.create_button(tr("door.open_sound"));
 	int close_button = f.create_button(tr("door.close_sound"));
 	int wall_list = f.create_list(tr("door.wall_type"));
@@ -50,8 +42,7 @@ void build_map_door()
 	int cancel_button = f.create_button("&" + tr("ui.cancel"), false, true);
 	f.set_default_controls(save_button, cancel_button);
 	f.focus(id_field);
-	int[] number_fields = {x0_field, x1_field, y0_field, y1_field, z0_field, z1_field, cooldown_field, autoclose_field,
-		room_x0_field, room_x1_field, room_y0_field, room_y1_field, room_z0_field, room_z1_field, cutoff_field};
+	int[] number_fields = {x0_field, x1_field, y0_field, y1_field, z0_field, z1_field, cooldown_field, autoclose_field};
 	for (uint i = 0; i < number_fields.length(); i++) f.set_disallowed_chars(number_fields[i], "0123456789-", true, tr("door.whole_numbers"));
 	string open_sound, close_sound;
 	while (true)
@@ -105,43 +96,6 @@ void build_map_door()
 		}
 		string wall_type = wall_types[uint(wall_pos)];
 		string line = "door:" + id + ":" + x0 + ":" + x1 + ":" + y0 + ":" + y1 + ":" + z0 + ":" + z1 + ":" + wall_type + ":" + open_sound + ":" + close_sound + ":" + cooldown + ":" + auto_close;
-		string room_id = string_to_lower_case(f.get_text(room_id_field).trim_whitespace());
-		if (room_id != "")
-		{
-			int rx0, rx1, ry0, ry1, rz0, rz1, cutoff;
-			if (!door_room_id_is_valid(room_id) ||
-				!door_builder_parse_integer(f.get_text(room_x0_field), rx0) || !door_builder_parse_integer(f.get_text(room_x1_field), rx1) ||
-				!door_builder_parse_integer(f.get_text(room_y0_field), ry0) || !door_builder_parse_integer(f.get_text(room_y1_field), ry1) ||
-				!door_builder_parse_integer(f.get_text(room_z0_field), rz0) || !door_builder_parse_integer(f.get_text(room_z1_field), rz1) ||
-				!door_builder_parse_integer(f.get_text(cutoff_field), cutoff))
-			{
-				speak(tr("door.invalid_room"));
-				continue;
-			}
-			if (rx0 > rx1 || ry0 > ry1 || rz0 > rz1 || rx0 < minx || rx1 > maxx || ry0 < miny || ry1 > maxy || rz0 < minz || rz1 > maxz || cutoff < 10 || cutoff > 22000)
-			{
-				speak(tr("door.invalid_room_bounds"));
-				continue;
-			}
-			if (!door_interior_bounds_touch_side(x0, x1, y0, y1, z0, z1, rx0, rx1, ry0, ry1, rz0, rz1))
-			{
-				speak(tr("door.room_must_touch_side"));
-				continue;
-			}
-			for (uint ri = 0; ri < map_doors.length(); ri++)
-			{
-				map_door_definition@ existing_room = map_doors[ri];
-				if (existing_room is null || existing_room.room_id != room_id) continue;
-				if (existing_room.room_x0 != rx0 || existing_room.room_x1 != rx1 || existing_room.room_y0 != ry0 || existing_room.room_y1 != ry1 || existing_room.room_z0 != rz0 || existing_room.room_z1 != rz1 || int(existing_room.room_cutoff_hz) != cutoff)
-				{
-					speak(tr("door.room_configuration_conflict"));
-					room_id = "";
-					break;
-				}
-			}
-			if (room_id == "") continue;
-			line += ":" + room_id + ":" + rx0 + ":" + rx1 + ":" + ry0 + ":" + ry1 + ":" + rz0 + ":" + rz1 + ":" + cutoff;
-		}
 		save_to_map(line);
 		return;
 	}

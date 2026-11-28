@@ -14,6 +14,8 @@ Explosives System, Guided Missile & Fixes:
 - Owner aggro tracking: when any explosive or missile damages an NPC—even from afar—the NPC identifies the owner and immediately starts running toward the target.
 - Kept only `sound_pickup` in items (`includes/item_data_saver.nvgt` and `includes/item_manager.nvgt`), removing unused `sound_draw`, `sound_plant`, and `sound_loop` fields.
 - Fixed dynamic map loading in `get_map_content_by_name()` (`includes/map.nvgt`) and `save_to_map()` synchronization (`includes/builder.nvgt`) so resurrection/level restrictions take effect immediately on travel points for all maps.
+- Returned to NVGT's default MiniAudio sound engine (0.90.0-dev) for better fluidity, using Steam Audio (`nvgt_phonon`) for 3D HRTF spatialization and attenuation (`audio_panner_phonon_hrtf` and `audio_attenuator_phonon`), along with native `audio_fdn_reverb_node` and `reverb3d` for reverb zones (`includes/reverb_system.nvgt`, `includes/sound_pool.nvgt`, and `tcf.nvgt`).
+- Completely removed the interior/exterior room acoustic filter from doors (`includes/door_system.nvgt`, `includes/builder/misc/door_builder.nvgt`, `includes/world_runtime.nvgt`, `includes/sound_pool.nvgt`, and `settings/maps/safe_zone.map`), while keeping 3D spatial door sounds at the door's exact coordinates.
 
 New in version 1.1 (2026-11-27 - 09:40 -03:00)
 

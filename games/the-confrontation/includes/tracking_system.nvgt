@@ -172,7 +172,6 @@ void show_travel_point_tracker_menu()
 	travel_tracker_z0 = target.z0; travel_tracker_z1 = target.z1;
 	travel_tracker_active = true;
 	travel_tracker_audio.max_distance = 250.0;
-	travel_tracker_audio.room_filter_enabled = false;
 	travel_tracker_slot = travel_tracker_audio.play_3d("sounds/tracking/beacon.ogg", me.x, me.y, me.z,
 		travel_tracker_x, travel_tracker_y, travel_tracker_z, double(facing), true, true);
 	if (travel_tracker_slot < 0)

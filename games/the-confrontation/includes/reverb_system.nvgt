@@ -1,9 +1,11 @@
-// reverb_system.nvgt - Native King Audio Engine Reverb Zone System.
-// Uses strictly King Audio's native mixer reverb (presets and custom parameters),
-// with no high-pass, low-pass, or MiniAudio fallback effects.
+// reverb_system.nvgt - Native NVGT MiniAudio Reverb3D + FDN Reverb Zone System.
 
 mixer world_reverb_mixer;
 mixer world_sources_reverb_mixer;
+audio_fdn_reverb_node world_fdn_reverb;
+audio_fdn_reverb_node world_sources_fdn_reverb;
+reverb3d@ world_reverb3d = null;
+reverb3d@ world_sources_reverb3d = null;
 bool world_reverb_mixer_initialized = false;
 int active_reverb_zone_index = -1;
 
@@ -118,21 +120,21 @@ void get_king_reverb_preset_defaults(
 	}
 	else if (p == "forest")
 	{
-		decay_ms = 1500.0f; diffusion = 79.0f; density = 100.0f;
-		early_delay = 162.0f; late_delay = 88.0f; hf_reference = 5000.0f;
-		hf_decay_ratio = 54.0f; high_cut = 760.0f;
+		decay_ms = 1500.0f; diffusion = 70.0f; density = 100.0f;
+		early_delay = 179.0f; late_delay = 100.0f; hf_reference = 5000.0f;
+		hf_decay_ratio = 54.0f; high_cut = 2500.0f; wet_db = -10.0f;
 	}
 	else if (p == "tunnel")
 	{
-		decay_ms = 3900.0f; diffusion = 100.0f; density = 100.0f;
-		early_delay = 5.0f; late_delay = 15.0f; hf_reference = 5000.0f;
-		hf_decay_ratio = 50.0f; high_cut = 5000.0f;
+		decay_ms = 2800.0f; diffusion = 100.0f; density = 100.0f;
+		early_delay = 15.0f; late_delay = 22.0f; hf_reference = 5000.0f;
+		hf_decay_ratio = 60.0f; high_cut = 4500.0f;
 	}
 	else if (p == "underwater")
 	{
 		decay_ms = 1500.0f; diffusion = 100.0f; density = 100.0f;
 		early_delay = 7.0f; late_delay = 11.0f; hf_reference = 5000.0f;
-		hf_decay_ratio = 10.0f; high_cut = 500.0f;
+		hf_decay_ratio = 10.0f; high_cut = 500.0f; wet_db = 0.0f;
 	}
 	else
 	{
@@ -147,25 +149,54 @@ void init_world_reverb_mixer()
 	if (!world_reverb_mixer_initialized)
 	{
 		world_reverb_mixer_initialized = true;
+		world_fdn_reverb.dry = 0.0f;
+		world_sources_fdn_reverb.dry = 0.0f;
+		@world_reverb3d = @reverb3d(world_fdn_reverb, null);
+		@world_sources_reverb3d = @reverb3d(world_sources_fdn_reverb, null);
 		@p.mixer = @world_reverb_mixer;
 		@sp.mixer = @world_sources_reverb_mixer;
 		@itempool.mixer = @world_reverb_mixer;
 		@bulletpool.mixer = @world_reverb_mixer;
 		@map_door_audio.mixer = @world_reverb_mixer;
-		@elevator_audio.mixer = @world_reverb_mixer;
+		if (npcp !is null) @npcp.mixer = @world_reverb_mixer;
 	}
-	if (sp.mixer !is world_sources_reverb_mixer)
-	{
-		@sp.mixer = @world_sources_reverb_mixer;
-	}
-	if (itempool.mixer !is world_reverb_mixer)
-	{
-		@itempool.mixer = @world_reverb_mixer;
-	}
-	if (npcp !is null && npcp.mixer is null)
-	{
-		@npcp.mixer = @world_reverb_mixer;
-	}
+}
+
+float reverb_clampf(float v, float lo, float hi)
+{
+	if (v < lo) return lo;
+	if (v > hi) return hi;
+	return v;
+}
+
+void configure_fdn_reverb_node(
+	audio_fdn_reverb_node@ node,
+	reverb3d@ verb,
+	const string&in preset,
+	float decay_ms,
+	float wet_db,
+	float dry_db,
+	float diffusion,
+	float density,
+	float early_delay,
+	float late_delay,
+	float hf_reference,
+	float hf_decay_ratio,
+	float low_shelf_freq,
+	float low_shelf_gain,
+	float high_cut,
+	float early_late_mix)
+{
+	if (node is null || verb is null) return;
+	node.dry = 0.0f;
+	node.t60 = reverb_clampf(decay_ms / 1000.0f, 0.1f, 20.0f);
+	node.diffusion = reverb_clampf(diffusion / 100.0f, 0.0f, 1.0f);
+	node.hf_reference = reverb_clampf(hf_reference, 200.0f, 16000.0f);
+	node.hf_rolloff = reverb_clampf(hf_decay_ratio / 100.0f, 0.05f, 2.0f);
+	node.input_lowpass = reverb_clampf(high_cut, 300.0f, 20000.0f);
+	node.mean_free_path = reverb_clampf(0.015f + (early_delay + late_delay) * 0.001f, 0.01f, 0.25f);
+	verb.max_volume = reverb_clampf(wet_db, -45.0f, 6.0f);
+	verb.min_volume = reverb_clampf(wet_db - 4.0f, -50.0f, 0.0f);
 }
 
 void apply_king_reverb_to_mixer(
@@ -185,13 +216,37 @@ void apply_king_reverb_to_mixer(
 	float high_cut,
 	float early_late_mix)
 {
-	// Reverb migration to Legacy Sound (BASS FX) will be done in the next step.
+	if (m is null) return;
+	if (m is world_sources_reverb_mixer)
+	{
+		configure_fdn_reverb_node(world_sources_fdn_reverb, world_sources_reverb3d, preset, decay_ms, wet_db, dry_db, diffusion, density, early_delay, late_delay, hf_reference, hf_decay_ratio, low_shelf_freq, low_shelf_gain, high_cut, early_late_mix);
+		@m.reverb3d = @world_sources_reverb3d;
+	}
+	else if (m is world_reverb_mixer)
+	{
+		configure_fdn_reverb_node(world_fdn_reverb, world_reverb3d, preset, decay_ms, wet_db, dry_db, diffusion, density, early_delay, late_delay, hf_reference, hf_decay_ratio, low_shelf_freq, low_shelf_gain, high_cut, early_late_mix);
+		@m.reverb3d = @world_reverb3d;
+	}
+	else
+	{
+		audio_fdn_reverb_node preview_node;
+		reverb3d@ preview_verb = reverb3d(preview_node, null);
+		configure_fdn_reverb_node(preview_node, preview_verb, preset, decay_ms, wet_db, dry_db, diffusion, density, early_delay, late_delay, hf_reference, hf_decay_ratio, low_shelf_freq, low_shelf_gain, high_cut, early_late_mix);
+		@m.reverb3d = @preview_verb;
+	}
 }
 
 void clear_map_reverbs()
 {
 	map_reverb_zones.resize(0);
 	active_reverb_zone_index = -1;
+	if (world_reverb_mixer_initialized)
+	{
+		@world_reverb_mixer.reverb3d = null;
+		@world_sources_reverb_mixer.reverb3d = null;
+		world_fdn_reverb.reset();
+		world_sources_fdn_reverb.reset();
+	}
 }
 
 void spawn_reverb_zone(
@@ -248,6 +303,8 @@ void update_map_reverb()
 		if (active_reverb_zone_index != -1)
 		{
 			active_reverb_zone_index = -1;
+			@world_reverb_mixer.reverb3d = null;
+			@world_sources_reverb_mixer.reverb3d = null;
 		}
 		return;
 	}
@@ -270,6 +327,8 @@ void update_map_reverb()
 
 	if (matched_idx == -1)
 	{
+		@world_reverb_mixer.reverb3d = null;
+		@world_sources_reverb_mixer.reverb3d = null;
 		return;
 	}
 
@@ -314,6 +373,6 @@ void update_map_reverb()
 	}
 	else
 	{
-		// No source reverb active
+		@world_sources_reverb_mixer.reverb3d = null;
 	}
 }

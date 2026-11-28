@@ -14,6 +14,8 @@ Sistema de Explosivos, Míssil Guiado e Correções:
 - Identificação de autor: quando qualquer explosivo ou míssil causa dano em um NPC, mesmo à distância, o NPC identifica o autor e passa imediatamente a correr atrás do alvo.
 - Mantido apenas o som de coleta (`sound_pickup`) nos construtores e dados de itens (`includes/item_data_saver.nvgt` e `includes/item_manager.nvgt`), removendo `sound_draw`, `sound_plant` e `sound_loop`.
 - Corrigida a leitura dinâmica de mapas em `get_map_content_by_name()` (`includes/map.nvgt`) e sincronização de `save_to_map()` (`includes/builder.nvgt`) para que restrições de ressurreição/nível em qualquer mapa tenham efeito imediato nos pontos de viagem.
+- Retorno ao motor de som padrão MiniAudio do NVGT (versão 0.90.0-dev) para maior fluidez, utilizando Steam Audio (`nvgt_phonon`) para espacialização e atenuação HRTF 3D (`audio_panner_phonon_hrtf` e `audio_attenuator_phonon`), além de reverb nativo com `audio_fdn_reverb_node` e `reverb3d` (`includes/reverb_system.nvgt`, `includes/sound_pool.nvgt` e `tcf.nvgt`).
+- Removido completamente o filtro acústico de ambiente interior/exterior das portas (`includes/door_system.nvgt`, `includes/builder/misc/door_builder.nvgt`, `includes/world_runtime.nvgt`, `includes/sound_pool.nvgt` e `settings/maps/safe_zone.map`), mantendo os sons das portas em áudio espacial 3D na posição exata da porta.
 
 Novo na versão 1.1 (27/11/2026 - 09:40 -03:00)
 

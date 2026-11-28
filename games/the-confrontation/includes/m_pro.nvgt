@@ -44,7 +44,6 @@ void fade(sound@ handle, double final_volume=-100.0, double delay=25)
 	while (handle.volume > final_volume and handle.active)
 	{
 		handle.volume = handle.volume - 2.0;
-		handle.set_position(0, 0, 0, 0, 0, 0);
 		if (handle.volume <= final_volume) break;
 		wait(delay);
 	}
@@ -472,7 +471,7 @@ if(key_down(volkeydown) and voltimer.elapsed>=voltime)
 {
 menu_music_volume=menu_music_volume-2;
 if (menu_music_volume < -100.0) menu_music_volume = -100.0;
-if (music.active) { music.volume = menu_music_volume; music.set_position(0, 0, 0, 0, 0, 0); }
+if (music.active) music.volume = menu_music_volume;
 writeprefs();
 voltimer.restart();
 }
@@ -480,7 +479,7 @@ if(key_down(volkeyup) and voltimer.elapsed>=voltime)
 {
 menu_music_volume=menu_music_volume+2;
 if (menu_music_volume > 0.0) menu_music_volume = 0.0;
-if (music.active) { music.volume = menu_music_volume; music.set_position(0, 0, 0, 0, 0, 0); }
+if (music.active) music.volume = menu_music_volume;
 writeprefs();
 voltimer.restart();
 }

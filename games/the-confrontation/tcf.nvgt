@@ -1,5 +1,5 @@
-#pragma namespace sound legacy
-#pragma plugin legacy_sound
+// MiniAudio default sound engine
+#pragma plugin nvgt_phonon
 #pragma plugin nvgt_curl
 
 /* Player posture state (sitting / standing). Kept engine-side so every module
@@ -254,8 +254,10 @@ if (!file_exists(prefsdir+"settings.dat") && !file_exists(prefsdir+"/settings.da
 dlg("Settings file not found, creating a new settings file...");
 }
 // King Audio uses Steam Audio HRTF for spatial rendering.
-sound_global_hrtf = true;
-sound_global_hrtf = true;
+set_sound_default_3d_panner(audio_panner_phonon_hrtf);
+set_sound_default_3d_attenuator(audio_attenuator_phonon);
+set_sound_default_3d_panner(audio_panner_phonon_hrtf);
+set_sound_default_3d_attenuator(audio_attenuator_phonon);
 init_world_reverb_mixer();
 
 	p.volume_step = SOUND_VOLUME_STEP;

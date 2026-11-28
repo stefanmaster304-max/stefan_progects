@@ -1,7 +1,6 @@
-/* map_system.nvgt - Native coordinate map integration backed by map_system.dll
+/* map_system.nvgt - Native coordinate map integration using NVGT's built-in coordinate_map
  * Used for instant zero-latency spatial queries in 3D maps.
  */
-#pragma plugin map_system
 
 enum map_flags {
 	MAP_TILE        = 1 << 0,
