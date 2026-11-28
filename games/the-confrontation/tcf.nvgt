@@ -254,9 +254,11 @@ if (!file_exists(prefsdir+"settings.dat") && !file_exists(prefsdir+"/settings.da
 dlg("Settings file not found, creating a new settings file...");
 }
 // King Audio uses Steam Audio HRTF for spatial rendering.
+sound_master_volume = 100.0;
 king_global_hrtf = true;
 king_hrtf_blend_distance = 0.0;
 king_hrtf_near_radius = 0.0;
+sound_master_volume = 100.0;
 king_global_hrtf = true;
 king_hrtf_blend_distance = 0.0;
 king_hrtf_near_radius = 0.0;
