@@ -24,9 +24,12 @@ void update_game_world()
 		autosave_timer.restart();
 		save_location();
 	}
+	defer_king_system_update = true;
 	p.update_listener_3d(me.x, me.y, me.z, double(facing));
 	sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 	itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
 	map_door_audio.update_listener_3d(me.x, me.y, me.z, double(facing));
+	defer_king_system_update = false;
+	king_system_update();
 	update_travel_point_tracking();
 }

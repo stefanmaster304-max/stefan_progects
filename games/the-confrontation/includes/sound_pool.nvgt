@@ -10,7 +10,7 @@
 bool sound_pool_default_y_elevation = false;
 const float SOUND_VOLUME_STEP = 2.1;
 const float SOUND_PAN_STEP = 1.0;
-timer king_update_throttle;
+bool defer_king_system_update = false;
 
 class sound_pool_item {
 	sound@ handle;
@@ -50,6 +50,10 @@ class sound_pool_item {
 	float last_set_sx = -999999.0, last_set_sy = -999999.0, last_set_sz = -999999.0;
 	float last_set_rot = -999999.0;
 	float last_set_pitch = -999999.0;
+	float last_set_pan = -999999.0;
+	bool hrtf_enabled = false;
+	bool last_hrtf_active = false;
+	bool paused_by_distance = false;
 
 	sound_pool_item() {
 		reset();
@@ -93,6 +97,10 @@ class sound_pool_item {
 		last_set_sx = -999999.0; last_set_sy = -999999.0; last_set_sz = -999999.0;
 		last_set_rot = -999999.0;
 		last_set_pitch = -999999.0;
+		last_set_pan = -999999.0;
+		hrtf_enabled = false;
+		last_hrtf_active = false;
+		paused_by_distance = false;
 	}
 
 	/*
@@ -105,18 +113,21 @@ class sound_pool_item {
 			int total_distance = get_total_distance(listener_x, listener_y, listener_z);
 			if (total_distance > max_distance and handle.active == true) {
 				if (looping) {
-					if (handle.playing)
+					if (handle.playing) {
 						handle.pause();
+						paused_by_distance = true;
+					}
 				} else {
 					handle.close();
 				}
 				return;
 			}
-			if (total_distance <= max_distance and handle.active == true and looping and paused == false and handle.playing == false) {
-				handle.play_looped();
-				last_set_lx = -999999.0;
-				update_listener_position(listener_x, listener_y, listener_z, rotation);
-				return;
+			if (total_distance <= max_distance and handle.active == true and paused_by_distance) {
+				paused_by_distance = false;
+				if (paused == false and handle.playing == false) {
+					handle.play_looped();
+					last_set_lx = -999999.0;
+				}
 			}
 			if (total_distance <= max_distance and handle.active == false) {
 				if (stream) {
@@ -133,7 +144,9 @@ class sound_pool_item {
 				if (handle.active == true) {
 					if (start_offset > 0)
 						handle.seek(start_offset);
-					handle.set_hrtf(!stationary && king_global_hrtf);
+					hrtf_enabled = !stationary && king_global_hrtf;
+					last_hrtf_active = hrtf_enabled;
+					handle.set_hrtf(hrtf_enabled);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
 					handle.pan = start_pan;
 					handle.volume = start_volume;
@@ -210,6 +223,14 @@ class sound_pool_item {
 		while (eff_rotation < 0) eff_rotation += 360.0;
 		while (eff_rotation >= 360.0) eff_rotation -= 360.0;
 
+		bool outside_bounds = (sound_x != eff_listener_x or sound_y != eff_listener_y or sound_z != eff_listener_z);
+		bool want_hrtf = outside_bounds && hrtf_enabled;
+		if (want_hrtf != last_hrtf_active) {
+			handle.set_hrtf(want_hrtf);
+			last_hrtf_active = want_hrtf;
+			last_set_lx = -999999.0;
+		}
+
 		// Only call set_position when something actually changed.
 		// king_audio's set_position runs occlusion raycasts and may add/remove DSPs,
 		// so calling it on unchanged values causes audible stutter on moving sources.
@@ -222,20 +243,30 @@ class sound_pool_item {
 			last_set_rot = eff_rotation;
 		}
 
-		// Behind pitch decrease (only when sound is outside range)
-		float pitch = start_pitch;
-		if (sound_x != eff_listener_x or sound_y != eff_listener_y or sound_z != eff_listener_z) {
+		// Hard directional pan when outside range (no pitch change)
+		float target_pan = start_pan;
+		if (outside_bounds) {
 			float dx = sound_x - eff_listener_x;
 			float dy = sound_y - eff_listener_y;
 			float rad = eff_rotation * 0.01745329251;
 			float cos_r = cos(rad);
 			float sin_r = sin(rad);
+			float local_x = dx * cos_r - dy * sin_r;
 			float local_y = dx * sin_r + dy * cos_r;
-			if (local_y < 0) pitch -= behind_pitch_decrease;
+			float horiz = sqrt(local_x * local_x + local_y * local_y);
+			if (horiz > 0.0001) {
+				target_pan = (local_x / horiz) * 100.0;
+				if (target_pan < -100.0) target_pan = -100.0;
+				if (target_pan > 100.0) target_pan = 100.0;
+			}
 		}
-		if (pitch != last_set_pitch) {
-			handle.pitch = pitch;
-			last_set_pitch = pitch;
+		if (target_pan != last_set_pan) {
+			handle.pan = target_pan;
+			last_set_pan = target_pan;
+		}
+		if (start_pitch != last_set_pitch) {
+			handle.pitch = start_pitch;
+			last_set_pitch = start_pitch;
 		}
 	}
 
@@ -351,7 +382,9 @@ class sound_pool {
 		items[slot].persistent = persistent;
 		items[slot].stream = stream;
 		items[slot].theta = theta;
-		items[slot].handle.set_hrtf(king_global_hrtf);
+		items[slot].hrtf_enabled = (dimension > 0) ? (hrtf || king_global_hrtf) : false;
+		items[slot].last_hrtf_active = items[slot].hrtf_enabled;
+		items[slot].handle.set_hrtf(items[slot].hrtf_enabled);
 		if (@mix != null)
 			items[slot].handle.set_mixer(mix);
 		else if (@mixer != null)
@@ -598,9 +631,7 @@ class sound_pool {
 			if (refresh_y_is_elevation) items[i].y_is_elevation = this.y_is_elevation;
 			items[i].update(listener_x, listener_y, listener_z, rotation, max_distance);
 		}
-		// Flush FMOD 3D state at most once per ~12ms frame to avoid stutter across many pools
-		if (king_update_throttle.elapsed >= 12) {
-			king_update_throttle.restart();
+		if (!defer_king_system_update) {
 			king_system_update();
 		}
 	}
