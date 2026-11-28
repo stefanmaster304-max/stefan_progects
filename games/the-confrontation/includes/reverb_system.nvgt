@@ -74,7 +74,7 @@ void get_king_reverb_preset_defaults(
 	float&out early_late_mix)
 {
 	string p = string_to_lower_case(preset.trim_whitespace());
-	wet_db = -6.0f;
+	wet_db = 0.0f;
 	dry_db = 0.0f;
 	low_shelf_freq = 250.0f;
 	low_shelf_gain = 0.0f;
@@ -209,6 +209,7 @@ void apply_king_reverb_to_mixer(
 			early_late_mix
 		);
 	}
+	king_system_update();
 }
 
 void clear_map_reverbs()
@@ -302,6 +303,7 @@ void update_map_reverb()
 	{
 		world_reverb_mixer.remove_reverb();
 		world_sources_reverb_mixer.remove_reverb();
+		king_system_update();
 		return;
 	}
 
