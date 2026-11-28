@@ -284,9 +284,9 @@ p.hrtf = true;
 sp.hrtf = false;
 map_door_audio.hrtf = true;
 p.behind_pitch_decrease = 0.0;
-sp.behind_pitch_decrease = 4.0;
+sp.behind_pitch_decrease = 0.0;
 	p.max_distance = 80;
-	sp.max_distance = 0;
+	sp.max_distance = 35;
 	itempool.max_distance = 80;
 load_updater_settings();
 if (check_updates_on_startup == 1)
