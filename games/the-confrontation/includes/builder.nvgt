@@ -45,7 +45,7 @@ void buildmenu()
 		"wall - add solid blocking walls to your map",
 		"safe zone - add safe zones where combat damage is disabled",
 		"text zone - add trigger zones that display or speak text when entered",
-		"reverb zone - add a native King Audio reverberation zone to your map",
+		"reverb zone - add a native MiniAudio reverberation zone to your map",
 		"spawnpoint - set the default player spawn coordinates on this map",
 		"items manager - add, edit, remove and create new items",
 		"package manager - create, edit, view and delete packages",

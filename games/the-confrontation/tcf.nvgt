@@ -253,7 +253,7 @@ if (!file_exists(prefsdir+"settings.dat") && !file_exists(prefsdir+"/settings.da
 {
 dlg("Settings file not found, creating a new settings file...");
 }
-// King Audio uses Steam Audio HRTF for spatial rendering.
+// MiniAudio uses Steam Audio HRTF for spatial rendering.
 set_sound_default_3d_panner(audio_panner_phonon_hrtf);
 set_sound_default_3d_attenuator(audio_attenuator_phonon);
 set_sound_default_3d_panner(audio_panner_phonon_hrtf);
@@ -267,7 +267,7 @@ init_world_reverb_mixer();
 	// War Cry lowers the pitch of its distant reports by 6 when the sound sits
 	// behind the listener, and the same cue is used here.
 	// Max audible radius for pools. The distant weapon pool is unbounded: its
-	// reports must reach the far side of any map. King Audio silences a sound at
+	// reports must reach the far side of any map. A very small rolloff step
 	// 125 / volume_step units, so this step (a range of 125,000) makes the
 	// engine's own falloff negligible; the report level is computed from the
 	// distance instead, so a map of any size can be covered without the far

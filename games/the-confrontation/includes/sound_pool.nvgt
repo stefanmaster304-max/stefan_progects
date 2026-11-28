@@ -134,20 +134,25 @@ class sound_pool_item {
 			return;
 		}
 		true_pos -= vector(listener_x, listener_y, listener_z);
-		rotation -= theta;
-		while (rotation < 0) rotation += 2 * pi;
-		true_pos = rotate(true_pos, vector(0, 0), rotation);
-		if (y_is_elevation) {
-			true_pos.y += true_pos.z;
-			true_pos.z = true_pos.y - true_pos.z;
-			true_pos.y -= true_pos.z;
-		}
-		handle.directional_attenuation_factor = pan_step;
-		handle.rolloff = volume_step;
-		handle.set_position_3d(true_pos.x, true_pos.y, true_pos.z);
+		double rot_deg = rotation - theta;
+		while (rot_deg < 0) rot_deg += 360.0;
+		while (rot_deg >= 360.0) rot_deg -= 360.0;
+		double rot_rad = rot_deg * 0.017453292519943295;
+		true_pos = rotate(true_pos, vector(0, 0), rot_rad);
 		float pitch = start_pitch;
-		if (true_pos.y < 0) pitch -= behind_pitch_decrease;
-		if (true_pos.z < 0) pitch -= behind_pitch_decrease;
+		if (y_is_elevation) {
+			if (true_pos.z < 0) pitch -= behind_pitch_decrease;
+			if (true_pos.y < 0) pitch -= behind_pitch_decrease;
+			handle.directional_attenuation_factor = pan_step;
+			handle.rolloff = volume_step;
+			handle.set_position_3d(true_pos.x, true_pos.y, -true_pos.z);
+		} else {
+			if (true_pos.y < 0) pitch -= behind_pitch_decrease;
+			if (true_pos.z < 0) pitch -= behind_pitch_decrease;
+			handle.directional_attenuation_factor = pan_step;
+			handle.rolloff = volume_step;
+			handle.set_position_3d(true_pos.x, true_pos.z, -true_pos.y);
+		}
 		handle.pitch = pitch;
 	}
 

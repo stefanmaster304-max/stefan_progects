@@ -1,4 +1,4 @@
-// reverb_builder.nvgt - Interactive King Audio Reverb Zone Builder with real-time looping preview.
+// reverb_builder.nvgt - Interactive MiniAudio Reverb Zone Builder with real-time looping preview.
 
 void stop_reverb_preview(sound@ preview_snd, mixer@ preview_mix)
 {

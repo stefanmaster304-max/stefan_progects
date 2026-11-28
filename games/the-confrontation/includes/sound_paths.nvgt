@@ -1,4 +1,4 @@
-// sound_paths.nvgt - audio path & wildcard resolver for King Audio packs.
+// sound_paths.nvgt - audio path & wildcard resolver for NVGT sound packs.
 // Loose files remain supported for development and map-specific content.
 
 sound builder_preview_sound;
