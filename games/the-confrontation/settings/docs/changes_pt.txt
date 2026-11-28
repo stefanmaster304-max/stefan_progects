@@ -3,7 +3,7 @@ The Confront - Registro de Alterações (Português)
 Novo na versão 1.3 (28/11/2026 - 11:03 -03:00)
 
 King Audio Atualizado, Compatibilidade NVGT e Portas:
-- Atualizado o motor de áudio King Audio (`king_audio_engine.dll` + `fmod.dll` + `phonon.dll`) com Steam Audio HRTF e reverb nativo (`includes/reverb_system.nvgt`, `includes/sound_pool.nvgt` e `tcf.nvgt`), além de ajuste fino de proximidade (`king_hrtf_blend_distance = 0.0` e `king_hrtf_near_radius = 0.0`) para posicionamento 3D preciso em qualquer direção.
+- Restaurada a versão clássica do motor de áudio King Audio (`king_audio_engine.dll` + `fmod.dll` + `fmodstudio.dll` + `phonon.dll`) com Steam Audio HRTF, reverb nativo (`includes/reverb_system.nvgt`, `includes/sound_pool.nvgt` e `tcf.nvgt`), `SOUND_VOLUME_STEP = 2.1` e controle de frequência de `king_system_update()` para evitar picotamentos com múltiplos NPCs e ambientes.
 - Atualizada a base do NVGT (`0.90.0-dev` API v5) e adaptada a camada de processos/rede (`includes/updater.nvgt` e `includes/bgt_compat.nvgt`) para total compatibilidade com a API do plugin.
 - Removido completamente o filtro acústico de ambiente interior/exterior das portas (`includes/door_system.nvgt`, `includes/builder/misc/door_builder.nvgt`, `includes/world_runtime.nvgt`, `includes/sound_pool.nvgt` e `settings/maps/safe_zone.map`), mantendo os sons das portas em áudio espacial 3D na posição exata da porta.
 

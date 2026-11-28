@@ -256,12 +256,8 @@ dlg("Settings file not found, creating a new settings file...");
 // King Audio uses Steam Audio HRTF for spatial rendering.
 sound_master_volume = 100.0;
 king_global_hrtf = true;
-king_hrtf_blend_distance = 0.0;
-king_hrtf_near_radius = 0.0;
 sound_master_volume = 100.0;
 king_global_hrtf = true;
-king_hrtf_blend_distance = 0.0;
-king_hrtf_near_radius = 0.0;
 init_world_reverb_mixer();
 
 	p.volume_step = SOUND_VOLUME_STEP;
@@ -281,7 +277,7 @@ sp.pan_step = SOUND_PAN_STEP;
 itempool.pan_step = SOUND_PAN_STEP;
 spool.pan_step = SOUND_PAN_STEP;
 p.hrtf = true;
-sp.hrtf = false;
+sp.hrtf = true;
 map_door_audio.hrtf = true;
 p.behind_pitch_decrease = 0.0;
 sp.behind_pitch_decrease = 0.0;

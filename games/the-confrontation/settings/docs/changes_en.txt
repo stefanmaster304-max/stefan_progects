@@ -3,7 +3,7 @@ The Confront - Changelog (English)
 New in version 1.3 (2026-11-28 - 11:03 -03:00)
 
 Updated King Audio, NVGT API Compatibility & Doors:
-- Updated the King Audio sound engine (`king_audio_engine.dll` + `fmod.dll` + `phonon.dll`) with Steam Audio HRTF and native reverb (`includes/reverb_system.nvgt`, `includes/sound_pool.nvgt`, and `tcf.nvgt`), plus near-field tuning (`king_hrtf_blend_distance = 0.0` and `king_hrtf_near_radius = 0.0`) for crisp 3D directional positioning.
+- Restored the classic King Audio sound engine (`king_audio_engine.dll` + `fmod.dll` + `fmodstudio.dll` + `phonon.dll`) with Steam Audio HRTF, native reverb (`includes/reverb_system.nvgt`, `includes/sound_pool.nvgt`, and `tcf.nvgt`), `SOUND_VOLUME_STEP = 2.1`, and `king_system_update()` frame throttling to prevent audio stuttering with many NPCs and ambiences.
 - Updated the NVGT toolchain (`0.90.0-dev` API v5) and adapted process/network wrappers (`includes/updater.nvgt` and `includes/bgt_compat.nvgt`) for full plugin API compatibility.
 - Completely removed the interior/exterior room acoustic filter from doors (`includes/door_system.nvgt`, `includes/builder/misc/door_builder.nvgt`, `includes/world_runtime.nvgt`, `includes/sound_pool.nvgt`, and `settings/maps/safe_zone.map`), while keeping 3D spatial door sounds at the door's exact coordinates.
 

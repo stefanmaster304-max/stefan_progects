@@ -4,22 +4,13 @@
  *
  * Original Copyright (C) 2010-2014 Blastbay Studios
  * King Audio adaptation - 2026
- *
- * This file is the outdated King Audio set, unmodified, with two additions the
- * game uses room-specific exterior low-pass filtering.
- * get_sound_position(), used to resume the map music where it stopped.
  */
 #include "rotation.nvgt"
 #pragma plugin king_audio_engine
 bool sound_pool_default_y_elevation = false;
-
-// One attenuation for the whole game. Every pool - the player's own sounds, the
-// map, the items, the projectiles and the NPCs - uses these same numbers, so a
-// sound is attenuated exactly like any other sound at the same distance. The
-// distant weapon reports are the only pool with their own falloff, because they
-// compute their level from the distance instead of letting the engine do it.
 const float SOUND_VOLUME_STEP = 2.1;
 const float SOUND_PAN_STEP = 1.0;
+timer king_update_throttle;
 
 class sound_pool_item {
 	sound@ handle;
@@ -55,16 +46,10 @@ class sound_pool_item {
 	timer last_memory_push;
 	string extra_data;
 	string[] fx_list;
-bool room_exterior_filter_applied = false;
 	float last_set_lx = -999999.0, last_set_ly = -999999.0, last_set_lz = -999999.0;
 	float last_set_sx = -999999.0, last_set_sy = -999999.0, last_set_sz = -999999.0;
 	float last_set_rot = -999999.0;
 	float last_set_pitch = -999999.0;
-	float last_set_pan = -999999.0;
-	float last_set_vol = -999999.0;
-	int last_behind_cutoff = -1;
-	bool hrtf_enabled = false;
-	bool last_hrtf_active = false;
 
 	sound_pool_item() {
 		reset();
@@ -108,11 +93,6 @@ bool room_exterior_filter_applied = false;
 		last_set_sx = -999999.0; last_set_sy = -999999.0; last_set_sz = -999999.0;
 		last_set_rot = -999999.0;
 		last_set_pitch = -999999.0;
-		last_set_pan = -999999.0;
-		last_set_vol = -999999.0;
-		last_behind_cutoff = -1;
-		hrtf_enabled = false;
-		last_hrtf_active = false;
 	}
 
 	/*
@@ -142,8 +122,6 @@ bool room_exterior_filter_applied = false;
 				if (handle.active == true) {
 					if (start_offset > 0)
 						handle.seek(start_offset);
-					last_hrtf_active = hrtf_enabled;
-					handle.set_hrtf(hrtf_enabled);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
 					handle.pan = start_pan;
 					handle.volume = start_volume;
@@ -218,67 +196,6 @@ bool room_exterior_filter_applied = false;
 		while (eff_rotation < 0) eff_rotation += 360.0;
 		while (eff_rotation >= 360.0) eff_rotation -= 360.0;
 
-		bool outside_bounds = (sound_x != eff_listener_x or sound_y != eff_listener_y or sound_z != eff_listener_z);
-
-		// Non-HRTF pools (such as map music/ambience/sources in sp) must never call
-		// set_position(), because FMOD downmixes 3D channels to mono.
-		// Using 2D pan (-100..100), volume (125 / volume_step), and behind pitch keeps
-		// full stereo inside bounds and pans 100% left/right outside bounds.
-		if (!hrtf_enabled) {
-			float target_pan = start_pan;
-			float target_vol = start_volume;
-			int target_cutoff = 0;
-			if (outside_bounds) {
-				float dx = sound_x - eff_listener_x;
-				float dy = sound_y - eff_listener_y;
-				float dz = sound_z - eff_listener_z;
-				float rad = eff_rotation * 0.01745329251;
-				float cos_r = cos(rad);
-				float sin_r = sin(rad);
-				float local_x = dx * cos_r - dy * sin_r;
-				float local_y = dx * sin_r + dy * cos_r;
-				float horiz = sqrt(local_x * local_x + local_y * local_y);
-				if (horiz > 0.0001) {
-					target_pan = (local_x / horiz) * 100.0;
-					if (target_pan < -100.0) target_pan = -100.0;
-					if (target_pan > 100.0) target_pan = 100.0;
-					if (local_y < 0.0) {
-						float back_ratio = (-local_y) / horiz;
-						target_cutoff = int(14000.0 - back_ratio * 10800.0);
-						if (target_cutoff < 3200) target_cutoff = 3200;
-					}
-				}
-				float dist = sqrt(dx * dx + dy * dy + dz * dz);
-				float max_r = (volume_step > 0.0) ? (125.0 / volume_step) : 125.0;
-				float atten_db = (dist * 100.0) / max_r;
-				target_vol = start_volume - atten_db;
-				if (target_vol < -100.0) target_vol = -100.0;
-			}
-			if (target_pan != last_set_pan) {
-				handle.pan = target_pan;
-				last_set_pan = target_pan;
-			}
-			if (target_vol != last_set_vol) {
-				handle.volume = target_vol;
-				last_set_vol = target_vol;
-			}
-			if (target_cutoff != last_behind_cutoff) {
-				if (target_cutoff > 0)
-					handle.set_fx("$behind:lowpass:" + target_cutoff + ":0.7");
-				else if (last_behind_cutoff > 0)
-					handle.set_fx("$behind");
-				last_behind_cutoff = target_cutoff;
-			}
-			return;
-		}
-
-		bool want_hrtf = outside_bounds && hrtf_enabled;
-		if (want_hrtf != last_hrtf_active) {
-			handle.set_hrtf(want_hrtf);
-			last_hrtf_active = want_hrtf;
-			last_set_lx = -999999.0;
-		}
-
 		// Only call set_position when something actually changed.
 		// king_audio's set_position runs occlusion raycasts and may add/remove DSPs,
 		// so calling it on unchanged values causes audible stutter on moving sources.
@@ -291,27 +208,16 @@ bool room_exterior_filter_applied = false;
 			last_set_rot = eff_rotation;
 		}
 
-		// Hard directional pan + behind pitch decrease (when outside range)
+		// Behind pitch decrease (only when sound is outside range)
 		float pitch = start_pitch;
-		float target_pan = start_pan;
 		if (sound_x != eff_listener_x or sound_y != eff_listener_y or sound_z != eff_listener_z) {
 			float dx = sound_x - eff_listener_x;
 			float dy = sound_y - eff_listener_y;
 			float rad = eff_rotation * 0.01745329251;
 			float cos_r = cos(rad);
 			float sin_r = sin(rad);
-			float local_x = dx * cos_r - dy * sin_r;
 			float local_y = dx * sin_r + dy * cos_r;
-			float horiz = sqrt(local_x * local_x + local_y * local_y);
-			if (horiz > 0.0001) {
-				target_pan = (local_x / horiz) * 100.0;
-				if (target_pan < -100.0) target_pan = -100.0;
-				if (target_pan > 100.0) target_pan = 100.0;
-			}
-		}
-		if (target_pan != last_set_pan) {
-			handle.pan = target_pan;
-			last_set_pan = target_pan;
+			if (local_y < 0) pitch -= behind_pitch_decrease;
 		}
 		if (pitch != last_set_pitch) {
 			handle.pitch = pitch;
@@ -391,8 +297,8 @@ class sound_pool {
 	sound_pool(int default_item_size = 100) {
 		items.resize(default_item_size);
 		max_distance = 0;
-		pan_step = SOUND_PAN_STEP;
-		volume_step = SOUND_VOLUME_STEP;
+		pan_step = 1.0;
+		volume_step = 1.0;
 		behind_pitch_decrease = 0.25;
 		last_listener_x = 0;
 		last_listener_y = 0;
@@ -431,8 +337,7 @@ class sound_pool {
 		items[slot].persistent = persistent;
 		items[slot].stream = stream;
 		items[slot].theta = theta;
-		items[slot].hrtf_enabled = (dimension > 0) ? hrtf : false;
-		items[slot].last_hrtf_active = items[slot].hrtf_enabled;
+		items[slot].handle.set_hrtf(king_global_hrtf);
 		if (@mix != null)
 			items[slot].handle.set_mixer(mix);
 		else if (@mixer != null)
@@ -488,7 +393,7 @@ class sound_pool {
 			if (start_volume < 0.0)
 				items[slot].handle.volume = start_volume;
 			items[slot].handle.pitch = start_pitch;
-			items[slot].handle.set_hrtf(items[slot].hrtf_enabled);
+			items[slot].handle.set_hrtf(dimension > 0 ? (hrtf || king_global_hrtf) : false);
 		}
 		for (uint i = 0; i < items[slot].fx_list.length(); i++)
 			items[slot].handle.set_fx(items[slot].fx_list[i]);
@@ -679,8 +584,11 @@ class sound_pool {
 			if (refresh_y_is_elevation) items[i].y_is_elevation = this.y_is_elevation;
 			items[i].update(listener_x, listener_y, listener_z, rotation, max_distance);
 		}
-		// Flush FMOD 3D state after all sounds updated
-		king_system_update();
+		// Flush FMOD 3D state at most once per ~12ms frame to avoid stutter across many pools
+		if (king_update_throttle.elapsed >= 12) {
+			king_update_throttle.restart();
+			king_system_update();
+		}
 	}
 
 	bool set_sound_owner(int slot, string owner, int priority = 0) {
@@ -699,16 +607,10 @@ class sound_pool {
 		return -1;
 	}
 
-	// Playback position of a slot in milliseconds, used to resume a looping
-	// music source where the previous map left it.
 	double get_sound_position(int slot) {
-		if (verify_slot(slot) == false || @items[slot].handle == null)
+		if (verify_slot(slot) == false or @items[slot].handle == null)
 			return 0.0;
-		if (items[slot].handle.active == true && items[slot].handle.playing == true) {
-			double pos = items[slot].handle.position;
-			if (pos > 0) return pos;
-		}
-		return items[slot].start_offset;
+		return double(items[slot].handle.position);
 	}
 
 	bool update_sound_1d(int slot, int x) {
@@ -813,8 +715,6 @@ class sound_pool {
 				// atliyordu; burada cache'i invalidate ediyoruz ki bir sonraki frame
 				// set_position zorla cagrilsin ve yeni volume duyulsun.
 				items[slot].last_set_lx = -999999.0;
-				items[slot].last_set_pan = -999999.0;
-				items[slot].last_set_vol = -999999.0;
 			}
 			return true;
 		}
