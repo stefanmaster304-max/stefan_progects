@@ -136,7 +136,6 @@ bool room_exterior_filter_applied = false;
 				if (handle.active == true) {
 					if (start_offset > 0)
 						handle.seek(start_offset);
-					hrtf_enabled = !stationary && king_global_hrtf;
 					last_hrtf_active = hrtf_enabled;
 					handle.set_hrtf(hrtf_enabled);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
@@ -362,7 +361,7 @@ class sound_pool {
 		items[slot].persistent = persistent;
 		items[slot].stream = stream;
 		items[slot].theta = theta;
-		items[slot].hrtf_enabled = (dimension > 0) ? (hrtf || king_global_hrtf) : false;
+		items[slot].hrtf_enabled = (dimension > 0) ? hrtf : false;
 		items[slot].last_hrtf_active = items[slot].hrtf_enabled;
 		if (@mix != null)
 			items[slot].handle.set_mixer(mix);
