@@ -14,7 +14,7 @@ safezone:0:100:0:100:0:100
 zone:0:100:0:49:0:100:@map.zone_safe
 zone:0:100:49:50:0:100:@map.zone_store_door
 zone:0:100:51:100:0:100:@map.zone_store_area
-door:store_door:0:100:50:50:0:100:walldoor3:doors/open/open10/open.ogg:doors/close/close10/close.ogg:500:5000:store_room:0:100:51:100:0:100:1500
+door:store_door:0:100:50:50:0:100:walldoor2:doors/open/open5/open.ogg:doors/close/close5/close.ogg:500:5000:store_room:0:100:51:100:0:100:1500
 source:0:100:51:100:0:100:musics/Music9:0:90
 source:0:100:51:100:0:100:sources/walking_people2:0:100
 storepoint:general:0:0:51:100:0:0
