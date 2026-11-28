@@ -143,14 +143,16 @@ class sound_pool_item {
 		if (y_is_elevation) {
 			if (true_pos.z < 0) pitch -= behind_pitch_decrease;
 			if (true_pos.y < 0) pitch -= behind_pitch_decrease;
+			handle.min_distance = 0.25;
 			handle.directional_attenuation_factor = pan_step;
-			handle.rolloff = volume_step;
+			handle.rolloff = volume_step * 0.5;
 			handle.set_position_3d(true_pos.x, true_pos.y, -true_pos.z);
 		} else {
 			if (true_pos.y < 0) pitch -= behind_pitch_decrease;
 			if (true_pos.z < 0) pitch -= behind_pitch_decrease;
+			handle.min_distance = 0.25;
 			handle.directional_attenuation_factor = pan_step;
-			handle.rolloff = volume_step;
+			handle.rolloff = volume_step * 0.5;
 			handle.set_position_3d(true_pos.x, true_pos.z, -true_pos.y);
 		}
 		handle.pitch = pitch;
