@@ -1024,6 +1024,13 @@ void npc_drop_death_items(npc_instance@ npc)
 // ---------------------------------------------------------------------------
 // Damage and death
 // ---------------------------------------------------------------------------
+string get_npc_display_name(npc_data@ d)
+{
+	if (d is null) return "";
+	string raw = (d.name.trim_whitespace() != "") ? d.name : d.id;
+	return tr("npc_names." + d.id, raw);
+}
+
 void npc_die(npc_instance@ npc, const string&in killer, const string&in weapon_name)
 {
 	if (npc is null || npc.dead) return;
@@ -1047,7 +1054,7 @@ void npc_die(npc_instance@ npc, const string&in killer, const string&in weapon_n
 
 		npc_drop_death_items(npc);
 
-		string[] k_args = { killer, npc.data.name, "" + npc.x, "" + npc.y, "" + npc.z, weapon_name };
+		string[] k_args = { killer, get_npc_display_name(npc.data), "" + npc.x, "" + npc.y, "" + npc.z, weapon_name };
 		string line = tr("game.npc_killed", k_args);
 		npc_write_kill_line(line);
 		speak(line);

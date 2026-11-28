@@ -30,5 +30,4 @@ void update_game_world()
 	itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
 	map_door_audio.update_listener_3d(me.x, me.y, me.z, double(facing));
 	update_travel_point_tracking();
-	king_system_update();
 }

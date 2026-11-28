@@ -9,7 +9,7 @@ void stop_reverb_preview(sound@ preview_snd, mixer@ preview_mix)
 	}
 	if (preview_mix !is null)
 	{
-		preview_mix.remove_reverb();
+		// Reverb preview will be migrated in the next step.
 	}
 }
 

@@ -171,7 +171,7 @@ string serialize_explosive_config(explosive_data@ ex)
 	s += "name=" + ex.name + "\n";
 	if (ex.description != "") s += "description=" + ex.description + "\n";
 	s += "etype=" + t + "\n";
-	if (!is_smoke && !is_detonator) s += "damage=" + ex.damage + "\n";
+	if (!is_detonator) s += "damage=" + ex.damage + "\n";
 	if (!is_detonator) s += "radius=" + ex.radius + "\n";
 	if (is_mine) s += "trigger_radius=" + ex.trigger_radius + "\n";
 	if (is_timed || is_frag || is_smoke_g || is_smoke_b) s += "fuse_ms=" + ex.fuse_ms + "\n";

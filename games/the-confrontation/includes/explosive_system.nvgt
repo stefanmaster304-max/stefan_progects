@@ -20,6 +20,7 @@ class active_explosive
 	int custom_fuse_ms;
 	timer fuse_timer;
 	timer active_timer;
+	timer poison_timer;
 	timer beep_timer;
 	timer move_timer;
 	int loop_sound_slot;
@@ -165,9 +166,10 @@ void detonate_explosive(active_explosive@ exp)
 
 	if (exp.data.etype == "smoke_grenade" || exp.data.etype == "smoke_bomb")
 	{
-		// Generates a smoke cloud in the map that blinds/stuns NPCs while active; the player is unaffected.
+		// Generates a smoke cloud in the map that blinds/stuns and intoxicates NPCs while active; the player is unaffected.
 		exp.smoke_active = true;
 		exp.active_timer.restart();
+		exp.poison_timer.restart();
 		string skey = (exp.data.sound_smoke != "") ? exp.data.sound_smoke : exp.data.sound_travel;
 		if (skey != "" && exp.map_name == mapname)
 		{
@@ -193,13 +195,13 @@ void detonate_explosive(active_explosive@ exp)
 		{
 			if (is_direct_target) hit_target_npc = true;
 			if (exp.data.sound_hit != "" && exp.map_name == mapname) play_explosive_3d(exp.data.sound_hit, npc.x, npc.y, npc.z);
-			npc_take_damage(npc, dmg, exp.owner_name, exp.data.name);
+			npc_take_damage(npc, dmg, exp.owner_name, get_item_display_name(exp.data.id));
 		}
 	}
 	if (exp.is_missile && exp.missile_has_npc_target && !hit_target_npc && exp.target_npc !is null && !exp.target_npc.dead)
 	{
 		if (exp.data.sound_hit != "" && exp.map_name == mapname) play_explosive_3d(exp.data.sound_hit, exp.target_npc.x, exp.target_npc.y, exp.target_npc.z);
-		npc_take_damage(exp.target_npc, dmg, exp.owner_name, exp.data.name);
+		npc_take_damage(exp.target_npc, dmg, exp.owner_name, get_item_display_name(exp.data.id));
 	}
 
 	apply_explosive_player_damage(exp);
@@ -250,7 +252,7 @@ void plant_or_throw_explosive(explosive_data@ ex, int custom_fuse_ms = -1)
 	active_explosive@ exp = active_explosive();
 	@exp.data = @ex;
 	exp.map_name = mapname;
-	exp.owner_name = (current_player_character != "" ? current_player_character : "Player");
+	exp.owner_name = "Player";
 	exp.x = round(me.x, 0);
 	exp.y = round(me.y, 0);
 	exp.z = round(me.z, 0);
@@ -276,7 +278,7 @@ void launch_guided_missile(explosive_data@ ex, int tx, int ty, int tz, npc_insta
 	active_explosive@ exp = active_explosive();
 	@exp.data = @ex;
 	exp.map_name = mapname;
-	exp.owner_name = (current_player_character != "" ? current_player_character : "Player");
+	exp.owner_name = "Player";
 	exp.x = round(me.x, 0);
 	exp.y = round(me.y, 0);
 	exp.z = round(me.z, 0);
@@ -425,7 +427,7 @@ bool prompt_guided_missile_target(explosive_data@ ex)
 		{
 			npc_instance@ n = live_npcs[i];
 			int dist = explosive_chebyshev_distance(me.x, me.y, me.z, n.x, n.y, n.z);
-			nf.add_list_item(npc_list, n.data.name + " (" + n.x + ", " + n.y + ", " + n.z + " - " + dist + ")", "" + i);
+			nf.add_list_item(npc_list, get_npc_display_name(n.data) + " (" + n.x + ", " + n.y + ", " + n.z + " - " + dist + ")", "" + i);
 		}
 		int nok = nf.create_button("&" + tr("ui.ok"), true);
 		int ncan = nf.create_button("&" + tr("ui.cancel"), false, true);
@@ -445,7 +447,7 @@ bool prompt_guided_missile_target(explosive_data@ ex)
 				{
 					npc_instance@ chosen = live_npcs[uint(pos)];
 					launch_guided_missile(ex, chosen.x, chosen.y, chosen.z, chosen);
-					speak(tr("explosives.missile_launched_npc", {chosen.data.name}));
+					speak(tr("explosives.missile_launched_npc", {get_npc_display_name(chosen.data)}));
 					return true;
 				}
 				return false;
@@ -529,13 +531,20 @@ void update_explosives()
 				active_explosives.remove_at(uint(i));
 				continue;
 			}
-			for (uint n = 0; n < npc_instances.length(); n++)
+			bool apply_poison = (exp.poison_timer.elapsed >= 1000);
+			if (apply_poison) exp.poison_timer.restart();
+			int poison_dmg = (exp.data.damage > 0) ? exp.data.damage : 150;
+			for (int n = int(npc_instances.length()) - 1; n >= 0; n--)
 			{
-				npc_instance@ npc = npc_instances[n];
+				npc_instance@ npc = npc_instances[uint(n)];
 				if (npc is null || npc.dead) continue;
 				if (explosive_chebyshev_distance(exp.x, exp.y, exp.z, npc.x, npc.y, npc.z) <= exp.data.radius)
 				{
 					npc_apply_blind(npc, 400);
+					if (apply_poison)
+					{
+						npc_take_damage(npc, poison_dmg, exp.owner_name, get_item_display_name(exp.data.id));
+					}
 				}
 			}
 			continue;

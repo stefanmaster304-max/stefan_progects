@@ -455,9 +455,18 @@ void inventory_menu()
 	inventory_use_pending = false;
 	inventory_closed_by_enter_this_frame = false;
 	int position = 0;
+	string prev_selected = inventory_selected_item;
 	inventory_selected_item = "";
 	string[] items = inventory_items_for_category(inventory_categories[uint(inventory_category_index)]);
-	if (items.length() > 0) inventory_selected_item = items[0];
+	if (items.length() > 0)
+	{
+		if (prev_selected != "")
+		{
+			int found_idx = items.find(prev_selected);
+			if (found_idx >= 0) position = found_idx;
+		}
+		inventory_selected_item = items[uint(position)];
+	}
 	speak_inventory_category(inventory_categories[uint(inventory_category_index)], items);
 	while (true)
 	{

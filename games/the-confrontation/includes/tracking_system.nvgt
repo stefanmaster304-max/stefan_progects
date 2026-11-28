@@ -45,7 +45,7 @@ void track_nearby_npcs()
 		if (npc is null || npc.data is null || npc.dead) continue;
 		double distance = get_3d_distance(me.x, me.y, me.z, npc.x, npc.y, npc.z);
 		if (distance > 30.0) continue;
-		string npc_name = npc.data.name;
+		string npc_name = get_npc_display_name(npc.data);
 		if (npc_name.trim_whitespace() == "") npc_name = npc.data.id;
 		string direction = tracker_direction(calculate_x_y_angle(me.x, me.y, npc.x, npc.y, double(facing), false, false));
 		string[] args = {npc_name, "" + npc.hp, "" + int(round(distance, 0)), direction};

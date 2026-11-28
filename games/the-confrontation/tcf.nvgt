@@ -1,5 +1,5 @@
-#pragma namespace sound upcoming
-#pragma plugin king_audio_engine
+#pragma namespace sound legacy
+#pragma plugin legacy_sound
 #pragma plugin nvgt_curl
 
 /* Player posture state (sitting / standing). Kept engine-side so every module
@@ -254,8 +254,8 @@ if (!file_exists(prefsdir+"settings.dat") && !file_exists(prefsdir+"/settings.da
 dlg("Settings file not found, creating a new settings file...");
 }
 // King Audio uses Steam Audio HRTF for spatial rendering.
-king_global_hrtf = true;
-king_realistic_distance = false;
+sound_global_hrtf = true;
+sound_global_hrtf = true;
 init_world_reverb_mixer();
 
 	p.volume_step = SOUND_VOLUME_STEP;
@@ -550,12 +550,11 @@ else if (shiftisdown() && enter_pressed)
 {
 	try_open_map_store_at_player();
 }
-else if (!inventory_closed_by_enter_this_frame && !altisdown() && !shiftisdown() && (kb_pressed("use") || enter_pressed) && inventory_use_pending)
+else if (!inventory_closed_by_enter_this_frame && !altisdown() && !shiftisdown() && (kb_pressed("use") || enter_pressed) && (inventory_use_pending || inventory_selected_item != ""))
 {
 	string item_to_use = inventory_selected_item;
 	inventory_use_pending = false;
-	inventory_selected_item = "";
-	if (item_to_use != "") use(item_to_use);
+	if (item_to_use != "") { use(item_to_use); if (get_item_count(item_to_use) <= 0) inventory_selected_item = ""; }
 	else speak(tr("inventory.favorite_select_item"));
 }
 else if (!altisdown() && !shiftisdown() && (kb_pressed("use") || enter_pressed) && is_sitting)
@@ -731,7 +730,6 @@ update_idle_scuff();
 	sp.update_listener_3d(me.x, me.y, me.z, double(facing));
 	itempool.update_listener_3d(me.x, me.y, me.z, double(facing));
 	update_map_reverb();
-	king_system_update();
 if (kb_pressed("exit_game") and jumping==0 and falling==false)
 {
     bool do_exit = (confirm_exit == 1) ? confirm_exit_dialog() : true;
