@@ -104,7 +104,18 @@ class sound_pool_item {
 		if (max_distance > 0 and looping == true and filename != "") {
 			int total_distance = get_total_distance(listener_x, listener_y, listener_z);
 			if (total_distance > max_distance and handle.active == true) {
-				handle.close();
+				if (looping) {
+					if (handle.playing)
+						handle.pause();
+				} else {
+					handle.close();
+				}
+				return;
+			}
+			if (total_distance <= max_distance and handle.active == true and looping and paused == false and handle.playing == false) {
+				handle.play_looped();
+				last_set_lx = -999999.0;
+				update_listener_position(listener_x, listener_y, listener_z, rotation);
 				return;
 			}
 			if (total_distance <= max_distance and handle.active == false) {
@@ -122,13 +133,16 @@ class sound_pool_item {
 				if (handle.active == true) {
 					if (start_offset > 0)
 						handle.seek(start_offset);
+					handle.set_hrtf(!stationary && king_global_hrtf);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
 					handle.pan = start_pan;
 					handle.volume = start_volume;
 					for (uint fi = 0; fi < fx_list.length(); fi++)
 						handle.set_fx(fx_list[fi]);
-					if (paused == false)
+					if (paused == false) {
 						handle.play_looped();
+						last_set_lx = -999999.0;
+					}
 				}
 				return;
 			}
