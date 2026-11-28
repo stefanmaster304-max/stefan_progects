@@ -18,7 +18,7 @@ bool sound_pool_default_y_elevation = false;
 // sound is attenuated exactly like any other sound at the same distance. The
 // distant weapon reports are the only pool with their own falloff, because they
 // compute their level from the distance instead of letting the engine do it.
-const float SOUND_VOLUME_STEP = 1.7;
+const float SOUND_VOLUME_STEP = 2.1;
 const float SOUND_PAN_STEP = 1.0;
 
 class sound_pool_item {
@@ -217,6 +217,52 @@ bool room_exterior_filter_applied = false;
 		while (eff_rotation >= 360.0) eff_rotation -= 360.0;
 
 		bool outside_bounds = (sound_x != eff_listener_x or sound_y != eff_listener_y or sound_z != eff_listener_z);
+
+		// Non-HRTF pools (such as map music/ambience/sources in sp) must never call
+		// set_position(), because FMOD downmixes 3D channels to mono.
+		// Using 2D pan (-100..100), volume (125 / volume_step), and behind pitch keeps
+		// full stereo inside bounds and pans 100% left/right outside bounds.
+		if (!hrtf_enabled) {
+			float target_pan = start_pan;
+			float target_vol = start_volume;
+			float target_pitch = start_pitch;
+			if (outside_bounds) {
+				float dx = sound_x - eff_listener_x;
+				float dy = sound_y - eff_listener_y;
+				float dz = sound_z - eff_listener_z;
+				float rad = eff_rotation * 0.01745329251;
+				float cos_r = cos(rad);
+				float sin_r = sin(rad);
+				float local_x = dx * cos_r - dy * sin_r;
+				float local_y = dx * sin_r + dy * cos_r;
+				float horiz = sqrt(local_x * local_x + local_y * local_y);
+				if (horiz > 0.0001) {
+					target_pan = (local_x / horiz) * 100.0;
+					if (target_pan < -100.0) target_pan = -100.0;
+					if (target_pan > 100.0) target_pan = 100.0;
+				}
+				float dist = sqrt(dx * dx + dy * dy + dz * dz);
+				float max_r = (volume_step > 0.0) ? (125.0 / volume_step) : 125.0;
+				float atten_db = (dist * 100.0) / max_r;
+				target_vol = start_volume - atten_db;
+				if (target_vol < -100.0) target_vol = -100.0;
+				if (local_y < 0) target_pitch -= behind_pitch_decrease;
+			}
+			if (target_pan != last_set_pan) {
+				handle.pan = target_pan;
+				last_set_pan = target_pan;
+			}
+			if (target_vol != last_set_vol) {
+				handle.volume = target_vol;
+				last_set_vol = target_vol;
+			}
+			if (target_pitch != last_set_pitch) {
+				handle.pitch = target_pitch;
+				last_set_pitch = target_pitch;
+			}
+			return;
+		}
+
 		bool want_hrtf = outside_bounds && hrtf_enabled;
 		if (want_hrtf != last_hrtf_active) {
 			handle.set_hrtf(want_hrtf);
