@@ -60,6 +60,8 @@ bool room_exterior_filter_applied = false;
 	float last_set_sx = -999999.0, last_set_sy = -999999.0, last_set_sz = -999999.0;
 	float last_set_rot = -999999.0;
 	float last_set_pitch = -999999.0;
+	bool hrtf_enabled = false;
+	bool last_hrtf_active = false;
 
 	sound_pool_item() {
 		reset();
@@ -103,6 +105,8 @@ bool room_exterior_filter_applied = false;
 		last_set_sx = -999999.0; last_set_sy = -999999.0; last_set_sz = -999999.0;
 		last_set_rot = -999999.0;
 		last_set_pitch = -999999.0;
+		hrtf_enabled = false;
+		last_hrtf_active = false;
 	}
 
 	/*
@@ -132,7 +136,9 @@ bool room_exterior_filter_applied = false;
 				if (handle.active == true) {
 					if (start_offset > 0)
 						handle.seek(start_offset);
-					handle.set_hrtf(!stationary && king_global_hrtf);
+					hrtf_enabled = !stationary && king_global_hrtf;
+					last_hrtf_active = hrtf_enabled;
+					handle.set_hrtf(hrtf_enabled);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
 					handle.pan = start_pan;
 					handle.volume = start_volume;
@@ -206,6 +212,14 @@ bool room_exterior_filter_applied = false;
 		float eff_rotation = rotation - theta;
 		while (eff_rotation < 0) eff_rotation += 360.0;
 		while (eff_rotation >= 360.0) eff_rotation -= 360.0;
+
+		bool outside_bounds = (sound_x != eff_listener_x or sound_y != eff_listener_y or sound_z != eff_listener_z);
+		bool want_hrtf = outside_bounds && hrtf_enabled;
+		if (want_hrtf != last_hrtf_active) {
+			handle.set_hrtf(want_hrtf);
+			last_hrtf_active = want_hrtf;
+			last_set_lx = -999999.0;
+		}
 
 		// Only call set_position when something actually changed.
 		// king_audio's set_position runs occlusion raycasts and may add/remove DSPs,
@@ -348,7 +362,8 @@ class sound_pool {
 		items[slot].persistent = persistent;
 		items[slot].stream = stream;
 		items[slot].theta = theta;
-		items[slot].handle.set_hrtf(dimension > 0 ? (hrtf || king_global_hrtf) : false);
+		items[slot].hrtf_enabled = (dimension > 0) ? (hrtf || king_global_hrtf) : false;
+		items[slot].last_hrtf_active = items[slot].hrtf_enabled;
 		if (@mix != null)
 			items[slot].handle.set_mixer(mix);
 		else if (@mixer != null)
@@ -404,6 +419,7 @@ class sound_pool {
 			if (start_volume < 0.0)
 				items[slot].handle.volume = start_volume;
 			items[slot].handle.pitch = start_pitch;
+			items[slot].handle.set_hrtf(items[slot].hrtf_enabled);
 		}
 		for (uint i = 0; i < items[slot].fx_list.length(); i++)
 			items[slot].handle.set_fx(items[slot].fx_list[i]);
