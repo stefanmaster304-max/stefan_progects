@@ -132,7 +132,7 @@ bool room_exterior_filter_applied = false;
 				if (handle.active == true) {
 					if (start_offset > 0)
 						handle.seek(start_offset);
-					handle.set_hrtf(!stationary);
+					handle.set_hrtf(!stationary && king_global_hrtf);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
 					handle.pan = start_pan;
 					handle.volume = start_volume;
@@ -219,26 +219,17 @@ bool room_exterior_filter_applied = false;
 			last_set_rot = eff_rotation;
 		}
 
-		// Hard directional pan + behind pitch decrease (when outside range)
+		// Behind pitch decrease (only when sound is outside range)
 		float pitch = start_pitch;
-		float target_pan = start_pan;
 		if (sound_x != eff_listener_x or sound_y != eff_listener_y or sound_z != eff_listener_z) {
 			float dx = sound_x - eff_listener_x;
 			float dy = sound_y - eff_listener_y;
 			float rad = eff_rotation * 0.01745329251;
 			float cos_r = cos(rad);
 			float sin_r = sin(rad);
-			float local_x = dx * cos_r - dy * sin_r;
 			float local_y = dx * sin_r + dy * cos_r;
 			if (local_y < 0) pitch -= behind_pitch_decrease;
-			float horiz = sqrt(local_x * local_x + local_y * local_y);
-			if (horiz > 0.0001) {
-				target_pan = (local_x / horiz) * 100.0;
-				if (target_pan < -100.0) target_pan = -100.0;
-				if (target_pan > 100.0) target_pan = 100.0;
-			}
 		}
-		if (handle.pan != target_pan) handle.pan = target_pan;
 		if (pitch != last_set_pitch) {
 			handle.pitch = pitch;
 			last_set_pitch = pitch;
@@ -357,7 +348,7 @@ class sound_pool {
 		items[slot].persistent = persistent;
 		items[slot].stream = stream;
 		items[slot].theta = theta;
-		items[slot].handle.set_hrtf(dimension > 0 ? king_global_hrtf : false);
+		items[slot].handle.set_hrtf(dimension > 0 ? (hrtf || king_global_hrtf) : false);
 		if (@mix != null)
 			items[slot].handle.set_mixer(mix);
 		else if (@mixer != null)
@@ -432,6 +423,7 @@ class sound_pool {
 				items[slot].handle.play_looped();
 			else
 				items[slot].handle.play();
+			items[slot].last_set_lx = -999999.0;
 		}
 		if (slot > highest_slot)
 			highest_slot = slot;
