@@ -1,13 +1,30 @@
-/* sound_pool.nvgt - Standard NVGT MiniAudio SoundPool with Steam Audio HRTF support. */
-
+/* sound_pool.nvgt - King Audio Engine version
+ * Adapted from BGT/NVGT sound_pool for use with king_audio_engine (FMOD + Steam Audio HRTF).
+ * All spatial positioning uses king_audio's set_position() which handles HRTF internally.
+ *
+ * Original Copyright (C) 2010-2014 Blastbay Studios
+ * King Audio adaptation - 2026
+ *
+ * This file is the outdated King Audio set, unmodified, with two additions the
+ * game uses room-specific exterior low-pass filtering.
+ * get_sound_position(), used to resume the map music where it stopped.
+ */
+#include "rotation.nvgt"
+#pragma plugin king_audio_engine
 bool sound_pool_default_y_elevation = false;
+
+// One attenuation for the whole game. Every pool - the player's own sounds, the
+// map, the items, the projectiles and the NPCs - uses these same numbers, so a
+// sound is attenuated exactly like any other sound at the same distance. The
+// distant weapon reports are the only pool with their own falloff, because they
+// compute their level from the distance instead of letting the engine do it.
 const float SOUND_VOLUME_STEP = 2.0;
 const float SOUND_PAN_STEP = 1.0;
 
 class sound_pool_item {
 	sound@ handle;
 	string filename;
-	pack_interface@ packfile = null;
+	king_pack@ packfile = null;
 	string owner;
 	bool y_is_elevation;
 	int priority;
@@ -32,11 +49,17 @@ class sound_pool_item {
 	bool is_3d;
 	bool paused;
 	bool stationary;
-	bool occlude;
 	double start_offset;
 	bool persistent;
+	bool stream;
 	timer last_memory_push;
 	string extra_data;
+	string[] fx_list;
+bool room_exterior_filter_applied = false;
+	float last_set_lx = -999999.0, last_set_ly = -999999.0, last_set_lz = -999999.0;
+	float last_set_sx = -999999.0, last_set_sy = -999999.0, last_set_sz = -999999.0;
+	float last_set_rot = -999999.0;
+	float last_set_pitch = -999999.0;
 
 	sound_pool_item() {
 		reset();
@@ -46,6 +69,7 @@ class sound_pool_item {
 		if (@handle != null)
 			handle.close();
 		@handle = null;
+		@packfile = null;
 		filename = "";
 		owner = "";
 		priority = 0;
@@ -54,8 +78,8 @@ class sound_pool_item {
 		z = 0;
 		theta = 0;
 		looping = false;
-		pan_step = 0.0;
-		volume_step = 0.0;
+		pan_step = 1.0;
+		volume_step = 1.0;
 		behind_pitch_decrease = 0.0;
 		start_pan = 0.0;
 		start_volume = 0.0;
@@ -69,13 +93,21 @@ class sound_pool_item {
 		is_3d = false;
 		paused = false;
 		stationary = false;
-		occlude = true;
 		start_offset = 0.0;
 		persistent = false;
+		stream = false;
 		last_memory_push.restart();
 		extra_data = "";
+		fx_list.resize(0);
+		last_set_lx = -999999.0; last_set_ly = -999999.0; last_set_lz = -999999.0;
+		last_set_sx = -999999.0; last_set_sy = -999999.0; last_set_sz = -999999.0;
+		last_set_rot = -999999.0;
+		last_set_pitch = -999999.0;
 	}
 
+	/*
+	This method updates the sound, checking if it should be closed due to out of earshot conditions etc.
+	*/
 	void update(float listener_x, float listener_y, float listener_z, double rotation, int max_distance) {
 		if (@handle == null)
 			return;
@@ -86,13 +118,25 @@ class sound_pool_item {
 				return;
 			}
 			if (total_distance <= max_distance and handle.active == false) {
-				handle.load(filename, @packfile != null ? @packfile : @sound_default_pack);
+				if (stream) {
+					if (@packfile != null)
+						handle.stream(filename, packfile);
+					else
+						handle.stream(filename);
+				} else {
+					if (@packfile != null)
+						handle.load(filename, packfile);
+					else
+						handle.load(filename);
+				}
 				if (handle.active == true) {
 					if (start_offset > 0)
 						handle.seek(start_offset);
 					update_listener_position(listener_x, listener_y, listener_z, rotation);
-					handle.set_pan(start_pan);
-					handle.set_volume(start_volume);
+					handle.pan = start_pan;
+					handle.volume = start_volume;
+					for (uint fi = 0; fi < fx_list.length(); fi++)
+						handle.set_fx(fx_list[fi]);
 					if (paused == false)
 						handle.play_looped();
 				}
@@ -102,62 +146,99 @@ class sound_pool_item {
 		update_listener_position(listener_x, listener_y, listener_z, rotation);
 	}
 
+	/*
+	This method recalculates the position and calls king_audio's set_position().
+	King audio handles all 3D spatialization (including HRTF) in a single call.
+	*/
 	void update_listener_position(float listener_x, float listener_y, float listener_z, float rotation) {
 		if (handle.active == false)
 			return;
-		if (stationary == true) {
-			if (handle.spatialization_enabled) handle.spatialization_enabled = false;
+		if (stationary == true)
 			return;
-		} else handle.positioning = AUDIO_POSITIONING_ABSOLUTE;
+
+		// Apply pivit rotation: rotate listener around the pivit point by theta
+		float eff_listener_x = listener_x;
+		float eff_listener_y = listener_y;
+		float eff_listener_z = listener_z;
+		if (theta != 0) {
+			vector rotated = rotate(vector(listener_x, listener_y, listener_z), pivit, theta * 0.01745329251);
+			eff_listener_x = rotated.x;
+			eff_listener_y = rotated.y;
+			eff_listener_z = listener_z; // Z is not affected by 2D rotation
+		}
+
+		// Calculate effective sound position considering ranges
 		float delta_left = x - left_range;
 		float delta_right = x + right_range;
 		float delta_backward = y - backward_range;
 		float delta_forward = y + forward_range;
 		float delta_lower = z - lower_range;
 		float delta_upper = z + upper_range;
-		vector true_pos(listener_x, listener_y, listener_z);
-		if (listener_x < delta_left)
-			true_pos.x = delta_left;
-		else if (listener_x >= delta_right)
-			true_pos.x = delta_right;
-		if (listener_y < delta_backward)
-			true_pos.y = delta_backward;
-		else if (listener_y >= delta_forward)
-			true_pos.y = delta_forward;
-		if (listener_z < delta_lower)
-			true_pos.z = delta_lower;
-		else if (listener_z >= delta_upper)
-			true_pos.z = delta_upper;
-		handle.spatialization_enabled = true_pos != vector(listener_x, listener_y, listener_z);
-		if (!handle.spatialization_enabled) {
-			handle.pitch = start_pitch;
-			return;
+
+		float sound_x = x;
+		float sound_y = y;
+		float sound_z = z;
+
+		// Clamp listener to range bounds for effective positioning
+		if (eff_listener_x < delta_left)
+			sound_x = delta_left;
+		else if (eff_listener_x >= delta_right)
+			sound_x = delta_right;
+		else
+			sound_x = eff_listener_x;
+
+		if (eff_listener_y < delta_backward)
+			sound_y = delta_backward;
+		else if (eff_listener_y >= delta_forward)
+			sound_y = delta_forward;
+		else
+			sound_y = eff_listener_y;
+
+		if (eff_listener_z < delta_lower)
+			sound_z = delta_lower;
+		else if (eff_listener_z >= delta_upper)
+			sound_z = delta_upper;
+		else
+			sound_z = eff_listener_z;
+
+		// Adjust listener rotation by theta offset (all in degrees)
+		float eff_rotation = rotation - theta;
+		while (eff_rotation < 0) eff_rotation += 360.0;
+		while (eff_rotation >= 360.0) eff_rotation -= 360.0;
+
+		// Only call set_position when something actually changed.
+		// king_audio's set_position runs occlusion raycasts and may add/remove DSPs,
+		// so calling it on unchanged values causes audible stutter on moving sources.
+		if (eff_listener_x != last_set_lx or eff_listener_y != last_set_ly or eff_listener_z != last_set_lz
+			or sound_x != last_set_sx or sound_y != last_set_sy or sound_z != last_set_sz
+			or eff_rotation != last_set_rot) {
+			handle.set_position(eff_listener_x, eff_listener_y, eff_listener_z, sound_x, sound_y, sound_z, eff_rotation, pan_step, volume_step);
+			last_set_lx = eff_listener_x; last_set_ly = eff_listener_y; last_set_lz = eff_listener_z;
+			last_set_sx = sound_x; last_set_sy = sound_y; last_set_sz = sound_z;
+			last_set_rot = eff_rotation;
 		}
-		true_pos -= vector(listener_x, listener_y, listener_z);
-		double rot_deg = rotation - theta;
-		while (rot_deg < 0) rot_deg += 360.0;
-		while (rot_deg >= 360.0) rot_deg -= 360.0;
-		double rot_rad = rot_deg * 0.017453292519943295;
-		true_pos = rotate(true_pos, vector(0, 0), rot_rad);
+
+		// Behind pitch decrease (only when sound is outside range)
 		float pitch = start_pitch;
-		if (y_is_elevation) {
-			if (true_pos.z < 0) pitch -= behind_pitch_decrease;
-			if (true_pos.y < 0) pitch -= behind_pitch_decrease;
-			handle.min_distance = 0.25;
-			handle.directional_attenuation_factor = pan_step;
-			handle.rolloff = volume_step * 0.5;
-			handle.set_position_3d(true_pos.x, true_pos.y, -true_pos.z);
-		} else {
-			if (true_pos.y < 0) pitch -= behind_pitch_decrease;
-			if (true_pos.z < 0) pitch -= behind_pitch_decrease;
-			handle.min_distance = 0.25;
-			handle.directional_attenuation_factor = pan_step;
-			handle.rolloff = volume_step * 0.5;
-			handle.set_position_3d(true_pos.x, true_pos.z, -true_pos.y);
+		if (sound_x != eff_listener_x or sound_y != eff_listener_y or sound_z != eff_listener_z) {
+			float dx = sound_x - eff_listener_x;
+			float dy = sound_y - eff_listener_y;
+			float rad = eff_rotation * 0.01745329251;
+			float cos_r = cos(rad);
+			float sin_r = sin(rad);
+			float local_y = dx * sin_r + dy * cos_r;
+			if (local_y < 0) pitch -= behind_pitch_decrease;
 		}
-		handle.pitch = pitch;
+		if (pitch != last_set_pitch) {
+			handle.pitch = pitch;
+			last_set_pitch = pitch;
+		}
 	}
 
+
+	/*
+	This method returns the total distance between the current sound and the listener in space.
+	*/
 	int get_total_distance(float listener_x, float listener_y, float listener_z) {
 		if (stationary == true)
 			return 0;
@@ -167,19 +248,19 @@ class sound_pool_item {
 		int delta_forward = y + forward_range;
 		int delta_lower = z - lower_range;
 		int delta_upper = z + upper_range;
-		int true_x = listener_x;
-		int true_y = listener_y;
-		int true_z = listener_z;
 		int distance = 0;
 		if (is_3d == false) {
 			if (listener_x >= delta_left and listener_x <= delta_right)
-				return 0;
-			else if (listener_x < delta_left)
+				return distance;
+			if (listener_x < delta_left)
 				distance = delta_left - listener_x;
-			else if (listener_x > delta_right)
+			if (listener_x > delta_right)
 				distance = listener_x - delta_right;
 			return distance;
 		}
+		int true_x = listener_x;
+		int true_y = listener_y;
+		int true_z = listener_z;
 		if (listener_x < delta_left)
 			true_x = delta_left;
 		else if (listener_x > delta_right)
@@ -208,17 +289,21 @@ class sound_pool_item {
 	}
 }
 
+
+/*
+This is the actual sound_pool class, adapted for king_audio_engine.
+*/
 class sound_pool {
+	bool y_is_elevation = sound_pool_default_y_elevation;
 	int max_distance;
-	bool y_is_elevation;
 	float pan_step;
 	float volume_step;
 	float behind_pitch_decrease;
-	bool hrtf = true;
-	bool occlude = true;
+	bool hrtf = king_global_hrtf;
 	mixer@ mixer = null;
-	pack_interface@ pack_file = null;
+	king_pack@ pack_file = null;
 
+	// Default constructor
 	sound_pool(int default_item_size = 100) {
 		items.resize(default_item_size);
 		max_distance = 0;
@@ -233,7 +318,7 @@ class sound_pool {
 		clean_frequency = 3;
 	}
 
-	int play_extended(int dimension, string filename, pack_interface@ packfile, float listener_x, float listener_y, float listener_z, float sound_x, float sound_y, float sound_z, double rotation, int left_range, int right_range, int backward_range, int forward_range, int lower_range, int upper_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool start_playing = true, double theta = 0, bool stream = false) {
+	int play_extended(int dimension, string filename, king_pack@ packfile, float listener_x, float listener_y, float listener_z, float sound_x, float sound_y, float sound_z, double rotation, int left_range, int right_range, int backward_range, int forward_range, int lower_range, int upper_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool start_playing = true, double theta = 0, bool stream = false) {
 		int slot = reserve_slot();
 		if (slot == -1)
 			return -1;
@@ -253,7 +338,6 @@ class sound_pool {
 		items[slot].forward_range = forward_range;
 		items[slot].lower_range = lower_range;
 		items[slot].upper_range = upper_range;
-		items[slot].occlude = occlude;
 		items[slot].is_3d = true;
 		if (filename != "")
 			items[slot].start_offset = offset;
@@ -261,8 +345,9 @@ class sound_pool {
 		items[slot].start_volume = start_volume;
 		items[slot].start_pitch = start_pitch;
 		items[slot].persistent = persistent;
+		items[slot].stream = stream;
 		items[slot].theta = theta;
-		items[slot].handle.set_hrtf(hrtf);
+		items[slot].handle.set_hrtf(king_global_hrtf);
 		if (@mix != null)
 			items[slot].handle.set_mixer(mix);
 		else if (@mixer != null)
@@ -271,6 +356,11 @@ class sound_pool {
 			@items[slot].packfile = @packfile;
 		else
 			@items[slot].packfile = @pack_file;
+		items[slot].fx_list.resize(0);
+		if (@fx != null) {
+			for (uint fi = 0; fi < fx.length(); fi++)
+				items[slot].fx_list.insert_last(fx[fi]);
+		}
 		if (filename != "") {
 			if (dimension > 1 and max_distance > 0 and items[slot].get_total_distance(listener_x, listener_y, (dimension == 2 ? 0 : listener_z)) > max_distance) {
 				if (looping == false) {
@@ -291,7 +381,17 @@ class sound_pool {
 					return slot;
 				}
 			}
-			items[slot].handle.load(items[slot].filename, @items[slot].packfile != null ? @items[slot].packfile : @sound_default_pack);
+			if (items[slot].stream) {
+				if (@items[slot].packfile != null)
+					items[slot].handle.stream(items[slot].filename, items[slot].packfile);
+				else
+					items[slot].handle.stream(items[slot].filename);
+			} else {
+				if (@items[slot].packfile != null)
+					items[slot].handle.load(items[slot].filename, items[slot].packfile);
+				else
+					items[slot].handle.load(items[slot].filename);
+			}
 			if (items[slot].handle.active == false) {
 				items[slot].reset();
 				return -1;
@@ -299,11 +399,13 @@ class sound_pool {
 			if (items[slot].start_offset > 0)
 				items[slot].handle.seek(items[slot].start_offset);
 			if (start_pan != 0.0)
-				items[slot].handle.set_pan(start_pan);
+				items[slot].handle.pan = start_pan;
 			if (start_volume < 0.0)
-				items[slot].handle.set_volume(start_volume);
-			items[slot].handle.set_pitch(start_pitch);
+				items[slot].handle.volume = start_volume;
+			items[slot].handle.pitch = start_pitch;
 		}
+		for (uint i = 0; i < items[slot].fx_list.length(); i++)
+			items[slot].handle.set_fx(items[slot].fx_list[i]);
 		if (dimension > 0)
 			last_listener_x = listener_x;
 		if (dimension > 1) {
@@ -326,7 +428,7 @@ class sound_pool {
 		return slot;
 	}
 
-	int play_stationary(string filename, pack_interface@ packfile, bool looping, bool persistent = false) {
+	int play_stationary(string filename, king_pack@ packfile, bool looping, bool persistent = false) {
 		return play_extended(0, filename, packfile, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent);
 	}
 
@@ -334,15 +436,15 @@ class sound_pool {
 		return play_extended(0, filename, null, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent);
 	}
 
-	int play_stationary_extended(string filename, pack_interface@ packfile, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool stream = false) {
-		return play_extended(0, filename, packfile, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
+	int play_stationary_extended(string filename, king_pack@ packfile, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null) {
+		return play_extended(0, filename, packfile, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
-	int play_stationary_extended(string filename, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool stream = false) {
-		return play_extended(0, filename, null, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
+	int play_stationary_extended(string filename, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null) {
+		return play_extended(0, filename, null, 0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
-	int play_1d(string filename, pack_interface@ packfile, float listener_x, float sound_x, bool looping, bool persistent = false) {
+	int play_1d(string filename, king_pack@ packfile, float listener_x, float sound_x, bool looping, bool persistent = false) {
 		return play_extended(1, filename, packfile, listener_x, 0, 0, sound_x, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent);
 	}
 
@@ -350,19 +452,19 @@ class sound_pool {
 		return play_extended(1, filename, null, listener_x, 0, 0, sound_x, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent);
 	}
 
-	int play_extended_1d(string filename, float listener_x, float sound_x, int left_range, int right_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool stream = false) {
-		return play_extended(1, filename, null, listener_x, 0, 0, sound_x, 0, 0, 0.0, left_range, right_range, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
+	int play_extended_1d(string filename, float listener_x, float sound_x, int left_range, int right_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null) {
+		return play_extended(1, filename, null, listener_x, 0, 0, sound_x, 0, 0, 0.0, left_range, right_range, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
-	int play_extended_1d(string filename, pack_interface@ packfile, float listener_x, float sound_x, int left_range, int right_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool stream = false) {
-		return play_extended(1, filename, packfile, listener_x, 0, 0, sound_x, 0, 0, 0.0, left_range, right_range, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
+	int play_extended_1d(string filename, king_pack@ packfile, float listener_x, float sound_x, int left_range, int right_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null) {
+		return play_extended(1, filename, packfile, listener_x, 0, 0, sound_x, 0, 0, 0.0, left_range, right_range, 0, 0, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
-	int play_2d(string filename, pack_interface@ packfile, float listener_x, float listener_y, float sound_x, float sound_y, bool looping, bool persistent = false) {
+	int play_2d(string filename, king_pack@ packfile, float listener_x, float listener_y, float sound_x, float sound_y, bool looping, bool persistent = false) {
 		return play_extended(2, filename, packfile, listener_x, listener_y, 0, sound_x, sound_y, 0, 0.0, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent);
 	}
 
-	int play_2d(string filename, pack_interface@ packfile, float listener_x, float listener_y, float sound_x, float sound_y, double rotation, bool looping, bool persistent = false) {
+	int play_2d(string filename, king_pack@ packfile, float listener_x, float listener_y, float sound_x, float sound_y, double rotation, bool looping, bool persistent = false) {
 		return play_extended(2, filename, packfile, listener_x, listener_y, 0, sound_x, sound_y, 0, rotation, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent);
 	}
 
@@ -374,43 +476,37 @@ class sound_pool {
 		return play_extended(2, filename, null, listener_x, listener_y, 0, sound_x, sound_y, 0, rotation, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent);
 	}
 
-	int play_extended_2d(string filename, pack_interface@ packfile, float listener_x, float listener_y, float sound_x, float sound_y, double rotation, int left_range, int right_range, int backward_range, int forward_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool stream = false) {
-		return play_extended(2, filename, packfile, listener_x, listener_y, 0, sound_x, sound_y, 0, rotation, left_range, right_range, backward_range, forward_range, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
+	int play_extended_2d(string filename, king_pack@ packfile, float listener_x, float listener_y, float sound_x, float sound_y, double rotation, int left_range, int right_range, int backward_range, int forward_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null) {
+		return play_extended(2, filename, packfile, listener_x, listener_y, 0, sound_x, sound_y, 0, rotation, left_range, right_range, backward_range, forward_range, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
-	int play_extended_2d(string filename, float listener_x, float listener_y, float sound_x, float sound_y, double rotation, int left_range, int right_range, int backward_range, int forward_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool stream = false) {
-		return play_extended(2, filename, null, listener_x, listener_y, 0, sound_x, sound_y, 0, rotation, left_range, right_range, backward_range, forward_range, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
+	int play_extended_2d(string filename, float listener_x, float listener_y, float sound_x, float sound_y, double rotation, int left_range, int right_range, int backward_range, int forward_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null) {
+		return play_extended(2, filename, null, listener_x, listener_y, 0, sound_x, sound_y, 0, rotation, left_range, right_range, backward_range, forward_range, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
-	int play_extended_2d(string filename, pack_interface@ packfile, float listener_x, float listener_y, float sound_x, float sound_y, int left_range, int right_range, int backward_range, int forward_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool stream = false) {
-		return play_extended(2, filename, packfile, listener_x, listener_y, 0, sound_x, sound_y, 0, 0, left_range, right_range, backward_range, forward_range, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
+	int play_extended_2d(string filename, king_pack@ packfile, float listener_x, float listener_y, float sound_x, float sound_y, int left_range, int right_range, int backward_range, int forward_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null) {
+		return play_extended(2, filename, packfile, listener_x, listener_y, 0, sound_x, sound_y, 0, 0, left_range, right_range, backward_range, forward_range, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
-	int play_extended_2d(string filename, float listener_x, float listener_y, float sound_x, float sound_y, int left_range, int right_range, int backward_range, int forward_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool stream = false) {
-		return play_extended(2, filename, null, listener_x, listener_y, 0, sound_x, sound_y, 0, 0, left_range, right_range, backward_range, forward_range, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, true, 0, stream);
+	int play_extended_2d(string filename, float listener_x, float listener_y, float sound_x, float sound_y, int left_range, int right_range, int backward_range, int forward_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null) {
+		return play_extended(2, filename, null, listener_x, listener_y, 0, sound_x, sound_y, 0, 0, left_range, right_range, backward_range, forward_range, 0, 0, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx);
 	}
 
-	int play_3d(string filename, pack_interface@ packfile, float listener_x, float listener_y, float listener_z, float sound_x, float sound_y, float sound_z, double rotation, bool looping, bool persistent = false, bool stream = false) {
+	int play_3d(string filename, king_pack@ packfile, float listener_x, float listener_y, float listener_z, float sound_x, float sound_y, float sound_z, double rotation, bool looping, bool persistent = false, bool stream = false) {
 		return play_extended(3, filename, packfile, listener_x, listener_y, listener_z, sound_x, sound_y, sound_z, rotation, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent, null, null, true, 0, stream);
 	}
-	int play_3d(string filename, pack_interface@ packfile, vector listener, vector sound_coordinate, double rotation, bool looping, bool persistent = false) {
-		return play_3d(filename, packfile, listener.x, listener.y, listener.z, sound_coordinate.x, sound_coordinate.y, sound_coordinate.z, rotation, looping, persistent);
-	}
+
 	int play_3d(string filename, float listener_x, float listener_y, float listener_z, float sound_x, float sound_y, float sound_z, double rotation, bool looping, bool persistent = false, bool stream = false) {
 		return play_extended(3, filename, null, listener_x, listener_y, listener_z, sound_x, sound_y, sound_z, rotation, 0, 0, 0, 0, 0, 0, looping, 0, 0.0, 0.0, 100.0, persistent, null, null, true, 0, stream);
 	}
-	int play_3d(string filename, vector listener, vector sound_coordinate, double rotation, bool looping, bool persistent = false) {
-		return play_3d(filename, listener.x, listener.y, listener.z, sound_coordinate.x, sound_coordinate.y, sound_coordinate.z, rotation, looping, persistent);
-	}
-	int play_extended_3d(string filename, pack_interface@ packfile, float listener_x, float listener_y, float listener_z, float sound_x, float sound_y, float sound_z, double rotation, int left_range, int right_range, int backward_range, int forward_range, int lower_range, int upper_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool start_playing = true, double theta = 0, bool stream = false) {
+
+	int play_extended_3d(string filename, king_pack@ packfile, float listener_x, float listener_y, float listener_z, float sound_x, float sound_y, float sound_z, double rotation, int left_range, int right_range, int backward_range, int forward_range, int lower_range, int upper_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool start_playing = true, double theta = 0, bool stream = false) {
 		return play_extended(3, filename, packfile, listener_x, listener_y, listener_z, sound_x, sound_y, sound_z, rotation, left_range, right_range, backward_range, forward_range, lower_range, upper_range, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, start_playing, theta, stream);
 	}
 
 	int play_extended_3d(string filename, float listener_x, float listener_y, float listener_z, float sound_x, float sound_y, float sound_z, double rotation, int left_range, int right_range, int backward_range, int forward_range, int lower_range, int upper_range, bool looping, double offset, float start_pan, float start_volume, float start_pitch, bool persistent = false, mixer@ mix = null, string[]@ fx = null, bool start_playing = true, double theta = 0, bool stream = false) {
 		return play_extended(3, filename, null, listener_x, listener_y, listener_z, sound_x, sound_y, sound_z, rotation, left_range, right_range, backward_range, forward_range, lower_range, upper_range, looping, offset, start_pan, start_volume, start_pitch, persistent, mix, fx, start_playing, theta, stream);
 	}
-
-	// Removed sound_push_memory / sound_last_memory_push_time (not supported in native MiniAudio sound).
 
 	bool sound_is_active(int slot) {
 		if (verify_slot(slot) == false)
@@ -459,12 +555,14 @@ class sound_pool {
 	}
 
 	void pause_all() {
-		for (uint i = 0; i < items.length(); i++)
+		int current_length = items.length();
+		for (uint i = 0; i < current_length; i++)
 			pause_sound(i);
 	}
 
 	void resume_all() {
-		for (uint i = 0; i < items.length(); i++)
+		int current_length = items.length();
+		for (uint i = 0; i < current_length; i++)
 			resume_sound(i);
 	}
 
@@ -483,6 +581,8 @@ class sound_pool {
 	void update_listener_3d(float listener_x, float listener_y, float listener_z, double rotation = 0.0, bool refresh_y_is_elevation = true) {
 		if (items.length() == 0)
 			return;
+		// Set global FMOD listener once before updating all sounds
+		set_listener(listener_x, listener_y, listener_z, rotation);
 		last_listener_x = listener_x;
 		last_listener_y = listener_y;
 		last_listener_z = listener_z;
@@ -492,10 +592,10 @@ class sound_pool {
 			if (refresh_y_is_elevation) items[i].y_is_elevation = this.y_is_elevation;
 			items[i].update(listener_x, listener_y, listener_z, rotation, max_distance);
 		}
+		// Flush FMOD 3D state after all sounds updated
+		king_system_update();
 	}
-	void update_listener_3d(vector listener, double rotation = 0.0, bool refresh_y_is_elevation = true) {
-		update_listener_3d(listener.x, listener.y, listener.z, rotation, refresh_y_is_elevation);
-	}
+
 	bool set_sound_owner(int slot, string owner, int priority = 0) {
 		if (verify_slot(slot) == false)
 			return false;
@@ -510,6 +610,18 @@ class sound_pool {
 				return i;
 		}
 		return -1;
+	}
+
+	// Playback position of a slot in milliseconds, used to resume a looping
+	// music source where the previous map left it.
+	double get_sound_position(int slot) {
+		if (verify_slot(slot) == false || @items[slot].handle == null)
+			return 0.0;
+		if (items[slot].handle.active == true && items[slot].handle.playing == true) {
+			double pos = items[slot].handle.position;
+			if (pos > 0) return pos;
+		}
+		return items[slot].start_offset;
 	}
 
 	bool update_sound_1d(int slot, int x) {
@@ -527,17 +639,15 @@ class sound_pool {
 		items[slot].update(last_listener_x, last_listener_y, last_listener_z, last_listener_rotation, max_distance);
 		return true;
 	}
-	bool update_sound_3d(int slot, vector coordinate) {
-		return update_sound_3d(slot, coordinate.x, coordinate.y, coordinate.z);
-	}
 	bool update_sound_position(int slot, int x, int y, int z) {
-		return update_sound_3d(slot, x, y, z);
+		if (verify_slot(slot) == false)
+			return false;
+		items[slot].x = x;
+		items[slot].y = y;
+		items[slot].z = z;
+		return true;
 	}
-	double get_sound_position(int slot) {
-		if (verify_slot(slot) == false || @items[slot].handle == null || !items[slot].handle.active)
-			return 0.0;
-		return items[slot].handle.position;
-	}
+
 	bool update_sounds_3d(string owner, int x, int y, int z, double rotation = -1) {
 		for (uint slot = 0; slot <= highest_slot; slot++) {
 			if (items[slot].stationary or items[slot].owner.substr(0, owner.length()) != owner)
@@ -546,14 +656,27 @@ class sound_pool {
 			items[slot].y = y;
 			items[slot].z = z;
 			if (rotation >= 0)
-				items[slot].theta = calculate_theta(rotation);
+				items[slot].theta = rotation;
 			items[slot].update(last_listener_x, last_listener_y, last_listener_z, last_listener_rotation, max_distance);
 		}
 		return true;
 	}
-	bool update_sounds_3d(string owner, vector coordinate, double rotation = -1) {
-		return update_sounds_3d(owner, coordinate.x, coordinate.y, coordinate.z, rotation);
+
+	bool sound_push_memory(int slot, string mem, bool stream_end = false, int pcm_rate = 0, int pcm_chans = 0) {
+		if (verify_slot(slot) == false or @items[slot].handle == null or items[slot].filename != "")
+			return false;
+		bool ret = items[slot].handle.push_memory(mem, stream_end, pcm_rate, pcm_chans);
+		if (ret)
+			items[slot].last_memory_push.restart();
+		return ret;
 	}
+
+	double sound_last_memory_push_time(int slot) {
+		if (verify_slot(slot) == false or @items[slot].handle == null or items[slot].filename != "")
+			return 0;
+		return items[slot].last_memory_push.elapsed;
+	}
+
 	bool set_sound_rotation(int slot, double rotation, vector pivit) {
 		if (verify_slot(slot) == false)
 			return false;
@@ -574,10 +697,11 @@ class sound_pool {
 		return true;
 	}
 
-	bool destroy_sounds(string owner) {
+	bool set_sounds_amp(string owner, int priority, float amp) {
 		for (uint slot = 0; slot <= highest_slot; slot++) {
-			if (items[slot].owner.substr(0, owner.length()) == owner)
-				destroy_sound(slot);
+			if (items[slot].owner.substr(0, owner.length()) != owner or items[slot].priority != priority)
+				continue;
+			items[slot].handle.set_fx("$amp:fader:" + amp);
 		}
 		return true;
 	}
@@ -585,13 +709,24 @@ class sound_pool {
 	bool update_sound_start_values(int slot, float start_pan, float start_volume, float start_pitch) {
 		if (verify_slot(slot) == false)
 			return false;
+		bool changed = (items[slot].start_pan != start_pan)
+			|| (items[slot].start_volume != start_volume)
+			|| (items[slot].start_pitch != start_pitch);
 		items[slot].start_pan = start_pan;
 		items[slot].start_volume = start_volume;
 		items[slot].start_pitch = start_pitch;
 		if (@items[slot].handle != null) {
-			items[slot].handle.set_pan(start_pan);
-			items[slot].handle.set_volume(start_volume);
-			items[slot].handle.set_pitch(start_pitch);
+			items[slot].handle.pan = start_pan;
+			items[slot].handle.volume = start_volume;
+			items[slot].handle.pitch = start_pitch;
+			if (changed) {
+				// king_audio, handle.volume/pitch/pan degisimini ancak set_position
+				// tekrar cagrildiginda audible output'a yansitiyor. Oyuncu hareket
+				// etmedigi surece update_listener_position cache yuzunden set_position'i
+				// atliyordu; burada cache'i invalidate ediyoruz ki bir sonraki frame
+				// set_position zorla cagrilsin ve yeni volume duyulsun.
+				items[slot].last_set_lx = -999999.0;
+			}
 			return true;
 		}
 		return true;
@@ -639,6 +774,15 @@ class sound_pool {
 		return false;
 	}
 
+	bool destroy_sounds(string owner) {
+		for (uint slot = 0; slot <= highest_slot; slot++) {
+			if (items[slot].owner.substr(0, owner.length()) == owner)
+				destroy_sound(slot);
+		}
+		return true;
+	}
+
+	// Internal properties
 	int last_listener_x;
 	int last_listener_y;
 	int last_listener_z;
@@ -647,6 +791,7 @@ class sound_pool {
 	uint highest_slot;
 	int clean_frequency;
 
+	// Internal methods
 	void find_highest_slot(uint limit) {
 		highest_slot = 0;
 		sound_pool_item@ current;
@@ -689,7 +834,7 @@ class sound_pool {
 	bool verify_slot(int slot) {
 		if (slot < 0)
 			return false;
-		if (slot >= int(items.length()))
+		if (slot >= items.length())
 			return false;
 		if (items[slot].persistent == true)
 			return true;

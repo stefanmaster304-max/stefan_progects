@@ -2,8 +2,9 @@ The Confront - Registro de Alterações (Português)
 
 Novo na versão 1.3 (28/11/2026 - 11:03 -03:00)
 
-Motor de Áudio MiniAudio, Steam Audio HRTF e Portas:
-- Retorno ao motor de som padrão MiniAudio do NVGT (versão 0.90.0-dev) para maior fluidez, utilizando Steam Audio (`nvgt_phonon`) para espacialização e atenuação HRTF 3D (`audio_panner_phonon_hrtf` e `audio_attenuator_phonon`), além de reverb nativo com `audio_fdn_reverb_node` e `reverb3d` (`includes/reverb_system.nvgt`, `includes/sound_pool.nvgt` e `tcf.nvgt`).
+King Audio Atualizado, Compatibilidade NVGT e Portas:
+- Atualizado o motor de áudio King Audio (`king_audio_engine.dll` + `fmod.dll` + `phonon.dll`) com Steam Audio HRTF e reverb nativo (`includes/reverb_system.nvgt`, `includes/sound_pool.nvgt` e `tcf.nvgt`), além de ajuste fino de proximidade (`king_hrtf_blend_distance = 0.0` e `king_hrtf_near_radius = 0.0`) para posicionamento 3D preciso em qualquer direção.
+- Atualizada a base do NVGT (`0.90.0-dev` API v5) e adaptada a camada de processos/rede (`includes/updater.nvgt` e `includes/bgt_compat.nvgt`) para total compatibilidade com a API do plugin.
 - Removido completamente o filtro acústico de ambiente interior/exterior das portas (`includes/door_system.nvgt`, `includes/builder/misc/door_builder.nvgt`, `includes/world_runtime.nvgt`, `includes/sound_pool.nvgt` e `settings/maps/safe_zone.map`), mantendo os sons das portas em áudio espacial 3D na posição exata da porta.
 
 Novo na versão 1.2 (27/11/2026 - 10:55 -03:00)

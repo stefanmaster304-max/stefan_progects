@@ -247,32 +247,33 @@ string powershell_literal(const string&in value)
 	return "'" + string_replace(value, "'", "''", true) + "'";
 }
 
-process@ start_hidden_powershell(const string&in command, const string&in script_path = "")
+class updater_process
 {
-	string[] args = {"powershell.exe", "-NoLogo", "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass"};
+	bool valid = false;
+	string ps_args;
+}
+
+updater_process@ start_hidden_powershell(const string&in command, const string&in script_path = "")
+{
+	updater_process@ proc = updater_process();
+	string base = "-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass ";
 	if (script_path != "")
 	{
-		args.insert_last("-File");
-		args.insert_last(script_path);
+		proc.ps_args = base + "-File \"" + script_path + "\"";
 	}
 	else
 	{
-		args.insert_last("-Command");
-		args.insert_last(command);
+		string escaped = string_replace(command, "\"", "\\\"", true);
+		proc.ps_args = base + "-Command \"" + escaped + "\"";
 	}
-	return run(args, PROCESS_BACKGROUND, cwdir());
+	proc.valid = true;
+	return proc;
 }
 
-bool wait_for_hidden_process(process@ child, bool unused_flag = false)
+bool wait_for_hidden_process(updater_process@ child, bool unused_flag = false)
 {
 	if (child is null || !child.valid) return false;
-	while (child.running)
-	{
-		wait(25);
-		update_game_world();
-	}
-	int exit_code = child.wait();
-	return exit_code == 0;
+	return run("powershell.exe", child.ps_args, true, true);
 }
 
 bool extract_update_archive(const string&in archive_path, const string&in destination, bool progress_beeps = false)
@@ -280,7 +281,7 @@ bool extract_update_archive(const string&in archive_path, const string&in destin
 	if (archive_path == "" || destination == "") return false;
 	if (!directory_exists(UPDATE_TEMP_DIR) && !directory_create(UPDATE_TEMP_DIR)) return false;
 	string command = "$ErrorActionPreference='Stop'; try { Add-Type -AssemblyName System.IO.Compression.FileSystem; $archive=" + powershell_literal(archive_path) + "; $destination=" + powershell_literal(destination) + "; if(!(Test-Path -LiteralPath $archive -PathType Leaf)){throw 'Archive file not found'}; if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination -Recurse -Force}; [System.IO.Directory]::CreateDirectory($destination) | Out-Null; [System.IO.Compression.ZipFile]::ExtractToDirectory($archive,$destination); exit 0 } catch { $_ | Out-String | Set-Content -LiteralPath 'update_temp/extract_error.txt'; exit 1 }";
-	process@ child = start_hidden_powershell(command);
+	updater_process@ child = start_hidden_powershell(command);
 	return wait_for_hidden_process(child, progress_beeps);
 }
 
@@ -289,7 +290,7 @@ bool extract_sound_archive(const string&in archive_path, const string&in destina
 	if (archive_path == "" || destination == "") return false;
 	if (!directory_exists(UPDATE_TEMP_DIR) && !directory_create(UPDATE_TEMP_DIR)) return false;
 	string command = "$ErrorActionPreference='Stop'; try { Add-Type -AssemblyName System.IO.Compression.FileSystem; $archive=" + powershell_literal(archive_path) + "; $destination=" + powershell_literal(destination) + "; if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination -Recurse -Force}; [System.IO.Directory]::CreateDirectory($destination)|Out-Null; $soundRoot=[System.IO.Path]::GetFullPath((Join-Path $destination 'sounds')); [System.IO.Directory]::CreateDirectory($soundRoot)|Out-Null; $rootPrefix=$soundRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar)+[System.IO.Path]::DirectorySeparatorChar; $zip=[System.IO.Compression.ZipFile]::OpenRead($archive); $count=0; try { foreach($entry in $zip.Entries){ if(!$entry.FullName.StartsWith('sounds/',[System.StringComparison]::OrdinalIgnoreCase) -or $entry.FullName.EndsWith('/')){continue}; $relative=$entry.FullName.Substring(7).Replace('/',[System.IO.Path]::DirectorySeparatorChar); if($relative -eq ''){continue}; $target=[System.IO.Path]::GetFullPath((Join-Path $soundRoot $relative)); if(!$target.StartsWith($rootPrefix,[System.StringComparison]::OrdinalIgnoreCase)){throw 'Unsafe sound archive path'}; [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($target))|Out-Null; $input=$entry.Open(); try{$output=[System.IO.File]::Open($target,[System.IO.FileMode]::Create,[System.IO.FileAccess]::Write,[System.IO.FileShare]::None); try{$input.CopyTo($output)}finally{$output.Dispose()}}finally{$input.Dispose()}; $count++ } } finally{$zip.Dispose()}; if($count -eq 0){throw 'Archive contains no sounds directory entries'}; exit 0 } catch { $_ | Out-String | Set-Content -LiteralPath 'update_temp/extract_sounds_error.txt'; exit 1 }";
-	process@ child = start_hidden_powershell(command);
+	updater_process@ child = start_hidden_powershell(command);
 	return wait_for_hidden_process(child, progress_beeps);
 }
 
@@ -428,7 +429,7 @@ bool install_sound_directory(const string&in source_dir)
 	updater_audio.stop();
 	updater_audio.close();
 	string stage_command = "$ErrorActionPreference='Stop'; function Copy-SoundTree([string]$from,[string]$to){[System.IO.Directory]::CreateDirectory($to)|Out-Null; foreach($entry in [System.IO.Directory]::EnumerateFileSystemEntries($from)){if([System.IO.Directory]::Exists($entry)){Copy-SoundTree $entry (Join-Path $to ([System.IO.Path]::GetFileName($entry)))}else{[System.IO.File]::Copy($entry,(Join-Path $to ([System.IO.Path]::GetFileName($entry))),$true)}}}; try { if(!(Test-Path -LiteralPath " + powershell_literal(source_dir) + " -PathType Container)){throw 'Extracted sound folder not found'}; if(Test-Path -LiteralPath 'sounds.new'){Remove-Item -LiteralPath 'sounds.new' -Recurse -Force}; Copy-SoundTree " + powershell_literal(source_dir) + " 'sounds.new'; exit 0 } catch { $_ | Out-String | Set-Content -LiteralPath 'update_temp/sounds_stage_error.txt'; exit 1 }";
-	process@ stage_process = start_hidden_powershell(stage_command);
+	updater_process@ stage_process = start_hidden_powershell(stage_command);
 	if (!wait_for_hidden_process(stage_process, true) || !sound_directory_is_valid("sounds.new")) return false;
 	file swap_script;
 	if (!swap_script.open(UPDATE_TEMP_DIR + "/swap_sounds.ps1", "w")) return false;
@@ -699,7 +700,7 @@ bool apply_game_update(update_item@ item)
 			return false;
 		}
 		string ps_cmd = "if (Test-Path '" + extract_dir + "') { Remove-Item '" + extract_dir + "' -Recurse -Force }; Expand-Archive -LiteralPath '" + zip_path + "' -DestinationPath '" + extract_dir + "' -Force";
-		process@ extract_proc = start_hidden_powershell(ps_cmd);
+		updater_process@ extract_proc = start_hidden_powershell(ps_cmd);
 		if (!wait_for_hidden_process(extract_proc, true) || !file_exists(extract_dir + "/tcf.exe"))
 		{
 			speak(tr("updater.game_install_failed") + " " + tr("updater.game_archive_exe_invalid"));
@@ -733,8 +734,8 @@ bool apply_game_update(update_item@ item)
 	play_update_complete_sound();
 	speak(tr("updater.game_restart"));
 	wait_for_update_complete_sound();
-	process@ installer_process = start_hidden_powershell("", UPDATE_TEMP_DIR + "/install_game_update.ps1");
-	if (installer_process is null || !installer_process.valid)
+	updater_process@ installer_process = start_hidden_powershell("", UPDATE_TEMP_DIR + "/install_game_update.ps1");
+	if (installer_process is null || !installer_process.valid || !run("powershell.exe", installer_process.ps_args, false, true))
 	{
 		speak(tr("updater.game_installer_launch_failed"));
 		return false;
@@ -969,8 +970,6 @@ int fetch_manifest(string&out body, string&out error_message)
 	/* The startup check must never hold the game. A slow or unreachable server
 	   is given a few seconds and then the menu opens exactly as if there were
 	   no update: no retry storm, no thirty second freeze before the menu. */
-	h.connect_timeout = 3000;
-	h.receive_timeout = 4000;
 	h.max_retries = 0;
 
 	bool started = h.get(update_manifest_url);
